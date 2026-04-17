@@ -1317,3 +1317,54 @@ initLogo();renderNav();initNavSortable();initQuote();restoreFilters(currentView)
 </script>
 </body>
 </html>
+/* 信息ap模块 */
+#info-ap-module {
+  margin-top: 30px;
+}
+
+#info-ap-module .info-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--border-color);
+}
+
+#info-ap-module .tab {
+  padding: 10px 15px;
+  cursor: pointer; 
+  color: var(--text-secondary);
+  position: relative;
+}
+
+#info-ap-module .tab.active {
+  color: var(--text-main);
+}
+
+#info-ap-module .tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--theme-color); 
+}
+
+#info-ap-module .info-panel {
+  display: none;
+  padding: 20px 0;
+}
+
+#info-ap-module .info-panel.active {
+  display: block;
+}
+
+/* 待办数量提示 */  
+#todo-count {
+  display: inline-block;
+  background: var(--accent-color);
+  color: #fff;
+  font-size: 12px;
+  padding: 2px 5px;
+  border-radius: 10px;
+  margin-left: 5px;  
+  vertical-align: top;
+}
