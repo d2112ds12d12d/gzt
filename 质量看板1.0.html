@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>质检管理看板</title>
-<script src="config.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
@@ -329,7 +328,7 @@ document.getElementById('currentDate').textContent = new Date().toLocaleDateStri
 /* ===== GITHUB 配置 ===== */
 const GH_USER  = 'd2112ds12d12d';
 const GH_REPO  = 'gzt';
-function getToken(){ return window.GH_TOKEN || ''; }
+function getToken(){ return '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'; }
 
 /* 初始化时检测 GitHub 连通性 */
 fetch(`https://api.github.com/repos/${GH_USER}/${GH_REPO}`, {
