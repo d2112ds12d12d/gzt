@@ -129,7 +129,15 @@
   <div class="sidebar-footer">
     <div style="margin-bottom:6px;color:#475569;">云端状态</div>
     <span class="cloud-badge" id="cloudStatus">● 等待连接</span>
-    <div style="margin-top:10px;font-size:11px;color:#334155;">CloudBase 预留接口已就绪</div>
+    <div style="margin-top:12px;">
+      <div style="font-size:11px;color:#475569;margin-bottom:5px;">上传者 Token</div>
+      <div style="display:flex;gap:6px;">
+        <input type="password" id="tokenInput" placeholder="粘贴 GitHub Token"
+          style="flex:1;font-size:11px;padding:5px 8px;background:#0f1117;border:1px solid #2a3145;border-radius:6px;color:#94a3b8;outline:none;min-width:0;">
+        <button onclick="saveToken()" style="font-size:11px;padding:5px 9px;background:#1e3a52;border:1px solid #4fc3f7;border-radius:6px;color:#4fc3f7;cursor:pointer;white-space:nowrap;">保存</button>
+      </div>
+      <div style="margin-top:5px;font-size:10px;color:#334155;">普通查看者无需填写</div>
+    </div>
   </div>
 </nav>
 
@@ -326,25 +334,44 @@
 document.getElementById('currentDate').textContent = new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit'});
 
 /* ===== GITHUB 配置 ===== */
-const GH_USER  = 'd2112ds12d12d';
-const GH_REPO  = 'gzt';
-function getToken(){ return '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'; }
+const GH_USER = 'd2112ds12d12d';
+const GH_REPO = 'gzt';
 
-/* 初始化时检测 GitHub 连通性 */
-fetch(`https://api.github.com/repos/${GH_USER}/${GH_REPO}`, {
-  headers: { Authorization: `token ${getToken()}` }
-}).then(r => {
-  if(r.ok){
-    document.getElementById('cloudStatus').textContent = '● GitHub 已连接';
-    document.getElementById('cloudStatus').style.color = '#34d399';
-  } else {
-    document.getElementById('cloudStatus').textContent = '● 连接失败 ' + r.status;
-    document.getElementById('cloudStatus').style.color = '#f87171';
+function getToken(){ return localStorage.getItem('gh_token') || ''; }
+
+function saveToken(){
+  const val = document.getElementById('tokenInput').value.trim();
+  if(!val){ showToast('请先粘贴 Token'); return; }
+  localStorage.setItem('gh_token', val);
+  document.getElementById('tokenInput').value = '';
+  showToast('✓ Token 已保存，正在验证…');
+  initGitHub();
+}
+
+function initGitHub(){
+  const token = getToken();
+  if(!token){
+    document.getElementById('cloudStatus').textContent = '● 未配置 Token';
+    document.getElementById('cloudStatus').style.color = '#64748b';
+    return;
   }
-}).catch(() => {
-  document.getElementById('cloudStatus').textContent = '● 网络异常';
-  document.getElementById('cloudStatus').style.color = '#f87171';
-});
+  fetch('https://api.github.com/repos/' + GH_USER + '/' + GH_REPO, {
+    headers:{ Authorization:'token ' + token }
+  }).then(r => {
+    if(r.ok){
+      document.getElementById('cloudStatus').textContent = '● GitHub 已连接';
+      document.getElementById('cloudStatus').style.color = '#34d399';
+    } else {
+      document.getElementById('cloudStatus').textContent = '● Token 无效 ' + r.status;
+      document.getElementById('cloudStatus').style.color = '#f87171';
+      localStorage.removeItem('gh_token');
+    }
+  }).catch(() => {
+    document.getElementById('cloudStatus').textContent = '● 网络异常';
+    document.getElementById('cloudStatus').style.color = '#f87171';
+  });
+}
+initGitHub();
 
 /* ===== PAGE SWITCH ===== */
 function switchPage(page){
