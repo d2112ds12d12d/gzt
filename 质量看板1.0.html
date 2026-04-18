@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>质检管理看板</title>
-<script src="https://imgcache.qq.com/qcloud/cloudbase-js-sdk/1.3.5/cloudbase.full.js"></script>
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
   *{margin:0;padding:0;box-sizing:border-box;}
@@ -325,37 +326,26 @@
 /* ===== DATE ===== */
 document.getElementById('currentDate').textContent = new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit'});
 
-/* ===== CLOUDBASE INIT ===== */
-const CLOUD_ENV = 'inran-d0gdmoj6a6c0c';
-let cloudApp = null;
-try {
-  cloudApp = cloudbase.init({ env: CLOUD_ENV });
-  document.getElementById('cloudStatus').textContent = '● 已连接';
-  document.getElementById('cloudStatus').style.background = '#0c2a1a';
-  document.getElementById('cloudStatus').style.color = '#34d399';
-} catch(e) {
-  document.getElementById('cloudStatus').textContent = '● 连接失败';
-  document.getElementById('cloudStatus').style.color = '#f87171';
-}
+/* ===== GITHUB 配置 ===== */
+const GH_USER  = 'd2112ds12d12d';
+const GH_REPO  = 'gzt';
+function getToken(){ return window.GH_TOKEN || ''; }
 
-/* ===== FETCH LATEST DATA ===== */
-function fetchLatestData(type) {
-  if(!cloudApp) return;
-  const db = cloudApp.database();
-  if(type === 'quality') {
-    db.collection('quality_data').orderBy('uploadTime','desc').limit(1).get()
-      .then(res => { if(res.data && res.data.length) renderQualityData(res.data[0]); })
-      .catch(err => console.warn('拉取质量数据失败', err));
+/* 初始化时检测 GitHub 连通性 */
+fetch(`https://api.github.com/repos/${GH_USER}/${GH_REPO}`, {
+  headers: { Authorization: `token ${getToken()}` }
+}).then(r => {
+  if(r.ok){
+    document.getElementById('cloudStatus').textContent = '● GitHub 已连接';
+    document.getElementById('cloudStatus').style.color = '#34d399';
   } else {
-    db.collection('training_data').orderBy('uploadTime','desc').limit(1).get()
-      .then(res => { if(res.data && res.data.length) renderTrainingData(res.data[0]); })
-      .catch(err => console.warn('拉取培训数据失败', err));
+    document.getElementById('cloudStatus').textContent = '● 连接失败 ' + r.status;
+    document.getElementById('cloudStatus').style.color = '#f87171';
   }
-}
-
-/* 数据渲染回调 — 云端数据返回后在此更新页面（可按需扩展） */
-function renderQualityData(data) { showToast('✓ 质量数据已从云端更新'); }
-function renderTrainingData(data) { showToast('✓ 培训数据已从云端更新'); }
+}).catch(() => {
+  document.getElementById('cloudStatus').textContent = '● 网络异常';
+  document.getElementById('cloudStatus').style.color = '#f87171';
+});
 
 /* ===== PAGE SWITCH ===== */
 function switchPage(page){
@@ -370,39 +360,183 @@ function switchPage(page){
   }
 }
 
-/* ===== UPLOAD ===== */
-function handleUpload(input, type){
-  const file = input.files[0];
-  if(!file) return;
-  const nameEl = document.getElementById(type==='quality'?'qualityFileName':'trainingFileName');
-  nameEl.textContent = '✓ 已选择：'+file.name;
-  showToast('正在上传到云端，请稍候…');
-  // ===== CloudBase 上传接口（已激活）=====
-  const cloudEnv = 'inran-d0gdmoj6a6c0c';
-  const app = cloudbase.init({ env: cloudEnv });
-  const storage = app.storage();
-  storage.uploadFile({
-    cloudPath: `data/${type}/${Date.now()}_${file.name}`,
-    filePath: file,
-  }).then(res => {
-    showToast('✓ 上传成功：' + res.fileID);
-    fetchLatestData(type);
-  }).catch(err => showToast('✗ 上传失败：' + err.message));
+/* ===== PARSE EXCEL → JSON ===== */
+function parseExcel(file){
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const wb = XLSX.read(e.target.result, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(ws, { defval: '' });
+        resolve(rows);
+      } catch(err) { reject(err); }
+    };
+    reader.onerror = () => reject(new Error('文件读取失败'));
+    reader.readAsArrayBuffer(file);
+  });
 }
 
-/* ===== CLOUD SYNC ===== */
+/* ===== 写文件到 GitHub 仓库 =====
+   路径：data/quality_data.json 或 data/training_data.json
+   如果文件已存在，需要带上 sha 才能覆盖
+*/
+async function writeToGitHub(filename, content){
+  const path = `data/${filename}`;
+  const url  = `https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${path}`;
+  const headers = {
+    'Authorization': `token ${getToken()}`,
+    'Content-Type': 'application/json'
+  };
+
+  // 先查文件是否存在，获取 sha
+  let sha = null;
+  try {
+    const check = await fetch(url, { headers: { Authorization: `token ${getToken()}` } });
+    if(check.ok){
+      const info = await check.json();
+      sha = info.sha;
+    }
+  } catch(e) {}
+
+  const body = {
+    message: `更新 ${filename} - ${new Date().toLocaleString('zh-CN')}`,
+    content: btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 2)))),
+    ...(sha ? { sha } : {})
+  };
+
+  const res = await fetch(url, {
+    method: 'PUT',
+    headers,
+    body: JSON.stringify(body)
+  });
+
+  if(!res.ok){
+    const err = await res.json();
+    throw new Error(err.message || res.status);
+  }
+  return res.json();
+}
+
+/* ===== 从 GitHub 读取 JSON 文件 ===== */
+async function readFromGitHub(filename){
+  const path = `data/${filename}`;
+  // 加时间戳防止浏览器缓存
+  const url = `https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/${path}?t=${Date.now()}`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error('文件不存在或网络错误');
+  return res.json();
+}
+
+/* ===== UPLOAD：解析 Excel → 写入 GitHub ===== */
+async function handleUpload(input, type){
+  const file = input.files[0];
+  if(!file) return;
+
+  const nameEl = document.getElementById(type==='quality'?'qualityFileName':'trainingFileName');
+  nameEl.textContent = '⏳ 解析中…';
+  showToast('正在解析 Excel，请稍候…');
+
+  let rows;
+  try {
+    rows = await parseExcel(file);
+  } catch(err) {
+    nameEl.textContent = '✗ 解析失败';
+    showToast('✗ Excel 解析失败：' + err.message);
+    return;
+  }
+
+  if(!rows || rows.length === 0){
+    nameEl.textContent = '✗ 文件无数据';
+    showToast('✗ Excel 内没有读到数据，请检查文件');
+    return;
+  }
+
+  nameEl.textContent = `⏳ 上传中…（${rows.length} 行）`;
+  showToast(`解析完成 ${rows.length} 行，正在写入 GitHub…`);
+
+  const filename = type === 'quality' ? 'quality_data.json' : 'training_data.json';
+  const payload  = { uploadTime: new Date().toISOString(), fileName: file.name, rows };
+
+  try {
+    await writeToGitHub(filename, payload);
+    nameEl.textContent = `✓ ${file.name}（${rows.length} 行）`;
+    showToast(`✓ 上传成功！数据已写入 GitHub，全国同学同步后可见`);
+    if(type === 'quality') fetchAndRenderQuality();
+    else fetchAndRenderTraining();
+  } catch(err) {
+    nameEl.textContent = '✗ 上传失败';
+    showToast('✗ 写入 GitHub 失败：' + err.message);
+  }
+}
+
+/* ===== 从 GitHub 拉取并渲染质量数据 ===== */
+async function fetchAndRenderQuality(){
+  try {
+    const data = await readFromGitHub('quality_data.json');
+    renderQualityTable(data.rows);
+    showToast('✓ 质量数据已从 GitHub 同步');
+  } catch(err) {
+    showToast('✗ 同步失败：' + err.message);
+  }
+}
+
+/* ===== 从 GitHub 拉取并渲染培训数据 ===== */
+async function fetchAndRenderTraining(){
+  try {
+    const data = await readFromGitHub('training_data.json');
+    renderTrainingTable(data.rows);
+    showToast('✓ 培训数据已从 GitHub 同步');
+  } catch(err) {
+    showToast('✗ 同步失败：' + err.message);
+  }
+}
+
+/* ===== 渲染质量数据表格 ===== */
+function renderQualityTable(rows){
+  const tbody = document.getElementById('qualityTable');
+  if(!tbody || !rows || rows.length === 0) return;
+  tbody.innerHTML = rows.map(r => {
+    const checked = Number(r['质检量']) || 0;
+    const pass    = Number(r['合格量'])  || 0;
+    const fail    = Number(r['不合格量']) || 0;
+    const rate    = checked > 0 ? ((pass / checked) * 100).toFixed(2) + '%' : '-';
+    const rateNum = checked > 0 ? (pass / checked) * 100 : 0;
+    const badge   = rateNum >= 95 ? 'badge-green' : rateNum >= 90 ? 'badge-yellow' : 'badge-red';
+    const label   = rateNum >= 95 ? '优秀' : rateNum >= 90 ? '一般' : '需关注';
+    return `<tr>
+      <td>${r['机型'] || '-'}</td>
+      <td>${checked.toLocaleString()}</td>
+      <td>${pass.toLocaleString()}</td>
+      <td>${fail.toLocaleString()}</td>
+      <td>${rate}</td>
+      <td><span class="badge ${badge}">${label}</span></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ===== 渲染培训数据表格 ===== */
+function renderTrainingTable(rows){
+  const tbody = document.getElementById('trainingTable');
+  if(!tbody || !rows || rows.length === 0) return;
+  tbody.innerHTML = rows.map(r => {
+    const col1 = r['机型'] || r['仓库'] || r['区域'] || '-';
+    const col2 = r['质检量'] || r['培训量'] || r['场次'] || '-';
+    const col3 = r['合格量'] || r['参训人数'] || '-';
+    const col4 = r['不合格量'] || r['答疑数'] || '-';
+    return `<tr>
+      <td>${col1}</td><td>${col2}</td><td>${col3}</td><td>${col4}</td>
+      <td>-</td><td>-</td><td>-</td>
+      <td><span class="badge badge-blue">已导入</span></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ===== 云端同步按钮 ===== */
 function syncCloud(){
-  showToast('正在从云端同步数据…');
-  // ===== CloudBase 同步接口（已激活）=====
-  const app = cloudbase.init({ env: 'inran-d0gdmoj6a6c0c' });
-  const db = app.database();
-  db.collection('quality_data').get().then(res => {
-    if(res.data && res.data.length) renderQualityData(res.data);
-    else showToast('质量数据暂无云端记录');
-  }).catch(err => showToast('✗ 同步失败：' + err.message));
-  db.collection('training_data').get().then(res => {
-    if(res.data && res.data.length) renderTrainingData(res.data);
-  }).catch(err => {});
+  showToast('正在从 GitHub 同步最新数据…');
+  fetchAndRenderQuality();
+  fetchAndRenderTraining();
 }
 
 /* ===== TOAST ===== */
