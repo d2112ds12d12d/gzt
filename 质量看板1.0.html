@@ -177,6 +177,52 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
 .empty-page{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:#94a3b8;gap:12px;}
 .empty-icon{font-size:40px;opacity:.5;}
 .empty-text{font-size:13px;}
+
+/* ===== RED-BLACK BOARD ===== */
+@keyframes shimmer{0%{transform:translateX(-100%) skewX(-15deg)}100%{transform:translateX(200%) skewX(-15deg)}}
+@keyframes pulse-red{0%,100%{box-shadow:0 0 0 0 rgba(220,38,38,0)}50%{box-shadow:0 0 0 6px rgba(220,38,38,0.15)}}
+@keyframes float-gold{0%,100%{transform:translateY(0px)}50%{transform:translateY(-4px)}}
+@keyframes smoke{0%{transform:translateY(0) scale(1);opacity:.6}100%{transform:translateY(-20px) scale(1.4);opacity:0}}
+
+.red-board-wrap,.black-board-wrap{border-radius:16px;overflow:hidden;position:relative;}
+.red-board-wrap{background:linear-gradient(160deg,#fffbeb 0%,#fef3c7 40%,#fff7ed 100%);border:1.5px solid rgba(217,119,6,0.3);box-shadow:0 4px 24px rgba(217,119,6,0.12);}
+.black-board-wrap{background:linear-gradient(160deg,#fff1f2 0%,#ffe4e6 40%,#fff1f2 100%);border:1.5px solid rgba(220,38,38,0.25);box-shadow:0 4px 24px rgba(220,38,38,0.10);animation:pulse-red 3s ease-in-out infinite;}
+
+.board-header{display:flex;align-items:center;gap:12px;padding:16px 20px 12px;}
+.red-header{border-bottom:1px solid rgba(217,119,6,0.2);}
+.black-header{border-bottom:1px solid rgba(220,38,38,0.15);}
+.board-crown{font-size:28px;animation:float-gold 2.5s ease-in-out infinite;}
+.board-list{padding:12px 16px 16px;display:flex;flex-direction:column;gap:10px;}
+
+/* 红榜卡片 */
+.red-card{border-radius:12px;padding:14px 16px;background:rgba(255,255,255,0.75);border:1px solid rgba(217,119,6,0.2);position:relative;overflow:hidden;transition:transform .18s,box-shadow .18s;}
+.red-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(217,119,6,0.18);}
+.red-card::before{content:'';position:absolute;top:0;left:-100%;width:60%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.6),transparent);animation:shimmer 3s ease-in-out infinite;}
+.red-card.rank1{background:linear-gradient(135deg,rgba(255,251,235,0.95),rgba(254,243,199,0.9));border-color:rgba(217,119,6,0.4);box-shadow:0 2px 12px rgba(217,119,6,0.15);}
+/* 黑榜卡片 */
+.black-card{border-radius:12px;padding:14px 16px;background:rgba(255,255,255,0.75);border:1px solid rgba(220,38,38,0.2);position:relative;overflow:hidden;transition:transform .18s,box-shadow .18s;}
+.black-card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(220,38,38,0.18);}
+.black-card.rank1{background:linear-gradient(135deg,rgba(255,241,242,0.95),rgba(254,226,226,0.9));border-color:rgba(220,38,38,0.45);box-shadow:0 2px 14px rgba(220,38,38,0.18);animation:pulse-red 2s ease-in-out infinite;}
+
+.board-card-top{display:flex;align-items:center;gap:10px;margin-bottom:8px;}
+.board-rank-num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;flex-shrink:0;}
+.red-rank1{background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;}
+.red-rank2{background:linear-gradient(135deg,#94a3b8,#64748b);color:#fff;}
+.red-rank3{background:linear-gradient(135deg,#b45309,#92400e);color:#fff;}
+.black-rank1{background:linear-gradient(135deg,#dc2626,#b91c1c);color:#fff;}
+.black-rank2{background:linear-gradient(135deg,#ef4444,#dc2626);color:#fff;}
+.black-rank3{background:linear-gradient(135deg,#f87171,#ef4444);color:#fff;}
+.board-name{font-size:14px;font-weight:700;color:#1e293b;flex:1;}
+.board-warehouse{font-size:11px;color:#94a3b8;background:rgba(148,163,184,0.12);padding:2px 8px;border-radius:10px;}
+.board-rate{font-size:18px;font-weight:800;}
+.red-rate{color:#d97706;}.black-rate{color:#dc2626;}
+.board-stats{display:flex;gap:12px;margin-top:6px;}
+.board-stat{font-size:11px;color:#64748b;display:flex;align-items:center;gap:4px;}
+.board-stat-val{font-weight:700;color:#334155;}
+.smoke-particle{position:absolute;bottom:8px;right:12px;width:6px;height:6px;border-radius:50%;background:rgba(220,38,38,0.3);animation:smoke 2s ease-out infinite;}
+.smoke-particle:nth-child(2){animation-delay:.7s;right:22px;}
+.smoke-particle:nth-child(3){animation-delay:1.4s;right:32px;}
+
 </style>
 </head>
 <body>
@@ -190,15 +236,19 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
   <div class="nav-section">数据模块</div>
   <div class="nav-item active" onclick="switchPage('quality',this)">
     <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
-    质量数据
+    抽检质量数据
   </div>
-  <div class="nav-item" onclick="switchPage('training',this)">
-    <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-    培训答疑数据
+  <div class="nav-item" onclick="switchPage('audit',this)">
+    <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+    主板审核差异
   </div>
   <div class="nav-item" onclick="switchPage('ranking',this)">
     <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
     全国质检红黑榜
+  </div>
+  <div class="nav-item" onclick="switchPage('training',this)">
+    <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+    培训答疑数据
   </div>
   <div class="sidebar-footer">
     <div style="font-size:11px;color:#94a3b8;font-weight:600;letter-spacing:1px;margin-bottom:7px;">权限等级</div>
@@ -218,7 +268,7 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
       <svg id="gearBtn" class="gear-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" onclick="openSettings()">
         <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/>
       </svg>
-      <span class="ver">v1.3 · 培训部看板</span>
+      <span class="ver">v1.4 · 培训部看板</span>
     </div>
   </div>
 </nav>
@@ -226,7 +276,7 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
 <!-- MAIN -->
 <div id="main">
   <div class="topbar">
-    <div class="topbar-title" id="pageTitle">质量数据看板</div>
+    <div class="topbar-title" id="pageTitle">抽检质量数据看板</div>
     <div class="marquee-wrap">
       <span class="marquee-inner" id="marqueeText">欢迎使用培训部数据看板 · 数据驱动，精益求精</span>
     </div>
@@ -401,12 +451,71 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
       </div>
     </div>
 
+    <!-- 主板审核差异 -->
+    <div class="page" id="page-audit">
+      <div class="empty-page">
+        <div class="empty-icon">🔍</div>
+        <div class="empty-text" style="font-size:15px;font-weight:600;color:#334155;">主板审核差异</div>
+        <div class="empty-text">功能规划中，敬请期待</div>
+      </div>
+    </div>
+
     <!-- 全国质检红黑榜 -->
     <div class="page" id="page-ranking">
-      <div class="empty-page">
-        <div class="empty-icon">🏆</div>
-        <div class="empty-text" style="font-size:15px;font-weight:600;color:#334155;">全国质检红黑榜</div>
-        <div class="empty-text">功能规划中，敬请期待</div>
+      <!-- 筛选栏 -->
+      <div class="filter-bar glass" style="margin-bottom:16px;">
+        <span class="filter-label">仓库筛选</span>
+        <select id="rankingWarehouseFilter" class="filter-select" onchange="renderRankingBoard()">
+          <option value="全部">全国（所有仓库）</option>
+          <option>南京库</option><option>南昌库</option><option>合肥库</option><option>成都库</option>
+          <option>昆明库</option><option>杭州库</option><option>武汉库</option><option>沈阳库</option>
+          <option>济南库</option><option>深圳中心仓</option><option>石家庄库</option><option>西安库</option>
+          <option>郑州库</option><option>重庆库</option><option>长沙库</option>
+        </select>
+        <div class="filter-div"></div>
+        <span class="filter-label">触发阈值</span>
+        <select id="rankingThreshold" class="filter-select" onchange="renderRankingBoard()">
+          <option value="2">差异率 &gt;2%（黑榜入围）</option>
+          <option value="3" selected>差异率 &gt;3%（默认）</option>
+          <option value="5">差异率 &gt;5%（严格）</option>
+        </select>
+        <div class="filter-div"></div>
+        <span style="font-size:11px;color:#94a3b8;">以周维度计算触发次数</span>
+      </div>
+
+      <!-- 红黑榜主体 -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;">
+
+        <!-- 红榜 -->
+        <div class="red-board-wrap">
+          <div class="board-header red-header">
+            <div class="board-crown">🏆</div>
+            <div class="board-title-text">
+              <div style="font-size:16px;font-weight:800;color:#b45309;letter-spacing:1px;">红 榜</div>
+              <div style="font-size:11px;color:#d97706;margin-top:1px;">差异率最低 · 精益求精</div>
+            </div>
+          </div>
+          <div id="redBoardList" class="board-list"></div>
+        </div>
+
+        <!-- 黑榜 -->
+        <div class="black-board-wrap">
+          <div class="board-header black-header">
+            <div class="board-crown">⚠️</div>
+            <div class="board-title-text">
+              <div style="font-size:16px;font-weight:800;color:#dc2626;letter-spacing:1px;">黑 榜</div>
+              <div style="font-size:11px;color:#ef4444;margin-top:1px;">差异率最高 · 需重点关注</div>
+            </div>
+          </div>
+          <div id="blackBoardList" class="board-list"></div>
+        </div>
+
+      </div>
+
+      <!-- 说明 -->
+      <div style="margin-top:14px;padding:10px 16px;border-radius:10px;background:rgba(255,255,255,0.45);border:1px solid rgba(200,210,230,0.5);font-size:11px;color:#94a3b8;line-height:1.8;">
+        📌 触发规则：以周维度统计各仓检验员差异率，超过阈值即计触发一次。红榜取差异率最低前3名，黑榜取最高前3名。
+        数据来源为上传的 Excel 中"检验员"列，每次上传自动更新。
       </div>
     </div>
 
@@ -505,11 +614,12 @@ function switchPage(page,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');el.classList.add('active');
-  const titles={quality:'质量数据看板',training:'培训答疑数据看板',ranking:'全国质检红黑榜'};
+  const titles={quality:'抽检质量数据看板',audit:'主板审核差异',ranking:'全国质检红黑榜',training:'培训答疑数据看板'};
   document.getElementById('pageTitle').textContent=titles[page]||'';
   const topBtn=document.getElementById('uploadTopBtn');
   topBtn.style.display=(page==='quality'&&localStorage.getItem('gh_role')==='creator')?'inline-flex':'none';
   if(page==='training'&&!window._trainingChartsInit){setTimeout(initTrainingCharts,80);window._trainingChartsInit=true;}
+  if(page==='ranking') renderRankingBoard();
 }
 
 /* ===== MARQUEE ===== */
@@ -841,6 +951,101 @@ function initTrainingCharts(){
     <div class="rank-val">${r.val}</div>
   </div>`).join('');
   new Chart(document.getElementById('chartTopics'),{type:'doughnut',data:{labels:['外观检测','功能检测','评级标准','新人规范','逆向流程','系统操作','其他'],datasets:[{data:[22,18,15,12,10,9,14],backgroundColor:['#2563eb','#7c3aed','#059669','#d97706','#dc2626','#0891b2','#94a3b8'],borderWidth:0,hoverOffset:6}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:8,font:{size:10}}}},cutout:'55%'}});
+}
+
+
+/* ===== RED BLACK BOARD ===== */
+const RANKING_DEMO = [
+  {name:'李建国',warehouse:'沈阳库',rate:0.42,monthCount:0,yearCount:1},
+  {name:'王小燕',warehouse:'济南库',rate:0.65,monthCount:0,yearCount:2},
+  {name:'赵明远',warehouse:'长沙库',rate:0.88,monthCount:0,yearCount:0},
+  {name:'陈芳芳',warehouse:'武汉库',rate:0.96,monthCount:1,yearCount:3},
+  {name:'刘大海',warehouse:'南京库',rate:1.12,monthCount:0,yearCount:1},
+  {name:'孙晓丽',warehouse:'成都库',rate:1.30,monthCount:1,yearCount:2},
+  {name:'周伟强',warehouse:'合肥库',rate:5.40,monthCount:3,yearCount:8},
+  {name:'吴建平',warehouse:'深圳中心仓',rate:6.20,monthCount:4,yearCount:11},
+  {name:'郑雪梅',warehouse:'杭州库',rate:7.10,monthCount:4,yearCount:9},
+  {name:'张大力',warehouse:'石家庄库',rate:7.89,monthCount:5,yearCount:14},
+  {name:'林小花',warehouse:'郑州库',rate:8.43,monthCount:5,yearCount:12},
+  {name:'黄建华',warehouse:'西安库',rate:9.67,monthCount:6,yearCount:18},
+];
+
+function renderRankingBoard(){
+  const wh = document.getElementById('rankingWarehouseFilter').value;
+  const threshold = parseFloat(document.getElementById('rankingThreshold').value);
+
+  let src = RANKING_DEMO;
+  // If real data loaded, build from allRows checking '检验员' column
+  if(allRows.length){
+    const map = {};
+    allRows.forEach(r=>{
+      const name = r['检验员']||r['质检员']||r['姓名']||'';
+      const warehouse = r['站点名称']||r['机型']||'';
+      const rate = parseFloat(r['手机差异率'])||0;
+      if(!name) return;
+      if(!map[name]) map[name]={name,warehouse,rate,monthCount:0,yearCount:0};
+      if(rate > map[name].rate) map[name].rate = rate;
+      if(rate > threshold){ map[name].monthCount++; map[name].yearCount++; }
+    });
+    src = Object.values(map);
+  }
+
+  let filtered = wh==='全部' ? src : src.filter(p=>p.warehouse===wh);
+  const sorted = [...filtered].sort((a,b)=>a.rate-b.rate);
+  const redTop = sorted.slice(0,3);
+  const blackTop = [...filtered].sort((a,b)=>b.rate-a.rate).slice(0,3);
+
+  renderBoardSide('redBoardList', redTop, 'red');
+  renderBoardSide('blackBoardList', blackTop, 'black');
+}
+
+const rankColors = {
+  red:  ['red-rank1','red-rank2','red-rank3'],
+  black:['black-rank1','black-rank2','black-rank3']
+};
+const rankLabels = {
+  red:  ['🥇','🥈','🥉'],
+  black:['1','2','3']
+};
+
+function renderBoardSide(containerId, people, side){
+  const el = document.getElementById(containerId);
+  if(!people.length){
+    el.innerHTML = '<div style="text-align:center;padding:30px;color:#94a3b8;font-size:12px;">暂无数据</div>';
+    return;
+  }
+  const cardCls = side==='red'?'red-card':'black-card';
+  const rateCls = side==='red'?'red-rate':'black-rate';
+  el.innerHTML = people.map((p,i)=>{
+    const isFirst = i===0;
+    const smoke = side==='black' && isFirst
+      ? '<span class="smoke-particle"></span><span class="smoke-particle"></span><span class="smoke-particle"></span>'
+      : '';
+    return `<div class="${cardCls}${isFirst?' rank1':''}">
+      ${smoke}
+      <div class="board-card-top">
+        <div class="board-rank-num ${rankColors[side][i]}">${rankLabels[side][i]}</div>
+        <div class="board-name">${p.name}</div>
+        <div class="board-warehouse">${p.warehouse}</div>
+        <div class="board-rate ${rateCls}">${p.rate.toFixed(2)}%</div>
+      </div>
+      <div class="board-stats">
+        <div class="board-stat">
+          <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+          本月触发 <span class="board-stat-val">${p.monthCount} 次</span>
+        </div>
+        <div class="board-stat">
+          <svg width="11" height="11" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10"/></svg>
+          本年累计 <span class="board-stat-val">${p.yearCount} 次</span>
+        </div>
+        <div class="board-stat" style="margin-left:auto;">
+          <span style="font-size:10px;padding:1px 7px;border-radius:8px;background:${side==='red'?'rgba(217,119,6,0.1)':'rgba(220,38,38,0.1)'};color:${side==='red'?'#d97706':'#dc2626'};">
+            ${side==='red'?'优秀':'需关注'}
+          </span>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 
 /* ===== TOAST ===== */
