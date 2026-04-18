@@ -3,13 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>工作资料</title>
+<title>工作资料 v3.4 云同步版</title>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#1a1d21">
 <link rel="manifest" href="data:application/json;base64,eyJuYW1lIjoi5bel5L2c6LWE5paZIiwic2hvcnRfbmFtZSI6IuW3peS9nOi1hOaWmSIsImRlc2NyaXB0aW9uIjoi5pm66IO95b6F5Yqe5LiO56yU6K6w566h55CGIiwic3RhcnRfdXJsIjoiLiIsImRpc3BsYXkiOiJzdGFuZGFsb25lIiwiYmFja2dyb3VuZF9jb2xvciI6IiNmNGY1ZjciLCJ0aGVtZV9jb2xvciI6IiMxYTFkMjEiLCJpY29ucyI6W3sic3JjIjoiZGF0YTppbWFnZS9zdmcreG1sLDxzdmcgeG1sbnM9J2h0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnJyB3aWR0aD0nMTkyJyBoZWlnaHQ9JzE5Mic+PHJlY3Qgd2lkdGg9JzE5MicgaGVpZ2h0PScxOTInIHJ4PScyNCcgZmlsbD0nIzI1NjNlYicvPjx0ZXh0IHg9Jzk2JyB5PScxMjAnIGZvbnQtc2l6ZT0nODAnIGZpbGw9J3doaXRlJyB0ZXh0LWFuY2hvcj0nbWlkZGxlJyBmb250LWZhbWlseT0nc2Fucy1zZXJpZic+6LWEPC90ZXh0Pjwvc3ZnPiIsInNpemVzIjoiMTkyeDE5MiIsInR5cGUiOiJpbWFnZS9zdmcreG1sIn1dfQ==">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script>
 window._sortableReady=new Promise(r=>{const s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js';s.onload=()=>r(true);s.onerror=()=>{console.warn('SortableJS CDN failed');r(false)};document.head.appendChild(s)});
 </script>
@@ -496,6 +497,8 @@ tr.focused td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
   <div class="topbar-sep"></div>
   <span class="topbar-date" id="today-date"></span>
   <div class="topbar-actions">
+    <!-- Cloud Status Light -->
+    <div id="cloud-status-dot" title="云端状态" style="width:12px;height:12px;border-radius:50%;background:#d1d5db;flex-shrink:0;transition:background .4s,box-shadow .4s;cursor:default;box-shadow:0 0 0 3px rgba(0,0,0,.05)" onclick="showCloudStatus()"></div>
     <button class="btn" style="background:var(--green);color:#fff;border-color:var(--green)" onclick="generateDailyReport()">📊 生成分块日报</button>
     <button class="btn" onclick="backupData()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> 备份</button>
     <button class="btn" onclick="document.getElementById('file-restore').click()"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg> 恢复</button>
@@ -518,7 +521,7 @@ tr.focused td:first-child{box-shadow:inset 3px 0 0 var(--accent)}
   <div class="sidebar">
     <div class="sidebar-label">导航 <span style="display:flex;gap:2px"><button class="nav-add-btn" onclick="addNavFolder()" title="新建文件夹">📁</button><button class="nav-add-btn" onclick="addNavItem()" title="新建导航项">＋</button></span></div>
     <div id="nav-list"></div>
-    <div class="sidebar-footer"><div class="sidebar-footer-text">v3.3.2</div></div>
+    <div class="sidebar-footer"><div class="sidebar-footer-text">v3.4 云同步版</div></div>
   </div>
   <div class="content-area"><div id="view-container"></div></div>
 </div>
@@ -625,27 +628,184 @@ function renderMd(text){if(!text)return'';let h=escHtml(text);h=h.replace(/\*\*(
 function fmtTimer(ms){const s=Math.floor(ms/1000),m=Math.floor(s/60),h=Math.floor(m/60);return `${String(h).padStart(2,'0')}:${String(m%60).padStart(2,'0')}:${String(s%60).padStart(2,'0')}`}
 function fmtTimeHM(d){return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`}
 
+// ===================== SUPABASE CLOUD SYNC (v3.4) =====================
+const SUPA_URL='https://dzrivjnaawfjasvxcbzs.supabase.co';
+const SUPA_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6cml2am5hYXdmamFzdnhjYnpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY0NDY4MDEsImV4cCI6MjA5MjAyMjgwMX0.OCIeTOZvTO6rvL5OFDV_kbwUgKm2A9f6vgvQOn4QDMI';
+
+// Cloud status: 'init' | 'online' | 'offline'
+let _cloudStatus='init';
+let _supaClient=null;
+
+function _getClient(){
+  if(_supaClient)return _supaClient;
+  try{
+    if(window.supabase&&window.supabase.createClient){
+      _supaClient=window.supabase.createClient(SUPA_URL,SUPA_KEY);
+    }
+  }catch(e){console.warn('[Supabase] init error',e)}
+  return _supaClient;
+}
+
+function _setCloudStatus(s){
+  _cloudStatus=s;
+  const dot=document.getElementById('cloud-status-dot');
+  if(!dot)return;
+  if(s==='online'){
+    dot.style.background='#10b981';
+    dot.style.boxShadow='0 0 0 3px rgba(16,185,129,.18)';
+    dot.title='✅ 已连接云端';
+  }else if(s==='offline'){
+    dot.style.background='#ef4444';
+    dot.style.boxShadow='0 0 0 3px rgba(239,68,68,.18)';
+    dot.title='🔴 离线 / 云端报错，数据已本地保存';
+  }else{
+    dot.style.background='#d1d5db';
+    dot.style.boxShadow='0 0 0 3px rgba(0,0,0,.05)';
+    dot.title='⏳ 连接中...';
+  }
+}
+
+function showCloudStatus(){
+  const msgs={'online':'✅ 已连接云端，数据实时同步','offline':'🔴 当前离线或云端报错，数据已保存在本地','init':'⏳ 正在连接云端...'};
+  showToast(_cloudStatus==='online'?'☁️':'🔴', msgs[_cloudStatus]||'未知状态');
+}
+
+// Generic kv table operations
+// Table: app_kv (key TEXT primary key, value JSONB, updated_at TIMESTAMPTZ)
+async function _kvGet(key){
+  try{
+    const sb=_getClient();if(!sb)throw new Error('no client');
+    const {data,error}=await sb.from('app_kv').select('value').eq('key',key).maybeSingle();
+    if(error)throw error;
+    return data?data.value:null;
+  }catch(e){console.warn('[Cloud] kvGet',key,e);return null;}
+}
+async function _kvSet(key,value){
+  try{
+    const sb=_getClient();if(!sb)throw new Error('no client');
+    const {error}=await sb.from('app_kv').upsert({key,value,updated_at:new Date().toISOString()},{onConflict:'key'});
+    if(error)throw error;
+    _setCloudStatus('online');
+    return true;
+  }catch(e){console.warn('[Cloud] kvSet',key,e);_setCloudStatus('offline');return false;}
+}
+
+// Pull a key from cloud; fallback to localStorage; return parsed value
+async function _cloudLoad(lsKey,cloudKey,fallback){
+  const cloudVal=await _kvGet(cloudKey);
+  if(cloudVal!==null&&cloudVal!==undefined){
+    // Cloud has data – trust it and refresh local cache
+    try{localStorage.setItem(lsKey,JSON.stringify(cloudVal));}catch(e){}
+    _setCloudStatus('online');
+    return cloudVal;
+  }
+  // Cloud empty – push local to cloud so it's seeded
+  try{
+    const local=JSON.parse(localStorage.getItem(lsKey)||'null');
+    if(local!==null){await _kvSet(cloudKey,local);}
+    return local!==null?local:fallback;
+  }catch(e){return fallback;}
+}
+
+// Push to both cloud and localStorage
+async function _cloudSave(lsKey,cloudKey,value){
+  try{localStorage.setItem(lsKey,JSON.stringify(value));}catch(e){}
+  // Fire-and-forget cloud push
+  _kvSet(cloudKey,value);
+}
+
+// Bootstrap: on page load do a full cloud pull for tasks & quotes
+async function cloudBootstrap(){
+  _setCloudStatus('init');
+  const sb=_getClient();
+  if(!sb){_setCloudStatus('offline');return;}
+  try{
+    // tasks
+    const tasks=await _cloudLoad(STORAGE_KEY,'tasks',null);
+    if(tasks!==null){
+      // run migration on cloud data too
+      let d=Array.isArray(tasks)?tasks:[];
+      let c=false;
+      d.forEach(i=>{if(!i.contentType){i.contentType='todo';c=true}if(i.contentType==='note'&&!i.messages)i.messages=[];if(!i.topic)i.topic='';if(typeof i.isSop==='undefined'){i.isSop=false}});
+      if(c){localStorage.setItem(STORAGE_KEY,JSON.stringify(d));}
+    }
+    // quotes
+    await _cloudLoad(QUOTES_KEY,'quotes',null);
+    // nav
+    await _cloudLoad(NAV_KEY,'nav',null);
+    // tags
+    await _cloudLoad(TAGS_KEY,'tags',null);
+    // logo
+    await _cloudLoad(LOGO_KEY,'logo',null);
+    // timerHist
+    await _cloudLoad(TIMER_HIST_KEY,'timerHist',null);
+    // quoteState
+    await _cloudLoad(QUOTE_STATE_KEY,'quoteState',null);
+    // quoteMeta
+    await _cloudLoad(QUOTE_META_KEY,'quoteMeta',null);
+    // filters
+    await _cloudLoad(FILTER_KEY,'viewFilters',null);
+    _setCloudStatus('online');
+    // Re-render everything after cloud data loaded
+    renderNav();initNavSortable();initLogo();initQuote();
+    viewFilters=loadViewFilters();
+    restoreFilters(currentView);
+    renderView();
+    showToast('☁️','云端数据已同步');
+  }catch(e){
+    console.warn('[Cloud] bootstrap error',e);
+    _setCloudStatus('offline');
+  }
+}
+
 // ===================== DATA =====================
 function loadData(){try{return JSON.parse(localStorage.getItem(STORAGE_KEY)||'[]')}catch(e){return[]}}
-function saveData(d){localStorage.setItem(STORAGE_KEY,JSON.stringify(d))}
+function saveData(d){
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(d));
+  _kvSet('tasks',d); // async push, no await
+}
 function loadTags(){try{return JSON.parse(localStorage.getItem(TAGS_KEY)||'["事项","跟进","培训","周报","常驻-每日","常驻-每周","常驻-每月","笔记"]')}catch(e){return[]}}
-function saveTags(t){localStorage.setItem(TAGS_KEY,JSON.stringify(t))}
+function saveTags(t){
+  localStorage.setItem(TAGS_KEY,JSON.stringify(t));
+  _kvSet('tags',t);
+}
 function loadNav(){try{const r=localStorage.getItem(NAV_KEY);if(r)return migrateNavFormat(JSON.parse(r));const o=localStorage.getItem('qcNav_v3');if(o){const m=migrateNavFormat(JSON.parse(o));saveNav(m);return m}return JSON.parse(JSON.stringify(DEFAULT_NAV))}catch(e){return JSON.parse(JSON.stringify(DEFAULT_NAV))}}
 function migrateNavFormat(nav){nav=nav.map(n=>{if(!n.type)n.type='item';if(n.type==='folder'&&!n.children)n.children=[];if(n.type==='folder'&&n.children)n.children=n.children.map(c=>({...c,type:'item'}));return n});const allItems=[];nav.forEach(n=>{allItems.push(n);if(n.children)n.children.forEach(c=>allItems.push(c))});if(!allItems.find(x=>x.id==='notes')){const ki=nav.findIndex(x=>x.id==='kanban');nav.splice(ki+1,0,{id:'notes',label:'碎片笔记',icon:'chat',builtin:true,type:'item'})}return nav}
-function saveNav(n){localStorage.setItem(NAV_KEY,JSON.stringify(n))}
+function saveNav(n){
+  localStorage.setItem(NAV_KEY,JSON.stringify(n));
+  _kvSet('nav',n);
+}
 function loadQuotes(){try{const r=localStorage.getItem(QUOTES_KEY);if(!r){initDefaultQuotes();return JSON.parse(localStorage.getItem(QUOTES_KEY))}return JSON.parse(r)}catch(e){initDefaultQuotes();return JSON.parse(localStorage.getItem(QUOTES_KEY)||'[]')}}
-function saveQuotes(q){localStorage.setItem(QUOTES_KEY,JSON.stringify(q))}
+function saveQuotes(q){
+  localStorage.setItem(QUOTES_KEY,JSON.stringify(q));
+  _kvSet('quotes',q);
+}
 function initDefaultQuotes(){saveQuotes(DEFAULT_QUOTES.map(q=>({id:genId(),text:q.text,author:q.author||'',category:q.category||'其他',likes:0,likedDates:[],createdAt:Date.now()})))}
 function loadQuoteState(){try{return JSON.parse(localStorage.getItem(QUOTE_STATE_KEY)||'{}')}catch(e){return{}}}
-function saveQuoteState(s){localStorage.setItem(QUOTE_STATE_KEY,JSON.stringify(s))}
+function saveQuoteState(s){
+  localStorage.setItem(QUOTE_STATE_KEY,JSON.stringify(s));
+  _kvSet('quoteState',s);
+}
 function loadQuoteMeta(){try{return JSON.parse(localStorage.getItem(QUOTE_META_KEY)||'{"categories":[],"authors":[]}')}catch(e){return{categories:[],authors:[]}}}
-function saveQuoteMeta(m){localStorage.setItem(QUOTE_META_KEY,JSON.stringify(m))}
+function saveQuoteMeta(m){
+  localStorage.setItem(QUOTE_META_KEY,JSON.stringify(m));
+  _kvSet('quoteMeta',m);
+}
 function loadLogo(){try{return JSON.parse(localStorage.getItem(LOGO_KEY)||'null')}catch(e){return null}}
-function saveLogo(d){localStorage.setItem(LOGO_KEY,JSON.stringify(d))}
+function saveLogo(d){
+  localStorage.setItem(LOGO_KEY,JSON.stringify(d));
+  _kvSet('logo',d);
+}
 function loadTimerHist(){try{return JSON.parse(localStorage.getItem(TIMER_HIST_KEY)||'[]')}catch(e){return[]}}
-function saveTimerHist(h){localStorage.setItem(TIMER_HIST_KEY,JSON.stringify(h))}
+function saveTimerHist(h){
+  localStorage.setItem(TIMER_HIST_KEY,JSON.stringify(h));
+  _kvSet('timerHist',h);
+}
 function loadViewFilters(){try{return JSON.parse(localStorage.getItem(FILTER_KEY)||'{}')}catch(e){return{}}}
-function saveViewFilters(f){localStorage.setItem(FILTER_KEY,JSON.stringify(f))}
+function saveViewFilters(f){
+  localStorage.setItem(FILTER_KEY,JSON.stringify(f));
+  _kvSet('viewFilters',f);
+}
 
 // ===================== MIGRATION =====================
 (function(){
@@ -1314,6 +1474,8 @@ document.addEventListener('keydown',e=>{
 viewFilters=loadViewFilters();
 document.getElementById('today-date').textContent=(()=>{const n=new Date();return `${n.getFullYear()}年${n.getMonth()+1}月${n.getDate()}日 星期${'日一二三四五六'[n.getDay()]}`})();
 initLogo();renderNav();initNavSortable();initQuote();restoreFilters(currentView);renderView();
+// v3.4: Cloud bootstrap (async, non-blocking)
+setTimeout(()=>cloudBootstrap(),300);
 </script>
 </body>
 </html>
