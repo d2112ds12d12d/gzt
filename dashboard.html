@@ -5,10 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>质检管理看板</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
-<script src="https://imgcache.qq.com/qcloud/tcbjs/1.10.8/tcb.js"></script>
 <style>
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:'Microsoft YaHei',sans-serif;background:#0f1117;color:#e2e8f0;display:flex;height:100vh;overflow:hidden;}
+
+  /* ===== SIDEBAR ===== */
   #sidebar{width:220px;min-width:220px;background:#161b27;border-right:1px solid #2a3145;display:flex;flex-direction:column;overflow:hidden;}
   .sidebar-logo{padding:20px 18px 16px;border-bottom:1px solid #2a3145;}
   .sidebar-logo .brand{font-size:16px;font-weight:700;color:#4fc3f7;letter-spacing:1px;}
@@ -19,6 +20,8 @@
   .nav-item.active{background:#1e2a3a;color:#4fc3f7;border-left-color:#4fc3f7;}
   .nav-icon{width:18px;height:18px;flex-shrink:0;}
   .sidebar-footer{margin-top:auto;padding:16px 18px;border-top:1px solid #2a3145;font-size:11px;color:#475569;}
+
+  /* ===== MAIN ===== */
   #main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
   .topbar{background:#161b27;border-bottom:1px solid #2a3145;padding:0 24px;height:54px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
   .topbar-title{font-size:15px;font-weight:600;color:#e2e8f0;}
@@ -26,7 +29,10 @@
   .topbar-date{font-size:12px;color:#64748b;background:#1e2537;padding:5px 12px;border-radius:6px;border:1px solid #2a3145;}
   .sync-btn{font-size:12px;padding:5px 14px;border-radius:6px;border:1px solid #4fc3f7;background:transparent;color:#4fc3f7;cursor:pointer;transition:all .2s;}
   .sync-btn:hover{background:#4fc3f7;color:#0f1117;}
+
   .content{flex:1;overflow-y:auto;padding:24px;}
+
+  /* ===== CARDS ===== */
   .kpi-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:14px;margin-bottom:24px;}
   .kpi-card{background:#161b27;border:1px solid #2a3145;border-radius:10px;padding:16px 18px;}
   .kpi-label{font-size:11px;color:#64748b;margin-bottom:6px;}
@@ -34,21 +40,31 @@
   .kpi-change{font-size:11px;margin-top:4px;}
   .kpi-change.up{color:#34d399;}
   .kpi-change.down{color:#f87171;}
+
   .section-title{font-size:13px;font-weight:600;color:#94a3b8;margin-bottom:14px;display:flex;align-items:center;gap:8px;}
   .section-title::before{content:'';width:3px;height:14px;background:#4fc3f7;border-radius:2px;}
+
   .charts-row{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;}
+  .charts-row-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;margin-bottom:24px;}
   .chart-card{background:#161b27;border:1px solid #2a3145;border-radius:10px;padding:18px;}
   .chart-title{font-size:12px;color:#64748b;margin-bottom:14px;}
   .chart-wrap{position:relative;height:200px;}
+
+  /* ===== TABLE ===== */
   .table-card{background:#161b27;border:1px solid #2a3145;border-radius:10px;padding:18px;margin-bottom:24px;}
   table{width:100%;border-collapse:collapse;font-size:12px;}
   th{color:#64748b;font-weight:500;padding:8px 12px;border-bottom:1px solid #2a3145;text-align:left;}
   td{padding:9px 12px;border-bottom:1px solid #1e2537;color:#94a3b8;}
+  tr:last-child td{border-bottom:none;}
+  tr:hover td{background:#1a2133;}
   .badge{display:inline-block;padding:2px 9px;border-radius:4px;font-size:11px;font-weight:600;}
   .badge-green{background:#064e3b;color:#34d399;}
   .badge-yellow{background:#451a03;color:#fbbf24;}
   .badge-red{background:#450a0a;color:#f87171;}
   .badge-blue{background:#0c2a4a;color:#60a5fa;}
+
+  /* ===== RANKING ===== */
+  .rank-list{display:flex;flex-direction:column;gap:8px;}
   .rank-item{display:flex;align-items:center;gap:10px;}
   .rank-num{width:22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;}
   .rank-gold{background:#78350f;color:#fbbf24;}
@@ -57,34 +73,66 @@
   .rank-bar{height:100%;border-radius:4px;background:#4fc3f7;transition:width .6s;}
   .rank-label{font-size:12px;color:#94a3b8;width:70px;}
   .rank-val{font-size:12px;color:#e2e8f0;width:40px;text-align:right;}
+
+  /* ===== UPLOAD BUTTON ===== */
   .upload-btn{display:inline-flex;align-items:center;gap:8px;padding:9px 18px;background:#1e3a52;border:1px dashed #4fc3f7;border-radius:8px;color:#4fc3f7;font-size:13px;cursor:pointer;transition:all .2s;}
   .upload-btn:hover{background:#4fc3f7;color:#0f1117;}
   .upload-area{display:flex;gap:12px;flex-wrap:wrap;margin-bottom:20px;}
   input[type=file]{display:none;}
+
+  /* ===== PROGRESS ===== */
   .progress-wrap{background:#1e2537;border-radius:6px;height:10px;overflow:hidden;margin-top:4px;}
   .progress-bar{height:100%;border-radius:6px;background:linear-gradient(90deg,#4fc3f7,#38bdf8);}
+
+  /* ===== PAGE TOGGLE ===== */
   .page{display:none;}
   .page.active{display:block;}
+
+  /* ===== CLOUD STATUS ===== */
   .cloud-badge{font-size:11px;padding:3px 10px;border-radius:20px;background:#0c2a1a;color:#34d399;border:1px solid #064e3b;}
+
+  /* ===== TOAST ===== */
   #toast{position:fixed;bottom:24px;right:24px;background:#1e3a52;border:1px solid #4fc3f7;color:#4fc3f7;padding:10px 18px;border-radius:8px;font-size:13px;display:none;z-index:999;}
+
+  /* scrollbar */
+  .content::-webkit-scrollbar{width:5px;}
+  .content::-webkit-scrollbar-track{background:#0f1117;}
+  .content::-webkit-scrollbar-thumb{background:#2a3145;border-radius:3px;}
 </style>
 </head>
 <body>
 
+<!-- SIDEBAR -->
 <nav id="sidebar">
   <div class="sidebar-logo">
     <div class="brand">✦ 质检管理中心</div>
     <div class="sub">ZEYE · 内部数据看板</div>
   </div>
+
   <div class="nav-section">数据模块</div>
-  <div class="nav-item active" onclick="switchPage('quality')">质量数据</div>
-  <div class="nav-item" onclick="switchPage('training')">培训答疑数据</div>
+
+  <div class="nav-item active" onclick="switchPage('quality')">
+    <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/>
+    </svg>
+    质量数据
+  </div>
+
+  <div class="nav-item" onclick="switchPage('training')">
+    <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/>
+    </svg>
+    培训答疑数据
+  </div>
+
   <div class="sidebar-footer">
     <div style="margin-bottom:6px;color:#475569;">云端状态</div>
     <span class="cloud-badge" id="cloudStatus">● 等待连接</span>
+    <div style="margin-top:10px;font-size:11px;color:#334155;">CloudBase 预留接口已就绪</div>
   </div>
 </nav>
 
+<!-- MAIN -->
 <div id="main">
   <div class="topbar">
     <div class="topbar-title" id="pageTitle">质量数据看板</div>
@@ -95,82 +143,344 @@
   </div>
 
   <div class="content">
+
+    <!-- ===== PAGE: 质量数据 ===== -->
     <div class="page active" id="page-quality">
+
       <div class="upload-area">
-        <label class="upload-btn" for="qualityExcel">点击上传 Excel（质量数据）</label>
+        <label class="upload-btn" for="qualityExcel">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+          点击上传 Excel（质量数据）
+        </label>
         <input type="file" id="qualityExcel" accept=".xlsx,.xls,.csv" onchange="handleUpload(this,'quality')">
         <span id="qualityFileName" style="font-size:12px;color:#4fc3f7;align-self:center;"></span>
       </div>
+
       <div class="kpi-grid">
-        <div class="kpi-card"><div class="kpi-label">总质检量</div><div class="kpi-value" id="kq1">16,901</div></div>
-        <div class="kpi-card"><div class="kpi-label">整体合格率</div><div class="kpi-value" id="kq2">94.13%</div></div>
+        <div class="kpi-card">
+          <div class="kpi-label">总质检量（含异常）</div>
+          <div class="kpi-value" id="kq1">16,901</div>
+          <div class="kpi-change up">↑ 环比 +2.28%</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">整体合格率</div>
+          <div class="kpi-value" id="kq2">94.13%</div>
+          <div class="kpi-change up">↑ 较上周 +0.6%</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">质检量/到货量</div>
+          <div class="kpi-value" id="kq3">101.50%</div>
+          <div class="kpi-change">总到货量 16,651</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">产能达成率</div>
+          <div class="kpi-value" id="kq4">64.36%</div>
+          <div class="kpi-change down">↓ 低于目标 35.64%</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">待上架量</div>
+          <div class="kpi-value" id="kq5">7,398</div>
+          <div class="kpi-change">B2C 供货 1,809</div>
+        </div>
       </div>
+
       <div class="charts-row">
-        <div class="chart-card"><div class="chart-title">趋势图</div><div class="chart-wrap"><canvas id="chartForecast"></canvas></div></div>
-        <div class="chart-card"><div class="chart-title">各机型统计</div><div class="chart-wrap"><canvas id="chartRepair"></canvas></div></div>
+        <div class="chart-card">
+          <div class="chart-title">近 7 日业务预测达成率 / 到货量趋势</div>
+          <div class="chart-wrap"><canvas id="chartForecast"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">各机型返修统计（台）</div>
+          <div class="chart-wrap"><canvas id="chartRepair"></canvas></div>
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-title">待上架量构成</div>
+          <div class="chart-wrap"><canvas id="chartPie"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">各仓库 Promise 三段超时率</div>
+          <div class="chart-wrap"><canvas id="chartPromise"></canvas></div>
+        </div>
+      </div>
+
+      <div class="section-title">各机型合格率明细</div>
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>机型</th><th>质检量</th><th>合格量</th><th>不合格量</th><th>合格率</th><th>状态</th>
+            </tr>
+          </thead>
+          <tbody id="qualityTable">
+            <tr><td>iPhone 15 Pro Max</td><td>3,240</td><td>3,148</td><td>92</td><td>97.16%</td><td><span class="badge badge-green">优秀</span></td></tr>
+            <tr><td>iPhone 15</td><td>2,890</td><td>2,780</td><td>110</td><td>96.19%</td><td><span class="badge badge-green">优秀</span></td></tr>
+            <tr><td>iPhone 14 Pro</td><td>2,100</td><td>2,003</td><td>97</td><td>95.38%</td><td><span class="badge badge-green">优秀</span></td></tr>
+            <tr><td>华为 Mate 60 Pro</td><td>1,980</td><td>1,832</td><td>148</td><td>92.52%</td><td><span class="badge badge-yellow">一般</span></td></tr>
+            <tr><td>三星 S24 Ultra</td><td>1,650</td><td>1,512</td><td>138</td><td>91.64%</td><td><span class="badge badge-yellow">一般</span></td></tr>
+            <tr><td>小米 14 Pro</td><td>1,420</td><td>1,274</td><td>146</td><td>89.72%</td><td><span class="badge badge-red">需关注</span></td></tr>
+            <tr><td>OPPO Find X7</td><td>980</td><td>870</td><td>110</td><td>88.78%</td><td><span class="badge badge-red">需关注</span></td></tr>
+            <tr><td>其他机型</td><td>2,641</td><td>2,490</td><td>151</td><td>94.28%</td><td><span class="badge badge-blue">正常</span></td></tr>
+          </tbody>
+        </table>
       </div>
     </div>
+
+    <!-- ===== PAGE: 培训答疑数据 ===== -->
     <div class="page" id="page-training">
-       <div class="upload-area">
-         <label class="upload-btn" for="trainingExcel">上传培训数据</label>
-         <input type="file" id="trainingExcel" accept=".xlsx,.xls,.csv" onchange="handleUpload(this,'training')">
-         <span id="trainingFileName"></span>
-       </div>
-       <div id="regionRanking"></div>
+
+      <div class="upload-area">
+        <label class="upload-btn" for="trainingExcel">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+          上传 Excel（培训量数据）
+        </label>
+        <input type="file" id="trainingExcel" accept=".xlsx,.xls,.csv" onchange="handleUpload(this,'training')">
+
+        <label class="upload-btn" for="qaExcel" style="background:#1e3052;border-color:#818cf8;color:#818cf8;">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/></svg>
+          上传 Excel（答疑量数据）
+        </label>
+        <input type="file" id="qaExcel" accept=".xlsx,.xls,.csv" onchange="handleUpload(this,'qa')">
+
+        <span id="trainingFileName" style="font-size:12px;color:#4fc3f7;align-self:center;"></span>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <div class="kpi-label">本月培训场次</div>
+          <div class="kpi-value" style="color:#818cf8;">48</div>
+          <div class="kpi-change up">↑ 较上月 +6 场</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">本月参训人次</div>
+          <div class="kpi-value" style="color:#818cf8;">1,286</div>
+          <div class="kpi-change up">覆盖率 83.2%</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">累计答疑问题数</div>
+          <div class="kpi-value" style="color:#34d399;">3,047</div>
+          <div class="kpi-change up">本月新增 412</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">答疑完成率</div>
+          <div class="kpi-value" style="color:#34d399;">91.8%</div>
+          <div class="kpi-change down">↓ 未回复 250 条</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">平均答疑响应时长</div>
+          <div class="kpi-value" style="color:#fbbf24;">2.4h</div>
+          <div class="kpi-change up">↑ 较上月优化 0.3h</div>
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-title">近 8 周培训场次 & 参训人次趋势</div>
+          <div class="chart-wrap"><canvas id="chartTrainTrend"></canvas></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">近 8 周答疑量 & 完成率趋势</div>
+          <div class="chart-wrap"><canvas id="chartQaTrend"></canvas></div>
+        </div>
+      </div>
+
+      <div class="charts-row">
+        <div class="chart-card">
+          <div class="chart-title">各区域提问排名（Top 10）</div>
+          <div style="padding-top:6px;" id="regionRanking"></div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-title">培训课题分布</div>
+          <div class="chart-wrap"><canvas id="chartTopics"></canvas></div>
+        </div>
+      </div>
+
+      <div class="section-title">培训记录明细</div>
+      <div class="table-card">
+        <table>
+          <thead>
+            <tr><th>日期</th><th>培训主题</th><th>讲师</th><th>区域</th><th>参训人数</th><th>答疑问题数</th><th>完成率</th><th>状态</th></tr>
+          </thead>
+          <tbody id="trainingTable">
+            <tr><td>2026-04-13</td><td>iPhone 外观检验规范 V3</td><td>张磊</td><td>南京库</td><td>32</td><td>18</td><td><div class="progress-wrap"><div class="progress-bar" style="width:100%"></div></div><small style="color:#34d399">100%</small></td><td><span class="badge badge-green">已完成</span></td></tr>
+            <tr><td>2026-04-12</td><td>华为系列功能检测标准</td><td>王芳</td><td>武汉库</td><td>27</td><td>23</td><td><div class="progress-wrap"><div class="progress-bar" style="width:87%"></div></div><small style="color:#fbbf24">87%</small></td><td><span class="badge badge-yellow">进行中</span></td></tr>
+            <tr><td>2026-04-11</td><td>二手机评级 A/B/C 标准</td><td>陈晓</td><td>杭州库</td><td>41</td><td>35</td><td><div class="progress-wrap"><div class="progress-bar" style="width:94%"></div></div><small style="color:#34d399">94%</small></td><td><span class="badge badge-green">已完成</span></td></tr>
+            <tr><td>2026-04-10</td><td>新人入职质检操作规范</td><td>刘敏</td><td>成都库</td><td>15</td><td>42</td><td><div class="progress-wrap"><div class="progress-bar" style="width:71%"></div></div><small style="color:#f87171">71%</small></td><td><span class="badge badge-red">待跟进</span></td></tr>
+            <tr><td>2026-04-09</td><td>三星折叠屏检测要点</td><td>张磊</td><td>深圳中心仓</td><td>38</td><td>29</td><td><div class="progress-wrap"><div class="progress-bar" style="width:96%"></div></div><small style="color:#34d399">96%</small></td><td><span class="badge badge-green">已完成</span></td></tr>
+            <tr><td>2026-04-08</td><td>逆向退货处理流程</td><td>王芳</td><td>济南库</td><td>22</td><td>19</td><td><div class="progress-wrap"><div class="progress-bar" style="width:100%"></div></div><small style="color:#34d399">100%</small></td><td><span class="badge badge-green">已完成</span></td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
+
   </div>
 </div>
 
 <div id="toast">✓ 操作成功</div>
 
 <script>
-// 初始化腾讯云
-const cloudApp = tcb.init({
-  env: 'linran-d0gdmoj6a6c0cd666',
-  region: 'ap-shanghai'
-});
+/* ===== DATE ===== */
+document.getElementById('currentDate').textContent = new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit'});
 
-/* ===== 核心上传逻辑 ===== */
-function handleUpload(input, type) {
-  const file = input.files[0];
-  if (!file) return;
-
-  const nameEl = document.getElementById(type === 'quality' ? 'qualityFileName' : 'trainingFileName');
-  nameEl.textContent = '✓ 已选择：' + file.name;
-
-  // 执行匿名登录
-  cloudApp.auth().anonymousAuthProvider().signIn().then(() => {
-    document.getElementById('cloudStatus').textContent = '● 云端已连接';
-    document.getElementById('cloudStatus').style.color = '#34d399';
-
-    // 上传文件
-    cloudApp.storage().uploadFile({
-      cloudPath: `data/${type}/${Date.now()}_${file.name}`,
-      filePath: file,
-    }).then(res => {
-      showToast('云端同步成功！');
-    }).catch(err => showToast('上传失败：' + err.message));
-  }).catch(err => showToast('云端连接失败，请检查白名单配置'));
-}
-
-/* ===== 基础功能 ===== */
-document.getElementById('currentDate').textContent = new Date().toLocaleDateString();
+/* ===== PAGE SWITCH ===== */
 function switchPage(page){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
   document.getElementById('page-'+page).classList.add('active');
+  event.currentTarget.classList.add('active');
   document.getElementById('pageTitle').textContent = page==='quality'?'质量数据看板':'培训答疑数据看板';
+  if(page==='training' && !window._trainingChartsInit){
+    setTimeout(initTrainingCharts,100);
+    window._trainingChartsInit=true;
+  }
 }
+
+/* ===== UPLOAD ===== */
+function handleUpload(input, type){
+  const file = input.files[0];
+  if(!file) return;
+  const nameEl = document.getElementById(type==='quality'?'qualityFileName':'trainingFileName');
+  nameEl.textContent = '✓ 已选择：'+file.name;
+  showToast('文件已选择：'+file.name+'（云端上传接口预留，待接入 CloudBase）');
+  /* ===== CloudBase 预留接口 =====
+  // TODO: 接入腾讯云开发后，取消下方注释并填入环境 ID
+  // const cloudEnv = 'linran-d0gdmoj6a6c0cd666';
+  // const app = cloudbase.init({ env: cloudEnv });
+  // const storage = app.storage();
+  // storage.uploadFile({
+  //   cloudPath: `data/${type}/${Date.now()}_${file.name}`,
+  //   filePath: file,
+  // }).then(res => {
+  //   showToast('上传成功：' + res.fileID);
+  //   fetchLatestData(type);
+  // }).catch(err => showToast('上传失败：' + err.message));
+  */
+}
+
+/* ===== CLOUD SYNC ===== */
+function syncCloud(){
+  showToast('云端同步接口已预留（待接入腾讯云 CloudBase）');
+  /* ===== CloudBase 预留接口 =====
+  // const app = cloudbase.init({ env: 'YOUR_ENV_ID' });
+  // const db = app.database();
+  // db.collection('quality_data').get().then(res => {
+  //   renderQualityData(res.data);
+  // });
+  // db.collection('training_data').get().then(res => {
+  //   renderTrainingData(res.data);
+  // });
+  */
+}
+
+/* ===== TOAST ===== */
 function showToast(msg){
   const t=document.getElementById('toast');
   t.textContent=msg;t.style.display='block';
   setTimeout(()=>t.style.display='none',3000);
 }
-function syncCloud(){ showToast('正在从云端拉取最新数据...'); }
 
-/* ===== 图表初始化 (保持静态展示) ===== */
+/* ===== CHART DEFAULTS ===== */
 Chart.defaults.color='#64748b';
-new Chart(document.getElementById('chartForecast'),{type:'line',data:{labels:['04-07','04-08','04-09','04-10','04-11','04-12','04-13'],datasets:[{label:'到货量',data:[182,210,198,164,132,178,166],borderColor:'#4fc3f7'}]}});
-new Chart(document.getElementById('chartRepair'),{type:'bar',data:{labels:['15PM','15','14P','M60P'],datasets:[{data:[92,110,97,148],backgroundColor:'#4fc3f7'}]}});
+Chart.defaults.borderColor='#2a3145';
+Chart.defaults.font.family="'Microsoft YaHei',sans-serif";
+Chart.defaults.font.size=11;
+
+/* ===== QUALITY CHARTS ===== */
+const labels7=['04-07','04-08','04-09','04-10','04-11','04-12','04-13'];
+
+new Chart(document.getElementById('chartForecast'),{
+  type:'bar',
+  data:{
+    labels:labels7,
+    datasets:[
+      {label:'实际到货量',data:[18200,21000,19800,16400,13200,17800,16651],backgroundColor:'#1d4ed8aa',borderRadius:3},
+      {label:'预测到货量',data:[18300,19000,18000,17500,16200,17200,17200],type:'line',borderColor:'#4fc3f7',backgroundColor:'transparent',tension:.4,pointRadius:3,borderWidth:2},
+    ]
+  },
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:14}}},scales:{y:{grid:{color:'#1e2537'},ticks:{callback:v=>v>=10000?(v/10000).toFixed(0)+'万':v}}}}
+});
+
+new Chart(document.getElementById('chartRepair'),{
+  type:'bar',
+  data:{
+    labels:['iPhone 15PM','iPhone 15','iPhone 14P','华为 M60P','三星 S24U','小米 14P','OPPO FX7'],
+    datasets:[{label:'返修台数',data:[92,110,97,148,138,146,110],backgroundColor:['#4fc3f7','#38bdf8','#0ea5e9','#f87171','#fb923c','#fbbf24','#a78bfa'],borderRadius:4}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{maxRotation:30}},y:{grid:{color:'#1e2537'}}}}
+});
+
+new Chart(document.getElementById('chartPie'),{
+  type:'doughnut',
+  data:{
+    labels:['B2C 供货','B2C 已验机-前置','B1 保质...','中心仓前置返检','其他'],
+    datasets:[{data:[1809,1583,1166,463,2377],backgroundColor:['#4fc3f7','#818cf8','#34d399','#fbbf24','#475569'],borderWidth:0,hoverOffset:6}]
+  },
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:10,font:{size:11}}}},cutout:'60%'}
+});
+
+new Chart(document.getElementById('chartPromise'),{
+  type:'bar',
+  data:{
+    labels:['昆明库','深圳中心仓','石家庄库','南京库','长沙库','郑州库','西安库','成都库','合肥库','沈阳库'],
+    datasets:[{label:'超时率%',data:[5.94,5.15,4.80,3.17,1.17,0.95,0.42,0.36,0.18,0.16],backgroundColor:d=>d.raw>3?'#f87171':d.raw>1?'#fbbf24':'#4fc3f7',borderRadius:3}]
+  },
+  options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{color:'#1e2537'},ticks:{callback:v=>v+'%'}},y:{grid:{display:false},ticks:{font:{size:10}}}}}
+});
+
+/* ===== TRAINING CHARTS ===== */
+function initTrainingCharts(){
+  const weeks=['W09','W10','W11','W12','W13','W14','W15','W16'];
+
+  new Chart(document.getElementById('chartTrainTrend'),{
+    type:'bar',
+    data:{
+      labels:weeks,
+      datasets:[
+        {label:'场次',data:[4,5,6,5,7,6,8,7],backgroundColor:'#818cf866',borderRadius:3,yAxisID:'y'},
+        {label:'参训人次',data:[120,145,162,138,198,175,220,196],type:'line',borderColor:'#818cf8',backgroundColor:'transparent',tension:.4,pointRadius:3,borderWidth:2,yAxisID:'y1'}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:12}}},scales:{y:{grid:{color:'#1e2537'},position:'left',title:{display:true,text:'场次',color:'#64748b'}},y1:{grid:{display:false},position:'right',title:{display:true,text:'人次',color:'#818cf8'}}}}
+  });
+
+  new Chart(document.getElementById('chartQaTrend'),{
+    type:'bar',
+    data:{
+      labels:weeks,
+      datasets:[
+        {label:'答疑问题数',data:[320,380,410,355,460,420,490,412],backgroundColor:'#34d39955',borderRadius:3,yAxisID:'y'},
+        {label:'完成率%',data:[88,90,93,87,95,91,94,92],type:'line',borderColor:'#34d399',backgroundColor:'transparent',tension:.4,pointRadius:3,borderWidth:2,yAxisID:'y1'}
+      ]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:12}}},scales:{y:{grid:{color:'#1e2537'},position:'left'},y1:{grid:{display:false},position:'right',max:100,ticks:{callback:v=>v+'%'}}}}
+  });
+
+  const regions=[
+    {name:'深圳中心仓',val:87},{name:'南京库',val:74},{name:'武汉库',val:68},
+    {name:'成都库',val:62},{name:'杭州库',val:57},{name:'昆明库',val:51},
+    {name:'重庆库',val:45},{name:'郑州库',val:39},{name:'长沙库',val:33},{name:'济南库',val:28}
+  ];
+  const maxVal=regions[0].val;
+  const html=regions.map((r,i)=>`
+    <div class="rank-item" style="margin-bottom:8px;">
+      <div class="rank-num ${i<3?'rank-gold':'rank-silver'}">${i+1}</div>
+      <div class="rank-label" style="font-size:11px;color:#94a3b8;width:80px;flex-shrink:0;">${r.name}</div>
+      <div class="rank-bar-wrap"><div class="rank-bar" style="width:${(r.val/maxVal*100).toFixed(0)}%;background:${i===0?'#818cf8':i<3?'#4fc3f7':'#2a6080'}"></div></div>
+      <div class="rank-val">${r.val}</div>
+    </div>`).join('');
+  document.getElementById('regionRanking').innerHTML=html;
+
+  new Chart(document.getElementById('chartTopics'),{
+    type:'doughnut',
+    data:{
+      labels:['外观检测','功能检测','评级标准','新人规范','逆向流程','系统操作','其他'],
+      datasets:[{data:[22,18,15,12,10,9,14],backgroundColor:['#4fc3f7','#818cf8','#34d399','#fbbf24','#fb923c','#f87171','#475569'],borderWidth:0,hoverOffset:6}]
+    },
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:8,font:{size:10}}}},cutout:'55%'}
+  });
+}
 </script>
 </body>
 </html>
