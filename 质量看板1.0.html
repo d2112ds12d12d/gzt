@@ -13,8 +13,8 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 /* SIDEBAR */
 #sidebar{width:210px;min-width:210px;background:rgba(255,255,255,0.55);backdrop-filter:blur(24px) saturate(200%);-webkit-backdrop-filter:blur(24px) saturate(200%);border-right:1px solid rgba(255,255,255,0.75);display:flex;flex-direction:column;overflow:hidden;box-shadow:2px 0 16px rgba(100,120,180,0.08);}
 .sidebar-logo{padding:20px 16px 14px;border-bottom:1px solid rgba(200,210,230,0.5);}
-.sidebar-logo .brand{font-size:14px;font-weight:700;color:#2563eb;}
-.sidebar-logo .sub{font-size:10px;color:#94a3b8;margin-top:2px;}
+.sidebar-logo .brand{font-size:17px;font-weight:800;color:#2563eb;letter-spacing:.3px;line-height:1.2;}
+.sidebar-logo .sub{font-size:10px;color:#94a3b8;margin-top:3px;}
 .nav-section{padding:14px 12px 5px;font-size:10px;color:#94a3b8;letter-spacing:1.5px;text-transform:uppercase;font-weight:600;}
 .nav-item{display:flex;align-items:center;gap:9px;padding:9px 16px;cursor:pointer;font-size:13px;color:#64748b;border-left:3px solid transparent;transition:all .18s;}
 .nav-item:hover{background:rgba(37,99,235,0.07);color:#1e40af;}
@@ -27,18 +27,26 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .status-dot{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:3px 10px;border-radius:20px;background:rgba(241,245,249,0.8);border:1px solid rgba(200,210,230,0.6);color:#64748b;}
 .dot{width:6px;height:6px;border-radius:50%;background:#94a3b8;flex-shrink:0;}
 .dot.green{background:#10b981;}.dot.amber{background:#f59e0b;}.dot.red{background:#ef4444;}
-.ver{font-size:10px;color:#94a3b8;margin-top:7px;padding-top:7px;border-top:1px solid rgba(200,210,230,0.4);}
+.ver-row{display:flex;align-items:center;gap:7px;margin-top:7px;padding-top:7px;border-top:1px solid rgba(200,210,230,0.4);}
+.ver{font-size:10px;color:#94a3b8;}
+.gear-btn{width:18px;height:18px;cursor:pointer;color:#94a3b8;display:none;flex-shrink:0;transition:color .18s;}
+.gear-btn:hover{color:#2563eb;}
 
 /* MAIN */
 #main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-.topbar{background:rgba(255,255,255,0.70);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(200,210,230,0.6);padding:0 20px;height:50px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
-.topbar-title{font-size:14px;font-weight:700;color:#1e293b;}
-.topbar-right{display:flex;align-items:center;gap:10px;}
-.update-time{font-size:11px;color:#64748b;background:rgba(241,245,249,0.8);padding:4px 12px;border-radius:20px;border:1px solid rgba(200,210,230,0.7);}
-.update-label{color:#94a3b8;margin-right:4px;}
-.upload-topbtn{font-size:12px;padding:5px 13px;border-radius:20px;border:1.5px dashed rgba(37,99,235,0.5);background:rgba(37,99,235,0.06);color:#2563eb;cursor:pointer;transition:all .18s;display:none;}
+.topbar{background:rgba(255,255,255,0.70);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-bottom:1px solid rgba(200,210,230,0.6);padding:0 20px;height:50px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;gap:12px;}
+.topbar-title{font-size:14px;font-weight:700;color:#1e293b;white-space:nowrap;}
+/* 滚动公告 */
+.marquee-wrap{flex:1;overflow:hidden;margin:0 12px;}
+.marquee-inner{display:inline-block;white-space:nowrap;animation:marquee 28s linear infinite;font-size:12px;color:#64748b;}
+.marquee-inner:hover{animation-play-state:paused;}
+@keyframes marquee{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
+.update-time{font-size:11px;color:#64748b;background:rgba(241,245,249,0.8);padding:4px 11px;border-radius:20px;border:1px solid rgba(200,210,230,0.7);white-space:nowrap;}
+.update-label{color:#94a3b8;margin-right:3px;}
+.upload-topbtn{font-size:12px;padding:4px 12px;border-radius:20px;border:1.5px dashed rgba(37,99,235,0.5);background:rgba(37,99,235,0.06);color:#2563eb;cursor:pointer;transition:all .18s;display:none;white-space:nowrap;}
 .upload-topbtn:hover{background:#2563eb;color:#fff;border-style:solid;}
-.sync-btn{font-size:12px;padding:5px 13px;border-radius:20px;border:1px solid #2563eb;background:rgba(37,99,235,0.08);color:#2563eb;cursor:pointer;transition:all .18s;}
+.sync-btn{font-size:12px;padding:4px 12px;border-radius:20px;border:1px solid #2563eb;background:rgba(37,99,235,0.08);color:#2563eb;cursor:pointer;transition:all .18s;white-space:nowrap;}
 .sync-btn:hover{background:#2563eb;color:#fff;}
 input[type=file]{display:none;}
 
@@ -48,44 +56,51 @@ input[type=file]{display:none;}
 
 /* GLASS */
 .glass{background:rgba(255,255,255,0.62);backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%);border:1px solid rgba(255,255,255,0.85);box-shadow:0 4px 24px rgba(100,120,180,0.10);}
+.card{padding:14px 16px;border-radius:12px;background:rgba(255,255,255,0.65);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.9);box-shadow:0 2px 10px rgba(100,120,180,0.08);}
 
 /* FILTER BAR */
-.filter-bar{display:flex;align-items:center;flex-wrap:wrap;gap:8px;padding:10px 16px;border-radius:12px;margin-bottom:14px;}
+.filter-bar{display:flex;align-items:center;flex-wrap:wrap;gap:7px;padding:10px 14px;border-radius:12px;margin-bottom:14px;}
 .filter-label{font-size:11px;color:#64748b;font-weight:500;white-space:nowrap;}
 .filter-select,.filter-input{font-size:12px;padding:4px 9px;border-radius:7px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.7);color:#1e293b;outline:none;font-family:inherit;}
 .filter-chip{font-size:12px;padding:3px 11px;border-radius:20px;cursor:pointer;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.6);color:#64748b;transition:all .15s;white-space:nowrap;user-select:none;}
 .filter-chip.active{background:#2563eb;color:#fff;border-color:#2563eb;}
 .filter-chip:hover:not(.active){background:rgba(37,99,235,0.08);color:#2563eb;border-color:#2563eb;}
-.filter-div{width:1px;height:16px;background:rgba(200,210,230,0.6);margin:0 2px;}
+.filter-div{width:1px;height:14px;background:rgba(200,210,230,0.6);margin:0 2px;}
 
-/* KPI */
-.kpi-grid{display:grid;gap:10px;margin-bottom:14px;}
-.kpi-card{padding:14px 16px;border-radius:12px;background:rgba(255,255,255,0.65);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.9);box-shadow:0 2px 10px rgba(100,120,180,0.08);transition:transform .15s;}
-.kpi-card:hover{transform:translateY(-2px);}
-.kpi-label{font-size:11px;color:#64748b;margin-bottom:5px;font-weight:500;}
-.kpi-value{font-size:22px;font-weight:700;color:#1e293b;line-height:1.1;}
-.kpi-value.blue{color:#2563eb;}.kpi-value.green{color:#059669;}.kpi-value.red{color:#dc2626;}.kpi-value.amber{color:#d97706;}
-.kpi-sub{font-size:11px;margin-top:4px;color:#94a3b8;}
-.kpi-sub.up{color:#059669;}.kpi-sub.down{color:#dc2626;}
-
-/* OVERVIEW TABLE (品类横向) */
-.overview-table{width:100%;border-collapse:collapse;font-size:12px;}
-.overview-table th{background:rgba(241,245,249,0.85);color:#475569;font-weight:600;padding:9px 14px;border-bottom:1px solid rgba(200,210,230,0.5);text-align:left;white-space:nowrap;}
-.overview-table th.num{text-align:right;}
-.overview-table td{padding:9px 14px;border-bottom:1px solid rgba(200,210,230,0.3);color:#334155;}
-.overview-table td.num{text-align:right;font-variant-numeric:tabular-nums;}
-.overview-table tr:last-child td{border-bottom:none;}
-.overview-table tr:hover td{background:rgba(37,99,235,0.03);}
+/* OVERVIEW CARDS */
+.overview-cards{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px;}
+.ov-card{border-radius:14px;padding:16px 14px;position:relative;overflow:hidden;cursor:default;transition:transform .15s,box-shadow .15s;}
+.ov-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(100,120,180,0.15);}
+.ov-card-bg{position:absolute;inset:0;border-radius:14px;}
+.ov-card-content{position:relative;z-index:1;}
+.ov-cat{font-size:11px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:5px;}
+.ov-icon{font-size:16px;}
+.ov-big{font-size:22px;font-weight:800;line-height:1;margin-bottom:6px;}
+.ov-row{display:flex;justify-content:space-between;align-items:flex-end;}
+.ov-label{font-size:10px;opacity:.7;}
+.ov-rate{font-size:16px;font-weight:700;}
+.ov-sub{font-size:10px;opacity:.6;margin-top:4px;}
+/* 各品类配色 */
+.ov-phone{background:linear-gradient(135deg,rgba(37,99,235,0.12),rgba(96,165,250,0.08));border:1px solid rgba(37,99,235,0.2);}
+.ov-phone .ov-cat{color:#1d4ed8;}.ov-phone .ov-big{color:#1e40af;}.ov-phone .ov-rate{color:#1d4ed8;}
+.ov-laptop{background:linear-gradient(135deg,rgba(124,58,237,0.12),rgba(167,139,250,0.08));border:1px solid rgba(124,58,237,0.2);}
+.ov-laptop .ov-cat{color:#6d28d9;}.ov-laptop .ov-big{color:#5b21b6;}.ov-laptop .ov-rate{color:#6d28d9;}
+.ov-pad{background:linear-gradient(135deg,rgba(5,150,105,0.12),rgba(52,211,153,0.08));border:1px solid rgba(5,150,105,0.2);}
+.ov-pad .ov-cat{color:#047857;}.ov-pad .ov-big{color:#065f46;}.ov-pad .ov-rate{color:#047857;}
+.ov-earphone{background:linear-gradient(135deg,rgba(217,119,6,0.12),rgba(251,191,36,0.08));border:1px solid rgba(217,119,6,0.2);}
+.ov-earphone .ov-cat{color:#b45309;}.ov-earphone .ov-big{color:#92400e;}.ov-earphone .ov-rate{color:#b45309;}
+.ov-camera{background:linear-gradient(135deg,rgba(100,116,139,0.10),rgba(148,163,184,0.06));border:1px solid rgba(100,116,139,0.15);}
+.ov-camera .ov-cat{color:#475569;}.ov-camera .ov-big{color:#334155;}.ov-camera .ov-rate{color:#475569;}
+.rate-bad-txt{color:#dc2626!important;}.rate-warn-txt{color:#d97706!important;}.rate-ok-txt{color:#059669!important;}
 
 /* SECTION */
-.section-hd{font-size:13px;font-weight:700;color:#334155;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px;}
+.section-hd{font-size:13px;font-weight:700;color:#334155;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;}
 .section-hd-left{display:flex;align-items:center;gap:8px;}
 .section-hd-left::before{content:'';width:3px;height:14px;background:#2563eb;border-radius:2px;display:block;}
-.section-hd-btns{display:flex;gap:6px;align-items:center;flex-wrap:wrap;}
+.section-hd-btns{display:flex;gap:5px;align-items:center;flex-wrap:wrap;}
 
 /* RANK */
 .rank-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
-.rank-card{padding:14px 16px;border-radius:12px;background:rgba(255,255,255,0.65);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.9);box-shadow:0 2px 10px rgba(100,120,180,0.08);}
 .rank-item{display:flex;align-items:center;gap:7px;margin-bottom:8px;}
 .rank-num{width:18px;height:18px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;flex-shrink:0;}
 .rank-gold{background:#fef3c7;color:#d97706;}.rank-silver{background:#f1f5f9;color:#64748b;}
@@ -94,19 +109,18 @@ input[type=file]{display:none;}
 .rank-name{font-size:11px;color:#475569;width:72px;flex-shrink:0;}
 .rank-val{font-size:11px;font-weight:600;color:#1e293b;width:42px;text-align:right;}
 
-/* CHARTS ROW */
+/* CHARTS */
 .charts-2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:14px;}
-.chart-card{padding:14px 16px;border-radius:12px;background:rgba(255,255,255,0.65);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.9);box-shadow:0 2px 10px rgba(100,120,180,0.08);}
 .chart-title{font-size:12px;color:#64748b;margin-bottom:10px;font-weight:500;display:flex;align-items:center;justify-content:space-between;}
 .chart-wrap{position:relative;height:190px;}
 
 /* TABLE */
 .table-wrap{border-radius:12px;overflow:hidden;background:rgba(255,255,255,0.65);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.9);box-shadow:0 2px 10px rgba(100,120,180,0.08);margin-bottom:16px;}
-.table-toolbar{display:flex;align-items:center;justify-content:space-between;padding:10px 14px 8px;flex-wrap:wrap;gap:8px;}
-.table-filters{display:flex;gap:6px;flex-wrap:wrap;}
-.col-filter{font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.7);color:#475569;outline:none;font-family:inherit;max-width:110px;}
+.table-toolbar{display:flex;align-items:center;justify-content:space-between;padding:9px 14px 7px;flex-wrap:wrap;gap:7px;}
+.table-filters{display:flex;gap:5px;flex-wrap:wrap;}
+.col-filter{font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.7);color:#475569;outline:none;font-family:inherit;max-width:120px;}
 .table-scroll{overflow-x:auto;}
-table{width:100%;border-collapse:collapse;font-size:12px;min-width:900px;}
+table{width:100%;border-collapse:collapse;font-size:12px;}
 thead th{background:rgba(241,245,249,0.85);color:#475569;font-weight:600;padding:9px 12px;border-bottom:1px solid rgba(200,210,230,0.5);text-align:left;white-space:nowrap;}
 thead th.num{text-align:right;}
 tbody td{padding:8px 12px;border-bottom:1px solid rgba(200,210,230,0.3);color:#334155;white-space:nowrap;}
@@ -114,30 +128,60 @@ tbody td.num{text-align:right;font-variant-numeric:tabular-nums;}
 tbody tr:last-child td{border-bottom:none;}
 tbody tr:hover td{background:rgba(37,99,235,0.04);}
 .rate-bad{color:#dc2626;font-weight:600;}.rate-warn{color:#d97706;font-weight:600;}.rate-ok{color:#059669;font-weight:600;}
-
-/* PAGINATION */
-.pagination{display:flex;align-items:center;justify-content:space-between;padding:8px 14px;border-top:1px solid rgba(200,210,230,0.4);flex-wrap:wrap;gap:8px;}
+.pagination{display:flex;align-items:center;justify-content:space-between;padding:7px 14px;border-top:1px solid rgba(200,210,230,0.4);flex-wrap:wrap;gap:7px;}
 .page-info{font-size:11px;color:#64748b;}
-.page-btns{display:flex;align-items:center;gap:6px;}
-.page-btn{font-size:11px;padding:3px 9px;border-radius:6px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.7);color:#475569;cursor:pointer;transition:all .15s;}
+.page-btns{display:flex;align-items:center;gap:5px;}
+.page-btn{font-size:11px;padding:3px 8px;border-radius:5px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.7);color:#475569;cursor:pointer;transition:all .15s;}
 .page-btn:hover:not(:disabled){background:#2563eb;color:#fff;border-color:#2563eb;}
 .page-btn:disabled{opacity:.4;cursor:default;}
 .page-btn.active{background:#2563eb;color:#fff;border-color:#2563eb;}
-.per-page-select{font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.7);color:#475569;outline:none;cursor:pointer;}
+.per-page-select{font-size:11px;padding:3px 7px;border-radius:6px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.7);color:#475569;outline:none;cursor:pointer;}
 
 /* BADGE */
 .badge{display:inline-block;padding:2px 7px;border-radius:4px;font-size:11px;font-weight:600;}
 .badge-green{background:#d1fae5;color:#065f46;}.badge-yellow{background:#fef3c7;color:#92400e;}.badge-red{background:#fee2e2;color:#991b1b;}.badge-blue{background:#dbeafe;color:#1e40af;}
+
+/* TRAINING SECTION BOX */
+.train-section-box{border-radius:14px;border:1px solid rgba(255,255,255,0.9);background:rgba(255,255,255,0.45);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);padding:16px;margin-bottom:14px;box-shadow:0 2px 10px rgba(100,120,180,0.07);}
+.train-section-title{font-size:12px;font-weight:700;color:#2563eb;margin-bottom:12px;display:flex;align-items:center;gap:6px;padding-bottom:8px;border-bottom:1px solid rgba(200,210,230,0.4);}
+.train-section-title .tsub{font-size:10px;color:#94a3b8;font-weight:400;margin-left:4px;}
 
 /* PAGE */
 .page{display:none;}.page.active{display:block;}
 
 /* TOAST */
 #toast{position:fixed;bottom:20px;right:20px;background:rgba(255,255,255,0.92);backdrop-filter:blur(16px);border:1px solid rgba(200,210,230,0.8);color:#1e293b;padding:9px 16px;border-radius:10px;font-size:13px;display:none;z-index:999;box-shadow:0 4px 20px rgba(100,120,180,0.15);}
+
+/* SETTINGS MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,0.35);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;}
+.modal-overlay.open{display:flex;}
+.settings-modal{width:38vw;min-width:360px;max-width:560px;background:rgba(255,255,255,0.92);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.9);border-radius:18px;box-shadow:0 12px 48px rgba(100,120,180,0.18);overflow:hidden;}
+.modal-header{padding:16px 20px 12px;border-bottom:1px solid rgba(200,210,230,0.4);display:flex;align-items:center;justify-content:space-between;}
+.modal-title{font-size:14px;font-weight:700;color:#1e293b;}
+.modal-close{width:26px;height:26px;border-radius:50%;border:none;background:rgba(200,210,230,0.4);color:#64748b;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.modal-close:hover{background:#ef4444;color:#fff;}
+.modal-body{padding:16px 20px 20px;max-height:60vh;overflow-y:auto;}
+.modal-section{margin-bottom:18px;}
+.modal-section-title{font-size:12px;font-weight:600;color:#64748b;margin-bottom:8px;letter-spacing:.5px;}
+.slogan-item{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
+.slogan-input{flex:1;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.8);color:#1e293b;outline:none;font-family:inherit;}
+.slogan-del{width:24px;height:24px;border-radius:6px;border:none;background:rgba(239,68,68,0.1);color:#ef4444;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
+.slogan-del:hover{background:#ef4444;color:#fff;}
+.add-btn{font-size:12px;padding:5px 12px;border-radius:8px;border:1.5px dashed rgba(37,99,235,0.4);background:transparent;color:#2563eb;cursor:pointer;transition:all .15s;}
+.add-btn:hover{background:rgba(37,99,235,0.08);}
+.rule-select{font-size:12px;padding:5px 10px;border-radius:8px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.8);color:#1e293b;outline:none;font-family:inherit;width:100%;}
+.save-btn{width:100%;padding:9px;border-radius:10px;border:none;background:#2563eb;color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;margin-top:4px;}
+.save-btn:hover{background:#1d4ed8;}
+
+/* 空页提示 */
+.empty-page{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:#94a3b8;gap:12px;}
+.empty-icon{font-size:40px;opacity:.5;}
+.empty-text{font-size:13px;}
 </style>
 </head>
 <body>
 
+<!-- SIDEBAR -->
 <nav id="sidebar">
   <div class="sidebar-logo">
     <div class="brand">培训部数据看板</div>
@@ -152,6 +196,10 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
     <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
     培训答疑数据
   </div>
+  <div class="nav-item" onclick="switchPage('ranking',this)">
+    <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+    全国质检红黑榜
+  </div>
   <div class="sidebar-footer">
     <div style="font-size:11px;color:#94a3b8;font-weight:600;letter-spacing:1px;margin-bottom:7px;">权限等级</div>
     <div style="display:flex;gap:5px;margin-bottom:9px;">
@@ -161,24 +209,29 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
     <div id="creatorPanel" style="display:none;margin-bottom:9px;">
       <div style="font-size:11px;color:#64748b;margin-bottom:4px;">创造者密钥</div>
       <div style="display:flex;gap:5px;">
-        <input type="password" id="tokenInput" placeholder="粘贴密钥"
-          style="flex:1;font-size:11px;padding:5px 8px;background:rgba(255,255,255,0.8);border:1px solid rgba(200,210,230,0.8);border-radius:7px;color:#1e293b;outline:none;min-width:0;">
+        <input type="password" id="tokenInput" placeholder="粘贴密钥" style="flex:1;font-size:11px;padding:5px 8px;background:rgba(255,255,255,0.8);border:1px solid rgba(200,210,230,0.8);border-radius:7px;color:#1e293b;outline:none;min-width:0;">
         <button onclick="saveToken()" style="font-size:11px;padding:5px 9px;background:rgba(37,99,235,0.1);border:1px solid #2563eb;border-radius:7px;color:#2563eb;cursor:pointer;white-space:nowrap;">确认</button>
       </div>
     </div>
-    <div id="cloudStatus" class="status-dot">
-      <span class="dot" id="statusDot"></span>
-      <span id="statusText">使用者模式</span>
+    <div id="cloudStatus" class="status-dot"><span class="dot" id="statusDot"></span><span id="statusText">使用者模式</span></div>
+    <div class="ver-row">
+      <svg id="gearBtn" class="gear-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" onclick="openSettings()">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/>
+      </svg>
+      <span class="ver">v1.3 · 培训部看板</span>
     </div>
-    <div class="ver">v1.2 · 培训部看板</div>
   </div>
 </nav>
 
+<!-- MAIN -->
 <div id="main">
   <div class="topbar">
     <div class="topbar-title" id="pageTitle">质量数据看板</div>
+    <div class="marquee-wrap">
+      <span class="marquee-inner" id="marqueeText">欢迎使用培训部数据看板 · 数据驱动，精益求精</span>
+    </div>
     <div class="topbar-right">
-      <div class="update-time"><span class="update-label">看板最近更新时间</span><span id="lastUpdateTime">暂无数据</span></div>
+      <div class="update-time"><span class="update-label">最近更新</span><span id="lastUpdateTime">暂无</span></div>
       <label class="upload-topbtn" id="uploadTopBtn" for="qualityExcelTop">上传</label>
       <input type="file" id="qualityExcelTop" accept=".xlsx,.xls,.csv" onchange="handleUpload(this,'quality')">
       <button class="sync-btn" onclick="syncCloud()">↻ 同步</button>
@@ -187,83 +240,53 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
 
   <div class="content">
 
-    <!-- 质量数据页 -->
+    <!-- 质量数据 -->
     <div class="page active" id="page-quality">
-
-      <!-- 筛选栏 -->
       <div class="filter-bar glass">
-        <span class="filter-label">品类</span>
-        <span class="filter-chip active" onclick="setCategory(this,'全部')">全部</span>
-        <span class="filter-chip" onclick="setCategory(this,'手机')">手机</span>
-        <span class="filter-chip" onclick="setCategory(this,'笔记本')">笔记本</span>
-        <span class="filter-chip" onclick="setCategory(this,'平板')">平板</span>
-        <span class="filter-chip" onclick="setCategory(this,'耳机')">耳机</span>
-        <span class="filter-chip" onclick="setCategory(this,'相机')">相机</span>
-        <div class="filter-div"></div>
         <span class="filter-label">中心仓</span>
         <select id="filterWarehouse" class="filter-select" onchange="applyFilters()">
           <option value="全部">全部</option>
-          <option>南京库</option><option>南昌库</option><option>合肥库</option>
-          <option>成都库</option><option>昆明库</option><option>杭州库</option>
-          <option>武汉库</option><option>沈阳库</option><option>济南库</option>
-          <option>深圳中心仓</option><option>石家庄库</option><option>西安库</option>
-          <option>郑州库</option><option>重庆库</option><option>长沙库</option>
+          <option>南京库</option><option>南昌库</option><option>合肥库</option><option>成都库</option><option>昆明库</option><option>杭州库</option><option>武汉库</option><option>沈阳库</option><option>济南库</option><option>深圳中心仓</option><option>石家庄库</option><option>西安库</option><option>郑州库</option><option>重庆库</option><option>长沙库</option>
         </select>
       </div>
 
-      <!-- 总览 -->
-      <div class="section-hd"><div class="section-hd-left">总览</div></div>
-      <div class="table-wrap" style="margin-bottom:14px;">
-        <div class="table-scroll">
-          <table class="overview-table" id="overviewTable">
-            <thead><tr>
-              <th>品类</th>
-              <th class="num">抽检量</th>
-              <th class="num">客观执行差异量</th>
-              <th class="num">客观执行差异率</th>
-            </tr></thead>
-            <tbody id="overviewBody">
-              <tr><td>📱 手机</td><td class="num">2,237</td><td class="num">55</td><td class="num rate-bad">2.46%</td></tr>
-              <tr><td>💻 笔记本</td><td class="num">416</td><td class="num">24</td><td class="num rate-warn">5.77%</td></tr>
-              <tr><td>📟 平板</td><td class="num">56</td><td class="num">0</td><td class="num rate-ok">0.00%</td></tr>
-              <tr><td>🎧 耳机</td><td class="num">87</td><td class="num">0</td><td class="num rate-ok">0.00%</td></tr>
-              <tr><td>📷 相机</td><td class="num">—</td><td class="num">—</td><td class="num">—</td></tr>
-            </tbody>
-          </table>
-        </div>
+      <!-- 本月总览 -->
+      <div class="section-hd"><div class="section-hd-left">本月总览</div></div>
+      <div class="overview-cards" id="overviewCards">
+        <!-- 动态渲染 -->
       </div>
 
-      <!-- 排行榜 + 趋势图 -->
+      <!-- 排行榜 + 趋势 -->
       <div class="section-hd">
         <div class="section-hd-left">全国中心仓客观执行差异率排行榜</div>
         <div class="section-hd-btns">
-          <select id="rankWarehouse" class="filter-select" onchange="updateRankAndTrend()" style="font-size:11px;padding:3px 8px;">
+          <select id="rankWarehouse" class="filter-select" style="font-size:11px;padding:3px 8px;" onchange="updateRankAndTrend()">
             <option value="全部">全部仓库</option>
-            <option>南京库</option><option>南昌库</option><option>合肥库</option>
-            <option>成都库</option><option>昆明库</option><option>杭州库</option>
-            <option>武汉库</option><option>沈阳库</option><option>济南库</option>
-            <option>深圳中心仓</option><option>石家庄库</option><option>西安库</option>
-            <option>郑州库</option><option>重庆库</option><option>长沙库</option>
+            <option>南京库</option><option>南昌库</option><option>合肥库</option><option>成都库</option><option>昆明库</option><option>杭州库</option><option>武汉库</option><option>沈阳库</option><option>济南库</option><option>深圳中心仓</option><option>石家庄库</option><option>西安库</option><option>郑州库</option><option>重庆库</option><option>长沙库</option>
           </select>
           <span class="filter-chip active" id="rankCatPhone" onclick="setRankCat(this,'手机')">手机</span>
           <span class="filter-chip" id="rankCatLaptop" onclick="setRankCat(this,'笔记本')">笔记本</span>
           <div class="filter-div"></div>
-          <span class="filter-chip" id="rankPeriodWeek" onclick="setRankPeriod(this,'本周')">本周</span>
-          <span class="filter-chip" id="rankPeriodLastWeek" onclick="setRankPeriod(this,'上周')">上周</span>
-          <span class="filter-chip active" id="rankPeriodMonth" onclick="setRankPeriod(this,'本月')">本月</span>
+          <span class="filter-chip" id="rankPW" onclick="setRankPeriod(this,'本周')">本周</span>
+          <span class="filter-chip" id="rankPLW" onclick="setRankPeriod(this,'上周')">上周</span>
+          <span class="filter-chip active" id="rankPM" onclick="setRankPeriod(this,'本月')">本月</span>
+          <div class="filter-div"></div>
+          <input type="date" id="rankDateFrom" class="filter-input" style="font-size:11px;padding:3px 8px;" onchange="updateRankAndTrend()">
+          <span style="font-size:11px;color:#94a3b8;">至</span>
+          <input type="date" id="rankDateTo" class="filter-input" style="font-size:11px;padding:3px 8px;" onchange="updateRankAndTrend()">
         </div>
       </div>
       <div class="rank-grid">
-        <div class="rank-card">
-          <div class="chart-title">排行榜 · <span id="rankCatLabel">手机</span> · <span id="rankPeriodLabel">本月</span></div>
+        <div class="card">
+          <div class="chart-title"><span>排行榜 · <span id="rankCatLabel">手机</span> · <span id="rankPeriodLabel">本月</span></span></div>
           <div id="rankList"></div>
         </div>
-        <div class="chart-card">
+        <div class="card">
           <div class="chart-title">
             <span>趋势对比 · <span id="trendCatLabel">手机</span></span>
             <div style="display:flex;gap:5px;">
-              <span class="filter-chip active" id="trendCmpWeek" onclick="setTrendCmp(this,'上周')" style="font-size:11px;padding:2px 9px;">对比上周</span>
-              <span class="filter-chip" id="trendCmpMonth" onclick="setTrendCmp(this,'上月')" style="font-size:11px;padding:2px 9px;">对比上月</span>
+              <span class="filter-chip active" id="trendCmpWeek" onclick="setTrendCmp(this,'上周')" style="font-size:11px;padding:2px 8px;">对比上周</span>
+              <span class="filter-chip" id="trendCmpMonth" onclick="setTrendCmp(this,'上月')" style="font-size:11px;padding:2px 8px;">对比上月</span>
             </div>
           </div>
           <div class="chart-wrap"><canvas id="chartTrend"></canvas></div>
@@ -273,28 +296,21 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
       <!-- 明细数据 -->
       <div class="section-hd"><div class="section-hd-left">明细数据</div></div>
       <div class="table-wrap">
-        <!-- 列筛选 -->
         <div class="table-toolbar">
           <div class="table-filters">
-            <input class="col-filter" id="cf_site" placeholder="站点名称" oninput="applyDetailFilter()">
-            <input class="col-filter" id="cf_type" placeholder="站点类型" oninput="applyDetailFilter()">
-            <input class="col-filter" id="cf_phone_rate" placeholder="手机差异率" oninput="applyDetailFilter()">
-            <input class="col-filter" id="cf_laptop_rate" placeholder="笔记本差异率" oninput="applyDetailFilter()">
+            <select class="col-filter" id="cf_site" onchange="applyDetailFilter()"><option value="">全部站点</option></select>
+            <select class="col-filter" id="cf_type" onchange="applyDetailFilter()"><option value="">全部类型</option></select>
+            <select class="col-filter" id="cf_phone_rate" onchange="applyDetailFilter()" style="max-width:130px;"><option value="">手机差异率</option><option value="good">≤2% 良好</option><option value="warn">2%-5% 一般</option><option value="bad">&gt;5% 较差</option></select>
+            <select class="col-filter" id="cf_laptop_rate" onchange="applyDetailFilter()" style="max-width:130px;"><option value="">笔记本差异率</option><option value="good">≤2% 良好</option><option value="warn">2%-5% 一般</option><option value="bad">&gt;5% 较差</option></select>
           </div>
           <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b;">
-            每页
-            <select class="per-page-select" id="perPageSelect" onchange="setPerPage()">
-              <option value="10" selected>10 行</option>
-              <option value="20">20 行</option>
-              <option value="50">50 行</option>
-              <option value="100">100 行</option>
-              <option value="200">200 行</option>
-              <option value="999999">所有</option>
+            每页 <select class="per-page-select" id="perPageSelect" onchange="setPerPage()">
+              <option value="10" selected>10 行</option><option value="20">20 行</option><option value="50">50 行</option><option value="100">100 行</option><option value="200">200 行</option><option value="999999">所有</option>
             </select>
           </div>
         </div>
         <div class="table-scroll">
-          <table>
+          <table style="min-width:900px;">
             <thead><tr>
               <th>序号</th><th>站点名称</th><th>站点类型</th>
               <th class="num">手机抽检量</th><th class="num">手机差异量</th><th class="num">手机差异率</th>
@@ -312,48 +328,117 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
       </div>
     </div>
 
-    <!-- 培训答疑页 -->
+    <!-- 培训答疑 -->
     <div class="page" id="page-training">
-      <div class="kpi-grid" style="grid-template-columns:repeat(5,1fr);">
-        <div class="kpi-card"><div class="kpi-label">本月培训场次</div><div class="kpi-value blue">48</div><div class="kpi-sub up">↑ 较上月 +6 场</div></div>
-        <div class="kpi-card"><div class="kpi-label">本月参训人次</div><div class="kpi-value blue">1,286</div><div class="kpi-sub">覆盖率 83.2%</div></div>
-        <div class="kpi-card"><div class="kpi-label">累计答疑数</div><div class="kpi-value green">3,047</div><div class="kpi-sub up">本月新增 412</div></div>
-        <div class="kpi-card"><div class="kpi-label">答疑完成率</div><div class="kpi-value green">91.8%</div><div class="kpi-sub down">↓ 未回复 250 条</div></div>
-        <div class="kpi-card"><div class="kpi-label">平均响应时长</div><div class="kpi-value amber">2.4h</div><div class="kpi-sub up">↑ 较上月优化 0.3h</div></div>
-      </div>
-      <div class="charts-2">
-        <div class="chart-card"><div class="chart-title">近 8 周培训场次 & 参训人次</div><div class="chart-wrap"><canvas id="chartTrainTrend"></canvas></div></div>
-        <div class="chart-card"><div class="chart-title">近 8 周答疑量 & 完成率</div><div class="chart-wrap"><canvas id="chartQaTrend"></canvas></div></div>
-      </div>
-      <div class="charts-2">
-        <div class="chart-card"><div class="chart-title">各区域提问排名（Top 10）</div><div style="padding-top:4px;" id="regionRanking"></div></div>
-        <div class="chart-card"><div class="chart-title">培训课题分布</div><div class="chart-wrap"><canvas id="chartTopics"></canvas></div></div>
-      </div>
-      <div class="section-hd"><div class="section-hd-left">培训记录明细</div></div>
-      <div class="table-wrap">
-        <div class="table-scroll">
-          <table>
-            <thead><tr><th>日期</th><th>培训主题</th><th>讲师</th><th>区域</th><th class="num">参训人数</th><th class="num">答疑数</th><th>完成率</th><th>状态</th></tr></thead>
-            <tbody id="trainingTable">
-              <tr><td>2026-04-13</td><td>iPhone 外观检验规范 V3</td><td>张磊</td><td>南京库</td><td class="num">32</td><td class="num">18</td><td><span class="rate-ok">100%</span></td><td><span class="badge badge-green">已完成</span></td></tr>
-              <tr><td>2026-04-12</td><td>华为系列功能检测标准</td><td>王芳</td><td>武汉库</td><td class="num">27</td><td class="num">23</td><td><span class="rate-warn">87%</span></td><td><span class="badge badge-yellow">进行中</span></td></tr>
-              <tr><td>2026-04-11</td><td>二手机评级 A/B/C 标准</td><td>陈晓</td><td>杭州库</td><td class="num">41</td><td class="num">35</td><td><span class="rate-ok">94%</span></td><td><span class="badge badge-green">已完成</span></td></tr>
-              <tr><td>2026-04-10</td><td>新人入职质检操作规范</td><td>刘敏</td><td>成都库</td><td class="num">15</td><td class="num">42</td><td><span class="rate-bad">71%</span></td><td><span class="badge badge-red">待跟进</span></td></tr>
-            </tbody>
-          </table>
+
+      <!-- 培训数据区块 -->
+      <div class="train-section-box">
+        <div class="train-section-title">
+          📚 培训数据
+          <label id="trainUploadBtn" class="upload-topbtn" for="trainingExcelFile" style="display:none;border-radius:8px;padding:4px 11px;font-size:11px;">上传</label>
+          <input type="file" id="trainingExcelFile" accept=".xlsx,.xls,.csv" onchange="handleUpload(this,'training')">
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;">
+          <div class="card"><div style="font-size:11px;color:#64748b;margin-bottom:5px;">本月培训场次</div><div style="font-size:22px;font-weight:700;color:#2563eb;">48</div><div style="font-size:11px;color:#059669;margin-top:3px;">↑ 较上月 +6 场</div></div>
+          <div class="card"><div style="font-size:11px;color:#64748b;margin-bottom:5px;">本月参训人次</div><div style="font-size:22px;font-weight:700;color:#2563eb;">1,286</div><div style="font-size:11px;color:#94a3b8;margin-top:3px;">覆盖率 83.2%</div></div>
+          <div class="card"><div style="font-size:11px;color:#64748b;margin-bottom:5px;">平均响应时长</div><div style="font-size:22px;font-weight:700;color:#d97706;">2.4h</div><div style="font-size:11px;color:#059669;margin-top:3px;">↑ 较上月优化 0.3h</div></div>
+        </div>
+        <div class="charts-2" style="margin-bottom:0;">
+          <div class="card"><div class="chart-title">近 8 周培训场次 & 参训人次</div><div class="chart-wrap"><canvas id="chartTrainTrend"></canvas></div></div>
+          <div class="card"><div class="chart-title">培训课题分布</div><div class="chart-wrap"><canvas id="chartTopics"></canvas></div></div>
         </div>
       </div>
-      <!-- 培训上传按钮（创造者模式） -->
-      <div id="trainingUploadArea" style="display:none;margin-top:12px;display:none;">
-        <label class="upload-topbtn" for="trainingExcelFile" style="display:inline-flex;border-radius:8px;padding:7px 14px;">上传培训量数据</label>
-        <input type="file" id="trainingExcelFile" accept=".xlsx,.xls,.csv" onchange="handleUpload(this,'training')">
-        <label class="upload-topbtn" for="qaExcelFile" style="display:inline-flex;border-radius:8px;padding:7px 14px;border-color:rgba(124,58,237,0.5);color:#7c3aed;margin-left:8px;">上传答疑量数据</label>
-        <input type="file" id="qaExcelFile" accept=".xlsx,.xls,.csv" onchange="handleUpload(this,'qa')">
+
+      <!-- 答疑数据区块 -->
+      <div class="train-section-box">
+        <div class="train-section-title">
+          💬 答疑数据
+          <label id="qaUploadBtn" class="upload-topbtn" for="qaExcelFile" style="display:none;border-radius:8px;padding:4px 11px;font-size:11px;">上传</label>
+          <input type="file" id="qaExcelFile" accept=".xlsx,.xls,.csv" onchange="handleUpload(this,'qa')">
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;">
+          <div class="card"><div style="font-size:11px;color:#64748b;margin-bottom:5px;">累计答疑数</div><div style="font-size:22px;font-weight:700;color:#059669;">3,047</div><div style="font-size:11px;color:#059669;margin-top:3px;">本月新增 412</div></div>
+          <div class="card">
+            <div style="font-size:11px;color:#64748b;margin-bottom:5px;">答疑正确率（标准覆盖）<span style="font-size:10px;color:#94a3b8;"></span></div>
+            <div style="font-size:22px;font-weight:700;color:#059669;">91.8%</div>
+            <div style="font-size:11px;color:#dc2626;margin-top:3px;">↓ 未覆盖 250 条</div>
+          </div>
+          <div class="card"><div style="font-size:11px;color:#64748b;margin-bottom:5px;">本月新增答疑</div><div style="font-size:22px;font-weight:700;color:#7c3aed;">412</div><div style="font-size:11px;color:#94a3b8;margin-top:3px;">较上月 +38 条</div></div>
+        </div>
+        <div class="charts-2" style="margin-bottom:0;">
+          <div class="card"><div class="chart-title">近 8 周答疑量 & 正确率</div><div class="chart-wrap"><canvas id="chartQaTrend"></canvas></div></div>
+          <div class="card"><div class="chart-title">各区域提问排名（Top 10）</div><div style="padding-top:4px;" id="regionRanking"></div></div>
+        </div>
+      </div>
+
+      <!-- 培训记录明细 -->
+      <div class="section-hd"><div class="section-hd-left">培训记录明细</div></div>
+      <div class="table-wrap">
+        <div class="table-toolbar">
+          <div class="table-filters">
+            <select class="col-filter" id="tf_date" onchange="applyTrainFilter()"><option value="">全部日期</option></select>
+            <select class="col-filter" id="tf_topic" onchange="applyTrainFilter()" style="max-width:140px;"><option value="">全部主题</option></select>
+            <select class="col-filter" id="tf_trainer" onchange="applyTrainFilter()"><option value="">全部讲师</option></select>
+            <select class="col-filter" id="tf_area" onchange="applyTrainFilter()"><option value="">全部区域</option></select>
+            <select class="col-filter" id="tf_status" onchange="applyTrainFilter()"><option value="">全部状态</option><option>已完成</option><option>进行中</option><option>待跟进</option></select>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b;">
+            每页 <select class="per-page-select" id="trainPerPageSelect" onchange="setTrainPerPage()">
+              <option value="10" selected>10 行</option><option value="20">20 行</option><option value="50">50 行</option><option value="999999">所有</option>
+            </select>
+          </div>
+        </div>
+        <div class="table-scroll">
+          <table style="min-width:700px;">
+            <thead><tr><th>日期</th><th>培训主题</th><th>讲师</th><th>区域</th><th class="num">参训人数</th><th class="num">答疑数</th><th>完成率</th><th>状态</th></tr></thead>
+            <tbody id="trainingTable"></tbody>
+          </table>
+        </div>
+        <div class="pagination">
+          <div class="page-info" id="trainPageInfo">共 0 条</div>
+          <div class="page-btns" id="trainPageBtns"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 全国质检红黑榜 -->
+    <div class="page" id="page-ranking">
+      <div class="empty-page">
+        <div class="empty-icon">🏆</div>
+        <div class="empty-text" style="font-size:15px;font-weight:600;color:#334155;">全国质检红黑榜</div>
+        <div class="empty-text">功能规划中，敬请期待</div>
       </div>
     </div>
 
   </div>
 </div>
+
+<!-- 设置悬浮窗 -->
+<div class="modal-overlay" id="settingsModal">
+  <div class="settings-modal">
+    <div class="modal-header">
+      <div class="modal-title">⚙️ 系统设置</div>
+      <button class="modal-close" onclick="closeSettings()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-section">
+        <div class="modal-section-title">公告栏 · 滚动口号</div>
+        <div id="sloganList"></div>
+        <button class="add-btn" onclick="addSlogan()">+ 新增一条口号</button>
+      </div>
+      <div class="modal-section">
+        <div class="modal-section-title">播报规则</div>
+        <select class="rule-select" id="sloganRule">
+          <option value="always">每次打开时更新</option>
+          <option value="daily">每天首次打开更新</option>
+          <option value="weekly">每周一更新</option>
+        </select>
+      </div>
+      <button class="save-btn" onclick="saveSettings()">保存并同步到云端</button>
+    </div>
+  </div>
+</div>
+
 <div id="toast"></div>
 
 <script>
@@ -361,114 +446,119 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
 const GH_USER='d2112ds12d12d', GH_REPO='gzt';
 function getToken(){ return localStorage.getItem('gh_token')||''; }
 
-/* ===== DATA STORE ===== */
-let allRows=[], filteredRows=[], currentPage=1, perPage=10;
+/* ===== DATA ===== */
+let allRows=[], filteredRows=[], detailVisibleRows=[];
+let currentPage=1, perPage=10;
 let rankCat='手机', rankPeriod='本月', trendCmp='上周';
 let trendChart=null;
+let trainAllRows=[], trainVisibleRows=[], trainPage=1, trainPerPage=10;
 
-/* ===== CLOCK (最近更新时间从数据里读) ===== */
-function setUpdateTime(isoStr){
+/* ===== UPDATE TIME ===== */
+function setUpdateTime(iso){
   const el=document.getElementById('lastUpdateTime');
-  if(!isoStr){el.textContent='暂无数据';return;}
-  const d=new Date(isoStr);
-  const p=v=>String(v).padStart(2,'0');
+  if(!iso){el.textContent='暂无';return;}
+  const d=new Date(iso),p=v=>String(v).padStart(2,'0');
   el.textContent=`${d.getFullYear()}/${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
 
 /* ===== ROLE ===== */
 function setRole(role){
   const uB=document.getElementById('roleUser'),cB=document.getElementById('roleCreator');
-  const panel=document.getElementById('creatorPanel');
-  const topBtn=document.getElementById('uploadTopBtn');
-  const tUp=document.getElementById('trainingUploadArea');
+  const panel=document.getElementById('creatorPanel'),topBtn=document.getElementById('uploadTopBtn');
+  const gear=document.getElementById('gearBtn');
+  const trainUp=document.getElementById('trainUploadBtn'),qaUp=document.getElementById('qaUploadBtn');
   if(role==='user'){
     uB.className='role-btn active-user';cB.className='role-btn';
-    panel.style.display='none';
-    topBtn.style.display='none';
-    if(tUp)tUp.style.display='none';
-    setStatus('使用者模式','');
-    localStorage.setItem('gh_role','user');
+    panel.style.display='none';topBtn.style.display='none';
+    gear.style.display='none';
+    if(trainUp)trainUp.style.display='none';if(qaUp)qaUp.style.display='none';
+    setStatus('使用者模式','');localStorage.setItem('gh_role','user');
   } else {
     cB.className='role-btn active-creator';uB.className='role-btn';
     panel.style.display=getToken()?'none':'block';
     topBtn.style.display='inline-flex';
-    if(tUp)tUp.style.display='flex';
+    gear.style.display='block';
+    if(trainUp)trainUp.style.display='inline-flex';if(qaUp)qaUp.style.display='inline-flex';
     setStatus(getToken()?'创造者已就绪':'请输入密钥',getToken()?'green':'amber');
     localStorage.setItem('gh_role','creator');
   }
 }
-function setStatus(t,c){
-  document.getElementById('statusText').textContent=t;
-  const d=document.getElementById('statusDot');
-  d.className='dot'+(c?' '+c:'');
-}
+function setStatus(t,c){document.getElementById('statusText').textContent=t;const d=document.getElementById('statusDot');d.className='dot'+(c?' '+c:'');}
 function saveToken(){
   const v=document.getElementById('tokenInput').value.trim();
   if(!v){showToast('请先粘贴密钥');return;}
-  localStorage.setItem('gh_token',v);
-  document.getElementById('tokenInput').value='';
-  showToast('✓ 密钥已保存，正在验证…');
-  verifyToken();
+  localStorage.setItem('gh_token',v);document.getElementById('tokenInput').value='';
+  showToast('✓ 密钥已保存，正在验证…');verifyToken();
 }
 function verifyToken(){
   fetch('https://api.github.com/repos/'+GH_USER+'/'+GH_REPO,{headers:{Authorization:'token '+getToken()}})
   .then(r=>{
-    if(r.ok){
-      setStatus('创造者已就绪','green');
-      document.getElementById('creatorPanel').style.display='none';
-      showToast('✓ 验证成功，创造者权限已激活');
-    } else {
-      setStatus('密钥无效','red');
-      localStorage.removeItem('gh_token');
-      showToast('✗ 密钥无效，请重新输入');
-    }
+    if(r.ok){setStatus('创造者已就绪','green');document.getElementById('creatorPanel').style.display='none';showToast('✓ 验证成功，创造者权限已激活');}
+    else{setStatus('密钥无效','red');localStorage.removeItem('gh_token');showToast('✗ 密钥无效');}
   }).catch(()=>setStatus('网络异常','red'));
 }
-function initAuth(){
-  const r=localStorage.getItem('gh_role')||'user';
-  setRole(r);
-  if(r==='creator'&&getToken()) verifyToken();
-}
+function initAuth(){const r=localStorage.getItem('gh_role')||'user';setRole(r);if(r==='creator'&&getToken())verifyToken();}
 initAuth();
 
 /* ===== PAGE SWITCH ===== */
 function switchPage(page,el){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.getElementById('page-'+page).classList.add('active');
-  el.classList.add('active');
-  document.getElementById('pageTitle').textContent=page==='quality'?'质量数据看板':'培训答疑数据看板';
+  document.getElementById('page-'+page).classList.add('active');el.classList.add('active');
+  const titles={quality:'质量数据看板',training:'培训答疑数据看板',ranking:'全国质检红黑榜'};
+  document.getElementById('pageTitle').textContent=titles[page]||'';
   const topBtn=document.getElementById('uploadTopBtn');
-  if(page==='quality'){
-    topBtn.setAttribute('for','qualityExcelTop');
-    topBtn.style.display=localStorage.getItem('gh_role')==='creator'?'inline-flex':'none';
+  topBtn.style.display=(page==='quality'&&localStorage.getItem('gh_role')==='creator')?'inline-flex':'none';
+  if(page==='training'&&!window._trainingChartsInit){setTimeout(initTrainingCharts,80);window._trainingChartsInit=true;}
+}
+
+/* ===== MARQUEE ===== */
+let slogans=['欢迎使用培训部数据看板 · 数据驱动，精益求精'];
+function refreshMarquee(){document.getElementById('marqueeText').textContent=slogans.join('   ·   ');}
+
+/* ===== SETTINGS MODAL ===== */
+function openSettings(){
+  renderSloganList();
+  document.getElementById('settingsModal').classList.add('open');
+}
+function closeSettings(){document.getElementById('settingsModal').classList.remove('open');}
+document.getElementById('settingsModal').addEventListener('click',function(e){if(e.target===this)closeSettings();});
+function renderSloganList(){
+  const list=document.getElementById('sloganList');
+  list.innerHTML=slogans.map((s,i)=>`<div class="slogan-item">
+    <input class="slogan-input" value="${s.replace(/"/g,'&quot;')}" id="sl_${i}" />
+    <button class="slogan-del" onclick="removeSlogan(${i})">×</button>
+  </div>`).join('');
+}
+function addSlogan(){slogans.push('请输入口号内容');renderSloganList();}
+function removeSlogan(i){slogans.splice(i,1);renderSloganList();}
+async function saveSettings(){
+  slogans=Array.from(document.querySelectorAll('.slogan-input')).map(i=>i.value.trim()).filter(Boolean);
+  if(!slogans.length)slogans=['欢迎使用培训部数据看板'];
+  const rule=document.getElementById('sloganRule').value;
+  refreshMarquee();
+  const payload={slogans,rule,updatedAt:new Date().toISOString()};
+  if(getToken()){
+    try{await writeToGitHub('data/settings.json',payload);showToast('✓ 设置已保存并同步到云端');}
+    catch(e){showToast('✗ 同步失败，已在本地保存');localStorage.setItem('local_settings',JSON.stringify(payload));}
   } else {
-    topBtn.style.display='none';
-    if(!window._trainingChartsInit){setTimeout(initTrainingCharts,80);window._trainingChartsInit=true;}
+    localStorage.setItem('local_settings',JSON.stringify(payload));showToast('✓ 设置已本地保存');
   }
+  closeSettings();
+}
+async function loadSettings(){
+  try{
+    const data=await readFromGitHub('data/settings.json');
+    slogans=data.slogans||slogans;
+    if(data.rule)document.getElementById('sloganRule').value=data.rule;
+  }catch(e){
+    const local=localStorage.getItem('local_settings');
+    if(local){try{const d=JSON.parse(local);slogans=d.slogans||slogans;}catch(e){}}
+  }
+  refreshMarquee();
 }
 
-/* ===== CATEGORY FILTER ===== */
-let currentCategory='全部';
-function setCategory(el,cat){
-  document.querySelectorAll('.filter-chip').forEach(c=>{if(c.closest('.filter-bar'))c.classList.remove('active');});
-  el.classList.add('active');
-  currentCategory=cat;
-  applyFilters();
-}
-function applyFilters(){
-  const wh=document.getElementById('filterWarehouse').value;
-  filteredRows=allRows.filter(r=>{
-    const siteMatch=wh==='全部'||(r['站点名称']||r['机型']||'')=== wh;
-    return siteMatch;
-  });
-  currentPage=1;
-  renderOverview(filteredRows);
-  renderDetailPage();
-  applyDetailFilter();
-}
-
-/* ===== GITHUB READ/WRITE ===== */
+/* ===== GITHUB ===== */
 async function writeToGitHub(path,content){
   const url=`https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${path}`;
   const headers={'Authorization':'token '+getToken(),'Content-Type':'application/json'};
@@ -477,12 +567,10 @@ async function writeToGitHub(path,content){
   const body={message:`更新 ${path}`,content:btoa(unescape(encodeURIComponent(JSON.stringify(content,null,2)))),...(sha?{sha}:{})};
   const res=await fetch(url,{method:'PUT',headers,body:JSON.stringify(body)});
   if(!res.ok){const e=await res.json();throw new Error(e.message||res.status);}
-  return res.json();
 }
 async function readFromGitHub(path){
   const url=`https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/${path}?t=${Date.now()}`;
-  const res=await fetch(url);
-  if(!res.ok) throw new Error('文件不存在');
+  const res=await fetch(url);if(!res.ok)throw new Error('not found');
   return res.json();
 }
 
@@ -490,227 +578,219 @@ async function readFromGitHub(path){
 function parseExcel(file){
   return new Promise((resolve,reject)=>{
     const r=new FileReader();
-    r.onload=e=>{try{const wb=XLSX.read(e.target.result,{type:'array'});const ws=wb.Sheets[wb.SheetNames[0]];resolve(XLSX.utils.sheet_to_json(ws,{defval:''}));}catch(err){reject(err);}};
-    r.onerror=()=>reject(new Error('文件读取失败'));
-    r.readAsArrayBuffer(file);
+    r.onload=e=>{try{const wb=XLSX.read(e.target.result,{type:'array'});resolve(XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{defval:''}));}catch(err){reject(err);}};
+    r.onerror=()=>reject(new Error('读取失败'));r.readAsArrayBuffer(file);
   });
 }
 async function handleUpload(input,type){
   const file=input.files[0];if(!file)return;
   if(localStorage.getItem('gh_role')!=='creator'||!getToken()){showToast('✗ 仅创造者可上传');input.value='';return;}
   showToast('正在解析 Excel…');
-  let rows;
-  try{rows=await parseExcel(file);}catch(err){showToast('✗ 解析失败：'+err.message);return;}
+  let rows;try{rows=await parseExcel(file);}catch(err){showToast('✗ 解析失败：'+err.message);return;}
   if(!rows||!rows.length){showToast('✗ 文件无数据');return;}
   const uploadTime=new Date().toISOString();
-  const path=type==='quality'?'data/quality_data.json':type==='training'?'data/training_data.json':'data/qa_data.json';
+  const pathMap={quality:'data/quality_data.json',training:'data/training_data.json',qa:'data/qa_data.json'};
   showToast(`解析完成 ${rows.length} 行，正在上传…`);
   try{
-    await writeToGitHub(path,{uploadTime,fileName:file.name,rows});
-    showToast(`✓ 上传成功！${rows.length} 行，全国同学同步后可见`);
-    setUpdateTime(uploadTime);
+    await writeToGitHub(pathMap[type],{uploadTime,fileName:file.name,rows});
+    setUpdateTime(uploadTime);showToast(`✓ 上传成功！${rows.length} 行`);
     if(type==='quality'){allRows=rows;filteredRows=[...rows];renderAll();}
+    else if(type==='training'){trainAllRows=rows;trainVisibleRows=[...rows];rebuildTrainFilters();renderTrainPage();}
   }catch(err){showToast('✗ 上传失败：'+err.message);}
   input.value='';
 }
 
-/* ===== LOAD FROM GITHUB ===== */
+/* ===== SYNC ===== */
 async function syncCloud(){
-  showToast('正在从 GitHub 同步…');
-  try{
-    const data=await readFromGitHub('data/quality_data.json');
-    allRows=data.rows||[];
-    filteredRows=[...allRows];
-    setUpdateTime(data.uploadTime);
-    renderAll();
-    showToast('✓ 数据同步成功，共 '+allRows.length+' 行');
-  }catch(e){showToast('暂无云端数据，显示示例数据');}
+  showToast('正在同步…');
+  let ok=0;
+  try{const d=await readFromGitHub('data/quality_data.json');allRows=d.rows||[];filteredRows=[...allRows];setUpdateTime(d.uploadTime);renderAll();ok++;}catch(e){}
+  try{const d=await readFromGitHub('data/training_data.json');trainAllRows=d.rows||[];trainVisibleRows=[...trainAllRows];rebuildTrainFilters();renderTrainPage();}catch(e){}
+  await loadSettings();
+  showToast(ok?`✓ 同步成功，${allRows.length} 行数据`:'云端暂无数据，显示示例数据');
+}
+
+/* ===== FILTERS ===== */
+function applyFilters(){
+  const wh=document.getElementById('filterWarehouse').value;
+  filteredRows=allRows.filter(r=>wh==='全部'||(r['站点名称']||r['机型']||'')=== wh);
+  currentPage=1;renderAll();
 }
 
 /* ===== RENDER ALL ===== */
-function renderAll(){
-  renderOverview(filteredRows);
-  renderDetailPage();
-  updateRankAndTrend();
-}
+function renderAll(){renderOverview(filteredRows);rebuildDetailFilters();renderDetailPage();updateRankAndTrend();}
 
-/* ===== OVERVIEW TABLE ===== */
-const CAT_KEYS={
-  '手机':['手机抽检量','手机差异量','手机差异率'],
-  '笔记本':['笔记本抽检量','笔记本差异量','笔记本差异率'],
-  '平板':['平板抽检量','平板差异量','平板差异率'],
-  '耳机':['耳机抽检量','耳机差异量','耳机差异率'],
-  '相机':['相机抽检量','相机差异量','相机差异率'],
-};
-const CAT_ICON={'手机':'📱','笔记本':'💻','平板':'📟','耳机':'🎧','相机':'📷'};
+/* ===== OVERVIEW CARDS ===== */
+const CATS=[
+  {key:'手机',icon:'📱',cls:'ov-phone',ck:'手机抽检量',dk:'手机差异量'},
+  {key:'笔记本',icon:'💻',cls:'ov-laptop',ck:'笔记本抽检量',dk:'笔记本差异量'},
+  {key:'平板',icon:'📟',cls:'ov-pad',ck:'平板抽检量',dk:'平板差异量'},
+  {key:'耳机',icon:'🎧',cls:'ov-earphone',ck:'耳机抽检量',dk:'耳机差异量'},
+  {key:'相机',icon:'📷',cls:'ov-camera',ck:'相机抽检量',dk:'相机差异量'},
+];
 function renderOverview(rows){
-  const tbody=document.getElementById('overviewBody');
-  const cats=Object.keys(CAT_KEYS);
-  tbody.innerHTML=cats.map(cat=>{
-    const [ck,dk,rk]=CAT_KEYS[cat];
-    let total=0,diff=0,hasRate=false;
-    rows.forEach(r=>{
-      const c=Number(r[ck]);const d=Number(r[dk]);
-      if(!isNaN(c)&&c>0){total+=c;diff+=isNaN(d)?0:d;hasRate=true;}
-    });
-    const rate=hasRate&&total>0?((diff/total)*100).toFixed(2)+'%':'—';
-    const rc=hasRate&&total>0?(diff/total)*100:null;
-    const cls=rc===null?'':rc>5?'rate-bad':rc>2?'rate-warn':'rate-ok';
-    return `<tr>
-      <td>${CAT_ICON[cat]} ${cat}</td>
-      <td class="num">${total>0?total.toLocaleString():'—'}</td>
-      <td class="num">${diff>0?diff.toLocaleString():'—'}</td>
-      <td class="num ${cls}">${rate}</td>
-    </tr>`;
+  const container=document.getElementById('overviewCards');
+  container.innerHTML=CATS.map(cat=>{
+    let total=0,diff=0,has=false;
+    rows.forEach(r=>{const c=Number(r[cat.ck]);const d=Number(r[cat.dk]);if(!isNaN(c)&&c>0){total+=c;diff+=isNaN(d)?0:d;has=true;}});
+    const rate=has&&total>0?((diff/total)*100).toFixed(2)+'%':'—';
+    const rn=has&&total>0?(diff/total)*100:null;
+    const rateCls=rn===null?'':rn>5?'rate-bad-txt':rn>2?'rate-warn-txt':'rate-ok-txt';
+    return `<div class="ov-card ${cat.cls}">
+      <div class="ov-cat"><span class="ov-icon">${cat.icon}</span>${cat.key}</div>
+      <div class="ov-big">${total>0?total.toLocaleString():'—'}</div>
+      <div class="ov-row">
+        <div><div class="ov-label">差异量</div><div style="font-size:14px;font-weight:700;margin-top:2px;">${diff>0?diff.toLocaleString():'—'}</div></div>
+        <div style="text-align:right;"><div class="ov-label">差异率</div><div class="ov-rate ${rateCls}" style="margin-top:2px;">${rate}</div></div>
+      </div>
+      <div class="ov-sub">抽检量</div>
+    </div>`;
   }).join('');
 }
 
-/* ===== DETAIL TABLE WITH PAGINATION ===== */
-let detailBaseRows=[];
-let detailVisibleRows=[];
-function renderDetailPage(){
-  detailBaseRows=[...filteredRows];
-  applyDetailFilter();
+/* ===== DETAIL FILTERS ===== */
+function rebuildDetailFilters(){
+  const sites=[...new Set(filteredRows.map(r=>r['站点名称']||r['机型']||'').filter(Boolean))];
+  const types=[...new Set(filteredRows.map(r=>r['站点类型']||'').filter(Boolean))];
+  const setSel=(id,vals)=>{const s=document.getElementById(id);const cur=s.value;s.innerHTML=`<option value="">${s.options[0].text}</option>`+vals.map(v=>`<option ${v===cur?'selected':''}>${v}</option>`).join('');};
+  setSel('cf_site',sites);setSel('cf_type',types);
 }
 function applyDetailFilter(){
-  const fSite=(document.getElementById('cf_site').value||'').toLowerCase();
-  const fType=(document.getElementById('cf_type').value||'').toLowerCase();
-  const fPR=(document.getElementById('cf_phone_rate').value||'').toLowerCase();
-  const fLR=(document.getElementById('cf_laptop_rate').value||'').toLowerCase();
-  detailVisibleRows=detailBaseRows.filter(r=>{
-    const site=(r['站点名称']||r['机型']||'').toLowerCase();
-    const type=(r['站点类型']||'').toLowerCase();
-    const pr=String(r['手机差异率']||'').toLowerCase();
-    const lr=String(r['笔记本差异率']||'').toLowerCase();
-    return(!fSite||site.includes(fSite))&&(!fType||type.includes(fType))&&(!fPR||pr.includes(fPR))&&(!fLR||lr.includes(fLR));
+  const site=document.getElementById('cf_site').value;
+  const type=document.getElementById('cf_type').value;
+  const pr=document.getElementById('cf_phone_rate').value;
+  const lr=document.getElementById('cf_laptop_rate').value;
+  detailVisibleRows=filteredRows.filter(r=>{
+    const siteOk=!site||(r['站点名称']||r['机型']||'')=== site;
+    const typeOk=!type||(r['站点类型']||'')=== type;
+    const prVal=parseFloat(r['手机差异率']);
+    const lrVal=parseFloat(r['笔记本差异率']);
+    const prOk=!pr||(pr==='good'&&prVal<=2)||(pr==='warn'&&prVal>2&&prVal<=5)||(pr==='bad'&&prVal>5);
+    const lrOk=!lr||(lr==='good'&&lrVal<=2)||(lr==='warn'&&lrVal>2&&lrVal<=5)||(lr==='bad'&&lrVal>5);
+    return siteOk&&typeOk&&prOk&&lrOk;
   });
-  currentPage=1;
-  renderTablePage();
+  currentPage=1;renderTablePage();
 }
-function setPerPage(){
-  perPage=Number(document.getElementById('perPageSelect').value);
-  currentPage=1;
-  renderTablePage();
-}
+function renderDetailPage(){detailVisibleRows=[...filteredRows];renderTablePage();}
+function setPerPage(){perPage=Number(document.getElementById('perPageSelect').value);currentPage=1;renderTablePage();}
 function renderTablePage(){
-  const total=detailVisibleRows.length;
-  const totalPages=Math.max(1,Math.ceil(total/perPage));
+  const total=detailVisibleRows.length,totalPages=Math.max(1,Math.ceil(total/perPage));
   if(currentPage>totalPages)currentPage=totalPages;
   const start=(currentPage-1)*perPage;
   const pageRows=perPage>=999999?detailVisibleRows:detailVisibleRows.slice(start,start+perPage);
   const tbody=document.getElementById('qualityDetailBody');
-  if(!pageRows.length){
-    tbody.innerHTML=`<tr><td colspan="15" style="text-align:center;padding:24px;color:#94a3b8;">${allRows.length?'无匹配数据':'暂无数据，请上传或同步'}</td></tr>`;
-  } else {
-    const fmtR=(r,k)=>{const v=r[k];if(v===undefined||v==='')return'—';const n=parseFloat(v);if(isNaN(n))return v;const s=n.toFixed(2)+'%';const c=n>5?'rate-bad':n>2?'rate-warn':'rate-ok';return`<span class="${c}">${s}</span>`;};
-    const fmt=(r,k)=>{const v=r[k];return(v===undefined||v==='')?'—':v;};
-    tbody.innerHTML=pageRows.map((r,i)=>`<tr>
-      <td>${start+i+1}</td><td>${r['站点名称']||r['机型']||'-'}</td><td>${r['站点类型']||'-'}</td>
-      <td class="num">${fmt(r,'手机抽检量')}</td><td class="num">${fmt(r,'手机差异量')}</td><td class="num">${fmtR(r,'手机差异率')}</td>
-      <td class="num">${fmt(r,'笔记本抽检量')}</td><td class="num">${fmt(r,'笔记本差异量')}</td><td class="num">${fmtR(r,'笔记本差异率')}</td>
-      <td class="num">${fmt(r,'平板抽检量')}</td><td class="num">${fmt(r,'平板差异量')}</td><td class="num">${fmtR(r,'平板差异率')}</td>
-      <td class="num">${fmt(r,'耳机抽检量')}</td><td class="num">${fmt(r,'耳机差异量')}</td><td class="num">${fmtR(r,'耳机差异率')}</td>
-    </tr>`).join('');
+  if(!pageRows.length){tbody.innerHTML=`<tr><td colspan="15" style="text-align:center;padding:24px;color:#94a3b8;">${allRows.length?'无匹配数据':'暂无数据，请上传或点击同步'}</td></tr>`;}
+  else{
+    const fR=(r,k)=>{const v=r[k];if(v===undefined||v==='')return'—';const n=parseFloat(v);if(isNaN(n))return v;const s=n.toFixed(2)+'%';return`<span class="${n>5?'rate-bad':n>2?'rate-warn':'rate-ok'}">${s}</span>`;};
+    const f=(r,k)=>{const v=r[k];return(v===undefined||v==='')?'—':v;};
+    tbody.innerHTML=pageRows.map((r,i)=>`<tr><td>${start+i+1}</td><td>${r['站点名称']||r['机型']||'-'}</td><td>${r['站点类型']||'-'}</td>
+      <td class="num">${f(r,'手机抽检量')}</td><td class="num">${f(r,'手机差异量')}</td><td class="num">${fR(r,'手机差异率')}</td>
+      <td class="num">${f(r,'笔记本抽检量')}</td><td class="num">${f(r,'笔记本差异量')}</td><td class="num">${fR(r,'笔记本差异率')}</td>
+      <td class="num">${f(r,'平板抽检量')}</td><td class="num">${f(r,'平板差异量')}</td><td class="num">${fR(r,'平板差异率')}</td>
+      <td class="num">${f(r,'耳机抽检量')}</td><td class="num">${f(r,'耳机差异量')}</td><td class="num">${fR(r,'耳机差异率')}</td></tr>`).join('');
   }
-  /* pagination */
   document.getElementById('pageInfo').textContent=`共 ${total} 条，第 ${currentPage}/${totalPages} 页`;
-  const btns=document.getElementById('pageBtns');
-  if(perPage>=999999){btns.innerHTML='';return;}
-  let html=`<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage<=1?'disabled':''}>‹</button>`;
-  const range=[];
-  for(let i=1;i<=totalPages;i++){if(i===1||i===totalPages||Math.abs(i-currentPage)<=1)range.push(i);}
-  let prev=null;
-  range.forEach(i=>{
-    if(prev&&i-prev>1)html+=`<span style="font-size:11px;color:#94a3b8;padding:0 2px;">…</span>`;
-    html+=`<button class="page-btn${i===currentPage?' active':''}" onclick="goPage(${i})">${i}</button>`;
-    prev=i;
-  });
-  html+=`<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage>=totalPages?'disabled':''}>›</button>`;
-  btns.innerHTML=html;
+  renderPageBtns('pageBtns',currentPage,totalPages,goPage,perPage);
 }
-function goPage(p){
-  const total=detailVisibleRows.length;
-  const totalPages=Math.max(1,Math.ceil(total/perPage));
-  if(p<1||p>totalPages)return;
-  currentPage=p;renderTablePage();
-}
+function goPage(p){const t=detailVisibleRows.length,tp=Math.max(1,Math.ceil(t/perPage));if(p<1||p>tp)return;currentPage=p;renderTablePage();}
 
 /* ===== RANK ===== */
 function setRankCat(el,cat){
   ['rankCatPhone','rankCatLaptop'].forEach(id=>document.getElementById(id).classList.remove('active'));
-  el.classList.add('active');
-  rankCat=cat;
-  document.getElementById('rankCatLabel').textContent=cat;
-  document.getElementById('trendCatLabel').textContent=cat;
+  el.classList.add('active');rankCat=cat;
+  document.getElementById('rankCatLabel').textContent=cat;document.getElementById('trendCatLabel').textContent=cat;
   updateRankAndTrend();
 }
 function setRankPeriod(el,p){
-  ['rankPeriodWeek','rankPeriodLastWeek','rankPeriodMonth'].forEach(id=>document.getElementById(id).classList.remove('active'));
-  el.classList.add('active');
-  rankPeriod=p;
-  document.getElementById('rankPeriodLabel').textContent=p;
+  ['rankPW','rankPLW','rankPM'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  el.classList.add('active');rankPeriod=p;document.getElementById('rankPeriodLabel').textContent=p;
   updateRankAndTrend();
 }
 function setTrendCmp(el,cmp){
   ['trendCmpWeek','trendCmpMonth'].forEach(id=>document.getElementById(id).classList.remove('active'));
-  el.classList.add('active');
-  trendCmp=cmp;
-  updateTrendChart();
+  el.classList.add('active');trendCmp=cmp;updateTrendChart();
 }
-
-function updateRankAndTrend(){
-  buildRankFromData();
-  updateTrendChart();
-}
-
+function updateRankAndTrend(){buildRankFromData();updateTrendChart();}
 function buildRankFromData(){
   const el=document.getElementById('rankList');
   const ck=rankCat==='手机'?'手机抽检量':'笔记本抽检量';
   const dk=rankCat==='手机'?'手机差异量':'笔记本差异量';
   const wh=document.getElementById('rankWarehouse').value;
-  let src=allRows.length?allRows:DEMO_ROWS;
-  if(wh!=='全部') src=src.filter(r=>(r['站点名称']||r['机型']||'')===wh);
-  const ranked=src.map(r=>{
-    const c=Number(r[ck])||0,d=Number(r[dk])||0;
-    return{name:r['站点名称']||r['机型']||'-',rate:c>0?(d/c)*100:0};
-  }).filter(r=>r.rate>=0).sort((a,b)=>b.rate-a.rate).slice(0,10);
-  const max=ranked.length?ranked[0].rate:1;
+  let src=filteredRows.length?filteredRows:(allRows.length?allRows:DEMO_ROWS);
+  if(wh!=='全部')src=src.filter(r=>(r['站点名称']||r['机型']||'')=== wh);
+  const ranked=src.map(r=>{const c=Number(r[ck])||0,d=Number(r[dk])||0;return{name:r['站点名称']||r['机型']||'-',rate:c>0?(d/c)*100:0};}).sort((a,b)=>b.rate-a.rate).slice(0,10);
+  const max=ranked.length?ranked[0].rate||1:1;
   el.innerHTML=ranked.length?ranked.map((r,i)=>`<div class="rank-item">
     <div class="rank-num ${i<3?'rank-gold':'rank-silver'}">${i+1}</div>
     <div class="rank-name">${r.name}</div>
-    <div class="rank-bar-wrap"><div class="rank-bar" style="width:${max>0?((r.rate/max)*100).toFixed(0):0}%;background:${r.rate>5?'#ef4444':r.rate>2?'#f59e0b':'#10b981'}"></div></div>
+    <div class="rank-bar-wrap"><div class="rank-bar" style="width:${((r.rate/max)*100).toFixed(0)}%;background:${r.rate>5?'#ef4444':r.rate>2?'#f59e0b':'#10b981'}"></div></div>
     <div class="rank-val">${r.rate.toFixed(2)}%</div>
   </div>`).join(''):`<div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px;">暂无数据</div>`;
 }
-
-/* ===== TREND CHART ===== */
 function updateTrendChart(){
-  /* 模拟周/月趋势数据 — 上传真实数据后可替换此逻辑 */
-  const labels7=['周一','周二','周三','周四','周五','周六','周日'];
-  const labels4=['第1周','第2周','第3周','第4周'];
   const isWeek=trendCmp==='上周';
-  const labels=isWeek?labels7:labels4;
-  /* 当前周期数据（基于已上传数据随机模拟，真实场景替换为按日期分组聚合） */
-  function mockRates(seed,len){return Array.from({length:len},(_,i)=>+(Math.abs(Math.sin(seed+i)*4)+0.5).toFixed(2));}
-  const cur=mockRates(1,labels.length);
-  const prev=mockRates(5,labels.length);
-  const curLabel=isWeek?'本周':'本月';
-  const prevLabel=trendCmp;
+  const labels=isWeek?['周一','周二','周三','周四','周五','周六','周日']:['第1周','第2周','第3周','第4周'];
+  function mock(s,l){return Array.from({length:l},(_,i)=>+(Math.abs(Math.sin(s+i)*4)+0.5).toFixed(2));}
+  const cur=mock(1,labels.length),prev=mock(5,labels.length);
   if(trendChart){trendChart.destroy();trendChart=null;}
-  trendChart=new Chart(document.getElementById('chartTrend'),{
-    type:'line',
-    data:{labels,datasets:[
-      {label:curLabel+' '+rankCat+'差异率%',data:cur,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,0.08)',tension:.4,pointRadius:3,borderWidth:2,fill:true},
-      {label:prevLabel+' '+rankCat+'差异率%',data:prev,borderColor:'#94a3b8',backgroundColor:'transparent',tension:.4,pointRadius:3,borderWidth:2,borderDash:[4,3]}
-    ]},
-    options:{responsive:true,maintainAspectRatio:false,
-      plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:10}}},
-      scales:{y:{grid:{color:'rgba(200,210,230,0.4)'},ticks:{callback:v=>v+'%'}},x:{grid:{display:false}}}
-    }
-  });
+  trendChart=new Chart(document.getElementById('chartTrend'),{type:'line',data:{labels,datasets:[
+    {label:(isWeek?'本周':'本月')+' '+rankCat+'差异率%',data:cur,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,0.07)',tension:.4,pointRadius:3,borderWidth:2,fill:true},
+    {label:trendCmp+' '+rankCat+'差异率%',data:prev,borderColor:'#94a3b8',backgroundColor:'transparent',tension:.4,pointRadius:3,borderWidth:2,borderDash:[4,3]}
+  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:10}}},scales:{y:{grid:{color:'rgba(200,210,230,0.4)'},ticks:{callback:v=>v+'%'}},x:{grid:{display:false}}}}});
 }
 
-/* ===== DEMO DATA (fallback) ===== */
+/* ===== PAGINATION HELPER ===== */
+function renderPageBtns(containerId,cur,total,gofn,pp){
+  const btns=document.getElementById(containerId);
+  if(pp>=999999){btns.innerHTML='';return;}
+  let html=`<button class="page-btn" onclick="${gofn.name}(${cur-1})" ${cur<=1?'disabled':''}>‹</button>`;
+  const range=[];for(let i=1;i<=total;i++){if(i===1||i===total||Math.abs(i-cur)<=1)range.push(i);}
+  let prev=null;range.forEach(i=>{if(prev&&i-prev>1)html+=`<span style="font-size:11px;color:#94a3b8;padding:0 2px;">…</span>`;html+=`<button class="page-btn${i===cur?' active':''}" onclick="${gofn.name}(${i})">${i}</button>`;prev=i;});
+  html+=`<button class="page-btn" onclick="${gofn.name}(${cur+1})" ${cur>=total?'disabled':''}>›</button>`;
+  btns.innerHTML=html;
+}
+
+/* ===== TRAINING TABLE ===== */
+const TRAIN_DEMO=[
+  {日期:'2026-04-13',培训主题:'iPhone 外观检验规范 V3',讲师:'张磊',区域:'南京库',参训人数:32,答疑数:18,完成率:'100%',状态:'已完成'},
+  {日期:'2026-04-12',培训主题:'华为系列功能检测标准',讲师:'王芳',区域:'武汉库',参训人数:27,答疑数:23,完成率:'87%',状态:'进行中'},
+  {日期:'2026-04-11',培训主题:'二手机评级 A/B/C 标准',讲师:'陈晓',区域:'杭州库',参训人数:41,答疑数:35,完成率:'94%',状态:'已完成'},
+  {日期:'2026-04-10',培训主题:'新人入职质检操作规范',讲师:'刘敏',区域:'成都库',参训人数:15,答疑数:42,完成率:'71%',状态:'待跟进'},
+  {日期:'2026-04-09',培训主题:'三星折叠屏检测要点',讲师:'张磊',区域:'深圳中心仓',参训人数:38,答疑数:29,完成率:'96%',状态:'已完成'},
+  {日期:'2026-04-08',培训主题:'逆向退货处理流程',讲师:'王芳',区域:'济南库',参训人数:22,答疑数:19,完成率:'100%',状态:'已完成'},
+];
+function rebuildTrainFilters(){
+  const src=trainAllRows.length?trainAllRows:TRAIN_DEMO;
+  const setSel=(id,key,label)=>{const s=document.getElementById(id);const cur=s.value;const vals=[...new Set(src.map(r=>r[key]||'').filter(Boolean))];s.innerHTML=`<option value="">${label}</option>`+vals.map(v=>`<option ${v===cur?'selected':''}>${v}</option>`).join('');};
+  setSel('tf_date','日期','全部日期');setSel('tf_topic','培训主题','全部主题');setSel('tf_trainer','讲师','全部讲师');setSel('tf_area','区域','全部区域');
+}
+function applyTrainFilter(){
+  const src=trainAllRows.length?trainAllRows:TRAIN_DEMO;
+  const g=id=>document.getElementById(id).value;
+  trainVisibleRows=src.filter(r=>(!g('tf_date')||r['日期']===g('tf_date'))&&(!g('tf_topic')||r['培训主题']===g('tf_topic'))&&(!g('tf_trainer')||r['讲师']===g('tf_trainer'))&&(!g('tf_area')||r['区域']===g('tf_area'))&&(!g('tf_status')||r['状态']===g('tf_status')));
+  trainPage=1;renderTrainPage();
+}
+function setTrainPerPage(){trainPerPage=Number(document.getElementById('trainPerPageSelect').value);trainPage=1;renderTrainPage();}
+function renderTrainPage(){
+  const src=trainVisibleRows.length?trainVisibleRows:(trainAllRows.length?[]:[...TRAIN_DEMO]);
+  const total=src.length,tp=Math.max(1,Math.ceil(total/trainPerPage));
+  if(trainPage>tp)trainPage=tp;
+  const start=(trainPage-1)*trainPerPage;
+  const rows=trainPerPage>=999999?src:src.slice(start,start+trainPerPage);
+  const rateCls=v=>{const n=parseFloat(v);return n>=90?'rate-ok':n>=70?'rate-warn':'rate-bad';};
+  const badgeCls={已完成:'badge-green',进行中:'badge-yellow',待跟进:'badge-red'};
+  document.getElementById('trainingTable').innerHTML=rows.map((r,i)=>`<tr>
+    <td>${r['日期']||'-'}</td><td>${r['培训主题']||'-'}</td><td>${r['讲师']||'-'}</td><td>${r['区域']||'-'}</td>
+    <td class="num">${r['参训人数']||'-'}</td><td class="num">${r['答疑数']||'-'}</td>
+    <td><span class="${rateCls(r['完成率'])}">${r['完成率']||'-'}</span></td>
+    <td><span class="badge ${badgeCls[r['状态']]||'badge-blue'}">${r['状态']||'-'}</span></td>
+  </tr>`).join('');
+  document.getElementById('trainPageInfo').textContent=`共 ${total} 条，第 ${trainPage}/${tp} 页`;
+  renderPageBtns('trainPageBtns',trainPage,tp,goTrainPage,trainPerPage);
+}
+function goTrainPage(p){const tp=Math.max(1,Math.ceil((trainVisibleRows.length||(TRAIN_DEMO.length))/trainPerPage));if(p<1||p>tp)return;trainPage=p;renderTrainPage();}
+
+/* ===== DEMO DATA ===== */
 const DEMO_ROWS=[
   {'站点名称':'深圳中心仓','站点类型':'南区分站','手机抽检量':181,'手机差异量':7,'手机差异率':3.87,'笔记本抽检量':18,'笔记本差异量':1,'笔记本差异率':5.56,'平板抽检量':20,'平板差异量':0,'平板差异率':0,'耳机抽检量':20,'耳机差异量':0,'耳机差异率':0},
   {'站点名称':'合肥库','站点类型':'南区分站','手机抽检量':194,'手机差异量':7,'手机差异率':3.61,'笔记本抽检量':30,'笔记本差异量':5,'笔记本差异率':16.67,'平板抽检量':0,'平板差异量':0,'平板差异率':'','耳机抽检量':14,'耳机差异量':0,'耳机差异率':0},
@@ -724,15 +804,22 @@ const DEMO_ROWS=[
   {'站点名称':'郑州库','站点类型':'北区分站','手机抽检量':150,'手机差异量':4,'手机差异率':2.67,'笔记本抽检量':25,'笔记本差异量':1,'笔记本差异率':4.00,'平板抽检量':2,'平板差异量':0,'平板差异率':0,'耳机抽检量':0,'耳机差异量':0,'耳机差异率':''},
 ];
 
-/* 初始加载示例数据 */
-allRows=[...DEMO_ROWS];filteredRows=[...DEMO_ROWS];
-renderOverview(filteredRows);renderDetailPage();buildRankFromData();updateTrendChart();
+/* 初始化 */
+(function init(){
+  allRows=[...DEMO_ROWS];filteredRows=[...DEMO_ROWS];
+  renderOverview(filteredRows);rebuildDetailFilters();renderDetailPage();buildRankFromData();updateTrendChart();
+  rebuildTrainFilters();renderTrainPage();
+  loadSettings();
+  // 初始化日期范围
+  const today=new Date().toISOString().slice(0,10);
+  const monthStart=today.slice(0,8)+'01';
+  document.getElementById('rankDateFrom').value=monthStart;
+  document.getElementById('rankDateTo').value=today;
+})();
 
 /* ===== CHART DEFAULTS ===== */
-Chart.defaults.color='#64748b';
-Chart.defaults.borderColor='rgba(200,210,230,0.5)';
-Chart.defaults.font.family="-apple-system,'PingFang SC','Microsoft YaHei',sans-serif";
-Chart.defaults.font.size=11;
+Chart.defaults.color='#64748b';Chart.defaults.borderColor='rgba(200,210,230,0.5)';
+Chart.defaults.font.family="-apple-system,'PingFang SC','Microsoft YaHei',sans-serif";Chart.defaults.font.size=11;
 
 /* ===== TRAINING CHARTS ===== */
 function initTrainingCharts(){
@@ -743,7 +830,7 @@ function initTrainingCharts(){
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:10}}},scales:{y:{grid:{color:'rgba(200,210,230,0.4)'},position:'left'},y1:{grid:{display:false},position:'right'}}}});
   new Chart(document.getElementById('chartQaTrend'),{type:'bar',data:{labels:wks,datasets:[
     {label:'答疑问题数',data:[320,380,410,355,460,420,490,412],backgroundColor:'rgba(5,150,105,0.2)',borderRadius:3,yAxisID:'y'},
-    {label:'完成率%',data:[88,90,93,87,95,91,94,92],type:'line',borderColor:'#059669',backgroundColor:'transparent',tension:.4,pointRadius:3,borderWidth:2,yAxisID:'y1'}
+    {label:'正确率%',data:[88,90,93,87,95,91,94,92],type:'line',borderColor:'#059669',backgroundColor:'transparent',tension:.4,pointRadius:3,borderWidth:2,yAxisID:'y1'}
   ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:10}}},scales:{y:{grid:{color:'rgba(200,210,230,0.4)'},position:'left'},y1:{grid:{display:false},position:'right',max:100,ticks:{callback:v=>v+'%'}}}}});
   const rgs=[{name:'深圳中心仓',val:87},{name:'南京库',val:74},{name:'武汉库',val:68},{name:'成都库',val:62},{name:'杭州库',val:57},{name:'昆明库',val:51},{name:'重庆库',val:45},{name:'郑州库',val:39},{name:'长沙库',val:33},{name:'济南库',val:28}];
   const mx=rgs[0].val;
@@ -757,11 +844,7 @@ function initTrainingCharts(){
 }
 
 /* ===== TOAST ===== */
-function showToast(msg){
-  const t=document.getElementById('toast');
-  t.textContent=msg;t.style.display='block';
-  clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',3500);
-}
+function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',3500);}
 </script>
 </body>
 </html>
