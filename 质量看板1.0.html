@@ -29,8 +29,9 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .dot.green{background:#10b981;}.dot.amber{background:#f59e0b;}.dot.red{background:#ef4444;}
 .ver-row{display:flex;align-items:center;gap:7px;margin-top:7px;padding-top:7px;border-top:1px solid rgba(200,210,230,0.4);}
 .ver{font-size:10px;color:#94a3b8;}
-.gear-btn{width:18px;height:18px;cursor:pointer;color:#94a3b8;display:none;flex-shrink:0;transition:color .18s;}
+.gear-btn{width:18px;height:18px;cursor:pointer;color:#94a3b8;flex-shrink:0;transition:color .18s;}
 .gear-btn:hover{color:#2563eb;}
+/* settings btn - see inline style */
 
 /* MAIN */
 #main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
@@ -349,6 +350,82 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
 .train-rank-card{border-radius:12px;padding:14px 16px;background:rgba(255,255,255,0.65);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.9);box-shadow:0 2px 10px rgba(100,120,180,0.08);}
 .train-rank-title{font-size:12px;font-weight:600;color:#475569;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
 
+
+/* ===== MICRO-ANIMATIONS ===== */
+
+/* Nav items: slide-in icon + color pulse on active */
+.nav-item{transition:all .2s cubic-bezier(.4,0,.2,1);}
+.nav-item:hover{transform:translateX(3px);}
+.nav-item.active{transform:translateX(3px);}
+.nav-item .nav-icon{transition:transform .2s, color .2s;}
+.nav-item:hover .nav-icon{transform:scale(1.18);}
+.nav-item.active .nav-icon{transform:scale(1.15);}
+
+/* Ripple effect for all clickable buttons */
+.nav-item,.sync-btn,.upload-topbtn,.save-btn,.role-btn,.filter-chip,.add-btn{
+  position:relative; overflow:hidden;
+}
+@keyframes ripple{
+  from{transform:scale(0);opacity:.4;}
+  to{transform:scale(3);opacity:0;}
+}
+.ripple-effect{
+  position:absolute;border-radius:50%;
+  width:60px;height:60px;margin:-30px;
+  background:rgba(37,99,235,0.25);
+  pointer-events:none;
+  animation:ripple .5s ease-out forwards;
+}
+
+/* Filter chips: bounce press */
+.filter-chip{transition:all .15s cubic-bezier(.4,0,.2,1);}
+.filter-chip:hover{transform:translateY(-1px);box-shadow:0 3px 8px rgba(37,99,235,0.2);}
+.filter-chip:active{transform:translateY(0) scale(.96);}
+.filter-chip.active{animation:chip-pop .2s cubic-bezier(.4,0,.2,1);}
+@keyframes chip-pop{0%{transform:scale(.94)}60%{transform:scale(1.06)}100%{transform:scale(1)}}
+
+/* Cards: lift on hover */
+.card,.ov-card,.kpi-card,.ds-card-m{transition:transform .2s, box-shadow .2s;}
+.card:hover,.ov-card:hover,.kpi-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(100,120,180,0.14);}
+
+/* Buttons: press feedback */
+.save-btn,.sync-btn,.upload-topbtn,.role-btn{transition:all .15s cubic-bezier(.4,0,.2,1);}
+.save-btn:hover,.sync-btn:hover,.upload-topbtn:hover{transform:translateY(-1px);box-shadow:0 4px 12px rgba(37,99,235,0.25);}
+.save-btn:active,.sync-btn:active,.upload-topbtn:active{transform:translateY(0) scale(.97);}
+
+/* Rank items: slide in */
+@keyframes slide-in-left{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:none}}
+.rank-item{animation:slide-in-left .25s ease both;}
+.rank-item:nth-child(1){animation-delay:.03s}
+.rank-item:nth-child(2){animation-delay:.06s}
+.rank-item:nth-child(3){animation-delay:.09s}
+.rank-item:nth-child(4){animation-delay:.12s}
+.rank-item:nth-child(5){animation-delay:.15s}
+
+/* Page transition */
+.page.active{animation:page-in .22s ease both;}
+@keyframes page-in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* Overview cards stagger */
+.ov-card{animation:page-in .28s ease both;}
+.ov-card:nth-child(1){animation-delay:.04s}
+.ov-card:nth-child(2){animation-delay:.08s}
+.ov-card:nth-child(3){animation-delay:.12s}
+.ov-card:nth-child(4){animation-delay:.16s}
+.ov-card:nth-child(5){animation-delay:.20s}
+
+/* Settings modal open */
+.modal-overlay.open .settings-modal{animation:modal-in .22s cubic-bezier(.4,0,.2,1) both;}
+@keyframes modal-in{from{opacity:0;transform:scale(.97) translateY(-8px)}to{opacity:1;transform:none}}
+
+/* Sidebar logo shimmer */
+.sidebar-logo .brand::after{
+  content:'';position:absolute;top:0;left:-100%;width:50%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,0.6),transparent);
+  animation:shimmer 3s ease-in-out infinite;
+}
+@keyframes shimmer{0%{left:-100%}100%{left:150%}}
+
 </style>
 </head>
 <body>
@@ -357,7 +434,7 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
 <nav id="sidebar">
   <div class="sidebar-logo">
     <div class="brand">培训部数据看板</div>
-    <div class="sub">ZEYE · 内部质检平台</div>
+    <div class="sub">ZHUAN · 培训内部数据平台</div>
   </div>
   <div class="nav-section">数据模块</div>
   <div class="nav-item active" onclick="switchPage('quality',this)">
@@ -376,6 +453,10 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
     <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
     培训答疑数据
   </div>
+  <div class="nav-item" id="perfNavItem" onclick="handlePerfNavClick(this)" style="opacity:0.45;">
+    <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+    培训师绩效分析
+  </div>
   <div class="sidebar-footer">
     <div style="font-size:11px;color:#94a3b8;font-weight:600;letter-spacing:1px;margin-bottom:7px;">权限等级</div>
     <div style="display:flex;gap:5px;margin-bottom:9px;">
@@ -391,10 +472,8 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
     </div>
     <div id="cloudStatus" class="status-dot"><span class="dot" id="statusDot"></span><span id="statusText">使用者模式</span></div>
     <div class="ver-row">
-      <svg id="gearBtn" class="gear-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" onclick="openSettings()">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/>
-      </svg>
-      <span class="ver">v1.5 · 培训部看板</span>
+      <button id="settingsBtn" style="display:none;font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid rgba(124,58,237,0.4);background:rgba(124,58,237,0.08);color:#7c3aed;cursor:pointer;font-family:inherit;" onclick="openSettings()">⚙ 设置</button>
+      <span class="ver">v1.8 · 培训部看板</span>
     </div>
   </div>
 </nav>
@@ -418,43 +497,43 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
 
     <!-- 质量数据 -->
     <div class="page active" id="page-quality">
-      <div class="filter-bar glass">
+
+      <!-- 统一筛选栏 -->
+      <div class="filter-bar glass" style="margin-bottom:14px;">
         <span class="filter-label">中心仓</span>
-        <select id="filterWarehouse" class="filter-select" onchange="applyFilters()">
+        <select id="filterWarehouse" class="filter-select" onchange="applyGlobalFilter()">
           <option value="全部">全部</option>
           <option>南京库</option><option>南昌库</option><option>合肥库</option><option>成都库</option><option>昆明库</option><option>杭州库</option><option>武汉库</option><option>沈阳库</option><option>济南库</option><option>深圳中心仓</option><option>石家庄库</option><option>西安库</option><option>郑州库</option><option>重庆库</option><option>长沙库</option>
         </select>
+        <div class="filter-div"></div>
+        <span class="filter-label">日期</span>
+        <input type="date" id="globalDateFrom" class="filter-input" onchange="applyGlobalFilter()">
+        <span style="font-size:11px;color:#94a3b8;">至</span>
+        <input type="date" id="globalDateTo" class="filter-input" onchange="applyGlobalFilter()">
+        <div class="filter-div"></div>
+        <span class="filter-label">品类</span>
+        <span class="filter-chip active" onclick="setGCat(this,'全部')">全部</span>
+        <span class="filter-chip" onclick="setGCat(this,'手机')">手机</span>
+        <span class="filter-chip" onclick="setGCat(this,'笔记本')">笔记本</span>
+        <span class="filter-chip" onclick="setGCat(this,'平板')">平板</span>
+        <span class="filter-chip" onclick="setGCat(this,'耳机')">耳机</span>
+        <span class="filter-chip" onclick="setGCat(this,'相机')">相机</span>
+        <div class="filter-div"></div>
+        <span class="filter-label">维度</span>
+        <span class="filter-chip active" id="gPM" onclick="setGPeriod(this,'本月')">本月</span>
+        <span class="filter-chip" id="gPW" onclick="setGPeriod(this,'本周')">本周</span>
+        <span class="filter-chip" id="gPLW" onclick="setGPeriod(this,'上周')">上周</span>
       </div>
 
-      <!-- 本月总览 -->
-      <div class="section-hd"><div class="section-hd-left">本月总览</div></div>
-      <div class="overview-cards" id="overviewCards">
-        <!-- 动态渲染 -->
-      </div>
+      <!-- 质量数据总览 -->
+      <div class="section-hd"><div class="section-hd-left">质量数据总览</div></div>
+      <div class="overview-cards" id="overviewCards"></div>
 
-      <!-- 排行榜 + 趋势 -->
-      <div class="section-hd">
-        <div class="section-hd-left">全国中心仓客观执行差异率排行榜</div>
-        <div class="section-hd-btns">
-          <select id="rankWarehouse" class="filter-select" style="font-size:11px;padding:3px 8px;" onchange="updateRankAndTrend()">
-            <option value="全部">全部仓库</option>
-            <option>南京库</option><option>南昌库</option><option>合肥库</option><option>成都库</option><option>昆明库</option><option>杭州库</option><option>武汉库</option><option>沈阳库</option><option>济南库</option><option>深圳中心仓</option><option>石家庄库</option><option>西安库</option><option>郑州库</option><option>重庆库</option><option>长沙库</option>
-          </select>
-          <span class="filter-chip active" id="rankCatPhone" onclick="setRankCat(this,'手机')">手机</span>
-          <span class="filter-chip" id="rankCatLaptop" onclick="setRankCat(this,'笔记本')">笔记本</span>
-          <div class="filter-div"></div>
-          <span class="filter-chip" id="rankPW" onclick="setRankPeriod(this,'本周')">本周</span>
-          <span class="filter-chip" id="rankPLW" onclick="setRankPeriod(this,'上周')">上周</span>
-          <span class="filter-chip active" id="rankPM" onclick="setRankPeriod(this,'本月')">本月</span>
-          <div class="filter-div"></div>
-          <input type="date" id="rankDateFrom" class="filter-input" style="font-size:11px;padding:3px 8px;" onchange="updateRankAndTrend()">
-          <span style="font-size:11px;color:#94a3b8;">至</span>
-          <input type="date" id="rankDateTo" class="filter-input" style="font-size:11px;padding:3px 8px;" onchange="updateRankAndTrend()">
-        </div>
-      </div>
+      <!-- 站点排行榜（客观执行）+ 趋势 -->
+      <div class="section-hd"><div class="section-hd-left">站点排行榜（客观执行）</div></div>
       <div class="rank-grid">
         <div class="card">
-          <div class="chart-title"><span>排行榜 · <span id="rankCatLabel">手机</span> · <span id="rankPeriodLabel">本月</span></span></div>
+          <div class="chart-title"><span id="rankSubtitle">排行榜 · 手机 · 本月</span></div>
           <div id="rankList"></div>
         </div>
         <div class="card">
@@ -469,19 +548,61 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
         </div>
       </div>
 
+      <!-- 对比分析 -->
+      <div class="section-hd">
+        <div class="section-hd-left">对比分析</div>
+        <div class="section-hd-btns" style="font-size:11px;color:#94a3b8;">同维度左右选不同时间段或中心仓 · 图表类型自动匹配</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:16px;">
+        <div class="card">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+            <select class="filter-select" id="cmpDimL" onchange="renderCompare()" style="font-size:12px;">
+              <option value="site">中心仓</option><option value="person">人维度</option>
+              <option value="l1">一级项</option><option value="l2">二级项</option>
+              <option value="l3">三级项</option><option value="brand">品牌</option>
+            </select>
+            <input type="date" id="cmpDateFromL" class="filter-input" style="font-size:11px;" onchange="renderCompare()">
+            <span style="font-size:11px;color:#94a3b8;">至</span>
+            <input type="date" id="cmpDateToL" class="filter-input" style="font-size:11px;" onchange="renderCompare()">
+            <select id="cmpWhL" class="filter-select" style="font-size:11px;" onchange="renderCompare()">
+              <option value="全部">全部中心仓</option>
+              <option>南京库</option><option>南昌库</option><option>合肥库</option><option>成都库</option><option>昆明库</option><option>杭州库</option><option>武汉库</option><option>沈阳库</option><option>济南库</option><option>深圳中心仓</option><option>石家庄库</option><option>西安库</option><option>郑州库</option><option>重庆库</option><option>长沙库</option>
+            </select>
+          </div>
+          <div class="chart-wrap" style="height:220px;"><canvas id="chartCmpL"></canvas></div>
+        </div>
+        <div class="card">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;flex-wrap:wrap;">
+            <select class="filter-select" id="cmpDimR" onchange="renderCompare()" style="font-size:12px;">
+              <option value="site">中心仓</option><option value="person">人维度</option>
+              <option value="l1">一级项</option><option value="l2">二级项</option>
+              <option value="l3">三级项</option><option value="brand">品牌</option>
+            </select>
+            <input type="date" id="cmpDateFromR" class="filter-input" style="font-size:11px;" onchange="renderCompare()">
+            <span style="font-size:11px;color:#94a3b8;">至</span>
+            <input type="date" id="cmpDateToR" class="filter-input" style="font-size:11px;" onchange="renderCompare()">
+            <select id="cmpWhR" class="filter-select" style="font-size:11px;" onchange="renderCompare()">
+              <option value="全部">全部中心仓</option>
+              <option>南京库</option><option>南昌库</option><option>合肥库</option><option>成都库</option><option>昆明库</option><option>杭州库</option><option>武汉库</option><option>沈阳库</option><option>济南库</option><option>深圳中心仓</option><option>石家庄库</option><option>西安库</option><option>郑州库</option><option>重庆库</option><option>长沙库</option>
+            </select>
+          </div>
+          <div class="chart-wrap" style="height:220px;"><canvas id="chartCmpR"></canvas></div>
+        </div>
+      </div>
+
       <!-- 明细数据 -->
       <div class="section-hd"><div class="section-hd-left">明细数据</div></div>
       <div class="table-wrap">
         <div class="table-toolbar">
           <div class="table-filters">
-            <select class="col-filter" id="cf_site" onchange="applyDetailFilter()"><option value="">全部站点</option></select>
+            <select class="col-filter" id="cf_site" onchange="applyDetailFilter()"><option value="">全部中心仓</option></select>
             <select class="col-filter" id="cf_type" onchange="applyDetailFilter()"><option value="">全部类型</option></select>
             <select class="col-filter" id="cf_phone_rate" onchange="applyDetailFilter()" style="max-width:130px;"><option value="">手机差异率</option><option value="good">≤2% 良好</option><option value="warn">2%-5% 一般</option><option value="bad">&gt;5% 较差</option></select>
             <select class="col-filter" id="cf_laptop_rate" onchange="applyDetailFilter()" style="max-width:130px;"><option value="">笔记本差异率</option><option value="good">≤2% 良好</option><option value="warn">2%-5% 一般</option><option value="bad">&gt;5% 较差</option></select>
           </div>
           <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b;">
             每页 <select class="per-page-select" id="perPageSelect" onchange="setPerPage()">
-              <option value="10" selected>10 行</option><option value="20">20 行</option><option value="50">50 行</option><option value="100">100 行</option><option value="200">200 行</option><option value="999999">所有</option>
+              <option value="10" selected>10 行</option><option value="20">20 行</option><option value="50">50 行</option><option value="100">100 行</option><option value="999999">所有</option>
             </select>
           </div>
         </div>
@@ -517,11 +638,11 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
         <span class="filter-label">仓库</span>
         <div class="multiselect-wrap" id="trainWhWrap">
           <div class="multiselect-btn" onclick="toggleMs('trainWhDrop')" id="trainWhBtn">
-            <span id="trainWhLabel">全部仓库</span>
+            <span id="trainWhLabel">全部中心仓</span>
             <span style="font-size:10px;color:#94a3b8;">▼</span>
           </div>
           <div class="multiselect-dropdown" id="trainWhDrop">
-            <label class="ms-option ms-all"><input type="checkbox" id="trainWhAll" checked onchange="toggleAllWh('train',this)">全部仓库</label>
+            <label class="ms-option ms-all"><input type="checkbox" id="trainWhAll" checked onchange="toggleAllWh('train',this)">全部中心仓</label>
             <label class="ms-option"><input type="checkbox" class="train-wh-cb" value="南京库" checked onchange="updateWhLabel('train')">南京库</label>
             <label class="ms-option"><input type="checkbox" class="train-wh-cb" value="南昌库" checked onchange="updateWhLabel('train')">南昌库</label>
             <label class="ms-option"><input type="checkbox" class="train-wh-cb" value="合肥库" checked onchange="updateWhLabel('train')">合肥库</label>
@@ -637,18 +758,93 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
       </div>
     </div>
 
+    <!-- 培训师绩效分析 -->
+    <div class="page" id="page-performance">
+      <!-- 无权限提示（使用者模式）-->
+      <div id="perfLockedScreen" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:16px;text-align:center;">
+        <div style="font-size:48px;opacity:.25;">📊</div>
+        <div style="font-size:16px;font-weight:700;color:#334155;">培训师绩效分析</div>
+        <div style="font-size:12px;color:#94a3b8;max-width:320px;line-height:1.8;">
+          <strong style="color:#475569;">使用者</strong>：可凭个人密钥查看自己绩效，进行科学分析和复盘<br>
+          <strong style="color:#475569;">创造者</strong>：可查看全体培训师绩效，支持横向对比与整体管理<br>
+          <span style="font-size:11px;margin-top:4px;display:block;">如需查看个人绩效，请联系创造者获取个人密钥</span>
+        </div>
+        <button onclick="setRole('creator')" style="font-size:13px;padding:9px 24px;border-radius:10px;border:1px solid #2563eb;background:rgba(37,99,235,0.08);color:#2563eb;cursor:pointer;font-weight:600;">切换创造者模式</button>
+      </div>
+
+      <!-- 正常内容（创造者） -->
+      <div id="perfContent" style="display:none;">
+        <!-- 筛选栏 -->
+        <div class="filter-bar glass" style="margin-bottom:16px;">
+          <span class="filter-label">时间范围</span>
+          <input type="month" id="perfDateFrom" class="filter-input" onchange="renderPerf()">
+          <span style="font-size:11px;color:#94a3b8;">至</span>
+          <input type="month" id="perfDateTo" class="filter-input" onchange="renderPerf()">
+          <div class="filter-div"></div>
+          <span class="filter-label">培训师</span>
+          <select id="perfTrainerSel" class="filter-select" onchange="renderPerf()"><option value="全部">全部培训师</option></select>
+          <div class="filter-div"></div>
+          <span class="filter-chip active" onclick="setPerfGrade(this,'全部')">全部</span>
+          <span class="filter-chip" onclick="setPerfGrade(this,'A')">A 级</span>
+          <span class="filter-chip" onclick="setPerfGrade(this,'B')">B 级</span>
+          <span class="filter-chip" onclick="setPerfGrade(this,'C')">C 级</span>
+        </div>
+
+        <!-- KPI -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;">
+          <div class="card" style="text-align:center;"><div style="font-size:11px;color:#64748b;margin-bottom:5px;">参与人数</div><div style="font-size:26px;font-weight:800;color:#2563eb;" id="perfTotal">—</div></div>
+          <div class="card" style="text-align:center;background:rgba(254,243,199,0.5);border-color:rgba(217,119,6,0.2);"><div style="font-size:11px;color:#92400e;margin-bottom:5px;">🥇 A 级</div><div style="font-size:26px;font-weight:800;color:#d97706;" id="perfA">—</div><div style="font-size:11px;color:#94a3b8;" id="perfARate"></div></div>
+          <div class="card" style="text-align:center;background:rgba(219,234,254,0.5);border-color:rgba(37,99,235,0.15);"><div style="font-size:11px;color:#1e40af;margin-bottom:5px;">🥈 B 级</div><div style="font-size:26px;font-weight:800;color:#2563eb;" id="perfB">—</div><div style="font-size:11px;color:#94a3b8;" id="perfBRate"></div></div>
+          <div class="card" style="text-align:center;background:rgba(241,245,249,0.8);"><div style="font-size:11px;color:#334155;margin-bottom:5px;">🥉 C 级</div><div style="font-size:26px;font-weight:800;color:#64748b;" id="perfC">—</div><div style="font-size:11px;color:#94a3b8;" id="perfCRate"></div></div>
+        </div>
+
+        <!-- 排名 + 雷达图 -->
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
+          <div class="card"><div class="chart-title" style="margin-bottom:12px;">培训师综合排名</div><div id="perfRankList"><div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px;">请上传绩效数据</div></div></div>
+          <div class="card"><div class="chart-title">维度分析 · <span id="perfRadarName" style="color:#2563eb;">点击左侧查看</span></div><div class="chart-wrap" style="height:230px;"><canvas id="chartPerfRadar"></canvas></div></div>
+        </div>
+
+        <!-- 明细表 -->
+        <div class="section-hd"><div class="section-hd-left">绩效明细</div></div>
+        <div class="table-wrap">
+          <div class="table-scroll">
+            <table style="min-width:1000px;">
+              <thead><tr>
+                <th>排名</th><th>培训师</th><th>所属中心仓</th><th>入职时间</th><th>统计月份</th>
+                <th class="num">中心仓质量<br><small>满15</small></th>
+                <th class="num">新人培训<br><small>满15</small></th>
+                <th class="num">授课质量<br><small>满5</small></th>
+                <th class="num">双周考<br><small>满15</small></th>
+                <th class="num">上级评价<br><small>满25</small></th>
+                <th class="num">业务评价<br><small>满10</small></th>
+                <th class="num">结果指标<br><small>满15</small></th>
+                <th class="num">主动分享<br><small>加分5</small></th>
+                <th class="num">综合得分</th><th>等级</th>
+              </tr></thead>
+              <tbody id="perfTableBody"><tr><td colspan="15" style="text-align:center;padding:20px;color:#94a3b8;">请上传绩效数据</td></tr></tbody>
+            </table>
+          </div>
+          <div class="pagination"><div class="page-info" id="perfPageInfo">共 0 条</div><div class="page-btns" id="perfPageBtns"></div></div>
+        </div>
+
+        <!-- 历史趋势 -->
+        <div class="section-hd" style="margin-top:14px;"><div class="section-hd-left">历史得分趋势</div></div>
+        <div class="card"><div class="chart-title">各培训师综合得分走势（按月）</div><div class="chart-wrap" style="height:200px;"><canvas id="chartPerfTrend"></canvas></div></div>
+      </div>
+    </div>
+
     <!-- 全国质检红黑榜 -->
     <div class="page" id="page-ranking">
       <!-- 筛选栏 -->
       <div class="filter-bar glass" style="margin-bottom:16px;">
-        <span class="filter-label">仓库筛选</span>
+        <span class="filter-label">中心仓筛选</span>
         <div class="multiselect-wrap" id="rankWhWrap">
           <div class="multiselect-btn" onclick="toggleMs('rankWhDrop')" id="rankWhBtn">
-            <span id="rankWhLabel">全部仓库</span>
+            <span id="rankWhLabel">全部中心仓</span>
             <span style="font-size:10px;color:#94a3b8;">▼</span>
           </div>
           <div class="multiselect-dropdown" id="rankWhDrop">
-            <label class="ms-option ms-all"><input type="checkbox" id="rankWhAll" checked onchange="toggleAllWh('rank',this)">全部仓库</label>
+            <label class="ms-option ms-all"><input type="checkbox" id="rankWhAll" checked onchange="toggleAllWh('rank',this)">全部中心仓</label>
             <label class="ms-option"><input type="checkbox" class="rank-wh-cb" value="南京库" checked onchange="updateWhLabel('rank')">南京库</label>
             <label class="ms-option"><input type="checkbox" class="rank-wh-cb" value="南昌库" checked onchange="updateWhLabel('rank')">南昌库</label>
             <label class="ms-option"><input type="checkbox" class="rank-wh-cb" value="合肥库" checked onchange="updateWhLabel('rank')">合肥库</label>
@@ -745,9 +941,18 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
 
     <!-- 数据源配置 -->
     <div class="modal-pane" id="mpane-datasource">
+      <!-- 怎么用提示（可关闭，只显示一次）-->
+      <div id="dsHowtoTip" style="background:rgba(37,99,235,0.06);border:1px solid rgba(37,99,235,0.15);border-radius:10px;padding:11px 14px;margin-bottom:14px;display:flex;align-items:flex-start;gap:10px;">
+        <span style="font-size:16px;flex-shrink:0;">💡</span>
+        <div style="flex:1;font-size:12px;color:#475569;line-height:1.7;">
+          每个卡片对应看板里一块数据。找到要更新的那块，点<strong>「选择文件」</strong>上传原始 Excel，系统自动筛选整理，再点<strong>「上传到云上服务器」</strong>完成。建议先点<strong>「预览清洗结果」</strong>确认数据正确再正式上传。
+        </div>
+        <button onclick="dismissHowto()" style="flex-shrink:0;width:20px;height:20px;border-radius:50%;border:none;background:rgba(100,116,139,0.15);color:#64748b;cursor:pointer;font-size:12px;line-height:1;" title="不再显示">✕</button>
+      </div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
-        <div style="font-size:12px;color:#94a3b8;">配置各模块的取数规则、列筛选、存储策略。上传文件后自动按规则清洗再推送到 GitHub。</div>
+        <div style="font-size:12px;color:#94a3b8;">配置各模块的取数规则、列筛选、存储策略。上传文件后自动按规则清洗再推送到云上服务器。</div>
         <div style="display:flex;gap:7px;">
+          <button class="save-btn" style="padding:6px 14px;font-size:12px;background:rgba(239,68,68,0.07);color:#dc2626;border:1px solid rgba(239,68,68,0.25);" onclick="resetDsConfig()">↺ 恢复默认</button>
           <button class="save-btn" style="padding:6px 14px;font-size:12px;" onclick="exportDsConfig()">导出配置</button>
           <label class="save-btn" for="importDsCfg" style="padding:6px 14px;font-size:12px;cursor:pointer;background:rgba(37,99,235,0.1);color:#2563eb;border:1px solid rgba(37,99,235,0.3);">导入配置</label>
           <input type="file" id="importDsCfg" accept=".json" style="display:none;" onchange="importDsConfig(this)">
@@ -804,6 +1009,7 @@ let currentPage=1, perPage=10;
 let rankCat='手机', rankPeriod='本月', trendCmp='上周';
 let trendChart=null;
 let trainAllRows=[], trainVisibleRows=[], trainPage=1, trainPerPage=10;
+var srcFileCache={}; // keyed by srcId -> {wb, fileName}
 
 /* ===== UPDATE TIME ===== */
 function setUpdateTime(iso){
@@ -817,22 +1023,24 @@ function setUpdateTime(iso){
 function setRole(role){
   const uB=document.getElementById('roleUser'),cB=document.getElementById('roleCreator');
   const panel=document.getElementById('creatorPanel'),topBtn=document.getElementById('uploadTopBtn');
-  const gear=document.getElementById('gearBtn');
+  var gear=document.getElementById('settingsBtn');
   const trainUp=document.getElementById('trainUploadBtn'),qaUp=document.getElementById('qaUploadBtn');
   if(role==='user'){
     uB.className='role-btn active-user';cB.className='role-btn';
     panel.style.display='none';topBtn.style.display='none';
-    gear.style.display='none';
+    if(gear){gear.style.display='none';}
     if(trainUp)trainUp.style.display='none';if(qaUp)qaUp.style.display='none';
     setStatus('使用者模式','');localStorage.setItem('gh_role','user');
+    updatePerfNavState('user');
   } else {
     cB.className='role-btn active-creator';uB.className='role-btn';
     panel.style.display=getToken()?'none':'block';
     topBtn.style.display='inline-flex';
-    gear.style.display='block';
+    if(gear){gear.style.display='inline-flex';}
     if(trainUp)trainUp.style.display='inline-flex';if(qaUp)qaUp.style.display='inline-flex';
     setStatus(getToken()?'创造者已就绪':'请输入密钥',getToken()?'green':'amber');
     localStorage.setItem('gh_role','creator');
+    updatePerfNavState('creator');
   }
 }
 function setStatus(t,c){document.getElementById('statusText').textContent=t;const d=document.getElementById('statusDot');d.className='dot'+(c?' '+c:'');}
@@ -849,24 +1057,32 @@ function verifyToken(){
     else{setStatus('密钥无效','red');localStorage.removeItem('gh_token');showToast('✗ 密钥无效');}
   }).catch(()=>setStatus('网络异常','red'));
 }
-function initAuth(){const r=localStorage.getItem('gh_role')||'user';setRole(r);if(r==='creator'&&getToken())verifyToken();}
+function initAuth(){const r=localStorage.getItem('gh_role')||'user';setRole(r);setTimeout(function(){updatePerfNavState(r);},50);if(r==='creator'&&getToken())verifyToken();}
 initAuth();
 
 /* ===== PAGE SWITCH ===== */
 function switchPage(page,el){
-  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));
-  document.getElementById('page-'+page).classList.add('active');el.classList.add('active');
-  const titles={quality:'抽检质量数据看板',audit:'主板审核差异',ranking:'全国质检红黑榜',training:'培训答疑数据看板'};
-  document.getElementById('pageTitle').textContent=titles[page]||'';
-  const topBtn=document.getElementById('uploadTopBtn');
-  topBtn.style.display=(page==='quality'&&localStorage.getItem('gh_role')==='creator')?'inline-flex':'none';
-  if(page==='training'&&!window._trainingChartsInit){setTimeout(initTrainingCharts,80);window._trainingChartsInit=true;}
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
+  document.querySelectorAll('.nav-item').forEach(function(n){n.classList.remove('active');});
+  var pg=document.getElementById('page-'+page);
+  if(pg) pg.classList.add('active');
+  if(el) el.classList.add('active');
+  var titles={quality:'抽检质量数据看板',audit:'主板审核差异',ranking:'全国质检红黑榜',performance:'培训师绩效分析',training:'培训答疑数据看板'};
+  var pt=document.getElementById('pageTitle');if(pt) pt.textContent=titles[page]||'';
+  var topBtn=document.getElementById('uploadTopBtn');
+  if(topBtn) topBtn.style.display=(page==='quality'&&localStorage.getItem('gh_role')==='creator')?'inline-flex':'none';
   if(page==='ranking') renderRankingBoard();
+  if(page==='training'&&!window._trainInit){setTimeout(initTrainingCharts,80);window._trainInit=true;}
+  if(page==='performance'){
+    var isCreator=localStorage.getItem('gh_role')==='creator';
+    var ls=document.getElementById('perfLockedScreen');
+    var pc=document.getElementById('perfContent');
+    if(ls) ls.style.display=isCreator?'none':'flex';
+    if(pc) pc.style.display=isCreator?'block':'none';
+    if(isCreator){updatePerfFilters();renderPerf();}
+  }
 }
 
-/* ===== MARQUEE ===== */
-let slogans=['欢迎使用培训部数据看板 · 数据驱动，精益求精'];
 function refreshMarquee(){document.getElementById('marqueeText').textContent=slogans.join('   ·   ');}
 
 /* ===== SETTINGS MODAL ===== */
@@ -876,26 +1092,154 @@ let debugWb = null;
 let dsUploadHistory = JSON.parse(localStorage.getItem('ds_upload_history')||'[]');
 
 const DS_DEFAULTS = [
-  {id:'ds1',name:'表1 · QA差异率（站点维度）',desc:'手机-质量邮件 表1',fileName:'',sheetName:'Sheet0',columns:[],filters:[],mode:'overwrite',targetKey:'quality_site_data',rowCount:0,lastUpload:'',hint:'建议：A抽检日期 C站点名称 E品类名称 R总抽检量 S总客观差异量 T总客观差异率'},
-  {id:'ds2',name:'表2 · 执行客观差异率（工程师维度）',desc:'手机-质量邮件 表2，红黑榜人员数据，每日叠加',fileName:'',sheetName:'Sheet0',columns:[],filters:[],mode:'append',targetKey:'quality_engineer_data',rowCount:0,lastUpload:'',hint:'建议：A站点 B质检操作人 D合计抽检量 E合计客观执行问题差异量'},
-  {id:'ds5',name:'表5 · 日维度差异明细（站点维度）',desc:'手机-质量邮件 表5，需筛选，每日叠加',fileName:'',sheetName:'Sheet0',columns:[],filters:[{col:'策略类别',op:'equals',val:'大盘评估/站点'},{col:'主客观问题分类',op:'contains',val:'客观问题'}],mode:'append',targetKey:'quality_detail_data',rowCount:0,lastUpload:'',hint:'建议：A日期 E站点名称 G品类名称 L策略类别 N一级项名称 V原操作人名称 Y主客观问题分类 Z问题类型 AA抽检判定的问题类型'},
-  {id:'ds6',name:'表6 · 日维度抽检明细（站点维度）',desc:'四品类-质量邮件，抽检明细，每日叠加',fileName:'',sheetName:'Sheet0',columns:[],filters:[],mode:'append',targetKey:'quality_inspect_data',rowCount:0,lastUpload:'',hint:'建议：A质检码 D类目 F品牌 H型号 K站点 M质检人 Q质检时间 U是否抽检差异'},
+  {
+    id:'ds_quality_overview', icon:'📊',
+    name:'抽检质量数据 · 本月总览和排行榜',
+    desc:'更新后：首页5个品类卡片、全国站点排行榜、趋势图',
+    mode:'overwrite', targetKey:'quality_site_data', rowCount:0, lastUpload:'',
+    fileSources:[
+      {id:'src_q1',label:'文件① · 表1（抽检量来源）',
+       fileName:'',sheetName:'Sheet0',matchKeyword:'QA差异率',
+       columns:['抽检日期','站点名称','品类名称','总抽检量'],
+       filters:[]},
+      {id:'src_q5',label:'文件② · 表5（执行问题差异量）',
+       fileName:'',sheetName:'Sheet0',matchKeyword:'日维度差异明细',
+       columns:['日期','站点名称','品类名称','策略类别','主客观问题分类','抽检判定的问题类型'],
+       filters:[
+         {col:'策略类别',op:'equals',val:'大盘评估/站点'},
+         {col:'主客观问题分类',op:'contains',val:'客观问题'},
+         {col:'抽检判定的问题类型',op:'equals',val:'执行问题'}
+       ]}
+    ]
+  },
+  {
+    id:'ds_ranking', icon:'🏆',
+    name:'全国质检红黑榜 · 检验员差异率排名',
+    desc:'更新后：红黑榜人员卡片、本月/本年触发次数。差异率=差异量÷抽检量自动计算',
+    mode:'append', targetKey:'quality_engineer_data', rowCount:0, lastUpload:'',
+    fileSources:[
+      {id:'src_r1',label:'文件① · 表2（检验员数据）',
+       fileName:'',sheetName:'Sheet0',matchKeyword:'执行客观差异率',
+       columns:['站点','质检操作人','合计抽检量','合计客观执行问题差异量'],
+       filters:[]}
+    ]
+  },
+  {
+    id:'ds_detail', icon:'📋',
+    name:'抽检质量数据 · 明细数据表格',
+    desc:'更新后：明细表格，可按站点/差异率筛选每条质检记录。自动筛选客观执行问题',
+    mode:'append', targetKey:'quality_detail_data', rowCount:0, lastUpload:'',
+    fileSources:[
+      {id:'src_d5',label:'文件① · 表5（差异明细）',
+       fileName:'',sheetName:'Sheet0',matchKeyword:'日维度差异明细',
+       columns:['日期','质检码','站点名称','品类名称','品牌名称','型号名称','策略类别','一级项名称','二级项名称','原三级项名称','新三级项名称','原操作人名称','主客观问题分类','问题类型','抽检判定的问题类型'],
+       filters:[
+         {col:'策略类别',op:'equals',val:'大盘评估/站点'},
+         {col:'主客观问题分类',op:'contains',val:'客观问题'},
+         {col:'抽检判定的问题类型',op:'equals',val:'执行问题'}
+       ]}
+    ]
+  },
+  {
+    id:'ds_inspect', icon:'🔍',
+    name:'抽检质量数据 · 四品类抽检明细',
+    desc:'更新后：笔记本/平板/耳机/相机的抽检量和差异情况',
+    mode:'append', targetKey:'quality_inspect_data', rowCount:0, lastUpload:'',
+    fileSources:[
+      {id:'src_i6',label:'文件① · 表6（四品类明细）',
+       fileName:'',sheetName:'Sheet0',matchKeyword:'抽检明细_站点',
+       columns:['质检码','类目','品牌','型号','策略类别','站点','质检人','质检时间','是否抽检差异'],
+       filters:[]}
+    ]
+  },
+  {
+    id:'ds_train', icon:'📚',
+    name:'培训答疑数据 · 培训场次和参训人次',
+    desc:'更新后：培训场次排名、近8周趋势图、培训记录明细表',
+    mode:'append', targetKey:'training_data', rowCount:0, lastUpload:'',
+    fileSources:[
+      {id:'src_t1',label:'文件① · 培训数据表',
+       fileName:'',sheetName:'Sheet0',matchKeyword:'培训',
+       columns:['日期','培训主题','讲师','区域','参训人数','答疑数','完成率','状态'],
+       filters:[]}
+    ]
+  },
+  {
+    id:'ds_qa', icon:'💬',
+    name:'培训答疑数据 · 答疑量和正确率',
+    desc:'更新后：答疑量排名、近8周答疑趋势图',
+    mode:'append', targetKey:'qa_data', rowCount:0, lastUpload:'',
+    fileSources:[
+      {id:'src_qa1',label:'文件① · 答疑数据表',
+       fileName:'',sheetName:'Sheet0',matchKeyword:'答疑',
+       columns:['日期','答疑人','区域','答疑量','正确率'],
+       filters:[]}
+    ]
+  },
+  {
+    id:'ds_perf', icon:'🎯',
+    name:'培训师绩效分析 · 各维度得分',
+    desc:'更新后：绩效排名、雷达图、历史趋势和明细表。每个子表=一位培训师',
+    mode:'append', targetKey:'performance_data', rowCount:0, lastUpload:'',
+    fileSources:[
+      {id:'src_p1',label:'文件① · 绩效考核表（多子表）',
+       fileName:'',sheetName:'__multi__',matchKeyword:'绩效',
+       columns:['所属中心仓','入职时间','统计月份','中心仓质量得分','新人培训得分','授课质量得分','双周考得分','上级评价得分','业务评价得分','结果指标得分','主动分享得分','综合得分'],
+       filters:[]}
+    ]
+  }
 ];
 
+const DS_CONFIG_VER = 'v3_board_centric'; // bump this when DS_DEFAULTS changes
+
 function initDsCfg(){
-  const s=localStorage.getItem('ds_config_v2');
-  if(s){try{dsCfg=JSON.parse(s);}catch(e){dsCfg={dataSources:DS_DEFAULTS.map(d=>({...d})),computedCols:[{id:'cc1',dsId:'ds2',numCol:'合计客观执行问题差异量',denCol:'合计抽检量',outCol:'计算差异率',desc:'跨周期差异率'}]};}}
-  else{dsCfg={dataSources:DS_DEFAULTS.map(d=>({...d})),computedCols:[{id:'cc1',dsId:'ds2',numCol:'合计客观执行问题差异量',denCol:'合计抽检量',outCol:'计算差异率',desc:'跨周期差异率'}]};}
+  const savedVer = localStorage.getItem('ds_config_ver');
+  const s = localStorage.getItem('ds_config_v2');
+  const defaultCfg = {
+    dataSources: DS_DEFAULTS.map(function(d){ return JSON.parse(JSON.stringify(d)); }),
+    computedCols: [{id:'cc1',dsId:'ds_ranking',numCol:'合计客观执行问题差异量',denCol:'合计抽检量',outCol:'计算差异率',desc:'跨周期差异率，差异量÷抽检量'}]
+  };
+  if(!s || savedVer !== DS_CONFIG_VER) {
+    // First load or version changed - use defaults, preserve upload stats if possible
+    dsCfg = defaultCfg;
+    if(s && savedVer) {
+      try {
+        var old = JSON.parse(s);
+        // Carry over rowCount and lastUpload from old cards by targetKey
+        var oldMap = {};
+        (old.dataSources||[]).forEach(function(d){ oldMap[d.targetKey] = d; });
+        dsCfg.dataSources.forEach(function(d){
+          var prev = oldMap[d.targetKey];
+          if(prev){ d.rowCount = prev.rowCount||0; d.lastUpload = prev.lastUpload||''; }
+        });
+      } catch(e){}
+    }
+    localStorage.setItem('ds_config_ver', DS_CONFIG_VER);
+    localStorage.setItem('ds_config_v2', JSON.stringify(dsCfg));
+  } else {
+    try { dsCfg = JSON.parse(s); } catch(e) { dsCfg = defaultCfg; }
+  }
+  migrateDsFileSources();
 }
 function saveDsCfg(){localStorage.setItem('ds_config_v2',JSON.stringify(dsCfg));}
+function resetDsConfig(){
+  if(!confirm('恢复默认配置？\n已上传的数据不会删除，只重置配置规则。上传历史和统计数据也会保留。')) return;
+  localStorage.removeItem('ds_config_ver');
+  initDsCfg();
+  renderDsCfgGrid();
+  showToast('✓ 已恢复默认配置');
+}
 
 function openSettings(){
-  initDsCfg();
-  renderSloganList();
-  renderDsCfgGrid();
-  renderComputedCfgList();
-  renderUploadHistory();
-  updateDebugDsSel();
+  try{
+    initDsCfg();
+    renderSloganList();
+    renderDsCfgGrid();
+    renderComputedCfgList();
+    renderUploadHistory();
+    updateDebugDsSel();
+    initHowto();
+  }catch(e){ console.warn('settings init error:',e); }
   document.getElementById('settingsModal').classList.add('open');
 }
 function closeSettings(){document.getElementById('settingsModal').classList.remove('open');}
@@ -936,63 +1280,126 @@ function renderDsCfgGrid(){
   document.getElementById('dsCfgGrid').innerHTML=dsCfg.dataSources.map(ds=>dsCfgCardHtml(ds)).join('');
 }
 function dsCfgCardHtml(ds){
-  const badge=ds.mode==='append'?`<span class="ds-badge-m badge-a">叠加</span>`:`<span class="ds-badge-m badge-o">覆盖</span>`;
-  const lastInfo=ds.lastUpload?`<span class="scchip">上次 <strong>${new Date(ds.lastUpload).toLocaleDateString('zh-CN')}</strong></span><span class="scchip">共 <strong>${(ds.rowCount||0).toLocaleString()}</strong> 行</span>`:`<span style="font-size:11px;color:#94a3b8;">尚未上传</span>`;
-  const warn=(ds.mode==='overwrite'&&ds.rowCount>0)?`<div class="warnbox show" id="mwarn_${ds.id}">⚠️ 切换覆盖将清空历史<button onclick="exportDsHistory('${ds.id}')" style="font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid #059669;background:rgba(5,150,105,0.1);color:#059669;cursor:pointer;white-space:nowrap;">先导出</button></div>`:`<div class="warnbox" id="mwarn_${ds.id}"></div>`;
-  return `<div class="ds-card-m" id="mcard_${ds.id}">
-  <div class="ds-head-m" onclick="toggleDsCard('${ds.id}')">
-    <div><div class="ds-name-m">${ds.name}</div><div class="ds-desc-m">${ds.desc}</div></div>
-    <div style="display:flex;align-items:center;gap:8px;">${badge}<span class="chev-m" id="mchev_${ds.id}">▼</span></div>
-  </div>
-  <div class="ds-body-m" id="mbody_${ds.id}">
-    <div style="margin-bottom:12px;">
-      <label class="flabel">上传原始文件</label>
-      <label class="fzone ${ds.fileName?'has':''}" for="mfile_${ds.id}">
-        <div class="fzone-txt">点击选择 xlsx / xls / csv</div>
-        ${ds.fileName?`<div class="fzone-name">✓ ${ds.fileName}</div>`:''}
-      </label>
-      <input type="file" id="mfile_${ds.id}" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleDsFile('${ds.id}',this)">
-    </div>
-    <div class="frow2">
-      <div><label class="flabel">子表名称</label><select class="fsel" id="msheet_${ds.id}" onchange="onDsSheetChange('${ds.id}')"  ><option>${ds.sheetName}</option></select></div>
-      <div><label class="flabel">GitHub 存储路径 <span class="fhint">（data/ 目录下）</span></label><input class="finput" value="${ds.targetKey}" onchange="updDsCfg('${ds.id}','targetKey',this.value)" placeholder="文件名不含扩展名"></div>
-    </div>
-    <div style="margin-bottom:12px;">
-      <label class="flabel">选择列 <span class="fhint">${ds.hint}</span></label>
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
-        <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:#2563eb;cursor:pointer;">
-          <input type="checkbox" id="mselAll_${ds.id}" onchange="toggleAllDsCols('${ds.id}',this)"> 全选
-        </label>
-        <span id="mcolCount_${ds.id}" style="font-size:11px;color:#94a3b8;">已选 ${ds.columns.length} 列（上传文件后可视化选择）</span>
-      </div>
-      <div class="cgrid" id="mcolGrid_${ds.id}">
-        ${ds.columns.length?ds.columns.map(c=>`<div class="citem con" onclick="toggleDsCol('${ds.id}','${c}',this)"><input type="checkbox" checked onchange="toggleDsCol('${ds.id}','${c}',this.closest('.citem'))"><span class="cname">${c}</span></div>`).join(''):'<div style="font-size:11px;color:#94a3b8;padding:4px;">上传文件后自动加载列名</div>'}
-      </div>
-    </div>
-    <div style="margin-bottom:12px;">
-      <label class="flabel">筛选条件 <span class="fhint">多值用英文逗号分隔，多条件取交集</span></label>
-      <div id="mrules_${ds.id}">${ds.filters.map((f,i)=>dsRuleHtml(ds.id,i,f)).join('')}</div>
-      <button class="add-btn" style="margin-top:6px;" onclick="addDsRule('${ds.id}')">+ 新增条件</button>
-    </div>
-    <div style="margin-bottom:12px;">
-      <label class="flabel">存储模式</label>
-      <div class="mtoggle">
-        <button class="mbtn ${ds.mode==='append'?'aon':''}" onclick="setDsMode('${ds.id}','append')">📥 叠加（历史累积）</button>
-        <button class="mbtn ${ds.mode==='overwrite'?'oon':''}" onclick="setDsMode('${ds.id}','overwrite')">🔄 覆盖（最新替换）</button>
-      </div>
-      <div style="font-size:10px;color:#94a3b8;margin-top:4px;">叠加：每次追加并去重 / 覆盖：完全替换历史数据</div>
-      ${warn}
-    </div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">${lastInfo}</div>
-    <div style="display:flex;gap:6px;flex-wrap:wrap;">
-      <button class="save-btn" style="padding:6px 14px;font-size:12px;" onclick="doCfgUpload('${ds.id}')">清洗并上传到 GitHub</button>
-      <button class="save-btn" style="padding:6px 14px;font-size:12px;background:rgba(37,99,235,0.1);color:#2563eb;border:1px solid rgba(37,99,235,0.3);" onclick="doCfgPreview('${ds.id}')">预览清洗结果</button>
-      <button class="save-btn" style="padding:6px 14px;font-size:12px;background:rgba(5,150,105,0.1);color:#059669;border:1px solid rgba(5,150,105,0.3);" onclick="exportDsHistory('${ds.id}')">导出历史</button>
-      <button class="save-btn" style="padding:6px 14px;font-size:12px;background:rgba(239,68,68,0.08);color:#dc2626;border:1px solid rgba(239,68,68,0.3);margin-left:auto;" onclick="removeDsCard('${ds.id}')">删除</button>
-    </div>
-    <div id="mprev_${ds.id}" style="margin-top:8px;"></div>
-  </div>
-</div>`;
+  // Ensure fileSources exists (migration)
+  if(!ds.fileSources||!ds.fileSources.length){
+    ds.fileSources=[{id:'src_'+ds.id+'_0',label:'文件来源 1',fileName:ds.fileName||'',sheetName:ds.sheetName||'Sheet0',columns:[].concat(ds.columns||[]),filters:[].concat(ds.filters||[]),matchKeyword:''}];
+  }
+  var lastInfo=ds.lastUpload
+    ?'<span class="scchip">上次 <strong>'+new Date(ds.lastUpload).toLocaleDateString('zh-CN')+'</strong></span><span class="scchip">共 <strong>'+(ds.rowCount||0).toLocaleString()+'</strong> 行</span>'
+    :'<span style="font-size:11px;color:#94a3b8;">尚未上传</span>';
+  var modeText=ds.mode==='append'?'叠加（历史累积）':'覆盖（最新替换）';
+  var modeColor=ds.mode==='append'?'#059669':'#475569';
+  var warn=(ds.mode==='overwrite'&&ds.rowCount>0)
+    ?'<div class="warnbox show" id="mwarn_'+ds.id+'">⚠️ 切换覆盖将清空历史 <button onclick="exportDsHistory(\''+ds.id+'\')" style="font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid #059669;background:rgba(5,150,105,0.1);color:#059669;cursor:pointer;margin-left:6px;">先导出</button></div>'
+    :'<div class="warnbox" id="mwarn_'+ds.id+'"></div>';
+
+  // Build file source blocks
+  var sourcesHtml=ds.fileSources.map(function(src,si){
+        // Auto-read columns from uploaded file, or show pre-set placeholder
+    var cachedWb = srcFileCache[src.id];
+    var colItems;
+    if(cachedWb){
+      var _ws=cachedWb.wb.Sheets[src.sheetName||cachedWb.wb.SheetNames[0]];
+      var _rows=XLSX.utils.sheet_to_json(_ws,{header:1,range:0,raw:false});
+      var _headers=(_rows[0]||[]).filter(function(h){return h||h===0;});
+      colItems=_headers.map(function(h,i){
+        var lt=i<26?String.fromCharCode(65+i):String.fromCharCode(64+Math.floor(i/26))+String.fromCharCode(65+i%26);
+        var ck=!src.columns||!src.columns.length||src.columns.includes(String(h));
+        var hEnc=String(h).replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+        return '<div class="citem '+(ck?'con':'')+'" data-dsid="'+ds.id+'" data-srcid="'+src.id+'" data-col="'+hEnc+'" onclick="toggleSrcColEl(this)">'
+          +'<input type="checkbox"'+(ck?' checked':'')+' onchange="toggleSrcColEl(this.parentElement)">'
+          +'<span class="cletter">'+lt+'</span><span class="cname">'+h+'</span></div>';
+      }).join('');
+    } else if(src.columns&&src.columns.length){
+      colItems='<div style="padding:8px 10px;background:rgba(241,245,249,0.8);border-radius:8px;">'
+        +'<div style="font-size:11px;color:#94a3b8;margin-bottom:5px;">上传文件后自动读取全部列名 · 当前预设选列：</div>'
+        +src.columns.map(function(c){return '<span style="display:inline-flex;align-items:center;gap:3px;background:#fff;border:1px solid rgba(37,99,235,0.2);border-radius:6px;padding:2px 8px;margin:2px;font-size:11px;color:#2563eb;">✓ '+c+'</span>';}).join('')
+        +'</div>';
+    } else {
+      colItems='<div style="font-size:11px;color:#94a3b8;padding:4px;">上传文件后自动读取列名，点击勾选需要的列</div>';
+    }
+
+    var rulesHtml=src.filters?src.filters.map(function(f,fi){return addSrcRuleHtml(ds.id,src.id,fi,f);}).join(''):'';
+    var filterDesc=src.filters&&src.filters.length
+      ?src.filters.map(function(f){return '只保留「'+f.col+'」'+(f.op==='equals'?'等于':f.op==='contains'?'包含':'不等于')+'「'+f.val+'」';}).join(' 且 ')
+      :'不过滤，保留全部行';
+    var canDel=ds.fileSources.length>1;
+    return '<div class="file-source-block" id="fsblock_'+src.id+'">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px;">'
+      +'<div style="display:flex;align-items:center;gap:7px;"><span style="width:18px;height:18px;border-radius:50%;background:#2563eb;color:#fff;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+(si+1)+'</span><span style="font-size:12px;font-weight:600;color:#334155;">'+src.label+'</span></div>'
+      +(canDel?'<button onclick="removeSrcBlock(\''+ds.id+'\',\''+src.id+'\')" style="font-size:11px;padding:2px 8px;border-radius:6px;border:1px solid rgba(239,68,68,0.3);background:rgba(239,68,68,0.06);color:#dc2626;cursor:pointer;">删除</button>':'')
+      +'</div>'
+      // Upload zone
+      +'<label class="fzone '+(src.fileName?'has':'')+'" for="fsfile_'+src.id+'">'
+      +(src.fileName?'<div class="fzone-name">✓ '+src.fileName+'</div>':'<div class="fzone-txt">点击选择文件'+(src.matchKeyword?' · 含「'+src.matchKeyword+'」自动识别':'')+'</div>')
+      +'</label>'
+      +'<input type="file" id="fsfile_'+src.id+'" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleSrcFile(\''+ds.id+'\',\''+src.id+'\',this)">'
+      // Sheet + keyword
+      +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px;">'
+      +'<div><div class="flabel">子表名称</div><select class="fsel" id="fssheet_'+src.id+'" onchange="onSrcSheetChange(\''+ds.id+'\',\''+src.id+'\')"><option>'+src.sheetName+'</option></select></div>'
+      +'<div><div class="flabel">关键词识别 <span class="fhint">文件名含此词自动匹配</span></div><input class="finput" style="font-size:11px;" placeholder="如：表1、QA差异率" value="'+(src.matchKeyword||'')+'" oninput="updSrcField(\''+ds.id+'\',\''+src.id+'\',\'matchKeyword\',this.value)"></div>'
+      +'</div>'
+      // Columns
+      +'<div style="margin-top:9px;">'
+      +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px;">'
+      +'<div class="flabel" style="margin:0;">选择列</div>'
+      +'<label style="display:flex;align-items:center;gap:4px;font-size:11px;color:#2563eb;cursor:pointer;"><input type="checkbox" onchange="toggleAllSrcCols(\''+ds.id+'\',\''+src.id+'\',this)"> 全选</label>'
+      +'<span id="fsColCount_'+src.id+'" style="font-size:11px;color:#94a3b8;">已选 '+(src.columns?src.columns.length:0)+' 列</span>'
+      +'</div>'
+      +'<div class="cgrid" id="fsColGrid_'+src.id+'">'+colItems+'</div>'
+      +'</div>'
+      // Filters
+      +'<div style="margin-top:9px;">'
+      +'<div class="flabel">筛选条件 <span class="fhint">多值用英文逗号，多条件取交集</span></div>'
+      +'<div style="font-size:11px;color:#475569;background:rgba(241,245,249,0.8);border-radius:7px;padding:5px 9px;margin-bottom:5px;">'+filterDesc+'</div>'
+      +'<div id="fsRules_'+src.id+'">'+rulesHtml+'</div>'
+      +'<button class="add-btn" style="font-size:11px;padding:4px 10px;margin-top:4px;" onclick="addSrcRule(\''+ds.id+'\',\''+src.id+'\')">+ 新增筛选条件</button>'
+      +'</div>'
+      +'</div>';
+  }).join('');
+
+  return '<div class="ds-card-m" id="mcard_'+ds.id+'" style="margin-bottom:12px;">'
+    // Header
+    +'<div class="ds-head-m" onclick="toggleDsCard(\''+ds.id+'\')">'
+    +'<div style="display:flex;align-items:center;gap:10px;flex:1;min-width:0;">'
+    +'<span style="font-size:20px;flex-shrink:0;">'+(ds.icon||'📁')+'</span>'
+    +'<div style="min-width:0;">'
+    +'<div class="ds-name-m">'+ds.name+'</div>'
+    +'<div class="ds-desc-m" style="margin-top:2px;">'+ds.desc+'</div>'
+    +'</div></div>'
+    +'<div style="display:flex;align-items:center;gap:7px;flex-shrink:0;">'
+    +(ds.lastUpload?'<span class="scchip" style="background:rgba(5,150,105,0.08);border-color:rgba(5,150,105,0.2);color:#059669;">✓ 已有数据</span>':'<span class="scchip" style="color:#94a3b8;">待上传</span>')
+    +'<span class="chev-m" id="mchev_'+ds.id+'">▼</span>'
+    +'</div></div>'
+    // Body
+    +'<div class="ds-body-m" id="mbody_'+ds.id+'">'
+    // File sources
+    +'<div style="margin-bottom:12px;">'
+    +'<div style="font-size:12px;font-weight:700;color:#2563eb;margin-bottom:8px;">文件来源 <span style="font-size:11px;color:#94a3b8;font-weight:400;">（每个来源独立配置列和筛选条件，上传时自动合并）</span></div>'
+    +sourcesHtml
+    +'<button class="add-file-btn" onclick="addSrcBlock(\''+ds.id+'\')">+ 添加文件来源</button>'
+    +'</div>'
+    // Mode
+    +'<div style="margin-bottom:12px;">'
+    +'<div class="flabel">存储方式</div>'
+    +'<div class="mtoggle">'
+    +'<button class="mbtn '+(ds.mode==='append'?'aon':'')+'" onclick="setDsMode(\''+ds.id+'\',\'append\')">📥 叠加（每天追加历史）</button>'
+    +'<button class="mbtn '+(ds.mode==='overwrite'?'oon':'')+'" onclick="setDsMode(\''+ds.id+'\',\'overwrite\')">🔄 覆盖（只保留最新）</button>'
+    +'</div>'
+    +'<div style="font-size:11px;color:#94a3b8;margin-top:4px;">当前：<span style="color:'+modeColor+';font-weight:600;">'+modeText+'</span></div>'
+    +warn
+    +'</div>'
+    // Info + actions
+    +'<div style="background:rgba(241,245,249,0.6);border-radius:10px;padding:11px 13px;">'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:9px;">'+lastInfo+'</div>'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap;">'
+    +'<button class="save-btn" style="padding:7px 16px;" onclick="doCfgUpload(\''+ds.id+'\')">✓ 清洗并上传到云上服务器</button>'
+    +'<button class="save-btn" style="padding:7px 12px;background:rgba(37,99,235,0.08);color:#2563eb;border:1px solid rgba(37,99,235,0.25);" onclick="doCfgPreview(\''+ds.id+'\')">👁 预览清洗结果</button>'
+    +'<button class="save-btn" style="padding:7px 12px;background:rgba(5,150,105,0.08);color:#059669;border:1px solid rgba(5,150,105,0.25);" onclick="exportDsHistory(\''+ds.id+'\')">⬇ 导出历史</button>'
+    +'<button class="save-btn" style="padding:7px 12px;background:rgba(239,68,68,0.06);color:#dc2626;border:1px solid rgba(239,68,68,0.2);margin-left:auto;" onclick="removeDsCard(\''+ds.id+'\')">删除</button>'
+    +'</div></div>'
+    +'<div id="mprev_'+ds.id+'" style="margin-top:8px;"></div>'
+    +'</div></div>';
 }
 
 function dsRuleHtml(dsId,idx,f){
@@ -1115,47 +1522,76 @@ function cleanDsRows(dsId){
 }
 
 function doCfgPreview(dsId){
-  const rows=cleanDsRows(dsId);if(!rows)return;
-  const prev=rows.slice(0,8);
-  const el=document.getElementById('mprev_'+dsId);
-  if(!prev.length){el.innerHTML='<div style="text-align:center;padding:12px;color:#94a3b8;font-size:11px;">筛选后无数据，请检查条件</div>';return;}
-  const hs=Object.keys(prev[0]);
-  el.innerHTML=`<div class="prevwrap"><div class="prevhead"><span>清洗预览（前${prev.length}行 / 共 ${rows.length} 行）</span></div><div class="prevscroll"><table class="prevtable"><thead><tr>${hs.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${prev.map(r=>`<tr>${hs.map(h=>`<td>${r[h]??''}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>`;
-  showToast(`✓ 清洗后 ${rows.length} 行`);
+  var ds=getDs(dsId);
+  if(!ds||!ds.fileSources){showToast('✗ 配置异常');return;}
+  var el=document.getElementById('mprev_'+dsId);if(!el)return;
+  el.innerHTML='';
+  var anyLoaded=false;
+  ds.fileSources.forEach(function(src){
+    var rows=cleanSrcRows(src);
+    if(!rows)return;
+    anyLoaded=true;
+    var prev=rows.slice(0,8);
+    if(!prev.length){el.innerHTML+='<div style="padding:4px;font-size:11px;color:#94a3b8;">'+src.label+'：筛选后无数据</div>';return;}
+    var hs=Object.keys(prev[0]);
+    el.innerHTML+='<div style="font-size:11px;font-weight:600;color:#475569;margin:8px 0 4px;">'+src.label+' — 前'+prev.length+'行/共'+rows.length+'行</div>'
+      +'<div class="prevwrap"><div class="prevscroll"><table class="prevtable"><thead><tr>'
+      +hs.map(function(h){return '<th>'+h+'</th>';}).join('')+'</tr></thead><tbody>'
+      +prev.map(function(r){return '<tr>'+hs.map(function(h){return '<td>'+(r[h]||'')+'</td>';}).join('')+'</tr>';}).join('')
+      +'</tbody></table></div></div>';
+  });
+  if(!anyLoaded){el.innerHTML='<div style="text-align:center;padding:12px;color:#94a3b8;font-size:11px;">请先选择文件（点击文件上传区域）</div>';showToast('✗ 请先选择文件');}
+  else showToast('✓ 预览完成');
 }
 
 async function doCfgUpload(dsId){
-  const ds=getDs(dsId);
+  var ds=getDs(dsId);
   if(!getToken()){showToast('✗ 请先输入创造者密钥');return;}
-  const rows=cleanDsRows(dsId);if(!rows)return;
-  if(!rows.length){showToast('✗ 清洗后无数据');return;}
-  showToast(`处理 ${rows.length} 行…`);
-  const path=`data/${ds.targetKey}.json`;
-  let finalRows=rows;
+  if(!ds||!ds.fileSources){showToast('✗ 数据源配置异常');return;}
+  var withFile=ds.fileSources.filter(function(s){return !!srcFileCache[s.id];});
+  var without=ds.fileSources.filter(function(s){return !srcFileCache[s.id];});
+  if(!withFile.length){showToast('✗ 请先选择文件（点击文件上传区域）');return;}
+  if(without.length) showToast('注意：'+without.map(function(s){return s.label;}).join('、')+' 未上传，将跳过');
+  var allRows=[];
+  var srcSummary=[];
+  withFile.forEach(function(src){
+    var rows=cleanSrcRows(src);
+    if(!rows)return;
+    srcSummary.push(src.label+': '+rows.length+'行');
+    if(withFile.length>1) rows.forEach(function(r){r['_来源']=src.label;});
+    allRows=allRows.concat(rows);
+  });
+  if(dsCfg.computedCols) dsCfg.computedCols.forEach(function(cc){
+    if(cc.dsId!==dsId)return;
+    allRows=allRows.map(function(r){var n=parseFloat(r[cc.numCol])||0,d=parseFloat(r[cc.denCol])||1;return Object.assign({},r,{[cc.outCol]:(n/d*100).toFixed(2)+'%'});});
+  });
+  if(!allRows.length){showToast('✗ 清洗后无数据，请检查筛选条件');return;}
+  showToast('处理 '+allRows.length+' 行…');
+  var path='data/'+ds.targetKey+'.json';
+  var uploadTime=new Date().toISOString();
+  var finalRows=allRows;
   if(ds.mode==='append'){
     try{
-      const url=`https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/${path}?t=${Date.now()}`;
-      const res=await fetch(url);
+      var url='https://raw.githubusercontent.com/'+GH_USER+'/'+GH_REPO+'/main/'+path+'?t='+Date.now();
+      var res=await fetch(url);
       if(res.ok){
-        const ex=await res.json();const exRows=ex.rows||[];
-        const keys=Object.keys(rows[0]||{});
-        const k1=keys[0],k2=keys[1]||'';
-        const exSet=new Set(exRows.map(r=>String(r[k1]||'')+String(r[k2]||'')));
-        const newOnly=rows.filter(r=>!exSet.has(String(r[k1]||'')+String(r[k2]||'')));
-        finalRows=[...exRows,...newOnly];
-        showToast(`叠加：原${exRows.length}行 + 新${newOnly.length}行 = ${finalRows.length}行`);
+        var ex=await res.json();var exRows=ex.rows||[];
+        var k1=Object.keys(allRows[0]||{})[0]||'',k2=Object.keys(allRows[0]||{})[1]||'';
+        var exSet=new Set(exRows.map(function(r){return String(r[k1]||'')+String(r[k2]||'');}));
+        var newOnly=allRows.filter(function(r){return !exSet.has(String(r[k1]||'')+String(r[k2]||''));});
+        finalRows=exRows.concat(newOnly);
+        showToast('叠加：原'+exRows.length+'行+新'+newOnly.length+'行=共'+finalRows.length+'行');
       }
     }catch(e){}
   }
-  const uploadTime=new Date().toISOString();
   try{
-    await writeToGitHub(path,{uploadTime,fileName:ds.fileName,mode:ds.mode,rows:finalRows});
+    await writeToGitHub(path,{uploadTime:uploadTime,mode:ds.mode,sources:srcSummary,rows:finalRows});
     ds.rowCount=finalRows.length;ds.lastUpload=uploadTime;
     dsUploadHistory.unshift({dsName:ds.name,rows:finalRows.length,time:uploadTime,mode:ds.mode});
     if(dsUploadHistory.length>100)dsUploadHistory=dsUploadHistory.slice(0,100);
     localStorage.setItem('ds_upload_history',JSON.stringify(dsUploadHistory));
     saveDsCfg();renderDsCfgGrid();
-    showToast(`✓ 上传成功！${finalRows.length} 行已写入 GitHub`);
+    showToast('✓ 上传成功！'+srcSummary.join(' + ')+' → 共'+finalRows.length+'行');
   }catch(err){showToast('✗ 上传失败：'+err.message);}
 }
 
@@ -1471,7 +1907,7 @@ const DEMO_ROWS=[
 
 /* 初始化 */
 (function init(){
-  allRows=[...DEMO_ROWS];filteredRows=[...DEMO_ROWS];
+  allRows=[...DEMO_ROWS];filteredRows=[...DEMO_ROWS]; initGlobalDates(); setTimeout(function(){renderCompare();},300);
   renderOverview(filteredRows);rebuildDetailFilters();renderDetailPage();buildRankFromData();updateTrendChart();
   rebuildTrainFilters();renderTrainPage();
   loadSettings();
@@ -1634,7 +2070,7 @@ function updateWhLabel(prefix){
   allCb.checked = checked.length===all.length;
   const label = document.getElementById(prefix+'WhLabel');
   if(checked.length===0||checked.length===all.length){
-    label.textContent='全部仓库';
+    label.textContent='全部中心仓';
   } else if(checked.length===1){
     label.textContent=checked[0].value;
   } else {
@@ -1751,6 +2187,469 @@ function renderRankingBoard(){
   if(dt) dt.value=today;
   setTimeout(()=>applyTrainGlobalFilter(),200);
 })();
+
+/* ===== HOWTO DISMISS ===== */
+function initHowto(){
+  var tip=document.getElementById('dsHowtoTip');
+  if(tip && localStorage.getItem('ds_howto_dismissed')==='1') tip.style.display='none';
+}
+function dismissHowto(){
+  var tip=document.getElementById('dsHowtoTip');
+  if(tip) tip.style.display='none';
+  localStorage.setItem('ds_howto_dismissed','1');
+}
+
+/* ===== PERF NAV ===== */
+function handlePerfNavClick(el){
+  switchPage('performance', el);
+}
+function updatePerfNavState(role){
+  var pn=document.getElementById('perfNavItem');
+  var sb=document.getElementById('settingsBtn');
+  if(pn){pn.style.opacity=role==='creator'?'1':'0.45';pn.style.cursor=role==='creator'?'pointer':'default';}
+  if(sb){sb.style.display=role==='creator'?'inline-flex':'none';}
+}
+
+/* ===== GLOBAL QUALITY FILTER ===== */
+var gCat='全部', gPeriod='本月';
+var cmpChartL=null, cmpChartR=null;
+
+function initGlobalDates(){
+  var today=new Date();
+  var m1=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-01';
+  var lastDay=new Date(today.getFullYear(),today.getMonth()+1,0);
+  var mEnd=lastDay.toISOString().slice(0,10);
+  var f=document.getElementById('globalDateFrom');
+  var t=document.getElementById('globalDateTo');
+  if(f&&!f.value) f.value=m1;
+  if(t&&!t.value) t.value=mEnd;
+  var cl=document.getElementById('cmpDateFromL'), cr=document.getElementById('cmpDateFromR');
+  var tl=document.getElementById('cmpDateToL'), tr2=document.getElementById('cmpDateToR');
+  if(cl&&!cl.value) cl.value=m1; if(cr&&!cr.value) cr.value=m1;
+  if(tl&&!tl.value) tl.value=mEnd; if(tr2&&!tr2.value) tr2.value=mEnd;
+}
+
+function setGCat(el,cat){
+  document.querySelectorAll('#page-quality .filter-bar .filter-chip').forEach(function(c){
+    if(['全部','手机','笔记本','平板','耳机','相机'].indexOf(c.textContent)>-1) c.classList.remove('active');
+  });
+  el.classList.add('active'); gCat=cat; applyGlobalFilter();
+}
+function setGPeriod(el,period){
+  ['gPM','gPW','gPLW'].forEach(function(id){var e=document.getElementById(id);if(e)e.classList.remove('active');});
+  el.classList.add('active'); gPeriod=period;
+  var today=new Date(), from, to=today.toISOString().slice(0,10);
+  if(period==='本月'){from=today.getFullYear()+'-'+String(today.getMonth()+1).padStart(2,'0')+'-01';}
+  else if(period==='本周'){var d=today.getDay()||7;var mon=new Date(today);mon.setDate(today.getDate()-d+1);from=mon.toISOString().slice(0,10);}
+  else {var d2=today.getDay()||7;var lm=new Date(today);lm.setDate(today.getDate()-d2-6);var ls=new Date(today);ls.setDate(today.getDate()-d2);from=lm.toISOString().slice(0,10);to=ls.toISOString().slice(0,10);}
+  var f=document.getElementById('globalDateFrom'), t=document.getElementById('globalDateTo');
+  if(f) f.value=from; if(t) t.value=to;
+  applyGlobalFilter();
+}
+
+function applyGlobalFilter(){
+  var wh=document.getElementById('filterWarehouse')?document.getElementById('filterWarehouse').value:'全部';
+  var dateFrom=document.getElementById('globalDateFrom')?document.getElementById('globalDateFrom').value:'';
+  var dateTo=document.getElementById('globalDateTo')?document.getElementById('globalDateTo').value:'';
+  filteredRows=allRows.filter(function(r){
+    var site=r['站点名称']||r['机型']||'';
+    var date=r['抽检日期']||r['日期']||'';
+    var cat=r['品类名称']||r['品类']||'';
+    var whOk=wh==='全部'||site===wh;
+    var dateOk=(!dateFrom||date>=dateFrom)&&(!dateTo||date<=dateTo);
+    var catOk=gCat==='全部'||cat===gCat;
+    return whOk&&dateOk&&catOk;
+  });
+  currentPage=1;
+  renderOverview(filteredRows);
+  rebuildDetailFilters();
+  renderDetailPage();
+  var sub=document.getElementById('rankSubtitle');
+  if(sub) sub.textContent='排行榜 · '+(gCat==='全部'?'手机':gCat)+' · '+gPeriod;
+  var tl=document.getElementById('trendCatLabel');
+  if(tl) tl.textContent=gCat==='全部'?'手机':gCat;
+  buildRankFromData();
+  updateSmartTrend();
+}
+
+function applyFilters(){ applyGlobalFilter(); }
+
+/* Smart trend: week→daily, month→weekly points */
+function updateSmartTrend(){
+  var labels, curLbl, prevLbl;
+  if(gPeriod==='本周'||gPeriod==='上周'){
+    labels=['周一','周二','周三','周四','周五','周六','周日'];
+    curLbl=gPeriod; prevLbl=gPeriod==='本周'?'上周':'上上周';
+  } else {
+    labels=['第1周','第2周','第3周','第4周'];
+    curLbl='本月'; prevLbl='上月';
+  }
+  function mk(s){return labels.map(function(_,i){return+(Math.abs(Math.sin(s+i)*4)+0.5).toFixed(2);});}
+  var cur=mk(1), prev=mk(5);
+  if(trendChart){trendChart.destroy();trendChart=null;}
+  var canvas=document.getElementById('chartTrend');if(!canvas)return;
+  trendChart=new Chart(canvas,{type:'line',data:{labels:labels,datasets:[
+    {label:curLbl+' 差异率%',data:cur,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,0.07)',tension:.4,pointRadius:4,borderWidth:2,fill:true},
+    {label:prevLbl+' 差异率%',data:prev,borderColor:'#94a3b8',backgroundColor:'transparent',tension:.4,pointRadius:3,borderWidth:2,borderDash:[4,3]}
+  ]},options:{responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:8}}},
+    scales:{y:{grid:{color:'rgba(200,210,230,0.4)'},ticks:{callback:function(v){return v+'%';}}},x:{grid:{display:false}}}}});
+}
+
+/* ===== COMPARE PANEL ===== */
+var DIM_KEYS={site:'站点名称',person:'质检操作人',l1:'一级项名称',l2:'二级项名称',l3:'新三级项名称',brand:'品牌'};
+var DIM_LABELS={site:'中心仓',person:'质检员',l1:'一级项',l2:'二级项',l3:'三级项',brand:'品牌'};
+
+function renderCompare(){
+  renderOneSide('L');
+  renderOneSide('R');
+}
+
+function renderOneSide(side){
+  var dim=document.getElementById('cmpDim'+side).value;
+  var wh=document.getElementById('cmpWh'+side).value;
+  var dateFrom=document.getElementById('cmpDateFrom'+side).value;
+  var dateTo=document.getElementById('cmpDateTo'+side).value;
+  var src=allRows.filter(function(r){
+    var site=r['站点名称']||r['机型']||'';
+    var date=r['抽检日期']||r['日期']||'';
+    return (wh==='全部'||site===wh)&&(!dateFrom||date>=dateFrom)&&(!dateTo||date<=dateTo);
+  });
+  var dimKey=DIM_KEYS[dim]||'站点名称';
+  var agg={};
+  src.forEach(function(r){
+    var key=r[dimKey]||'未知';
+    if(!agg[key]) agg[key]={label:key,check:0,diff:0};
+    agg[key].check+=(parseFloat(r['手机抽检量'])||0)+(parseFloat(r['总抽检量'])||0);
+    agg[key].diff+=(parseFloat(r['手机差异量'])||0)+(parseFloat(r['总客观差异量'])||0);
+  });
+  var entries=Object.values(agg).map(function(a){return{label:a.label,rate:a.check>0?+(a.diff/a.check*100).toFixed(2):0};}).sort(function(a,b){return b.rate-a.rate;}).slice(0,12);
+  var labels=entries.map(function(e){return e.label;});
+  var vals=entries.map(function(e){return e.rate;});
+  var colors=entries.map(function(e){return e.rate>5?'rgba(220,38,38,0.7)':e.rate>2?'rgba(217,119,6,0.7)':'rgba(37,99,235,0.65)';});
+  var cref=side==='L'?cmpChartL:cmpChartR;
+  if(cref) cref.destroy();
+  var canvas=document.getElementById('chartCmp'+side);if(!canvas)return;
+  var newChart;
+  if(dim==='brand'){
+    newChart=new Chart(canvas,{type:'doughnut',data:{labels:labels,datasets:[{data:vals,backgroundColor:colors,borderWidth:0}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{boxWidth:10,padding:6,font:{size:10}}}}}});
+  } else {
+    newChart=new Chart(canvas,{type:'bar',data:{labels:labels,datasets:[{label:DIM_LABELS[dim]+' 差异率%',data:vals,backgroundColor:colors,borderRadius:4}]},
+      options:{responsive:true,maintainAspectRatio:false,indexAxis:labels.length>6?'y':'x',plugins:{legend:{display:false}},
+        scales:{x:{grid:{display:false}},y:{ticks:{callback:function(v){return typeof v==='number'?v+'%':v;}}}}}});
+  }
+  if(side==='L') cmpChartL=newChart; else cmpChartR=newChart;
+}
+
+/* ===== PERFORMANCE PAGE ===== */
+var perfAllData=[], perfGradeFilter='全部', perfRadarChart=null, perfTrendChart=null;
+var PERF_DIMS=[
+  {key:'中心仓质量得分',label:'中心仓质量',max:15},
+  {key:'新人培训得分',label:'新人培训',max:15},
+  {key:'授课质量得分',label:'授课质量',max:5},
+  {key:'双周考得分',label:'双周考',max:15},
+  {key:'上级评价得分',label:'上级评价',max:25},
+  {key:'业务评价得分',label:'业务评价',max:10},
+  {key:'结果指标得分',label:'结果指标',max:15},
+  {key:'主动分享得分',label:'主动分享',max:5}
+];
+
+function setPerfGrade(el,grade){
+  document.querySelectorAll('#page-performance .filter-chip').forEach(function(c){c.classList.remove('active');});
+  el.classList.add('active'); perfGradeFilter=grade; renderPerf();
+}
+
+function renderPerf(){
+  if(!perfAllData.length){return;}
+  var from=document.getElementById('perfDateFrom').value;
+  var to=document.getElementById('perfDateTo').value;
+  var trainer=document.getElementById('perfTrainerSel').value;
+  var data=perfAllData.filter(function(r){
+    return (!from||r.month>=from)&&(!to||r.month<=to)&&(trainer==='全部'||r.trainer===trainer);
+  });
+  var map={};
+  data.forEach(function(r){
+    if(!map[r.trainer]) map[r.trainer]={trainer:r.trainer,warehouse:r.warehouse,joinDate:r.joinDate,months:[],totalSum:0,count:0,scores:{}};
+    var m=map[r.trainer]; m.months.push(r.month); m.count++; m.totalSum+=(r.total||0);
+    PERF_DIMS.forEach(function(d){m.scores[d.key]=(m.scores[d.key]||0)+(r.scores[d.key]||0);});
+  });
+  var trainers=Object.values(map).map(function(m){
+    var avg=function(v){return+(v/m.count).toFixed(1);};
+    var scores={};PERF_DIMS.forEach(function(d){scores[d.key]=avg(m.scores[d.key]);});
+    return Object.assign({},m,{avgTotal:+(m.totalSum/m.count).toFixed(1),scores:scores});
+  }).sort(function(a,b){return b.avgTotal-a.avgTotal;});
+  var n=trainers.length;
+  trainers=trainers.map(function(t,i){
+    return Object.assign({},t,{grade:i<Math.ceil(n*.25)?'A':i<Math.ceil(n*.75)?'B':'C'});
+  });
+  var all=trainers;
+  var aCount=all.filter(function(t){return t.grade==='A';}).length;
+  var bCount=all.filter(function(t){return t.grade==='B';}).length;
+  var cCount=all.filter(function(t){return t.grade==='C';}).length;
+  document.getElementById('perfTotal').textContent=all.length||'—';
+  document.getElementById('perfA').textContent=aCount||'—';
+  document.getElementById('perfARate').textContent=all.length?'占比'+Math.round(aCount/all.length*100)+'%':'';
+  document.getElementById('perfB').textContent=bCount||'—';
+  document.getElementById('perfBRate').textContent=all.length?'占比'+Math.round(bCount/all.length*100)+'%':'';
+  document.getElementById('perfC').textContent=cCount||'—';
+  document.getElementById('perfCRate').textContent=all.length?'占比'+Math.round(cCount/all.length*100)+'%':'';
+  var filtered=perfGradeFilter==='全部'?trainers:trainers.filter(function(t){return t.grade===perfGradeFilter;});
+  renderPerfRankList(filtered);
+  renderPerfTableRows(filtered);
+  renderPerfTrend(data);
+  if(filtered.length) renderPerfRadar(filtered[0]);
+}
+
+var GS={A:{bg:'rgba(254,243,199,0.5)',border:'rgba(217,119,6,0.3)',color:'#d97706',icon:'🥇'},
+         B:{bg:'rgba(219,234,254,0.4)',border:'rgba(37,99,235,0.2)',color:'#2563eb',icon:'🥈'},
+         C:{bg:'rgba(241,245,249,0.7)',border:'rgba(200,210,230,0.5)',color:'#64748b',icon:'🥉'}};
+
+function renderPerfRankList(trainers){
+  var el=document.getElementById('perfRankList');
+  if(!el)return;
+  el.innerHTML=trainers.slice(0,10).map(function(t,i){
+    var g=GS[t.grade]||GS.C;
+    var ts=JSON.stringify(t).replace(/"/g,"'");
+    return '<div onclick="renderPerfRadar(JSON.parse(this.dataset.t))" data-t="'+ts.replace(/'/g,'&#39;')+'" style="display:flex;align-items:center;gap:9px;padding:8px 10px;border-radius:9px;border:1px solid '+g.border+';background:'+g.bg+';margin-bottom:6px;cursor:pointer;transition:transform .15s;" onmouseover="this.style.transform=\'translateX(3px)\'" onmouseout="this.style.transform=\'\'">'
+      +'<div style="width:20px;height:20px;border-radius:50%;background:'+g.color+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:800;flex-shrink:0;">'+(i+1)+'</div>'
+      +'<div style="flex:1;"><div style="font-size:13px;font-weight:700;color:#1e293b;">'+t.trainer+'</div><div style="font-size:11px;color:#94a3b8;">'+(t.warehouse||'')+(t.joinDate?' · 入职 '+t.joinDate:'')+'</div></div>'
+      +'<div style="text-align:right;"><div style="font-size:16px;font-weight:800;color:'+g.color+';">'+t.avgTotal+'</div><div style="font-size:11px;color:'+g.color+';font-weight:600;">'+g.icon+' '+t.grade+'级</div></div>'
+      +'</div>';
+  }).join('');
+}
+
+function renderPerfRadar(t){
+  if(!t) return;
+  var nameEl=document.getElementById('perfRadarName');
+  if(nameEl) nameEl.textContent=t.trainer;
+  var labels=PERF_DIMS.map(function(d){return d.label;});
+  var vals=PERF_DIMS.map(function(d){return t.scores&&t.scores[d.key]?+(t.scores[d.key]/d.max*100).toFixed(1):0;});
+  if(perfRadarChart){perfRadarChart.destroy();perfRadarChart=null;}
+  var canvas=document.getElementById('chartPerfRadar');if(!canvas)return;
+  perfRadarChart=new Chart(canvas,{type:'radar',data:{labels:labels,datasets:[{label:t.trainer+'（%）',data:vals,borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,0.1)',pointBackgroundColor:'#2563eb',pointRadius:4,borderWidth:2}]},
+    options:{responsive:true,maintainAspectRatio:false,scales:{r:{min:0,max:100,ticks:{stepSize:25,font:{size:9}},pointLabels:{font:{size:10}}}},plugins:{legend:{display:false}}}});
+}
+
+function renderPerfTableRows(trainers){
+  var el=document.getElementById('perfTableBody');if(!el)return;
+  var g=GS;
+  el.innerHTML=trainers.map(function(t,i){
+    var ts=JSON.stringify(t).replace(/"/g,"'");
+    return '<tr onclick="renderPerfRadar(JSON.parse(this.dataset.t))" data-t="'+ts.replace(/'/g,'&#39;')+'" style="cursor:pointer;">'
+      +'<td><strong>'+(i+1)+'</strong></td>'
+      +'<td><strong>'+t.trainer+'</strong></td>'
+      +'<td>'+(t.warehouse||'—')+'</td>'
+      +'<td>'+(t.joinDate||'—')+'</td>'
+      +'<td>'+t.months.sort().join('、')+'</td>'
+      +PERF_DIMS.map(function(d){return '<td class="num">'+(t.scores&&t.scores[d.key]!==undefined?t.scores[d.key]:'—')+'</td>';}).join('')
+      +'<td class="num"><strong style="font-size:13px;">'+t.avgTotal+'</strong></td>'
+      +'<td><span style="padding:2px 8px;border-radius:5px;font-size:12px;font-weight:700;background:'+(g[t.grade]||g.C).bg+';color:'+(g[t.grade]||g.C).color+';">'+(g[t.grade]||g.C).icon+' '+t.grade+'</span></td>'
+      +'</tr>';
+  }).join('');
+  document.getElementById('perfPageInfo').textContent='共 '+trainers.length+' 条';
+}
+
+function renderPerfTrend(rawData){
+  var byM={};
+  rawData.forEach(function(r){if(!byM[r.month])byM[r.month]={};byM[r.month][r.trainer]=(r.total||0);});
+  var months=Object.keys(byM).sort();
+  var trainers=[...new Set(rawData.map(function(r){return r.trainer;}))];
+  var colors=['#2563eb','#7c3aed','#059669','#d97706','#dc2626','#0891b2'];
+  var datasets=trainers.slice(0,6).map(function(t,i){return{label:t,data:months.map(function(m){return byM[m][t]||null;}),borderColor:colors[i%6],backgroundColor:'transparent',tension:.4,pointRadius:4,borderWidth:2,spanGaps:true};});
+  if(perfTrendChart){perfTrendChart.destroy();perfTrendChart=null;}
+  var canvas=document.getElementById('chartPerfTrend');if(!canvas)return;
+  perfTrendChart=new Chart(canvas,{type:'line',data:{labels:months,datasets:datasets},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:8}}},scales:{y:{min:0},x:{grid:{display:false}}}}});
+}
+
+function updatePerfFilters(){
+  var trainers=[...new Set(perfAllData.map(function(r){return r.trainer;}))].sort();
+  var sel=document.getElementById('perfTrainerSel');
+  if(sel) sel.innerHTML='<option value="全部">全部培训师</option>'+trainers.map(function(t){return '<option>'+t+'</option>';}).join('');
+}
+
+async function parseAndUploadPerf(file){
+  var buf=await file.arrayBuffer();
+  var wb=XLSX.read(buf);
+  var results=[];
+  wb.SheetNames.forEach(function(shName){
+    var ws=wb.Sheets[shName];
+    var rows=XLSX.utils.sheet_to_json(ws,{raw:false,defval:''});
+    rows.forEach(function(r){
+      var scores={};PERF_DIMS.forEach(function(d){scores[d.key]=parseFloat(r[d.key])||0;});
+      var total=parseFloat(r['综合得分'])||PERF_DIMS.reduce(function(s,d){return s+scores[d.key];},0);
+      results.push({trainer:shName,warehouse:r['所属中心仓']||r['所属仓库']||'',joinDate:r['入职时间']||'',month:r['统计月份']||r['月份']||'',scores:scores,total:+total.toFixed(1)});
+    });
+  });
+  return results;
+}
+
+/* ===== MULTI-FILE DATASOURCE SUPPORT ===== */
+function addSrcRuleHtml(dsId,srcId,idx,f){
+  var col=(f.col||'').replace(/"/g,'&quot;'), val=(f.val||'').replace(/"/g,'&quot;'), op=f.op||'equals';
+  return '<div class="frule" data-dsid="'+dsId+'" data-srcid="'+srcId+'" data-idx="'+idx+'" id="sr_'+srcId+'_'+idx+'">'
+    +'<input placeholder="列名" value="'+col+'" onchange="updSrcRuleEl(this,\'col\')">'
+    +'<select onchange="updSrcRuleEl(this,\'op\')">'
+    +'<option value="equals"'+(op==='equals'?' selected':'')+'>等于</option>'
+    +'<option value="contains"'+(op==='contains'?' selected':'')+'>包含</option>'
+    +'<option value="not_equals"'+(op==='not_equals'?' selected':'')+'>不等于</option>'
+    +'<option value="not_contains"'+(op==='not_contains'?' selected':'')+'>不包含</option>'
+    +'</select>'
+    +'<input placeholder="值，多个用逗号分隔" value="'+val+'" onchange="updSrcRuleEl(this,\'val\')">'
+    +'<button class="delbtn" onclick="delSrcRuleEl(this)">×</button>'
+    +'</div>';
+}
+function updSrcRuleEl(el,field){var row=el.closest('[data-dsid]');if(!row)return;updSrcRule(row.dataset.dsid,row.dataset.srcid,+row.dataset.idx,field,el.value);}
+function delSrcRuleEl(el){var row=el.closest('[data-dsid]');if(!row)return;removeSrcRule(row.dataset.dsid,row.dataset.srcid,+row.dataset.idx);}
+
+function getSrc(dsId,srcId){var ds=getDs(dsId);return ds&&ds.fileSources?ds.fileSources.find(function(s){return s.id===srcId;}):null;}
+
+function addSrcBlock(dsId){
+  var ds=getDs(dsId);if(!ds)return;
+  if(!ds.fileSources) ds.fileSources=[];
+  ds.fileSources.push({id:'src_'+dsId+'_'+Date.now(),label:'文件来源 '+(ds.fileSources.length+1),fileName:'',sheetName:'Sheet0',columns:[],filters:[],matchKeyword:''});
+  saveDsCfg();renderDsCfgGrid();
+  setTimeout(function(){var b=document.getElementById('mbody_'+dsId);var c=document.getElementById('mchev_'+dsId);if(b){b.classList.add('open');b.style.display='block';}if(c)c.classList.add('op');},50);
+}
+function removeSrcBlock(dsId,srcId){
+  var ds=getDs(dsId);if(!ds||!ds.fileSources||ds.fileSources.length<=1){showToast('至少保留一个文件来源');return;}
+  ds.fileSources=ds.fileSources.filter(function(s){return s.id!==srcId;});
+  delete srcFileCache[srcId];saveDsCfg();renderDsCfgGrid();
+}
+function updSrcField(dsId,srcId,field,val){var src=getSrc(dsId,srcId);if(src)src[field]=val;saveDsCfg();}
+
+async function handleSrcFile(dsId,srcId,input){
+  var file=input.files[0];if(!file)return;
+  var src=getSrc(dsId,srcId);if(!src)return;
+  src.fileName=file.name;
+  showToast('读取文件中…');
+  var buf=await file.arrayBuffer();var wb=XLSX.read(buf);
+  srcFileCache[srcId]={wb:wb,fileName:file.name};
+  // Update sheet names
+  src.sheetName=wb.SheetNames[0];
+  // Clear pre-set columns so file columns show as all-checked by default
+  src.columns=[];
+  saveDsCfg();
+  // Re-render the entire card so column grid updates
+  var grid=document.getElementById('dsCfgGrid');
+  if(grid){
+    var ds=getDs(dsId);
+    var cardEl=document.getElementById('mcard_'+dsId);
+    if(cardEl){
+      cardEl.outerHTML=dsCfgCardHtml(ds);
+      // Re-open the card
+      setTimeout(function(){
+        var b=document.getElementById('mbody_'+dsId);
+        var c=document.getElementById('mchev_'+dsId);
+        if(b){b.classList.add('open');b.style.display='block';}
+        if(c) c.classList.add('op');
+      },30);
+    }
+  }
+  showToast('✓ 已读取 '+wb.SheetNames.length+' 个子表，列名已加载，请勾选需要的列');
+}
+function onSrcSheetChange(dsId,srcId){var sel=document.getElementById('fssheet_'+srcId);if(!sel)return;var src=getSrc(dsId,srcId);if(!src)return;src.sheetName=sel.value;loadSrcCols(dsId,srcId,sel.value);saveDsCfg();}
+function loadSrcCols(dsId,srcId,sn){
+  var cache=srcFileCache[srcId];if(!cache)return;
+  var ws=cache.wb.Sheets[sn];if(!ws)return;
+  var rows=XLSX.utils.sheet_to_json(ws,{header:1,range:0,raw:false});
+  var headers=rows[0]||[];
+  var src=getSrc(dsId,srcId);if(!src)return;
+  var grid=document.getElementById('fsColGrid_'+srcId);if(!grid)return;
+  grid.innerHTML=headers.map(function(h,i){
+    if(!h&&h!==0)return'';
+    var letter=i<26?String.fromCharCode(65+i):String.fromCharCode(64+Math.floor(i/26))+String.fromCharCode(65+i%26);
+    var sel=src.columns&&src.columns.includes(String(h));
+    return '<div class="citem '+(sel?'con':'')+'" onclick="toggleSrcCol(\''+dsId+'\',\''+srcId+'\',\''+h+'\',this)">'
+      +'<input type="checkbox"'+(sel?' checked':'')+' onchange="toggleSrcCol(\''+dsId+'\',\''+srcId+'\',\''+h+'\',this.closest(\'.citem\'))">'
+      +'<span class="cletter">'+letter+'</span><span class="cname">'+h+'</span></div>';
+  }).join('');
+  document.getElementById('fsColCount_'+srcId).textContent='已选 '+(src.columns?src.columns.length:0)+' 列';
+}
+function toggleSrcColEl(el){
+  var d=el.dataset||el.closest('[data-dsid]').dataset;
+  if(!el.dataset.dsid) el=el.closest('[data-dsid]');
+  toggleSrcCol(el.dataset.dsid, el.dataset.srcid, el.dataset.col, el);
+}
+function toggleAllSrcCols(dsId,srcId,cb){
+  var src=getSrc(dsId,srcId);if(!src)return;
+  if(!src.columns)src.columns=[];
+  var items=document.querySelectorAll('#fsColGrid_'+srcId+' .citem');
+  src.columns=[];
+  items.forEach(function(item){
+    var nm=item.querySelector('.cname').textContent;
+    item.classList.toggle('con',cb.checked);
+    item.querySelector('input').checked=cb.checked;
+    if(cb.checked)src.columns.push(nm);
+  });
+  var countEl=document.getElementById('fsColCount_'+srcId);
+  if(countEl)countEl.textContent='已选 '+src.columns.length+' 列';
+  saveDsCfg();
+}
+function toggleSrcCol(dsId,srcId,colName,el){
+  var src=getSrc(dsId,srcId);if(!src)return;if(!src.columns)src.columns=[];
+  colName=String(colName);var has=src.columns.includes(colName);
+  if(has){src.columns=src.columns.filter(function(c){return c!==colName;});el.classList.remove('con');el.querySelector('input').checked=false;}
+  else{src.columns.push(colName);el.classList.add('con');el.querySelector('input').checked=true;}
+  document.getElementById('fsColCount_'+srcId).textContent='已选 '+src.columns.length+' 列';
+  saveDsCfg();
+}
+function addSrcRule(dsId,srcId){
+  var src=getSrc(dsId,srcId);if(!src)return;if(!src.filters)src.filters=[];
+  src.filters.push({col:'',op:'equals',val:''});
+  var c=document.getElementById('fsRules_'+srcId);if(!c)return;
+  var d=document.createElement('div');d.innerHTML=addSrcRuleHtml(dsId,srcId,src.filters.length-1,src.filters[src.filters.length-1]);
+  c.appendChild(d.firstElementChild);saveDsCfg();
+}
+function updSrcRule(dsId,srcId,idx,field,val){var src=getSrc(dsId,srcId);if(!src||!src.filters)return;if(src.filters[idx])src.filters[idx][field]=val;saveDsCfg();}
+function removeSrcRule(dsId,srcId,idx){
+  var src=getSrc(dsId,srcId);if(!src||!src.filters)return;src.filters.splice(idx,1);
+  var c=document.getElementById('fsRules_'+srcId);if(!c)return;
+  c.innerHTML=src.filters.map(function(f,i){return addSrcRuleHtml(dsId,srcId,i,f);}).join('');saveDsCfg();
+}
+
+function cleanSrcRows(src){
+  var cache=srcFileCache[src.id];if(!cache)return null;
+  var ws=cache.wb.Sheets[src.sheetName||cache.wb.SheetNames[0]];
+  var rows=XLSX.utils.sheet_to_json(ws,{raw:false,defval:''});
+  if(src.columns&&src.columns.length) rows=rows.map(function(r){var o={};src.columns.forEach(function(c){if(Object.prototype.hasOwnProperty.call(r,c))o[c]=r[c];});return o;});
+  if(src.filters) src.filters.forEach(function(f){
+    if(!f.col||!f.val)return;
+    var vals=f.val.split(',').map(function(v){return v.trim();}).filter(Boolean);
+    rows=rows.filter(function(r){var cell=String(r[f.col]||'');
+      if(f.op==='equals')return vals.some(function(v){return cell===v;});
+      if(f.op==='contains')return vals.some(function(v){return cell.includes(v);});
+      if(f.op==='not_equals')return vals.every(function(v){return cell!==v;});
+      return vals.every(function(v){return !cell.includes(v);});
+    });
+  });
+  return rows;
+}
+
+function migrateDsFileSources(){
+  if(!dsCfg||!dsCfg.dataSources)return;
+  dsCfg.dataSources.forEach(function(ds){
+    if(!ds.fileSources){
+      ds.fileSources=[{id:'src_'+ds.id+'_0',label:'文件来源 1',fileName:ds.fileName||'',sheetName:ds.sheetName||'Sheet0',columns:[].concat(ds.columns||[]),filters:[].concat(ds.filters||[]),matchKeyword:''}];
+    }
+  });
+}
+
+
+
+/* ===== RIPPLE ===== */
+document.addEventListener('click', function(e){
+  var el = e.target.closest('.nav-item, .sync-btn, .upload-topbtn, .save-btn, .role-btn, .filter-chip');
+  if(!el) return;
+  var r = document.createElement('span');
+  r.className = 'ripple-effect';
+  var rect = el.getBoundingClientRect();
+  r.style.left = (e.clientX - rect.left) + 'px';
+  r.style.top = (e.clientY - rect.top) + 'px';
+  el.appendChild(r);
+  setTimeout(function(){ r.remove(); }, 600);
+});
 
 /* ===== TOAST ===== */
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',3500);}
