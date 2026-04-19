@@ -13,7 +13,7 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 /* SIDEBAR */
 #sidebar{width:210px;min-width:210px;background:rgba(255,255,255,0.55);backdrop-filter:blur(24px) saturate(200%);-webkit-backdrop-filter:blur(24px) saturate(200%);border-right:1px solid rgba(255,255,255,0.75);display:flex;flex-direction:column;overflow:hidden;box-shadow:2px 0 16px rgba(100,120,180,0.08);}
 .sidebar-logo{padding:20px 16px 14px;border-bottom:1px solid rgba(200,210,230,0.5);}
-.sidebar-logo .brand{font-size:17px;font-weight:800;color:#2563eb;letter-spacing:.3px;line-height:1.2;}
+.sidebar-logo .brand{font-size:19px;font-weight:900;color:#2563eb;letter-spacing:.5px;line-height:1.2;position:relative;overflow:hidden;cursor:default;}
 .sidebar-logo .sub{font-size:10px;color:#94a3b8;margin-top:3px;}
 .nav-section{padding:14px 12px 5px;font-size:10px;color:#94a3b8;letter-spacing:1.5px;text-transform:uppercase;font-weight:600;}
 .nav-item{display:flex;align-items:center;gap:9px;padding:9px 16px;cursor:pointer;font-size:13px;color:#64748b;border-left:3px solid transparent;transition:all .18s;}
@@ -38,7 +38,7 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .topbar-title{font-size:14px;font-weight:700;color:#1e293b;white-space:nowrap;}
 /* 滚动公告 */
 .marquee-wrap{flex:1;overflow:hidden;margin:0 12px;}
-.marquee-inner{display:inline-block;white-space:nowrap;animation:marquee 28s linear infinite;font-size:12px;color:#64748b;}
+.marquee-inner{display:inline-block;white-space:nowrap;animation:marquee 28s linear infinite;font-size:12px;color:#2563eb;font-weight:600;letter-spacing:.3px;}
 .marquee-inner:hover{animation-play-state:paused;}
 @keyframes marquee{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}
 .topbar-right{display:flex;align-items:center;gap:8px;flex-shrink:0;}
@@ -153,25 +153,92 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
 #toast{position:fixed;bottom:20px;right:20px;background:rgba(255,255,255,0.92);backdrop-filter:blur(16px);border:1px solid rgba(200,210,230,0.8);color:#1e293b;padding:9px 16px;border-radius:10px;font-size:13px;display:none;z-index:999;box-shadow:0 4px 20px rgba(100,120,180,0.15);}
 
 /* SETTINGS MODAL */
-.modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,0.35);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;}
+.modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,0.4);backdrop-filter:blur(6px);z-index:200;display:none;align-items:center;justify-content:center;}
 .modal-overlay.open{display:flex;}
-.settings-modal{width:38vw;min-width:360px;max-width:560px;background:rgba(255,255,255,0.92);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.9);border-radius:18px;box-shadow:0 12px 48px rgba(100,120,180,0.18);overflow:hidden;}
-.modal-header{padding:16px 20px 12px;border-bottom:1px solid rgba(200,210,230,0.4);display:flex;align-items:center;justify-content:space-between;}
-.modal-title{font-size:14px;font-weight:700;color:#1e293b;}
-.modal-close{width:26px;height:26px;border-radius:50%;border:none;background:rgba(200,210,230,0.4);color:#64748b;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
+.settings-modal{width:72vw;max-width:960px;min-width:640px;height:78vh;background:rgba(248,250,255,0.97);backdrop-filter:blur(24px);border:1px solid rgba(255,255,255,0.9);border-radius:20px;box-shadow:0 16px 56px rgba(100,120,180,0.22);overflow:hidden;display:flex;flex-direction:column;}
+.modal-header{padding:16px 22px 12px;border-bottom:1px solid rgba(200,210,230,0.4);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
+.modal-title{font-size:15px;font-weight:700;color:#1e293b;}
+.modal-close{width:28px;height:28px;border-radius:50%;border:none;background:rgba(200,210,230,0.4);color:#64748b;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center;transition:all .15s;}
 .modal-close:hover{background:#ef4444;color:#fff;}
-.modal-body{padding:16px 20px 20px;max-height:60vh;overflow-y:auto;}
+/* Modal tabs */
+.modal-tabs{display:flex;gap:3px;padding:8px 22px 0;border-bottom:1px solid rgba(200,210,230,0.4);flex-shrink:0;background:rgba(255,255,255,0.5);}
+.modal-tab{padding:7px 18px;font-size:13px;color:#64748b;cursor:pointer;border-bottom:2px solid transparent;font-weight:500;transition:all .15s;white-space:nowrap;}
+.modal-tab.active{color:#2563eb;border-bottom-color:#2563eb;font-weight:600;}
+.modal-tab:hover:not(.active){color:#2563eb;}
+.modal-pane{display:none;flex:1;overflow-y:auto;padding:18px 22px 22px;}
+.modal-pane.active{display:block;}
+.modal-pane::-webkit-scrollbar{width:4px;}
+.modal-pane::-webkit-scrollbar-thumb{background:rgba(148,163,184,0.4);border-radius:2px;}
+/* Slogan section */
 .modal-section{margin-bottom:18px;}
-.modal-section-title{font-size:12px;font-weight:600;color:#64748b;margin-bottom:8px;letter-spacing:.5px;}
+.modal-section-title{font-size:11px;font-weight:600;color:#94a3b8;margin-bottom:8px;letter-spacing:1px;text-transform:uppercase;}
 .slogan-item{display:flex;align-items:center;gap:7px;margin-bottom:6px;}
 .slogan-input{flex:1;font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.8);color:#1e293b;outline:none;font-family:inherit;}
 .slogan-del{width:24px;height:24px;border-radius:6px;border:none;background:rgba(239,68,68,0.1);color:#ef4444;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;}
 .slogan-del:hover{background:#ef4444;color:#fff;}
-.add-btn{font-size:12px;padding:5px 12px;border-radius:8px;border:1.5px dashed rgba(37,99,235,0.4);background:transparent;color:#2563eb;cursor:pointer;transition:all .15s;}
+.add-btn{font-size:12px;padding:5px 12px;border-radius:8px;border:1.5px dashed rgba(37,99,235,0.4);background:transparent;color:#2563eb;cursor:pointer;transition:all .15s;font-family:inherit;}
 .add-btn:hover{background:rgba(37,99,235,0.08);}
-.rule-select{font-size:12px;padding:5px 10px;border-radius:8px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.8);color:#1e293b;outline:none;font-family:inherit;width:100%;}
-.save-btn{width:100%;padding:9px;border-radius:10px;border:none;background:#2563eb;color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;margin-top:4px;}
+.rule-select{font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.8);color:#1e293b;outline:none;font-family:inherit;width:100%;}
+.save-btn{padding:9px 24px;border-radius:10px;border:none;background:#2563eb;color:#fff;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;font-family:inherit;}
 .save-btn:hover{background:#1d4ed8;}
+/* DS Config inside modal */
+.ds-card-m{background:rgba(255,255,255,0.75);border:1px solid rgba(200,210,230,0.6);border-radius:12px;overflow:hidden;margin-bottom:10px;}
+.ds-head-m{display:flex;align-items:center;justify-content:space-between;padding:11px 16px;cursor:pointer;user-select:none;border-bottom:1px solid transparent;}
+.ds-head-m:hover{background:rgba(37,99,235,0.04);}
+.ds-head-m.open{border-bottom-color:rgba(200,210,230,0.4);}
+.ds-body-m{padding:14px 16px;display:none;}
+.ds-body-m.open{display:block;}
+.ds-name-m{font-size:13px;font-weight:700;color:#1e293b;}
+.ds-desc-m{font-size:11px;color:#94a3b8;margin-top:1px;}
+.ds-badge-m{font-size:11px;padding:2px 8px;border-radius:8px;}
+.badge-a{background:rgba(5,150,105,0.1);color:#059669;border:1px solid rgba(5,150,105,0.2);}
+.badge-o{background:rgba(100,116,139,0.1);color:#475569;border:1px solid rgba(100,116,139,0.2);}
+.chev-m{font-size:11px;color:#94a3b8;transition:transform .18s;}
+.chev-m.op{transform:rotate(180deg);}
+.flabel{font-size:11px;font-weight:600;color:#475569;margin-bottom:5px;display:block;}
+.fhint{font-size:10px;color:#94a3b8;font-weight:400;}
+.finput{font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.8);color:#1e293b;outline:none;font-family:inherit;width:100%;}
+.finput:focus{border-color:#2563eb;}
+.fsel{font-size:12px;padding:6px 10px;border-radius:8px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.8);color:#1e293b;outline:none;font-family:inherit;width:100%;}
+.fzone{border:1.5px dashed rgba(37,99,235,0.3);border-radius:10px;padding:12px;text-align:center;cursor:pointer;transition:all .15s;background:rgba(37,99,235,0.02);}
+.fzone:hover{border-color:#2563eb;background:rgba(37,99,235,0.05);}
+.fzone.has{border-color:rgba(5,150,105,0.4);background:rgba(5,150,105,0.03);}
+.fzone-txt{font-size:12px;color:#94a3b8;}
+.fzone-name{font-size:12px;color:#059669;font-weight:600;margin-top:3px;}
+.cgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:4px;max-height:180px;overflow-y:auto;padding:2px;}
+.citem{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:7px;border:1px solid rgba(200,210,230,0.5);background:rgba(255,255,255,0.6);cursor:pointer;transition:all .1s;font-size:11px;}
+.citem:hover{border-color:#2563eb;background:rgba(37,99,235,0.04);}
+.citem.con{border-color:#2563eb;background:rgba(37,99,235,0.07);}
+.citem input[type=checkbox]{accent-color:#2563eb;cursor:pointer;flex-shrink:0;width:12px;height:12px;}
+.cletter{font-size:10px;font-weight:700;color:#94a3b8;width:18px;flex-shrink:0;}
+.cname{color:#334155;flex:1;}
+.frule{display:grid;grid-template-columns:1fr 80px 1fr auto;gap:6px;align-items:center;margin-bottom:6px;}
+.frule input,.frule select{font-size:11px;padding:5px 8px;border-radius:7px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.8);color:#1e293b;outline:none;font-family:inherit;}
+.delbtn{width:24px;height:24px;border-radius:6px;border:none;background:rgba(239,68,68,0.1);color:#dc2626;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;}
+.delbtn:hover{background:#dc2626;color:#fff;}
+.mtoggle{display:flex;border-radius:8px;overflow:hidden;border:1px solid rgba(200,210,230,0.8);width:fit-content;}
+.mbtn{padding:6px 16px;font-size:11px;cursor:pointer;border:none;font-family:inherit;font-weight:500;background:transparent;color:#64748b;transition:all .15s;}
+.mbtn.aon{background:#059669;color:#fff;}
+.mbtn.oon{background:#475569;color:#fff;}
+.warnbox{display:none;margin-top:8px;padding:8px 12px;border-radius:8px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);font-size:11px;color:#dc2626;align-items:center;justify-content:space-between;gap:8px;}
+.warnbox.show{display:flex;}
+.scchip{font-size:11px;padding:3px 9px;border-radius:16px;background:rgba(255,255,255,0.7);border:1px solid rgba(200,210,230,0.6);color:#64748b;}
+.scchip strong{color:#2563eb;}
+.prevwrap{border-radius:10px;overflow:hidden;border:1px solid rgba(200,210,230,0.5);margin-top:10px;}
+.prevhead{display:flex;align-items:center;justify-content:space-between;padding:7px 12px;background:rgba(241,245,249,0.85);border-bottom:1px solid rgba(200,210,230,0.4);font-size:11px;font-weight:600;color:#475569;}
+.prevscroll{overflow-x:auto;max-height:200px;overflow-y:auto;}
+.prevtable{border-collapse:collapse;font-size:11px;white-space:nowrap;width:100%;}
+.prevtable th{background:rgba(241,245,249,0.9);color:#475569;font-weight:600;padding:6px 10px;border-bottom:1px solid rgba(200,210,230,0.4);text-align:left;position:sticky;top:0;}
+.prevtable td{padding:5px 10px;border-bottom:1px solid rgba(200,210,230,0.25);color:#334155;}
+.prevtable tr:last-child td{border-bottom:none;}
+.prevtable tr:hover td{background:rgba(37,99,235,0.04);}
+.histitem{display:flex;align-items:center;gap:10px;padding:7px 12px;border-bottom:1px solid rgba(200,210,230,0.3);font-size:11px;}
+.histitem:last-child{border-bottom:none;}
+.frow2{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+.frow3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:12px;}
+.comprow{display:grid;grid-template-columns:1fr 24px 1fr 24px 1fr;gap:6px;align-items:center;margin-bottom:6px;}
+.comprow input,.comprow select{font-size:11px;padding:5px 8px;border-radius:7px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.8);color:#1e293b;outline:none;font-family:inherit;}
+.compop{text-align:center;font-size:14px;color:#94a3b8;}
 
 /* 空页提示 */
 .empty-page{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:#94a3b8;gap:12px;}
@@ -223,6 +290,65 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
 .smoke-particle:nth-child(2){animation-delay:.7s;right:22px;}
 .smoke-particle:nth-child(3){animation-delay:1.4s;right:32px;}
 
+
+/* ===== V1.5 ENHANCEMENTS ===== */
+
+/* Brand shimmer */
+@keyframes brand-shimmer{0%{left:-80%}100%{left:120%}}
+.sidebar-logo .brand::after{content:'';position:absolute;top:0;left:-80%;width:40%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.7),transparent);animation:brand-shimmer 2.8s ease-in-out infinite;pointer-events:none;}
+
+/* UI entrance animations */
+@keyframes fadeInUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeInLeft{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:translateX(0)}}
+.page.active{animation:fadeInUp .28s ease both;}
+.ov-card{animation:fadeInUp .3s ease both;}
+.ov-card:nth-child(1){animation-delay:.04s}.ov-card:nth-child(2){animation-delay:.08s}
+.ov-card:nth-child(3){animation-delay:.12s}.ov-card:nth-child(4){animation-delay:.16s}
+.ov-card:nth-child(5){animation-delay:.20s}
+.rank-item{animation:fadeInLeft .25s ease both;}
+.kpi-card{animation:fadeInUp .28s ease both;}
+.train-section-box{animation:fadeInUp .3s ease both;}
+.card{transition:transform .18s,box-shadow .18s;}
+.card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(100,120,180,0.13);}
+
+/* Marquee upgrade */
+.marquee-wrap{background:rgba(37,99,235,0.05);border-radius:20px;border:1px solid rgba(37,99,235,0.15);padding:0 14px;}
+
+/* Black board dark theme */
+.black-board-wrap{background:linear-gradient(160deg,#1e1b2e 0%,#16213e 50%,#0f1429 100%) !important;border:1.5px solid rgba(99,102,241,0.35) !important;box-shadow:0 4px 24px rgba(15,20,40,0.25) !important;}
+.black-header{border-bottom:1px solid rgba(99,102,241,0.2) !important;}
+.black-card{background:rgba(255,255,255,0.06) !important;border:1px solid rgba(99,102,241,0.25) !important;color:#e2e8f0;}
+.black-card.rank1{background:rgba(99,102,241,0.15) !important;border-color:rgba(99,102,241,0.5) !important;}
+.black-card .board-name{color:#e2e8f0 !important;}
+.black-card .board-warehouse{background:rgba(255,255,255,0.08) !important;color:#94a3b8 !important;}
+.black-card .board-stat{color:#94a3b8 !important;}
+.black-card .board-stat-val{color:#c4b5fd !important;}
+.black-rate{color:#c4b5fd !important;}
+.black-board-wrap .board-title-text>div:first-child{color:#c4b5fd !important;}
+.black-board-wrap .board-title-text>div:last-child{color:#8b5cf6 !important;}
+@keyframes pulse-purple{0%,100%{box-shadow:0 0 0 0 rgba(99,102,241,0)}50%{box-shadow:0 0 0 6px rgba(99,102,241,0.12)}}
+.black-board-wrap{animation:pulse-purple 3s ease-in-out infinite !important;}
+.black-card.rank1{animation:pulse-purple 2s ease-in-out infinite !important;}
+.smoke-particle{background:rgba(99,102,241,0.4) !important;}
+
+/* Multi-select dropdown */
+.multiselect-wrap{position:relative;display:inline-block;}
+.multiselect-btn{font-size:12px;padding:4px 10px;border-radius:7px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.7);color:#1e293b;cursor:pointer;white-space:nowrap;display:flex;align-items:center;gap:5px;min-width:100px;justify-content:space-between;}
+.multiselect-btn:hover{border-color:#2563eb;}
+.multiselect-dropdown{position:absolute;top:calc(100% + 4px);left:0;min-width:160px;background:rgba(255,255,255,0.95);backdrop-filter:blur(16px);border:1px solid rgba(200,210,230,0.8);border-radius:10px;box-shadow:0 8px 24px rgba(100,120,180,0.15);z-index:100;overflow:hidden;display:none;max-height:240px;overflow-y:auto;}
+.multiselect-dropdown.open{display:block;animation:fadeInUp .15s ease both;}
+.ms-option{display:flex;align-items:center;gap:8px;padding:7px 12px;font-size:12px;color:#334155;cursor:pointer;transition:background .12s;}
+.ms-option:hover{background:rgba(37,99,235,0.06);}
+.ms-option input[type=checkbox]{accent-color:#2563eb;width:13px;height:13px;cursor:pointer;}
+.ms-option.ms-all{border-bottom:1px solid rgba(200,210,230,0.4);font-weight:600;color:#2563eb;}
+.ms-tag{display:inline-flex;align-items:center;gap:3px;font-size:11px;padding:1px 7px;background:rgba(37,99,235,0.1);color:#2563eb;border-radius:10px;}
+
+/* Training filter bar */
+.train-filter-bar{display:flex;align-items:flex-start;flex-wrap:wrap;gap:8px;padding:12px 16px;border-radius:12px;margin-bottom:12px;}
+.train-rank-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:12px;}
+.train-rank-card{border-radius:12px;padding:14px 16px;background:rgba(255,255,255,0.65);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,0.9);box-shadow:0 2px 10px rgba(100,120,180,0.08);}
+.train-rank-title{font-size:12px;font-weight:600;color:#475569;margin-bottom:10px;display:flex;align-items:center;gap:6px;}
+
 </style>
 </head>
 <body>
@@ -268,7 +394,7 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
       <svg id="gearBtn" class="gear-btn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" onclick="openSettings()">
         <path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><circle cx="12" cy="12" r="3"/>
       </svg>
-      <span class="ver">v1.4 · 培训部看板</span>
+      <span class="ver">v1.5 · 培训部看板</span>
     </div>
   </div>
 </nav>
@@ -381,6 +507,41 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
     <!-- 培训答疑 -->
     <div class="page" id="page-training">
 
+      <!-- 全局筛选：日期范围 + 仓多选 -->
+      <div class="train-filter-bar glass">
+        <span class="filter-label">日期范围</span>
+        <input type="date" id="trainDateFrom" class="filter-input" onchange="applyTrainGlobalFilter()">
+        <span style="font-size:11px;color:#94a3b8;">至</span>
+        <input type="date" id="trainDateTo" class="filter-input" onchange="applyTrainGlobalFilter()">
+        <div class="filter-div"></div>
+        <span class="filter-label">仓库</span>
+        <div class="multiselect-wrap" id="trainWhWrap">
+          <div class="multiselect-btn" onclick="toggleMs('trainWhDrop')" id="trainWhBtn">
+            <span id="trainWhLabel">全部仓库</span>
+            <span style="font-size:10px;color:#94a3b8;">▼</span>
+          </div>
+          <div class="multiselect-dropdown" id="trainWhDrop">
+            <label class="ms-option ms-all"><input type="checkbox" id="trainWhAll" checked onchange="toggleAllWh('train',this)">全部仓库</label>
+            <label class="ms-option"><input type="checkbox" class="train-wh-cb" value="南京库" checked onchange="updateWhLabel('train')">南京库</label>
+            <label class="ms-option"><input type="checkbox" class="train-wh-cb" value="南昌库" checked onchange="updateWhLabel('train')">南昌库</label>
+            <label class="ms-option"><input type="checkbox" class="train-wh-cb" value="合肥库" checked onchange="updateWhLabel('train')">合肥库</label>
+            <label class="ms-option"><input type="checkbox" class="train-wh-cb" value="成都库" checked onchange="updateWhLabel('train')">成都库</label>
+            <label class="ms-option"><input type="checkbox" class="train-wh-cb" value="昆明库" checked onchange="updateWhLabel('train')">昆明库</label>
+            <label class="ms-option"><input type="checkbox" class="train-wh-cb" value="杭州库" checked onchange="updateWhLabel('train')">杭州库</label>
+            <label class="ms-option"><input type="checkbox" class="train-wh-cb" value="武汉库" checked onchange="updateWhLabel('train')">武汉库</label>
+            <label class="ms-option"><input type="checkbox" class="train-wh-cb" value="沈阳库" checked onchange="updateWhLabel('train')">沈阳库</label>
+            <label class="ms-option"><input type="checkbox" class="train-wh-cb" value="济南库" checked onchange="updateWhLabel('train')">济南库</label>
+            <label class="ms-option"><input type="checkbox" class="train-wh-cb" value="深圳中心仓" checked onchange="updateWhLabel('train')">深圳中心仓</label>
+            <label class="ms-option"><input type="checkbox" class="train-wh-cb" value="石家庄库" checked onchange="updateWhLabel('train')">石家庄库</label>
+            <label class="ms-option"><input type="checkbox" class="train-wh-cb" value="西安库" checked onchange="updateWhLabel('train')">西安库</label>
+            <label class="ms-option"><input type="checkbox" class="train-wh-cb" value="郑州库" checked onchange="updateWhLabel('train')">郑州库</label>
+            <label class="ms-option"><input type="checkbox" class="train-wh-cb" value="重庆库" checked onchange="updateWhLabel('train')">重庆库</label>
+            <label class="ms-option"><input type="checkbox" class="train-wh-cb" value="长沙库" checked onchange="updateWhLabel('train')">长沙库</label>
+          </div>
+        </div>
+        <button class="sync-btn" style="font-size:11px;padding:4px 12px;" onclick="applyTrainGlobalFilter()">查询</button>
+      </div>
+
       <!-- 培训数据区块 -->
       <div class="train-section-box">
         <div class="train-section-title">
@@ -389,13 +550,22 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
           <input type="file" id="trainingExcelFile" accept=".xlsx,.xls,.csv" onchange="handleUpload(this,'training')">
         </div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;">
-          <div class="card"><div style="font-size:11px;color:#64748b;margin-bottom:5px;">本月培训场次</div><div style="font-size:22px;font-weight:700;color:#2563eb;">48</div><div style="font-size:11px;color:#059669;margin-top:3px;">↑ 较上月 +6 场</div></div>
-          <div class="card"><div style="font-size:11px;color:#64748b;margin-bottom:5px;">本月参训人次</div><div style="font-size:22px;font-weight:700;color:#2563eb;">1,286</div><div style="font-size:11px;color:#94a3b8;margin-top:3px;">覆盖率 83.2%</div></div>
+          <div class="card"><div style="font-size:11px;color:#64748b;margin-bottom:5px;">筛选期培训场次</div><div style="font-size:22px;font-weight:700;color:#2563eb;" id="kTrainCount">48</div><div style="font-size:11px;color:#059669;margin-top:3px;">↑ 较上月 +6 场</div></div>
+          <div class="card"><div style="font-size:11px;color:#64748b;margin-bottom:5px;">筛选期参训人次</div><div style="font-size:22px;font-weight:700;color:#2563eb;" id="kTrainPeople">1,286</div><div style="font-size:11px;color:#94a3b8;margin-top:3px;">覆盖率 83.2%</div></div>
           <div class="card"><div style="font-size:11px;color:#64748b;margin-bottom:5px;">平均响应时长</div><div style="font-size:22px;font-weight:700;color:#d97706;">2.4h</div><div style="font-size:11px;color:#059669;margin-top:3px;">↑ 较上月优化 0.3h</div></div>
         </div>
-        <div class="charts-2" style="margin-bottom:0;">
-          <div class="card"><div class="chart-title">近 8 周培训场次 & 参训人次</div><div class="chart-wrap"><canvas id="chartTrainTrend"></canvas></div></div>
-          <div class="card"><div class="chart-title">培训课题分布</div><div class="chart-wrap"><canvas id="chartTopics"></canvas></div></div>
+        <!-- 培训仓排名 -->
+        <div class="train-rank-grid">
+          <div class="train-rank-card">
+            <div class="train-rank-title">🏅 各仓培训场次排名</div>
+            <div id="trainCountRank"></div>
+          </div>
+          <div class="charts-2" style="margin-bottom:0;grid-column:span 1;">
+            <div class="card" style="grid-column:span 2;"><div class="chart-title">近 8 周培训场次 & 参训人次</div><div class="chart-wrap"><canvas id="chartTrainTrend"></canvas></div></div>
+          </div>
+        </div>
+        <div style="margin-top:12px;">
+          <div class="card"><div class="chart-title">培训课题分布</div><div class="chart-wrap" style="height:160px;"><canvas id="chartTopics"></canvas></div></div>
         </div>
       </div>
 
@@ -407,17 +577,24 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
           <input type="file" id="qaExcelFile" accept=".xlsx,.xls,.csv" onchange="handleUpload(this,'qa')">
         </div>
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px;">
-          <div class="card"><div style="font-size:11px;color:#64748b;margin-bottom:5px;">累计答疑数</div><div style="font-size:22px;font-weight:700;color:#059669;">3,047</div><div style="font-size:11px;color:#059669;margin-top:3px;">本月新增 412</div></div>
+          <div class="card"><div style="font-size:11px;color:#64748b;margin-bottom:5px;">筛选期答疑总量</div><div style="font-size:22px;font-weight:700;color:#059669;" id="kQaTotal">3,047</div><div style="font-size:11px;color:#059669;margin-top:3px;">本月新增 412</div></div>
           <div class="card">
-            <div style="font-size:11px;color:#64748b;margin-bottom:5px;">答疑正确率（标准覆盖）<span style="font-size:10px;color:#94a3b8;"></span></div>
+            <div style="font-size:11px;color:#64748b;margin-bottom:5px;">答疑正确率<span style="font-size:10px;color:#94a3b8;">（标准覆盖）</span></div>
             <div style="font-size:22px;font-weight:700;color:#059669;">91.8%</div>
             <div style="font-size:11px;color:#dc2626;margin-top:3px;">↓ 未覆盖 250 条</div>
           </div>
           <div class="card"><div style="font-size:11px;color:#64748b;margin-bottom:5px;">本月新增答疑</div><div style="font-size:22px;font-weight:700;color:#7c3aed;">412</div><div style="font-size:11px;color:#94a3b8;margin-top:3px;">较上月 +38 条</div></div>
         </div>
-        <div class="charts-2" style="margin-bottom:0;">
-          <div class="card"><div class="chart-title">近 8 周答疑量 & 正确率</div><div class="chart-wrap"><canvas id="chartQaTrend"></canvas></div></div>
-          <div class="card"><div class="chart-title">各区域提问排名（Top 10）</div><div style="padding-top:4px;" id="regionRanking"></div></div>
+        <!-- 答疑仓排名 -->
+        <div class="train-rank-grid">
+          <div class="train-rank-card">
+            <div class="train-rank-title">🏅 各仓答疑量排名</div>
+            <div id="qaCountRank"></div>
+          </div>
+          <div class="card">
+            <div class="chart-title">近 8 周答疑量 & 正确率</div>
+            <div class="chart-wrap"><canvas id="chartQaTrend"></canvas></div>
+          </div>
         </div>
       </div>
 
@@ -465,22 +642,32 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
       <!-- 筛选栏 -->
       <div class="filter-bar glass" style="margin-bottom:16px;">
         <span class="filter-label">仓库筛选</span>
-        <select id="rankingWarehouseFilter" class="filter-select" onchange="renderRankingBoard()">
-          <option value="全部">全国（所有仓库）</option>
-          <option>南京库</option><option>南昌库</option><option>合肥库</option><option>成都库</option>
-          <option>昆明库</option><option>杭州库</option><option>武汉库</option><option>沈阳库</option>
-          <option>济南库</option><option>深圳中心仓</option><option>石家庄库</option><option>西安库</option>
-          <option>郑州库</option><option>重庆库</option><option>长沙库</option>
-        </select>
+        <div class="multiselect-wrap" id="rankWhWrap">
+          <div class="multiselect-btn" onclick="toggleMs('rankWhDrop')" id="rankWhBtn">
+            <span id="rankWhLabel">全部仓库</span>
+            <span style="font-size:10px;color:#94a3b8;">▼</span>
+          </div>
+          <div class="multiselect-dropdown" id="rankWhDrop">
+            <label class="ms-option ms-all"><input type="checkbox" id="rankWhAll" checked onchange="toggleAllWh('rank',this)">全部仓库</label>
+            <label class="ms-option"><input type="checkbox" class="rank-wh-cb" value="南京库" checked onchange="updateWhLabel('rank')">南京库</label>
+            <label class="ms-option"><input type="checkbox" class="rank-wh-cb" value="南昌库" checked onchange="updateWhLabel('rank')">南昌库</label>
+            <label class="ms-option"><input type="checkbox" class="rank-wh-cb" value="合肥库" checked onchange="updateWhLabel('rank')">合肥库</label>
+            <label class="ms-option"><input type="checkbox" class="rank-wh-cb" value="成都库" checked onchange="updateWhLabel('rank')">成都库</label>
+            <label class="ms-option"><input type="checkbox" class="rank-wh-cb" value="昆明库" checked onchange="updateWhLabel('rank')">昆明库</label>
+            <label class="ms-option"><input type="checkbox" class="rank-wh-cb" value="杭州库" checked onchange="updateWhLabel('rank')">杭州库</label>
+            <label class="ms-option"><input type="checkbox" class="rank-wh-cb" value="武汉库" checked onchange="updateWhLabel('rank')">武汉库</label>
+            <label class="ms-option"><input type="checkbox" class="rank-wh-cb" value="沈阳库" checked onchange="updateWhLabel('rank')">沈阳库</label>
+            <label class="ms-option"><input type="checkbox" class="rank-wh-cb" value="济南库" checked onchange="updateWhLabel('rank')">济南库</label>
+            <label class="ms-option"><input type="checkbox" class="rank-wh-cb" value="深圳中心仓" checked onchange="updateWhLabel('rank')">深圳中心仓</label>
+            <label class="ms-option"><input type="checkbox" class="rank-wh-cb" value="石家庄库" checked onchange="updateWhLabel('rank')">石家庄库</label>
+            <label class="ms-option"><input type="checkbox" class="rank-wh-cb" value="西安库" checked onchange="updateWhLabel('rank')">西安库</label>
+            <label class="ms-option"><input type="checkbox" class="rank-wh-cb" value="郑州库" checked onchange="updateWhLabel('rank')">郑州库</label>
+            <label class="ms-option"><input type="checkbox" class="rank-wh-cb" value="重庆库" checked onchange="updateWhLabel('rank')">重庆库</label>
+            <label class="ms-option"><input type="checkbox" class="rank-wh-cb" value="长沙库" checked onchange="updateWhLabel('rank')">长沙库</label>
+          </div>
+        </div>
         <div class="filter-div"></div>
-        <span class="filter-label">触发阈值</span>
-        <select id="rankingThreshold" class="filter-select" onchange="renderRankingBoard()">
-          <option value="2">差异率 &gt;2%（黑榜入围）</option>
-          <option value="3" selected>差异率 &gt;3%（默认）</option>
-          <option value="5">差异率 &gt;5%（严格）</option>
-        </select>
-        <div class="filter-div"></div>
-        <span style="font-size:11px;color:#94a3b8;">以周维度计算触发次数</span>
+        <span style="font-size:11px;color:#94a3b8;">各仓差异率 Top3 红榜 · Bottom3 黑榜 · 以周维度计算触发次数</span>
       </div>
 
       <!-- 红黑榜主体 -->
@@ -522,18 +709,28 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
   </div>
 </div>
 
-<!-- 设置悬浮窗 -->
-<div class="modal-overlay" id="settingsModal">
-  <div class="settings-modal">
+<!-- 设置弹窗 -->
+<div class="modal-overlay" id="settingsModal" onclick="handleOverlayClick(event)">
+  <div class="settings-modal" onclick="event.stopPropagation()">
     <div class="modal-header">
-      <div class="modal-title">⚙️ 系统设置</div>
+      <div class="modal-title">⚙️ 系统设置 <span style="font-size:11px;color:#94a3b8;font-weight:400;margin-left:8px;">创造者模式</span></div>
       <button class="modal-close" onclick="closeSettings()">✕</button>
     </div>
-    <div class="modal-body">
+    <!-- Modal Tabs -->
+    <div class="modal-tabs">
+      <div class="modal-tab active" onclick="switchModalTab('announce',this)">📢 公告栏</div>
+      <div class="modal-tab" onclick="switchModalTab('datasource',this)">🗄️ 数据源配置</div>
+      <div class="modal-tab" onclick="switchModalTab('computed',this)">🔢 计算字段</div>
+      <div class="modal-tab" onclick="switchModalTab('history',this)">📋 上传历史</div>
+      <div class="modal-tab" onclick="switchModalTab('debug',this)">🔍 调试预览</div>
+    </div>
+
+    <!-- 公告栏 -->
+    <div class="modal-pane active" id="mpane-announce">
       <div class="modal-section">
-        <div class="modal-section-title">公告栏 · 滚动口号</div>
+        <div class="modal-section-title">滚动口号</div>
         <div id="sloganList"></div>
-        <button class="add-btn" onclick="addSlogan()">+ 新增一条口号</button>
+        <button class="add-btn" onclick="addSlogan()">+ 新增口号</button>
       </div>
       <div class="modal-section">
         <div class="modal-section-title">播报规则</div>
@@ -544,6 +741,52 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
         </select>
       </div>
       <button class="save-btn" onclick="saveSettings()">保存并同步到云端</button>
+    </div>
+
+    <!-- 数据源配置 -->
+    <div class="modal-pane" id="mpane-datasource">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;">
+        <div style="font-size:12px;color:#94a3b8;">配置各模块的取数规则、列筛选、存储策略。上传文件后自动按规则清洗再推送到 GitHub。</div>
+        <div style="display:flex;gap:7px;">
+          <button class="save-btn" style="padding:6px 14px;font-size:12px;" onclick="exportDsConfig()">导出配置</button>
+          <label class="save-btn" for="importDsCfg" style="padding:6px 14px;font-size:12px;cursor:pointer;background:rgba(37,99,235,0.1);color:#2563eb;border:1px solid rgba(37,99,235,0.3);">导入配置</label>
+          <input type="file" id="importDsCfg" accept=".json" style="display:none;" onchange="importDsConfig(this)">
+        </div>
+      </div>
+      <div id="dsCfgGrid"></div>
+      <button class="add-btn" style="margin-top:8px;" onclick="addDsCard()">+ 新增数据源</button>
+    </div>
+
+    <!-- 计算字段 -->
+    <div class="modal-pane" id="mpane-computed">
+      <div style="font-size:12px;color:#94a3b8;margin-bottom:12px;">定义跨列计算逻辑，上传时自动生成新列。如：差异率 = 差异量 ÷ 抽检量。</div>
+      <div id="computedCfgList"></div>
+      <button class="add-btn" onclick="addComputedCfg()">+ 新增计算字段</button>
+    </div>
+
+    <!-- 上传历史 -->
+    <div class="modal-pane" id="mpane-history">
+      <div id="uploadHistoryList"><div style="text-align:center;padding:24px;color:#94a3b8;font-size:12px;">暂无上传记录</div></div>
+    </div>
+
+    <!-- 调试预览 -->
+    <div class="modal-pane" id="mpane-debug">
+      <div class="frow2" style="margin-bottom:12px;">
+        <div>
+          <label class="flabel">选择数据源</label>
+          <select class="fsel" id="debugDsSel" onchange="renderDebugPreview()"><option value="">请选择…</option></select>
+        </div>
+        <div>
+          <label class="flabel">上传测试文件</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <label class="add-btn" for="debugFileInput" style="cursor:pointer;">选择文件</label>
+            <input type="file" id="debugFileInput" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleDebugFile(this)">
+            <span id="debugFName" style="font-size:11px;color:#059669;"></span>
+          </div>
+        </div>
+      </div>
+      <div id="debugStatRow" style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:10px;"></div>
+      <div id="debugPreviewArea"><div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px;">选择数据源并上传文件后显示清洗预览（前10行）</div></div>
     </div>
   </div>
 </div>
@@ -627,16 +870,51 @@ let slogans=['欢迎使用培训部数据看板 · 数据驱动，精益求精']
 function refreshMarquee(){document.getElementById('marqueeText').textContent=slogans.join('   ·   ');}
 
 /* ===== SETTINGS MODAL ===== */
+let dsCfg = { dataSources:[], computedCols:[] };
+let dsFileCache = {}; // dsId -> workbook
+let debugWb = null;
+let dsUploadHistory = JSON.parse(localStorage.getItem('ds_upload_history')||'[]');
+
+const DS_DEFAULTS = [
+  {id:'ds1',name:'表1 · QA差异率（站点维度）',desc:'手机-质量邮件 表1',fileName:'',sheetName:'Sheet0',columns:[],filters:[],mode:'overwrite',targetKey:'quality_site_data',rowCount:0,lastUpload:'',hint:'建议：A抽检日期 C站点名称 E品类名称 R总抽检量 S总客观差异量 T总客观差异率'},
+  {id:'ds2',name:'表2 · 执行客观差异率（工程师维度）',desc:'手机-质量邮件 表2，红黑榜人员数据，每日叠加',fileName:'',sheetName:'Sheet0',columns:[],filters:[],mode:'append',targetKey:'quality_engineer_data',rowCount:0,lastUpload:'',hint:'建议：A站点 B质检操作人 D合计抽检量 E合计客观执行问题差异量'},
+  {id:'ds5',name:'表5 · 日维度差异明细（站点维度）',desc:'手机-质量邮件 表5，需筛选，每日叠加',fileName:'',sheetName:'Sheet0',columns:[],filters:[{col:'策略类别',op:'equals',val:'大盘评估/站点'},{col:'主客观问题分类',op:'contains',val:'客观问题'}],mode:'append',targetKey:'quality_detail_data',rowCount:0,lastUpload:'',hint:'建议：A日期 E站点名称 G品类名称 L策略类别 N一级项名称 V原操作人名称 Y主客观问题分类 Z问题类型 AA抽检判定的问题类型'},
+  {id:'ds6',name:'表6 · 日维度抽检明细（站点维度）',desc:'四品类-质量邮件，抽检明细，每日叠加',fileName:'',sheetName:'Sheet0',columns:[],filters:[],mode:'append',targetKey:'quality_inspect_data',rowCount:0,lastUpload:'',hint:'建议：A质检码 D类目 F品牌 H型号 K站点 M质检人 Q质检时间 U是否抽检差异'},
+];
+
+function initDsCfg(){
+  const s=localStorage.getItem('ds_config_v2');
+  if(s){try{dsCfg=JSON.parse(s);}catch(e){dsCfg={dataSources:DS_DEFAULTS.map(d=>({...d})),computedCols:[{id:'cc1',dsId:'ds2',numCol:'合计客观执行问题差异量',denCol:'合计抽检量',outCol:'计算差异率',desc:'跨周期差异率'}]};}}
+  else{dsCfg={dataSources:DS_DEFAULTS.map(d=>({...d})),computedCols:[{id:'cc1',dsId:'ds2',numCol:'合计客观执行问题差异量',denCol:'合计抽检量',outCol:'计算差异率',desc:'跨周期差异率'}]};}
+}
+function saveDsCfg(){localStorage.setItem('ds_config_v2',JSON.stringify(dsCfg));}
+
 function openSettings(){
+  initDsCfg();
   renderSloganList();
+  renderDsCfgGrid();
+  renderComputedCfgList();
+  renderUploadHistory();
+  updateDebugDsSel();
   document.getElementById('settingsModal').classList.add('open');
 }
 function closeSettings(){document.getElementById('settingsModal').classList.remove('open');}
-document.getElementById('settingsModal').addEventListener('click',function(e){if(e.target===this)closeSettings();});
+function handleOverlayClick(e){if(e.target===document.getElementById('settingsModal'))closeSettings();}
+
+function switchModalTab(name,el){
+  document.querySelectorAll('.modal-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  document.querySelectorAll('.modal-pane').forEach(p=>p.classList.remove('active'));
+  document.getElementById('mpane-'+name).classList.add('active');
+  if(name==='history') renderUploadHistory();
+  if(name==='debug') updateDebugDsSel();
+}
+
+/* --- Slogan --- */
 function renderSloganList(){
   const list=document.getElementById('sloganList');
   list.innerHTML=slogans.map((s,i)=>`<div class="slogan-item">
-    <input class="slogan-input" value="${s.replace(/"/g,'&quot;')}" id="sl_${i}" />
+    <input class="slogan-input" value="${s.replace(/"/g,'&quot;')}" id="sl_${i}">
     <button class="slogan-del" onclick="removeSlogan(${i})">×</button>
   </div>`).join('');
 }
@@ -648,13 +926,290 @@ async function saveSettings(){
   const rule=document.getElementById('sloganRule').value;
   refreshMarquee();
   const payload={slogans,rule,updatedAt:new Date().toISOString()};
-  if(getToken()){
-    try{await writeToGitHub('data/settings.json',payload);showToast('✓ 设置已保存并同步到云端');}
-    catch(e){showToast('✗ 同步失败，已在本地保存');localStorage.setItem('local_settings',JSON.stringify(payload));}
-  } else {
-    localStorage.setItem('local_settings',JSON.stringify(payload));showToast('✓ 设置已本地保存');
+  if(getToken()){try{await writeToGitHub('data/settings.json',payload);showToast('✓ 已保存并同步');}catch(e){localStorage.setItem('local_settings',JSON.stringify(payload));showToast('✗ 同步失败，已本地保存');}}
+  else{localStorage.setItem('local_settings',JSON.stringify(payload));showToast('✓ 已本地保存');}
+}
+
+/* --- DS Config Grid --- */
+function getDs(id){return dsCfg.dataSources.find(d=>d.id===id);}
+function renderDsCfgGrid(){
+  document.getElementById('dsCfgGrid').innerHTML=dsCfg.dataSources.map(ds=>dsCfgCardHtml(ds)).join('');
+}
+function dsCfgCardHtml(ds){
+  const badge=ds.mode==='append'?`<span class="ds-badge-m badge-a">叠加</span>`:`<span class="ds-badge-m badge-o">覆盖</span>`;
+  const lastInfo=ds.lastUpload?`<span class="scchip">上次 <strong>${new Date(ds.lastUpload).toLocaleDateString('zh-CN')}</strong></span><span class="scchip">共 <strong>${(ds.rowCount||0).toLocaleString()}</strong> 行</span>`:`<span style="font-size:11px;color:#94a3b8;">尚未上传</span>`;
+  const warn=(ds.mode==='overwrite'&&ds.rowCount>0)?`<div class="warnbox show" id="mwarn_${ds.id}">⚠️ 切换覆盖将清空历史<button onclick="exportDsHistory('${ds.id}')" style="font-size:11px;padding:3px 8px;border-radius:6px;border:1px solid #059669;background:rgba(5,150,105,0.1);color:#059669;cursor:pointer;white-space:nowrap;">先导出</button></div>`:`<div class="warnbox" id="mwarn_${ds.id}"></div>`;
+  return `<div class="ds-card-m" id="mcard_${ds.id}">
+  <div class="ds-head-m" onclick="toggleDsCard('${ds.id}')">
+    <div><div class="ds-name-m">${ds.name}</div><div class="ds-desc-m">${ds.desc}</div></div>
+    <div style="display:flex;align-items:center;gap:8px;">${badge}<span class="chev-m" id="mchev_${ds.id}">▼</span></div>
+  </div>
+  <div class="ds-body-m" id="mbody_${ds.id}">
+    <div style="margin-bottom:12px;">
+      <label class="flabel">上传原始文件</label>
+      <label class="fzone ${ds.fileName?'has':''}" for="mfile_${ds.id}">
+        <div class="fzone-txt">点击选择 xlsx / xls / csv</div>
+        ${ds.fileName?`<div class="fzone-name">✓ ${ds.fileName}</div>`:''}
+      </label>
+      <input type="file" id="mfile_${ds.id}" accept=".xlsx,.xls,.csv" style="display:none;" onchange="handleDsFile('${ds.id}',this)">
+    </div>
+    <div class="frow2">
+      <div><label class="flabel">子表名称</label><select class="fsel" id="msheet_${ds.id}" onchange="onDsSheetChange('${ds.id}')"  ><option>${ds.sheetName}</option></select></div>
+      <div><label class="flabel">GitHub 存储路径 <span class="fhint">（data/ 目录下）</span></label><input class="finput" value="${ds.targetKey}" onchange="updDsCfg('${ds.id}','targetKey',this.value)" placeholder="文件名不含扩展名"></div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="flabel">选择列 <span class="fhint">${ds.hint}</span></label>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <label style="display:flex;align-items:center;gap:5px;font-size:11px;color:#2563eb;cursor:pointer;">
+          <input type="checkbox" id="mselAll_${ds.id}" onchange="toggleAllDsCols('${ds.id}',this)"> 全选
+        </label>
+        <span id="mcolCount_${ds.id}" style="font-size:11px;color:#94a3b8;">已选 ${ds.columns.length} 列（上传文件后可视化选择）</span>
+      </div>
+      <div class="cgrid" id="mcolGrid_${ds.id}">
+        ${ds.columns.length?ds.columns.map(c=>`<div class="citem con" onclick="toggleDsCol('${ds.id}','${c}',this)"><input type="checkbox" checked onchange="toggleDsCol('${ds.id}','${c}',this.closest('.citem'))"><span class="cname">${c}</span></div>`).join(''):'<div style="font-size:11px;color:#94a3b8;padding:4px;">上传文件后自动加载列名</div>'}
+      </div>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="flabel">筛选条件 <span class="fhint">多值用英文逗号分隔，多条件取交集</span></label>
+      <div id="mrules_${ds.id}">${ds.filters.map((f,i)=>dsRuleHtml(ds.id,i,f)).join('')}</div>
+      <button class="add-btn" style="margin-top:6px;" onclick="addDsRule('${ds.id}')">+ 新增条件</button>
+    </div>
+    <div style="margin-bottom:12px;">
+      <label class="flabel">存储模式</label>
+      <div class="mtoggle">
+        <button class="mbtn ${ds.mode==='append'?'aon':''}" onclick="setDsMode('${ds.id}','append')">📥 叠加（历史累积）</button>
+        <button class="mbtn ${ds.mode==='overwrite'?'oon':''}" onclick="setDsMode('${ds.id}','overwrite')">🔄 覆盖（最新替换）</button>
+      </div>
+      <div style="font-size:10px;color:#94a3b8;margin-top:4px;">叠加：每次追加并去重 / 覆盖：完全替换历史数据</div>
+      ${warn}
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">${lastInfo}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;">
+      <button class="save-btn" style="padding:6px 14px;font-size:12px;" onclick="doCfgUpload('${ds.id}')">清洗并上传到 GitHub</button>
+      <button class="save-btn" style="padding:6px 14px;font-size:12px;background:rgba(37,99,235,0.1);color:#2563eb;border:1px solid rgba(37,99,235,0.3);" onclick="doCfgPreview('${ds.id}')">预览清洗结果</button>
+      <button class="save-btn" style="padding:6px 14px;font-size:12px;background:rgba(5,150,105,0.1);color:#059669;border:1px solid rgba(5,150,105,0.3);" onclick="exportDsHistory('${ds.id}')">导出历史</button>
+      <button class="save-btn" style="padding:6px 14px;font-size:12px;background:rgba(239,68,68,0.08);color:#dc2626;border:1px solid rgba(239,68,68,0.3);margin-left:auto;" onclick="removeDsCard('${ds.id}')">删除</button>
+    </div>
+    <div id="mprev_${ds.id}" style="margin-top:8px;"></div>
+  </div>
+</div>`;
+}
+
+function dsRuleHtml(dsId,idx,f){
+  return `<div class="frule" id="mrule_${dsId}_${idx}">
+    <input placeholder="列名（如：策略类别）" value="${f.col||''}" oninput="updDsRule('${dsId}',${idx},'col',this.value)">
+    <select onchange="updDsRule('${dsId}',${idx},'op',this.value)">
+      <option value="equals" ${(f.op||'')==='equals'?'selected':''}>等于</option>
+      <option value="contains" ${f.op==='contains'?'selected':''}>包含</option>
+      <option value="not_equals" ${f.op==='not_equals'?'selected':''}>不等于</option>
+      <option value="not_contains" ${f.op==='not_contains'?'selected':''}>不包含</option>
+    </select>
+    <input placeholder="值，多个用英文逗号" value="${f.val||''}" oninput="updDsRule('${dsId}',${idx},'val',this.value)">
+    <button class="delbtn" onclick="removeDsRule('${dsId}',${idx})">×</button>
+  </div>`;
+}
+
+function toggleDsCard(dsId){
+  const body=document.getElementById('mbody_'+dsId),chev=document.getElementById('mchev_'+dsId);
+  const open=body.classList.contains('open');
+  body.classList.toggle('open');body.style.display=open?'none':'block';
+  chev.classList.toggle('op');
+  document.getElementById('mcard_'+dsId).querySelector('.ds-head-m').classList.toggle('open');
+}
+
+async function handleDsFile(dsId,input){
+  const file=input.files[0];if(!file)return;
+  const ds=getDs(dsId);ds.fileName=file.name;
+  showToast('读取文件中…');
+  const buf=await file.arrayBuffer();
+  const wb=XLSX.read(buf);
+  dsFileCache[dsId]={wb,fileName:file.name};
+  const sel=document.getElementById('msheet_'+dsId);
+  sel.innerHTML=wb.SheetNames.map(s=>`<option value="${s}" ${s===ds.sheetName?'selected':''}>${s}</option>`).join('');
+  loadDsCols(dsId,ds.sheetName||wb.SheetNames[0]);
+  saveDsCfg();showToast('✓ 文件读取成功，请勾选需要的列');
+}
+
+function onDsSheetChange(dsId){const sn=document.getElementById('msheet_'+dsId).value;updDsCfg(dsId,'sheetName',sn);loadDsCols(dsId,sn);}
+
+function loadDsCols(dsId,sheetName){
+  const cache=dsFileCache[dsId];if(!cache)return;
+  const ws=cache.wb.Sheets[sheetName];if(!ws)return;
+  const rows=XLSX.utils.sheet_to_json(ws,{header:1,range:0,raw:false});
+  const headers=rows[0]||[];
+  const ds=getDs(dsId);
+  const grid=document.getElementById('mcolGrid_'+dsId);
+  grid.innerHTML=headers.map((h,i)=>{
+    if(h===undefined||h===null||h==='') return '';
+    const letter=i<26?String.fromCharCode(65+i):(String.fromCharCode(64+Math.floor(i/26))+String.fromCharCode(65+(i%26)));
+    const sel=ds.columns.includes(String(h));
+    return `<div class="citem ${sel?'con':''}" onclick="toggleDsCol('${dsId}','${h}',this)">
+      <input type="checkbox" ${sel?'checked':''} onchange="toggleDsCol('${dsId}','${h}',this.closest('.citem'))">
+      <span class="cletter">${letter}</span><span class="cname">${h}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('mcolCount_'+dsId).textContent=`已选 ${ds.columns.length} 列`;
+}
+
+function toggleDsCol(dsId,colName,el){
+  const ds=getDs(dsId);colName=String(colName);
+  const has=ds.columns.includes(colName);
+  if(has){ds.columns=ds.columns.filter(c=>c!==colName);el.classList.remove('con');el.querySelector('input').checked=false;}
+  else{ds.columns.push(colName);el.classList.add('con');el.querySelector('input').checked=true;}
+  document.getElementById('mcolCount_'+dsId).textContent=`已选 ${ds.columns.length} 列`;
+  saveDsCfg();
+}
+function toggleAllDsCols(dsId,cb){
+  const ds=getDs(dsId);
+  const items=document.querySelectorAll(`#mcolGrid_${dsId} .citem`);
+  ds.columns=[];
+  items.forEach(item=>{
+    const nm=item.querySelector('.cname').textContent;
+    item.classList.toggle('con',cb.checked);
+    item.querySelector('input').checked=cb.checked;
+    if(cb.checked)ds.columns.push(nm);
+  });
+  document.getElementById('mcolCount_'+dsId).textContent=`已选 ${ds.columns.length} 列`;
+  saveDsCfg();
+}
+
+function addDsRule(dsId){const ds=getDs(dsId);ds.filters.push({col:'',op:'equals',val:''});const c=document.getElementById('mrules_'+dsId);const d=document.createElement('div');d.innerHTML=dsRuleHtml(dsId,ds.filters.length-1,ds.filters.at(-1));c.appendChild(d.firstElementChild);saveDsCfg();}
+function updDsRule(dsId,idx,field,val){const ds=getDs(dsId);if(ds.filters[idx])ds.filters[idx][field]=val;saveDsCfg();}
+function removeDsRule(dsId,idx){const ds=getDs(dsId);ds.filters.splice(idx,1);document.getElementById('mrules_'+dsId).innerHTML=ds.filters.map((f,i)=>dsRuleHtml(dsId,i,f)).join('');saveDsCfg();}
+
+function setDsMode(dsId,mode){
+  const ds=getDs(dsId);ds.mode=mode;
+  const card=document.getElementById('mcard_'+dsId);
+  card.querySelectorAll('.mbtn').forEach(b=>{b.classList.remove('aon','oon');if(b.classList.contains('mbtn')&&b.textContent.includes(mode==='append'?'叠加':'覆盖'))b.classList.add(mode==='append'?'aon':'oon');});
+  const badge=card.querySelector('.ds-badge-m');
+  badge.className='ds-badge-m '+(mode==='append'?'badge-a':'badge-o');badge.textContent=mode==='append'?'叠加':'覆盖';
+  const warn=document.getElementById('mwarn_'+dsId);
+  if(warn)warn.className='warnbox'+(mode==='overwrite'&&ds.rowCount>0?' show':'');
+  saveDsCfg();
+}
+
+function updDsCfg(dsId,field,val){const ds=getDs(dsId);if(ds)ds[field]=val;saveDsCfg();}
+
+function cleanDsRows(dsId){
+  const ds=getDs(dsId);
+  const cache=dsFileCache[dsId];
+  if(!cache){showToast('✗ 请先上传文件');return null;}
+  const ws=cache.wb.Sheets[ds.sheetName||cache.wb.SheetNames[0]];
+  let rows=XLSX.utils.sheet_to_json(ws,{raw:false,defval:''});
+  if(ds.columns.length)rows=rows.map(r=>{const o={};ds.columns.forEach(c=>{if(Object.prototype.hasOwnProperty.call(r,c))o[c]=r[c];});return o;});
+  ds.filters.forEach(f=>{
+    if(!f.col||!f.val)return;
+    const vals=f.val.split(',').map(v=>v.trim()).filter(Boolean);
+    rows=rows.filter(r=>{const cell=String(r[f.col]??'');
+      if(f.op==='equals')return vals.some(v=>cell===v);
+      if(f.op==='contains')return vals.some(v=>cell.includes(v));
+      if(f.op==='not_equals')return vals.every(v=>cell!==v);
+      return vals.every(v=>!cell.includes(v));
+    });
+  });
+  dsCfg.computedCols.forEach(cc=>{
+    if(cc.dsId!==dsId)return;
+    rows=rows.map(r=>{const n=parseFloat(r[cc.numCol])||0,d2=parseFloat(r[cc.denCol])||1;return{...r,[cc.outCol]:(n/d2*100).toFixed(2)+'%'};});
+  });
+  return rows;
+}
+
+function doCfgPreview(dsId){
+  const rows=cleanDsRows(dsId);if(!rows)return;
+  const prev=rows.slice(0,8);
+  const el=document.getElementById('mprev_'+dsId);
+  if(!prev.length){el.innerHTML='<div style="text-align:center;padding:12px;color:#94a3b8;font-size:11px;">筛选后无数据，请检查条件</div>';return;}
+  const hs=Object.keys(prev[0]);
+  el.innerHTML=`<div class="prevwrap"><div class="prevhead"><span>清洗预览（前${prev.length}行 / 共 ${rows.length} 行）</span></div><div class="prevscroll"><table class="prevtable"><thead><tr>${hs.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${prev.map(r=>`<tr>${hs.map(h=>`<td>${r[h]??''}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>`;
+  showToast(`✓ 清洗后 ${rows.length} 行`);
+}
+
+async function doCfgUpload(dsId){
+  const ds=getDs(dsId);
+  if(!getToken()){showToast('✗ 请先输入创造者密钥');return;}
+  const rows=cleanDsRows(dsId);if(!rows)return;
+  if(!rows.length){showToast('✗ 清洗后无数据');return;}
+  showToast(`处理 ${rows.length} 行…`);
+  const path=`data/${ds.targetKey}.json`;
+  let finalRows=rows;
+  if(ds.mode==='append'){
+    try{
+      const url=`https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/${path}?t=${Date.now()}`;
+      const res=await fetch(url);
+      if(res.ok){
+        const ex=await res.json();const exRows=ex.rows||[];
+        const keys=Object.keys(rows[0]||{});
+        const k1=keys[0],k2=keys[1]||'';
+        const exSet=new Set(exRows.map(r=>String(r[k1]||'')+String(r[k2]||'')));
+        const newOnly=rows.filter(r=>!exSet.has(String(r[k1]||'')+String(r[k2]||'')));
+        finalRows=[...exRows,...newOnly];
+        showToast(`叠加：原${exRows.length}行 + 新${newOnly.length}行 = ${finalRows.length}行`);
+      }
+    }catch(e){}
   }
-  closeSettings();
+  const uploadTime=new Date().toISOString();
+  try{
+    await writeToGitHub(path,{uploadTime,fileName:ds.fileName,mode:ds.mode,rows:finalRows});
+    ds.rowCount=finalRows.length;ds.lastUpload=uploadTime;
+    dsUploadHistory.unshift({dsName:ds.name,rows:finalRows.length,time:uploadTime,mode:ds.mode});
+    if(dsUploadHistory.length>100)dsUploadHistory=dsUploadHistory.slice(0,100);
+    localStorage.setItem('ds_upload_history',JSON.stringify(dsUploadHistory));
+    saveDsCfg();renderDsCfgGrid();
+    showToast(`✓ 上传成功！${finalRows.length} 行已写入 GitHub`);
+  }catch(err){showToast('✗ 上传失败：'+err.message);}
+}
+
+async function exportDsHistory(dsId){
+  const ds=getDs(dsId);if(!ds.rowCount){showToast('暂无历史数据');return;}
+  try{
+    const url=`https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/data/${ds.targetKey}.json?t=${Date.now()}`;
+    const res=await fetch(url);const data=await res.json();
+    const rows=data.rows||[];if(!rows.length){showToast('历史数据为空');return;}
+    const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'历史');
+    XLSX.writeFile(wb,`${ds.targetKey}_历史_${new Date().toISOString().slice(0,10)}.xlsx`);
+    showToast('✓ 历史数据已导出');
+  }catch(e){showToast('✗ 获取失败：'+e.message);}
+}
+
+function addDsCard(){dsCfg.dataSources.push({id:'ds'+Date.now(),name:'新数据源',desc:'请填写说明',fileName:'',sheetName:'Sheet0',columns:[],filters:[],mode:'overwrite',targetKey:'new_data_'+Date.now(),rowCount:0,lastUpload:'',hint:''});renderDsCfgGrid();saveDsCfg();}
+function removeDsCard(dsId){if(!confirm('确认删除？（不影响 GitHub 已有数据）'))return;dsCfg.dataSources=dsCfg.dataSources.filter(d=>d.id!==dsId);renderDsCfgGrid();saveDsCfg();}
+function exportDsConfig(){const b=new Blob([JSON.stringify(dsCfg,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`ds_config_${new Date().toISOString().slice(0,10)}.json`;a.click();showToast('✓ 配置已导出');}
+function importDsConfig(input){const f=input.files[0];if(!f)return;const r=new FileReader();r.onload=e=>{try{dsCfg=JSON.parse(e.target.result);saveDsCfg();renderDsCfgGrid();showToast('✓ 配置导入成功');}catch(e){showToast('✗ 格式错误');}};r.readAsText(f);}
+
+function renderUploadHistory(){
+  const el=document.getElementById('uploadHistoryList');
+  if(!dsUploadHistory.length){el.innerHTML='<div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px;">暂无上传记录</div>';return;}
+  el.innerHTML=`<div style="max-height:400px;overflow-y:auto;">${dsUploadHistory.map(h=>`<div class="histitem"><span style="font-weight:600;color:#334155;flex:1;">${h.dsName}</span><span style="color:#2563eb;font-weight:700;">${(h.rows||0).toLocaleString()} 行</span><span class="ds-badge-m ${h.mode==='append'?'badge-a':'badge-o'}">${h.mode==='append'?'叠加':'覆盖'}</span><span style="color:#94a3b8;">${new Date(h.time).toLocaleString('zh-CN')}</span></div>`).join('')}</div>`;
+}
+
+function renderComputedCfgList(){
+  const el=document.getElementById('computedCfgList');
+  el.innerHTML=dsCfg.computedCols.map((c,i)=>`<div class="ds-card-m" style="margin-bottom:8px;"><div style="padding:12px 14px;">
+    <div class="frow3"><div><label class="flabel">结果列名</label><input class="finput" value="${c.outCol}" onchange="dsCfg.computedCols[${i}].outCol=this.value;saveDsCfg()"></div>
+    <div><label class="flabel">数据源</label><select class="fsel" onchange="dsCfg.computedCols[${i}].dsId=this.value;saveDsCfg()">${dsCfg.dataSources.map(ds=>`<option value="${ds.id}" ${ds.id===c.dsId?'selected':''}>${ds.name}</option>`).join('')}</select></div>
+    <div><label class="flabel">说明</label><input class="finput" value="${c.desc}" onchange="dsCfg.computedCols[${i}].desc=this.value;saveDsCfg()"></div></div>
+    <div class="comprow" style="margin-top:8px;"><input placeholder="分子列" value="${c.numCol}" onchange="dsCfg.computedCols[${i}].numCol=this.value;saveDsCfg()"><div class="compop">÷</div><input placeholder="分母列" value="${c.denCol}" onchange="dsCfg.computedCols[${i}].denCol=this.value;saveDsCfg()"><div class="compop">=</div><input placeholder="结果列" value="${c.outCol}" onchange="dsCfg.computedCols[${i}].outCol=this.value;saveDsCfg()"></div>
+    <div style="text-align:right;margin-top:7px;"><button class="save-btn" style="padding:4px 12px;font-size:11px;background:rgba(239,68,68,0.08);color:#dc2626;border:1px solid rgba(239,68,68,0.3);" onclick="dsCfg.computedCols.splice(${i},1);renderComputedCfgList();saveDsCfg()">删除</button></div>
+  </div></div>`).join('');
+}
+function addComputedCfg(){dsCfg.computedCols.push({id:'cc'+Date.now(),dsId:dsCfg.dataSources[0]?.id||'',numCol:'',denCol:'',outCol:'计算差异率',desc:''});renderComputedCfgList();saveDsCfg();}
+
+function updateDebugDsSel(){const s=document.getElementById('debugDsSel');if(s)s.innerHTML='<option value="">请选择…</option>'+(dsCfg?.dataSources||[]).map(ds=>`<option value="${ds.id}">${ds.name}</option>`).join('');}
+async function handleDebugFile(input){const f=input.files[0];if(!f)return;document.getElementById('debugFName').textContent='✓ '+f.name;const buf=await f.arrayBuffer();debugWb=XLSX.read(buf);renderDebugPreview();}
+function renderDebugPreview(){
+  const dsId=document.getElementById('debugDsSel').value;if(!dsId||!debugWb)return;
+  const ds=getDs(dsId);if(!ds)return;
+  const ws=debugWb.Sheets[ds.sheetName||debugWb.SheetNames[0]];
+  let rows=XLSX.utils.sheet_to_json(ws,{raw:false,defval:''});
+  const before=rows.length;
+  if(ds.columns.length)rows=rows.map(r=>{const o={};ds.columns.forEach(c=>{if(Object.prototype.hasOwnProperty.call(r,c))o[c]=r[c];});return o;});
+  ds.filters.forEach(f=>{if(!f.col||!f.val)return;const vals=f.val.split(',').map(v=>v.trim());rows=rows.filter(r=>{const cell=String(r[f.col]??'');if(f.op==='equals')return vals.some(v=>cell===v);if(f.op==='contains')return vals.some(v=>cell.includes(v));if(f.op==='not_equals')return vals.every(v=>cell!==v);return vals.every(v=>!cell.includes(v));});});
+  const stats=document.getElementById('debugStatRow');
+  stats.innerHTML=`<span class="scchip">原始 <strong>${before}</strong> 行</span><span class="scchip">清洗后 <strong>${rows.length}</strong> 行</span><span class="scchip">过滤 <strong>${before-rows.length}</strong> 行</span><span class="scchip">列数 <strong>${Object.keys(rows[0]||{}).length}</strong></span>`;
+  const prev=rows.slice(0,10);const hs=Object.keys(prev[0]||{});
+  document.getElementById('debugPreviewArea').innerHTML=prev.length
+    ?`<div class="prevwrap"><div class="prevscroll"><table class="prevtable"><thead><tr>${hs.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${prev.map(r=>`<tr>${hs.map(h=>`<td>${r[h]??''}</td>`).join('')}</tr>`).join('')}</tbody></table></div></div>`
+    :'<div style="text-align:center;padding:12px;color:#94a3b8;font-size:11px;">筛选后无数据</div>';
 }
 async function loadSettings(){
   try{
@@ -1047,6 +1602,155 @@ function renderBoardSide(containerId, people, side){
     </div>`;
   }).join('');
 }
+
+
+/* ===== V1.5 MULTI-SELECT & TRAIN FILTERS ===== */
+
+// Close dropdowns when clicking outside
+document.addEventListener('click', function(e){
+  document.querySelectorAll('.multiselect-dropdown.open').forEach(d=>{
+    if(!d.parentElement.contains(e.target)) d.classList.remove('open');
+  });
+});
+
+function toggleMs(id){
+  const d = document.getElementById(id);
+  const wasOpen = d.classList.contains('open');
+  document.querySelectorAll('.multiselect-dropdown.open').forEach(x=>x.classList.remove('open'));
+  if(!wasOpen) d.classList.add('open');
+}
+
+function toggleAllWh(prefix, cb){
+  document.querySelectorAll('.'+prefix+'-wh-cb').forEach(c=>c.checked=cb.checked);
+  updateWhLabel(prefix);
+  if(prefix==='rank') renderRankingBoard();
+  if(prefix==='train') applyTrainGlobalFilter();
+}
+
+function updateWhLabel(prefix){
+  const all = [...document.querySelectorAll('.'+prefix+'-wh-cb')];
+  const checked = all.filter(c=>c.checked);
+  const allCb = document.getElementById(prefix+'WhAll');
+  allCb.checked = checked.length===all.length;
+  const label = document.getElementById(prefix+'WhLabel');
+  if(checked.length===0||checked.length===all.length){
+    label.textContent='全部仓库';
+  } else if(checked.length===1){
+    label.textContent=checked[0].value;
+  } else {
+    label.textContent=checked.length+'个仓库';
+  }
+  if(prefix==='rank') renderRankingBoard();
+  if(prefix==='train') applyTrainGlobalFilter();
+}
+
+function getSelectedWh(prefix){
+  const all=[...document.querySelectorAll('.'+prefix+'-wh-cb')];
+  const checked=all.filter(c=>c.checked).map(c=>c.value);
+  return checked.length===all.length ? [] : checked; // empty = all
+}
+
+/* Training global filter */
+function applyTrainGlobalFilter(){
+  const dateFrom = document.getElementById('trainDateFrom').value;
+  const dateTo = document.getElementById('trainDateTo').value;
+  const whFilter = getSelectedWh('train');
+  const src = trainAllRows.length ? trainAllRows : TRAIN_DEMO;
+
+  let filtered = src.filter(r=>{
+    const d = r['日期']||'';
+    const wh = r['区域']||r['仓库']||'';
+    const dateOk = (!dateFrom||d>=dateFrom)&&(!dateTo||d<=dateTo);
+    const whOk = !whFilter.length||whFilter.includes(wh);
+    return dateOk&&whOk;
+  });
+
+  // Update KPIs
+  const totalCount = filtered.length;
+  const totalPeople = filtered.reduce((s,r)=>s+(Number(r['参训人数'])||0),0);
+  const totalQa = filtered.reduce((s,r)=>s+(Number(r['答疑数'])||0),0);
+  document.getElementById('kTrainCount').textContent = totalCount;
+  document.getElementById('kTrainPeople').textContent = totalPeople.toLocaleString();
+  document.getElementById('kQaTotal').textContent = totalQa.toLocaleString();
+
+  // Render warehouse rankings
+  renderTrainRank(filtered);
+
+  // Update detail table
+  trainVisibleRows = filtered;
+  trainPage = 1;
+  renderTrainPage();
+}
+
+function renderTrainRank(rows){
+  // Training count by warehouse
+  const trainMap={}, qaMap={};
+  rows.forEach(r=>{
+    const wh=r['区域']||r['仓库']||'未知';
+    trainMap[wh]=(trainMap[wh]||0)+1;
+    qaMap[wh]=(qaMap[wh]||0)+(Number(r['答疑数'])||0);
+  });
+
+  const trainSorted=Object.entries(trainMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const qaSorted=Object.entries(qaMap).sort((a,b)=>b[1]-a[1]).slice(0,10);
+  const maxT=trainSorted.length?trainSorted[0][1]:1;
+  const maxQ=qaSorted.length?qaSorted[0][1]:1;
+
+  function buildRankHtml(data,max,color){
+    if(!data.length) return '<div style="text-align:center;padding:16px;color:#94a3b8;font-size:12px;">暂无数据</div>';
+    return data.map(([name,val],i)=>`<div class="rank-item" style="margin-bottom:7px;">
+      <div class="rank-num ${i<3?'rank-gold':'rank-silver'}">${i+1}</div>
+      <div class="rank-name">${name}</div>
+      <div class="rank-bar-wrap"><div class="rank-bar" style="width:${((val/max)*100).toFixed(0)}%;background:${color}"></div></div>
+      <div class="rank-val">${val}</div>
+    </div>`).join('');
+  }
+
+  const trainRankEl=document.getElementById('trainCountRank');
+  const qaRankEl=document.getElementById('qaCountRank');
+  if(trainRankEl) trainRankEl.innerHTML=buildRankHtml(trainSorted,maxT,'#2563eb');
+  if(qaRankEl) qaRankEl.innerHTML=buildRankHtml(qaSorted,maxQ,'#059669');
+}
+
+/* Override renderRankingBoard to use multi-select */
+function renderRankingBoard(){
+  const whFilter = getSelectedWh('rank');
+  const threshold = 3; // fixed rule: top/bottom 3
+
+  let src = RANKING_DEMO;
+  if(allRows.length){
+    const map={};
+    allRows.forEach(r=>{
+      const name=r['检验员']||r['质检员']||r['姓名']||'';
+      const warehouse=r['站点名称']||r['机型']||'';
+      const rate=parseFloat(r['手机差异率'])||0;
+      if(!name) return;
+      if(!map[name]) map[name]={name,warehouse,rate,monthCount:0,yearCount:0};
+      if(rate>map[name].rate) map[name].rate=rate;
+      if(rate>threshold){map[name].monthCount++;map[name].yearCount++;}
+    });
+    src=Object.values(map);
+  }
+
+  let filtered = whFilter.length ? src.filter(p=>whFilter.includes(p.warehouse)) : src;
+  const sorted=[...filtered].sort((a,b)=>a.rate-b.rate);
+  const redTop=sorted.slice(0,3);
+  const blackTop=[...filtered].sort((a,b)=>b.rate-a.rate).slice(0,3);
+
+  renderBoardSide('redBoardList',redTop,'red');
+  renderBoardSide('blackBoardList',blackTop,'black');
+}
+
+/* Init training date range */
+(function initTrainDates(){
+  const today=new Date().toISOString().slice(0,10);
+  const m=today.slice(0,8)+'01';
+  const df=document.getElementById('trainDateFrom');
+  const dt=document.getElementById('trainDateTo');
+  if(df) df.value=m;
+  if(dt) dt.value=today;
+  setTimeout(()=>applyTrainGlobalFilter(),200);
+})();
 
 /* ===== TOAST ===== */
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',3500);}
