@@ -1022,6 +1022,7 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
 <script>
 /* ===== GitHub ===== */
 const GH_USER='d2112ds12d12d', GH_REPO='gzt';
+const DATA_PREFIX='data_beta'; // 内测版用 data_beta；正式版改为 data
 function getToken(){ return localStorage.getItem('gh_token')||''; }
 
 /* ===== DATA ===== */
@@ -1291,7 +1292,7 @@ async function saveSettings(){
   const rule=document.getElementById('sloganRule').value;
   refreshMarquee();
   const payload={slogans,rule,updatedAt:new Date().toISOString()};
-  if(getToken()){try{await writeToGitHub('data/settings.json',payload);showToast('✓ 已保存并同步');}catch(e){localStorage.setItem('local_settings',JSON.stringify(payload));showToast('✗ 同步失败，已本地保存');}}
+  if(getToken()){try{await writeToGitHub(DATA_PREFIX+'/settings.json',payload);showToast('✓ 已保存并同步');}catch(e){localStorage.setItem('local_settings',JSON.stringify(payload));showToast('✗ 同步失败，已本地保存');}}
   else{localStorage.setItem('local_settings',JSON.stringify(payload));showToast('✓ 已本地保存');}
 }
 
@@ -1641,7 +1642,7 @@ async function doCfgUpload(dsId){
 
   if(!allRows.length){showToast('✗ 清洗后无数据，请检查筛选条件');return;}
   showToast('处理 '+allRows.length+' 行…');
-  var path='data/'+ds.targetKey+'.json';
+  var path=DATA_PREFIX+'/'+ds.targetKey+'.json';
   var uploadTime=new Date().toISOString();
   var finalRows=allRows;
   if(ds.mode==='append'){
@@ -1672,15 +1673,15 @@ async function doCfgUpload(dsId){
     setTimeout(async function(){
       try{
         var dk=ds.targetKey;
-        if(dk==='quality_site_data'){var d=await readFromGitHub('data/'+dk+'.json');allRows=d.rows||[];filteredRows=[...allRows];setUpdateTime(d.uploadTime);renderAll();}
+        if(dk==='quality_site_data'){var d=await readFromGitHub(DATA_PREFIX+'/'+dk+'.json');allRows=d.rows||[];filteredRows=[...allRows];setUpdateTime(d.uploadTime);renderAll();}
         else if(dk==='quality_engineer_data'){
-          var d2=await readFromGitHub('data/'+dk+'.json');var rows2=d2.rows||[];
+          var d2=await readFromGitHub(DATA_PREFIX+'/'+dk+'.json');var rows2=d2.rows||[];
           var map2={};rows2.forEach(function(r){var nm=r['检验员']||r['质检员']||r['姓名']||'';var wh=r['站点名称']||r['仓库']||'';var rt=parseFloat(r['计算差异率'])||parseFloat(r['手机差异率'])||0;if(!nm)return;if(!map2[nm])map2[nm]={name:nm,warehouse:wh,rate:rt,monthCount:0,yearCount:0};if(rt>map2[nm].rate)map2[nm].rate=rt;});
           RANKING_DEMO.length=0;Object.values(map2).forEach(function(v){RANKING_DEMO.push(v);});
           if(typeof renderRankingBoard==='function')renderRankingBoard();
         }
-        else if(dk==='training_data'||dk==='qa_data'){var d3=await readFromGitHub('data/'+dk+'.json');trainAllRows=d3.rows||[];trainVisibleRows=[...trainAllRows];rebuildTrainFilters();renderTrainPage();}
-        else if(dk==='performance_data'){var d4=await readFromGitHub('data/'+dk+'.json');perfAllData=d4.rows||[];if(typeof updatePerfFilters==='function')updatePerfFilters();if(typeof renderPerf==='function')renderPerf();}
+        else if(dk==='training_data'||dk==='qa_data'){var d3=await readFromGitHub(DATA_PREFIX+'/'+dk+'.json');trainAllRows=d3.rows||[];trainVisibleRows=[...trainAllRows];rebuildTrainFilters();renderTrainPage();}
+        else if(dk==='performance_data'){var d4=await readFromGitHub(DATA_PREFIX+'/'+dk+'.json');perfAllData=d4.rows||[];if(typeof updatePerfFilters==='function')updatePerfFilters();if(typeof renderPerf==='function')renderPerf();}
         showToast('✓ 看板已更新');
       }catch(e){showToast('⚠ 看板刷新失败，请手动点同步');}
     },800);
@@ -1741,7 +1742,7 @@ function renderDebugPreview(){
 }
 async function loadSettings(){
   try{
-    const data=await readFromGitHub('data/settings.json');
+    const data=await readFromGitHub(DATA_PREFIX+'/settings.json');
     slogans=data.slogans||slogans;
     if(data.rule)document.getElementById('sloganRule').value=data.rule;
   }catch(e){
@@ -1782,7 +1783,7 @@ async function handleUpload(input,type){
   let rows;try{rows=await parseExcel(file);}catch(err){showToast('✗ 解析失败：'+err.message);return;}
   if(!rows||!rows.length){showToast('✗ 文件无数据');return;}
   const uploadTime=new Date().toISOString();
-  const pathMap={quality:'data/quality_data.json',training:'data/training_data.json',qa:'data/qa_data.json'};
+  const pathMap={quality:DATA_PREFIX+'/quality_data.json',training:DATA_PREFIX+'/training_data.json',qa:DATA_PREFIX+'/qa_data.json'};
   showToast(`解析完成 ${rows.length} 行，正在上传…`);
   try{
     await writeToGitHub(pathMap[type],{uploadTime,fileName:file.name,rows});
@@ -1798,12 +1799,12 @@ async function syncCloud(){
   showToast('正在同步…');
   let ok=0;
   // Fix 1: 文件名与 targetKey 对齐（quality_site_data）
-  try{const d=await readFromGitHub('data/quality_site_data.json');allRows=d.rows||[];filteredRows=[...allRows];setUpdateTime(d.uploadTime);renderAll();ok++;}catch(e){}
+  try{const d=await readFromGitHub(DATA_PREFIX+'/quality_site_data.json');allRows=d.rows||[];filteredRows=[...allRows];setUpdateTime(d.uploadTime);renderAll();ok++;}catch(e){}
   // 培训数据（原有，保持不变）
-  try{const d=await readFromGitHub('data/training_data.json');trainAllRows=d.rows||[];trainVisibleRows=[...trainAllRows];rebuildTrainFilters();renderTrainPage();}catch(e){}
+  try{const d=await readFromGitHub(DATA_PREFIX+'/training_data.json');trainAllRows=d.rows||[];trainVisibleRows=[...trainAllRows];rebuildTrainFilters();renderTrainPage();}catch(e){}
   // Fix 2: 补加排行榜数据读取（quality_engineer_data）
   try{
-    const d=await readFromGitHub('data/quality_engineer_data.json');
+    const d=await readFromGitHub(DATA_PREFIX+'/quality_engineer_data.json');
     const rows=d.rows||[];
     if(rows.length){
       // 把云端数据转换为 RANKING_DEMO 格式并覆盖
@@ -1826,7 +1827,7 @@ async function syncCloud(){
   }catch(e){}
   // Fix 3: 补加绩效数据读取（performance_data）
   try{
-    const d=await readFromGitHub('data/performance_data.json');
+    const d=await readFromGitHub(DATA_PREFIX+'/performance_data.json');
     const rows=d.rows||[];
     if(rows.length){
       perfAllData=rows;
@@ -1837,7 +1838,7 @@ async function syncCloud(){
   }catch(e){}
   // Fix 3: 补加 QA 数据读取（qa_data → 合并进培训数据）
   try{
-    const d=await readFromGitHub('data/qa_data.json');
+    const d=await readFromGitHub(DATA_PREFIX+'/qa_data.json');
     const rows=d.rows||[];
     if(rows.length&&!trainAllRows.length){
       trainAllRows=rows;trainVisibleRows=[...rows];
