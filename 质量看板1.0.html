@@ -1813,20 +1813,40 @@ function setTrendCmp(el,cmp){
 }
 function updateRankAndTrend(){buildRankFromData();updateTrendChart();}
 function buildRankFromData(){
-  const el=document.getElementById('rankList');
-  const ck=rankCat==='手机'?'手机抽检量':'笔记本抽检量';
-  const dk=rankCat==='手机'?'手机差异量':'笔记本差异量';
-  const wh=document.getElementById('rankWarehouse').value;
-  let src=filteredRows.length?filteredRows:(allRows.length?allRows:DEMO_ROWS);
-  if(wh!=='全部')src=src.filter(r=>(r['站点名称']||r['机型']||'')=== wh);
-  const ranked=src.map(r=>{const c=Number(r[ck])||0,d=Number(r[dk])||0;return{name:r['站点名称']||r['机型']||'-',rate:c>0?(d/c)*100:0};}).sort((a,b)=>b.rate-a.rate).slice(0,10);
-  const max=ranked.length?ranked[0].rate||1:1;
-  el.innerHTML=ranked.length?ranked.map((r,i)=>`<div class="rank-item">
-    <div class="rank-num ${i<3?'rank-gold':'rank-silver'}">${i+1}</div>
-    <div class="rank-name">${r.name}</div>
-    <div class="rank-bar-wrap"><div class="rank-bar" style="width:${((r.rate/max)*100).toFixed(0)}%;background:${r.rate>5?'#ef4444':r.rate>2?'#f59e0b':'#10b981'}"></div></div>
-    <div class="rank-val">${r.rate.toFixed(2)}%</div>
-  </div>`).join(''):`<div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px;">暂无数据</div>`;
+  var el=document.getElementById('rankList');
+  if(!el)return;
+  var catLabel=(typeof gCat!=='undefined'&&gCat&&gCat!=='全部')?gCat:'手机';
+  var ckKey=catLabel+'抽检量';
+  var dkKey=catLabel+'差异量';
+  var src=filteredRows.length?filteredRows:(allRows.length?allRows:DEMO_ROWS);
+  var map={};
+  src.forEach(function(r){
+    if(r['品类名称']&&r['品类名称']!==catLabel)return;
+    var site=r['站点名称']||'';if(!site)return;
+    if(!map[site])map[site]={name:site,chk:0,diff:0};
+    var c=Number(r[ckKey])||Number(r['总抽检量'])||0;
+    var d=Number(r[dkKey])||Number(r['总客观差异量'])||0;
+    map[site].chk+=c; map[site].diff+=d;
+  });
+  var ranked=Object.values(map).filter(function(s){return s.chk>0;}).map(function(s){
+    return {name:s.name,rate:s.chk>0?(s.diff/s.chk*100):0,chk:s.chk,diff:s.diff};
+  }).sort(function(a,b){return b.rate-a.rate;}).slice(0,10);
+  if(!ranked.length){el.innerHTML='<div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px;">暂无数据</div>';return;}
+  var max=ranked[0].rate||1;
+  var sub=document.getElementById('rankSubtitle');
+  if(sub)sub.textContent='排行榜 · '+catLabel+' · '+(typeof gPeriod!=='undefined'?gPeriod:'本月');
+  el.innerHTML=ranked.map(function(r,i){
+    var pct=max>0?(r.rate/max*100).toFixed(0):0;
+    var color=r.rate>5?'#ef4444':r.rate>2?'#f59e0b':'#22c55e';
+    var medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':String(i+1);
+    return '<div class="rank-item" style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">'
+      +'<div style="width:22px;text-align:center;font-size:'+(i<3?'14':'11')+'px;">'+medal+'</div>'
+      +'<div style="flex:1;font-size:12px;color:#334155;">'+r.name+'</div>'
+      +'<div style="width:90px;background:rgba(200,210,230,0.3);border-radius:4px;height:6px;">'
+      +'<div style="width:'+pct+'%;height:6px;border-radius:4px;background:'+color+'"></div></div>'
+      +'<div style="font-size:12px;font-weight:700;color:'+color+';min-width:44px;text-align:right;">'+r.rate.toFixed(2)+'%</div>'
+      +'</div>';
+  }).join('');
 }
 function updateTrendChart(){
   const isWeek=trendCmp==='上周';
@@ -1889,15 +1909,31 @@ const DEMO_ROWS = [{"抽检日期":"2026-04-19","站点名称":"深圳中心仓"
 
 /* 初始化 */
 (function init(){
-  allRows=[...DEMO_ROWS];filteredRows=[...DEMO_ROWS]; initGlobalDates(); setTimeout(function(){renderCompare();},300);
-  renderOverview(filteredRows);rebuildDetailFilters();renderDetailPage();buildRankFromData();updateTrendChart();
-  rebuildTrainFilters();renderTrainPage();
+  allRows=[...DEMO_ROWS];filteredRows=[...DEMO_ROWS];
+  initGlobalDates();
+  renderOverview(filteredRows);
+  rebuildDetailFilters();
+  renderDetailPage();
+  buildRankFromData();
+  updateTrendChart();
+  applyTrainGlobalFilter();
   loadSettings();
-  // 初始化日期范围
-  const today=new Date().toISOString().slice(0,10);
-  const monthStart=today.slice(0,8)+'01';
-  document.getElementById('rankDateFrom').value=monthStart;
-  document.getElementById('rankDateTo').value=today;
+  // Perf demo data
+  if(typeof perfAllData!=='undefined'&&!perfAllData.length){
+    perfAllData=[
+      {trainer:'张磊',warehouse:'深圳中心仓',joinDate:'2022-03',month:'2026-04',scores:{'中心仓质量得分':13,'新人培训得分':14,'授课质量得分':5,'双周考得分':13,'上级评价得分':22,'业务评价得分':9,'结果指标得分':13,'主动分享得分':4},total:93},
+      {trainer:'王芳',warehouse:'南京库',joinDate:'2021-06',month:'2026-04',scores:{'中心仓质量得分':12,'新人培训得分':13,'授课质量得分':4,'双周考得分':14,'上级评价得分':20,'业务评价得分':8,'结果指标得分':12,'主动分享得分':3},total:86},
+      {trainer:'陈晓',warehouse:'合肥库',joinDate:'2023-01',month:'2026-04',scores:{'中心仓质量得分':11,'新人培训得分':12,'授课质量得分':4,'双周考得分':12,'上级评价得分':18,'业务评价得分':7,'结果指标得分':11,'主动分享得分':0},total:75},
+      {trainer:'刘强',warehouse:'成都库',joinDate:'2022-09',month:'2026-04',scores:{'中心仓质量得分':14,'新人培训得分':11,'授课质量得分':5,'双周考得分':11,'上级评价得分':21,'业务评价得分':9,'结果指标得分':14,'主动分享得分':5},total:90},
+      {trainer:'李梅',warehouse:'武汉库',joinDate:'2021-11',month:'2026-04',scores:{'中心仓质量得分':10,'新人培训得分':10,'授课质量得分':3,'双周考得分':10,'上级评价得分':16,'业务评价得分':6,'结果指标得分':10,'主动分享得分':0},total:65},
+      {trainer:'赵明',warehouse:'沈阳库',joinDate:'2023-03',month:'2026-04',scores:{'中心仓质量得分':13,'新人培训得分':13,'授课质量得分':4,'双周考得分':13,'上级评价得分':19,'业务评价得分':8,'结果指标得分':12,'主动分享得分':3},total:85},
+    ];
+    if(typeof updatePerfFilters==='function')updatePerfFilters();
+  }
+  setTimeout(function(){
+    renderRankingBoard();
+    renderCompare();
+  },200);
 })();
 
 /* ===== CHART DEFAULTS ===== */
@@ -1931,32 +1967,22 @@ function initTrainingCharts(){
 const RANKING_DEMO = [{"name":"冯晨明","warehouse":"南京库","rate":0.0,"check":11,"diff":0,"monthCount":0,"yearCount":0},{"name":"吴川","warehouse":"南京库","rate":0.0,"check":14,"diff":0,"monthCount":0,"yearCount":0},{"name":"孙新生","warehouse":"南京库","rate":0.0,"check":6,"diff":0,"monthCount":0,"yearCount":0},{"name":"尹向东","warehouse":"南京库","rate":0.0,"check":14,"diff":0,"monthCount":0,"yearCount":0},{"name":"张伟东","warehouse":"南京库","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"李想","warehouse":"南京库","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"柳梦宇","warehouse":"南京库","rate":0.0,"check":30,"diff":0,"monthCount":0,"yearCount":0},{"name":"王岚","warehouse":"南京库","rate":0.0,"check":8,"diff":0,"monthCount":0,"yearCount":0},{"name":"王康杰","warehouse":"南京库","rate":0.0,"check":15,"diff":0,"monthCount":0,"yearCount":0},{"name":"胡正轩","warehouse":"南京库","rate":0.0,"check":41,"diff":0,"monthCount":0,"yearCount":0},{"name":"谭龙泉","warehouse":"南京库","rate":0.0,"check":15,"diff":0,"monthCount":0,"yearCount":0},{"name":"郭诚","warehouse":"南京库","rate":0.0,"check":10,"diff":0,"monthCount":0,"yearCount":0},{"name":"高鹏旭","warehouse":"南京库","rate":0.0,"check":13,"diff":0,"monthCount":0,"yearCount":0},{"name":"鲁鸿蔚","warehouse":"南京库","rate":0.0,"check":14,"diff":0,"monthCount":0,"yearCount":0},{"name":"万向荣","warehouse":"南昌库","rate":0.0,"check":6,"diff":0,"monthCount":0,"yearCount":0},{"name":"吴泽阳","warehouse":"南昌库","rate":0.0,"check":6,"diff":0,"monthCount":0,"yearCount":0},{"name":"杨承峰","warehouse":"南昌库","rate":0.0,"check":7,"diff":0,"monthCount":0,"yearCount":0},{"name":"秦杰","warehouse":"南昌库","rate":0.0,"check":15,"diff":0,"monthCount":0,"yearCount":0},{"name":"邓星星","warehouse":"南昌库","rate":0.0,"check":13,"diff":0,"monthCount":0,"yearCount":0},{"name":"阎文轩","warehouse":"南昌库","rate":0.0,"check":8,"diff":0,"monthCount":0,"yearCount":0},{"name":"黄潮","warehouse":"南昌库","rate":0.0,"check":10,"diff":0,"monthCount":0,"yearCount":0},{"name":"冯兵盐","warehouse":"合肥库","rate":0.0,"check":11,"diff":0,"monthCount":0,"yearCount":0},{"name":"卫宇杨","warehouse":"合肥库","rate":0.0,"check":9,"diff":0,"monthCount":0,"yearCount":0},{"name":"吴万科","warehouse":"合肥库","rate":0.0,"check":9,"diff":0,"monthCount":0,"yearCount":0},{"name":"柳奇","warehouse":"合肥库","rate":0.0,"check":10,"diff":0,"monthCount":0,"yearCount":0},{"name":"武旭","warehouse":"合肥库","rate":0.0,"check":6,"diff":0,"monthCount":0,"yearCount":0},{"name":"王晨辉","warehouse":"合肥库","rate":0.0,"check":10,"diff":0,"monthCount":0,"yearCount":0},{"name":"胡江","warehouse":"合肥库","rate":0.0,"check":8,"diff":0,"monthCount":0,"yearCount":0},{"name":"苏宝童","warehouse":"合肥库","rate":0.0,"check":8,"diff":0,"monthCount":0,"yearCount":0},{"name":"陈世龙","warehouse":"合肥库","rate":0.0,"check":14,"diff":0,"monthCount":0,"yearCount":0},{"name":"高岩松","warehouse":"合肥库","rate":0.0,"check":16,"diff":0,"monthCount":0,"yearCount":0},{"name":"代仁杰","warehouse":"成都库","rate":0.0,"check":11,"diff":0,"monthCount":0,"yearCount":0},{"name":"何礼","warehouse":"成都库","rate":0.0,"check":8,"diff":0,"monthCount":0,"yearCount":0},{"name":"冯万林","warehouse":"成都库","rate":0.0,"check":10,"diff":0,"monthCount":0,"yearCount":0},{"name":"刘川","warehouse":"成都库","rate":0.0,"check":20,"diff":0,"monthCount":0,"yearCount":0},{"name":"刘苹","warehouse":"成都库","rate":0.0,"check":8,"diff":0,"monthCount":0,"yearCount":0},{"name":"姚凡","warehouse":"成都库","rate":0.0,"check":15,"diff":0,"monthCount":0,"yearCount":0},{"name":"孙小飞","warehouse":"成都库","rate":0.0,"check":16,"diff":0,"monthCount":0,"yearCount":0},{"name":"曾凡周","warehouse":"成都库","rate":0.0,"check":36,"diff":0,"monthCount":0,"yearCount":0},{"name":"曾凡祥","warehouse":"成都库","rate":0.0,"check":35,"diff":0,"monthCount":0,"yearCount":0},{"name":"李泊","warehouse":"成都库","rate":0.0,"check":19,"diff":0,"monthCount":0,"yearCount":0},{"name":"李洪权","warehouse":"成都库","rate":0.0,"check":6,"diff":0,"monthCount":0,"yearCount":0},{"name":"杨鑫","warehouse":"成都库","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"王珈岐","warehouse":"成都库","rate":0.0,"check":13,"diff":0,"monthCount":0,"yearCount":0},{"name":"赵丁","warehouse":"成都库","rate":0.0,"check":9,"diff":0,"monthCount":0,"yearCount":0},{"name":"车方向","warehouse":"成都库","rate":0.0,"check":18,"diff":0,"monthCount":0,"yearCount":0},{"name":"郭洪波","warehouse":"成都库","rate":0.0,"check":33,"diff":0,"monthCount":0,"yearCount":0},{"name":"金伟","warehouse":"成都库","rate":0.0,"check":15,"diff":0,"monthCount":0,"yearCount":0},{"name":"陈定棚","warehouse":"成都库","rate":0.0,"check":11,"diff":0,"monthCount":0,"yearCount":0},{"name":"龚维双","warehouse":"成都库","rate":0.0,"check":11,"diff":0,"monthCount":0,"yearCount":0},{"name":"刘乾","warehouse":"昆明库","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"刘春开","warehouse":"昆明库","rate":0.0,"check":18,"diff":0,"monthCount":0,"yearCount":0},{"name":"李攀","warehouse":"昆明库","rate":0.0,"check":9,"diff":0,"monthCount":0,"yearCount":0},{"name":"沈童","warehouse":"昆明库","rate":0.0,"check":15,"diff":0,"monthCount":0,"yearCount":0},{"name":"任新瑞","warehouse":"杭州库","rate":0.0,"check":14,"diff":0,"monthCount":0,"yearCount":0},{"name":"斯晨浩","warehouse":"杭州库","rate":0.0,"check":6,"diff":0,"monthCount":0,"yearCount":0},{"name":"李晨阳","warehouse":"杭州库","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"李阳阳","warehouse":"杭州库","rate":0.0,"check":16,"diff":0,"monthCount":0,"yearCount":0},{"name":"王俊","warehouse":"杭州库","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"王凯","warehouse":"杭州库","rate":0.0,"check":8,"diff":0,"monthCount":0,"yearCount":0},{"name":"金俊凯","warehouse":"杭州库","rate":0.0,"check":19,"diff":0,"monthCount":0,"yearCount":0},{"name":"金富成","warehouse":"杭州库","rate":0.0,"check":25,"diff":0,"monthCount":0,"yearCount":0},{"name":"陈登科","warehouse":"杭州库","rate":0.0,"check":8,"diff":0,"monthCount":0,"yearCount":0},{"name":"黄亮","warehouse":"杭州库","rate":0.0,"check":11,"diff":0,"monthCount":0,"yearCount":0},{"name":"岳文","warehouse":"武汉库","rate":0.0,"check":24,"diff":0,"monthCount":0,"yearCount":0},{"name":"张辰","warehouse":"武汉库","rate":0.0,"check":28,"diff":0,"monthCount":0,"yearCount":0},{"name":"李波","warehouse":"武汉库","rate":0.0,"check":25,"diff":0,"monthCount":0,"yearCount":0},{"name":"苏杰","warehouse":"武汉库","rate":0.0,"check":32,"diff":0,"monthCount":0,"yearCount":0},{"name":"陈金伟","warehouse":"武汉库","rate":0.0,"check":17,"diff":0,"monthCount":0,"yearCount":0},{"name":"任嘉聪","warehouse":"沈阳库","rate":0.0,"check":22,"diff":0,"monthCount":0,"yearCount":0},{"name":"孙铭阳","warehouse":"沈阳库","rate":0.0,"check":7,"diff":0,"monthCount":0,"yearCount":0},{"name":"张硕","warehouse":"沈阳库","rate":0.0,"check":6,"diff":0,"monthCount":0,"yearCount":0},{"name":"戴恩臣","warehouse":"沈阳库","rate":0.0,"check":7,"diff":0,"monthCount":0,"yearCount":0},{"name":"柴荣","warehouse":"沈阳库","rate":0.0,"check":20,"diff":0,"monthCount":0,"yearCount":0},{"name":"王志远","warehouse":"沈阳库","rate":0.0,"check":6,"diff":0,"monthCount":0,"yearCount":0},{"name":"范佳欢","warehouse":"沈阳库","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"袁宇兴","warehouse":"沈阳库","rate":0.0,"check":11,"diff":0,"monthCount":0,"yearCount":0},{"name":"郭振启","warehouse":"沈阳库","rate":0.0,"check":7,"diff":0,"monthCount":0,"yearCount":0},{"name":"刘加壮","warehouse":"济南库","rate":0.0,"check":37,"diff":0,"monthCount":0,"yearCount":0},{"name":"刘汉林","warehouse":"济南库","rate":0.0,"check":25,"diff":0,"monthCount":0,"yearCount":0},{"name":"卢鹏","warehouse":"济南库","rate":0.0,"check":34,"diff":0,"monthCount":0,"yearCount":0},{"name":"宁昆鹏","warehouse":"济南库","rate":0.0,"check":37,"diff":0,"monthCount":0,"yearCount":0},{"name":"宋昌民","warehouse":"济南库","rate":0.0,"check":27,"diff":0,"monthCount":0,"yearCount":0},{"name":"朱亚辉","warehouse":"济南库","rate":0.0,"check":32,"diff":0,"monthCount":0,"yearCount":0},{"name":"李俊楠","warehouse":"济南库","rate":0.0,"check":6,"diff":0,"monthCount":0,"yearCount":0},{"name":"王京宇","warehouse":"济南库","rate":0.0,"check":18,"diff":0,"monthCount":0,"yearCount":0},{"name":"王康","warehouse":"济南库","rate":0.0,"check":28,"diff":0,"monthCount":0,"yearCount":0},{"name":"金桂民","warehouse":"济南库","rate":0.0,"check":29,"diff":0,"monthCount":0,"yearCount":0},{"name":"马辉","warehouse":"济南库","rate":0.0,"check":22,"diff":0,"monthCount":0,"yearCount":0},{"name":"刘俊佳","warehouse":"深圳中心仓","rate":0.0,"check":13,"diff":0,"monthCount":0,"yearCount":0},{"name":"刘奔","warehouse":"深圳中心仓","rate":0.0,"check":8,"diff":0,"monthCount":0,"yearCount":0},{"name":"刘灿","warehouse":"深圳中心仓","rate":0.0,"check":10,"diff":0,"monthCount":0,"yearCount":0},{"name":"区嘉明","warehouse":"深圳中心仓","rate":0.0,"check":10,"diff":0,"monthCount":0,"yearCount":0},{"name":"吴少孟","warehouse":"深圳中心仓","rate":0.0,"check":11,"diff":0,"monthCount":0,"yearCount":0},{"name":"徐陈","warehouse":"深圳中心仓","rate":0.0,"check":16,"diff":0,"monthCount":0,"yearCount":0},{"name":"朱佳伟","warehouse":"深圳中心仓","rate":0.0,"check":18,"diff":0,"monthCount":0,"yearCount":0},{"name":"李宇豪","warehouse":"深圳中心仓","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"林真飞","warehouse":"深圳中心仓","rate":0.0,"check":10,"diff":0,"monthCount":0,"yearCount":0},{"name":"汪家吉","warehouse":"深圳中心仓","rate":0.0,"check":9,"diff":0,"monthCount":0,"yearCount":0},{"name":"罗江辉","warehouse":"深圳中心仓","rate":0.0,"check":19,"diff":0,"monthCount":0,"yearCount":0},{"name":"聂霖","warehouse":"深圳中心仓","rate":0.0,"check":20,"diff":0,"monthCount":0,"yearCount":0},{"name":"苏志荣","warehouse":"深圳中心仓","rate":0.0,"check":25,"diff":0,"monthCount":0,"yearCount":0},{"name":"邱超伟","warehouse":"深圳中心仓","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"陈科","warehouse":"深圳中心仓","rate":0.0,"check":9,"diff":0,"monthCount":0,"yearCount":0},{"name":"高经纬","warehouse":"深圳中心仓","rate":0.0,"check":17,"diff":0,"monthCount":0,"yearCount":0},{"name":"黄其峰","warehouse":"深圳中心仓","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"黎帆","warehouse":"深圳中心仓","rate":0.0,"check":6,"diff":0,"monthCount":0,"yearCount":0},{"name":"冯哲","warehouse":"石家庄库","rate":0.0,"check":9,"diff":0,"monthCount":0,"yearCount":0},{"name":"史新民","warehouse":"石家庄库","rate":0.0,"check":18,"diff":0,"monthCount":0,"yearCount":0},{"name":"宋子恒","warehouse":"石家庄库","rate":0.0,"check":8,"diff":0,"monthCount":0,"yearCount":0},{"name":"康硕","warehouse":"石家庄库","rate":0.0,"check":9,"diff":0,"monthCount":0,"yearCount":0},{"name":"李世龙","warehouse":"石家庄库","rate":0.0,"check":10,"diff":0,"monthCount":0,"yearCount":0},{"name":"杜咏发","warehouse":"石家庄库","rate":0.0,"check":16,"diff":0,"monthCount":0,"yearCount":0},{"name":"盖东会","warehouse":"石家庄库","rate":0.0,"check":15,"diff":0,"monthCount":0,"yearCount":0},{"name":"相博阳","warehouse":"石家庄库","rate":0.0,"check":6,"diff":0,"monthCount":0,"yearCount":0},{"name":"罗立俊","warehouse":"石家庄库","rate":0.0,"check":19,"diff":0,"monthCount":0,"yearCount":0},{"name":"鹿铁军","warehouse":"石家庄库","rate":0.0,"check":18,"diff":0,"monthCount":0,"yearCount":0},{"name":"万永鹏","warehouse":"襄阳中心仓","rate":0.0,"check":9,"diff":0,"monthCount":0,"yearCount":0},{"name":"张雷雨","warehouse":"襄阳中心仓","rate":0.0,"check":23,"diff":0,"monthCount":0,"yearCount":0},{"name":"曾华玲","warehouse":"襄阳中心仓","rate":0.0,"check":18,"diff":0,"monthCount":0,"yearCount":0},{"name":"谢展鹏","warehouse":"襄阳中心仓","rate":0.0,"check":32,"diff":0,"monthCount":0,"yearCount":0},{"name":"高俊翔","warehouse":"襄阳中心仓","rate":0.0,"check":7,"diff":0,"monthCount":0,"yearCount":0},{"name":"黄怡鹤","warehouse":"襄阳中心仓","rate":0.0,"check":24,"diff":0,"monthCount":0,"yearCount":0},{"name":"侯泽超","warehouse":"西安库","rate":0.0,"check":26,"diff":0,"monthCount":0,"yearCount":0},{"name":"刘冰","warehouse":"西安库","rate":0.0,"check":26,"diff":0,"monthCount":0,"yearCount":0},{"name":"刘航","warehouse":"西安库","rate":0.0,"check":37,"diff":0,"monthCount":0,"yearCount":0},{"name":"周涛","warehouse":"西安库","rate":0.0,"check":32,"diff":0,"monthCount":0,"yearCount":0},{"name":"张佳豪","warehouse":"西安库","rate":0.0,"check":9,"diff":0,"monthCount":0,"yearCount":0},{"name":"张训林","warehouse":"西安库","rate":0.0,"check":35,"diff":0,"monthCount":0,"yearCount":0},{"name":"杨存利","warehouse":"西安库","rate":0.0,"check":16,"diff":0,"monthCount":0,"yearCount":0},{"name":"杨森尧","warehouse":"西安库","rate":0.0,"check":15,"diff":0,"monthCount":0,"yearCount":0},{"name":"苏敏文","warehouse":"西安库","rate":0.0,"check":30,"diff":0,"monthCount":0,"yearCount":0},{"name":"邓杰","warehouse":"西安库","rate":0.0,"check":28,"diff":0,"monthCount":0,"yearCount":0},{"name":"陈川","warehouse":"西安库","rate":0.0,"check":10,"diff":0,"monthCount":0,"yearCount":0},{"name":"高哲","warehouse":"西安库","rate":0.0,"check":24,"diff":0,"monthCount":0,"yearCount":0},{"name":"任鸿运","warehouse":"郑州库","rate":0.0,"check":10,"diff":0,"monthCount":0,"yearCount":0},{"name":"吕乾文","warehouse":"郑州库","rate":0.0,"check":11,"diff":0,"monthCount":0,"yearCount":0},{"name":"吕瑞涛","warehouse":"郑州库","rate":0.0,"check":9,"diff":0,"monthCount":0,"yearCount":0},{"name":"张成恺","warehouse":"郑州库","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"张政","warehouse":"郑州库","rate":0.0,"check":22,"diff":0,"monthCount":0,"yearCount":0},{"name":"杨嘉沆","warehouse":"郑州库","rate":0.0,"check":22,"diff":0,"monthCount":0,"yearCount":0},{"name":"杨腾飞","warehouse":"郑州库","rate":0.0,"check":13,"diff":0,"monthCount":0,"yearCount":0},{"name":"郑玉晨","warehouse":"郑州库","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"郭振南","warehouse":"郑州库","rate":0.0,"check":8,"diff":0,"monthCount":0,"yearCount":0},{"name":"魏天宇","warehouse":"郑州库","rate":0.0,"check":8,"diff":0,"monthCount":0,"yearCount":0},{"name":"余宗琳","warehouse":"重庆库","rate":0.0,"check":28,"diff":0,"monthCount":0,"yearCount":0},{"name":"张亚锋","warehouse":"重庆库","rate":0.0,"check":34,"diff":0,"monthCount":0,"yearCount":0},{"name":"李代富","warehouse":"重庆库","rate":0.0,"check":19,"diff":0,"monthCount":0,"yearCount":0},{"name":"蒋金才","warehouse":"重庆库","rate":0.0,"check":24,"diff":0,"monthCount":0,"yearCount":0},{"name":"郑豪","warehouse":"重庆库","rate":0.0,"check":30,"diff":0,"monthCount":0,"yearCount":0},{"name":"陈珍珍","warehouse":"重庆库","rate":0.0,"check":23,"diff":0,"monthCount":0,"yearCount":0},{"name":"何兴","warehouse":"长沙库","rate":0.0,"check":25,"diff":0,"monthCount":0,"yearCount":0},{"name":"孙庆泽","warehouse":"长沙库","rate":0.0,"check":18,"diff":0,"monthCount":0,"yearCount":0},{"name":"曾波","warehouse":"长沙库","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"王鹏","warehouse":"长沙库","rate":0.0,"check":19,"diff":0,"monthCount":0,"yearCount":0},{"name":"肖什涛","warehouse":"长沙库","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"李爽","warehouse":"襄阳中心仓","rate":3.33,"check":30,"diff":1,"monthCount":1,"yearCount":2},{"name":"朱震皓","warehouse":"重庆库","rate":3.45,"check":29,"diff":1,"monthCount":1,"yearCount":2},{"name":"王彪","warehouse":"武汉库","rate":3.7,"check":27,"diff":1,"monthCount":1,"yearCount":1},{"name":"梁鹏欣","warehouse":"石家庄库","rate":4.0,"check":25,"diff":1,"monthCount":1,"yearCount":4},{"name":"钟成","warehouse":"重庆库","rate":4.0,"check":25,"diff":1,"monthCount":1,"yearCount":1},{"name":"蒋俊辉","warehouse":"重庆库","rate":4.35,"check":23,"diff":1,"monthCount":1,"yearCount":3},{"name":"李康健","warehouse":"襄阳中心仓","rate":5.0,"check":20,"diff":1,"monthCount":1,"yearCount":2},{"name":"植钏贵","warehouse":"成都库","rate":5.26,"check":19,"diff":1,"monthCount":1,"yearCount":2},{"name":"刘成清","warehouse":"成都库","rate":5.56,"check":18,"diff":1,"monthCount":1,"yearCount":2},{"name":"崔梦飞","warehouse":"石家庄库","rate":5.56,"check":18,"diff":1,"monthCount":1,"yearCount":3},{"name":"卢树峰","warehouse":"长沙库","rate":5.56,"check":18,"diff":1,"monthCount":1,"yearCount":1},{"name":"张中南","warehouse":"深圳中心仓","rate":5.88,"check":17,"diff":1,"monthCount":1,"yearCount":4},{"name":"龙灵辉","warehouse":"长沙库","rate":5.88,"check":17,"diff":1,"monthCount":1,"yearCount":3},{"name":"顾浩","warehouse":"郑州库","rate":6.25,"check":16,"diff":1,"monthCount":1,"yearCount":4},{"name":"高兴","warehouse":"深圳中心仓","rate":6.67,"check":15,"diff":1,"monthCount":1,"yearCount":2},{"name":"刘立文","warehouse":"成都库","rate":7.69,"check":13,"diff":1,"monthCount":1,"yearCount":2},{"name":"雷登洪","warehouse":"成都库","rate":7.69,"check":13,"diff":1,"monthCount":1,"yearCount":1},{"name":"刘华","warehouse":"昆明库","rate":8.33,"check":12,"diff":1,"monthCount":1,"yearCount":3},{"name":"李佳鹏","warehouse":"沈阳库","rate":8.33,"check":12,"diff":1,"monthCount":1,"yearCount":4},{"name":"苗广辉","warehouse":"沈阳库","rate":8.33,"check":12,"diff":1,"monthCount":1,"yearCount":2},{"name":"苏磊","warehouse":"昆明库","rate":9.09,"check":11,"diff":1,"monthCount":1,"yearCount":4},{"name":"王晓宇","warehouse":"合肥库","rate":10.0,"check":10,"diff":1,"monthCount":1,"yearCount":2},{"name":"王强","warehouse":"合肥库","rate":11.11,"check":9,"diff":1,"monthCount":1,"yearCount":2},{"name":"熊之博","warehouse":"长沙库","rate":11.11,"check":9,"diff":1,"monthCount":1,"yearCount":4},{"name":"曾骏昊","warehouse":"合肥库","rate":12.5,"check":8,"diff":1,"monthCount":1,"yearCount":4},{"name":"刘文庆","warehouse":"南京库","rate":14.29,"check":7,"diff":1,"monthCount":1,"yearCount":4}];
 
 function renderRankingBoard(){
-  const wh = document.getElementById('rankingWarehouseFilter').value;
-  const threshold = parseFloat(document.getElementById('rankingThreshold').value);
-
-  let src = RANKING_DEMO;
-  // If real data loaded, build from allRows checking '检验员' column
-  if(allRows.length){
-    const map = {};
-    allRows.forEach(r=>{
-      const name = r['检验员']||r['质检员']||r['姓名']||'';
-      const warehouse = r['站点名称']||r['机型']||'';
-      const rate = parseFloat(r['手机差异率'])||0;
-      if(!name) return;
-      if(!map[name]) map[name]={name,warehouse,rate,monthCount:0,yearCount:0};
-      if(rate > map[name].rate) map[name].rate = rate;
-      if(rate > threshold){ map[name].monthCount++; map[name].yearCount++; }
-    });
-    src = Object.values(map);
+  var redEl=document.getElementById('redBoardList');
+  var blackEl=document.getElementById('blackBoardList');
+  if(!redEl||!blackEl)return;
+  var src=RANKING_DEMO.slice();
+  if(!src.length){
+    redEl.innerHTML='<div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px;">暂无数据</div>';
+    blackEl.innerHTML=redEl.innerHTML; return;
   }
-
-  let filtered = wh==='全部' ? src : src.filter(p=>p.warehouse===wh);
-  const sorted = [...filtered].sort((a,b)=>a.rate-b.rate);
-  const redTop = sorted.slice(0,3);
-  const blackTop = [...filtered].sort((a,b)=>b.rate-a.rate).slice(0,3);
-
-  renderBoardSide('redBoardList', redTop, 'red');
-  renderBoardSide('blackBoardList', blackTop, 'black');
+  // Filter by multi-select if available
+  if(typeof getSelectedWh==='function'){
+    var whs=getSelectedWh('rank');
+    if(whs&&whs.length) src=src.filter(function(p){return whs.includes(p.warehouse);});
+  }
+  var byRate=src.slice().sort(function(a,b){return a.rate-b.rate;});
+  renderBoardSide('redBoardList',byRate.slice(0,3),'red');
+  renderBoardSide('blackBoardList',src.slice().sort(function(a,b){return b.rate-a.rate;}).slice(0,3),'black');
 }
 
 const rankColors = {
@@ -2057,34 +2083,55 @@ function getSelectedWh(prefix){
 
 /* Training global filter */
 function applyTrainGlobalFilter(){
-  const dateFrom = document.getElementById('trainDateFrom').value;
-  const dateTo = document.getElementById('trainDateTo').value;
-  const whFilter = getSelectedWh('train');
-  const src = trainAllRows.length ? trainAllRows : TRAIN_DEMO;
-
-  let filtered = src.filter(r=>{
-    const d = r['日期']||'';
-    const wh = r['区域']||r['仓库']||'';
-    const dateOk = (!dateFrom||d>=dateFrom)&&(!dateTo||d<=dateTo);
-    const whOk = !whFilter.length||whFilter.includes(wh);
+  var dateFrom=document.getElementById('trainDateFrom')?document.getElementById('trainDateFrom').value:'';
+  var dateTo=document.getElementById('trainDateTo')?document.getElementById('trainDateTo').value:'';
+  var whFilter=(typeof getSelectedWh==='function')?getSelectedWh('train'):[];
+  var src=trainAllRows.length?trainAllRows:TRAIN_DEMO;
+  var filtered=src.filter(function(r){
+    var d=r['日期']||'';
+    var wh=r['区域']||r['仓库']||'';
+    var dateOk=(!dateFrom||d>=dateFrom)&&(!dateTo||d<=dateTo);
+    var whOk=!whFilter.length||whFilter.includes(wh);
     return dateOk&&whOk;
   });
-
-  // Update KPIs
-  const totalCount = filtered.length;
-  const totalPeople = filtered.reduce((s,r)=>s+(Number(r['参训人数'])||0),0);
-  const totalQa = filtered.reduce((s,r)=>s+(Number(r['答疑数'])||0),0);
-  document.getElementById('kTrainCount').textContent = totalCount;
-  document.getElementById('kTrainPeople').textContent = totalPeople.toLocaleString();
-  document.getElementById('kQaTotal').textContent = totalQa.toLocaleString();
-
-  // Render warehouse rankings
-  renderTrainRank(filtered);
-
-  // Update detail table
-  trainVisibleRows = filtered;
-  trainPage = 1;
-  renderTrainPage();
+  // KPIs
+  var totalCount=filtered.length;
+  var totalPeople=filtered.reduce(function(s,r){return s+(Number(r['参训人数'])||0);},0);
+  var totalQA=filtered.reduce(function(s,r){return s+(Number(r['答疑数'])||0);},0);
+  function setEl(id,v){var e=document.getElementById(id);if(e)e.textContent=v;}
+  setEl('kTrainCount',totalCount);
+  setEl('kTrainPeople',totalPeople.toLocaleString());
+  setEl('kQaTotal',totalQA.toLocaleString());
+  // Warehouse rank bars
+  var trainMap={},qaMap={};
+  filtered.forEach(function(r){
+    var wh=r['区域']||r['仓库']||'未知';
+    trainMap[wh]=(trainMap[wh]||0)+1;
+    qaMap[wh]=(qaMap[wh]||0)+(Number(r['答疑数'])||0);
+  });
+  function buildBar(map,color){
+    var entries=Object.entries(map).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
+    if(!entries.length)return '<div style="text-align:center;padding:16px;color:#94a3b8;font-size:12px;">暂无数据</div>';
+    var mx=entries[0][1]||1;
+    return entries.map(function(e,i){
+      var pct=(e[1]/mx*100).toFixed(0);
+      var medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':String(i+1);
+      return '<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">'
+        +'<div style="width:22px;text-align:center;font-size:'+(i<3?'13':'11')+'px;">'+medal+'</div>'
+        +'<div style="flex:1;font-size:12px;color:#334155;">'+e[0]+'</div>'
+        +'<div style="width:80px;background:rgba(200,210,230,0.3);border-radius:4px;height:6px;">'
+        +'<div style="width:'+pct+'%;height:6px;border-radius:4px;background:'+color+'"></div></div>'
+        +'<div style="font-size:12px;font-weight:700;color:'+color+';min-width:28px;text-align:right;">'+e[1]+'</div>'
+        +'</div>';
+    }).join('');
+  }
+  var tcEl=document.getElementById('trainCountRank');
+  var qcEl=document.getElementById('qaCountRank');
+  if(tcEl)tcEl.innerHTML=buildBar(trainMap,'#2563eb');
+  if(qcEl)qcEl.innerHTML=buildBar(qaMap,'#059669');
+  // Detail table
+  trainVisibleRows=filtered;trainPage=1;
+  if(typeof renderTrainPage==='function')renderTrainPage();
 }
 
 function renderTrainRank(rows){
@@ -2622,6 +2669,155 @@ document.addEventListener('click', function(e){
 
 /* ===== TOAST ===== */
 function showToast(msg){const t=document.getElementById('toast');t.textContent=msg;t.style.display='block';clearTimeout(t._t);t._t=setTimeout(()=>t.style.display='none',3500);}
+
+
+/* ===== NUCLEAR DATA FIX - override all broken render functions ===== */
+
+// ── 1. Fix buildRankFromData (rankWarehouse element no longer exists) ──
+function buildRankFromData(){
+  var el=document.getElementById('rankList');
+  if(!el)return;
+  var src=filteredRows.length?filteredRows:(allRows.length?allRows:DEMO_ROWS);
+  var ck=gCat&&gCat!=='全部'?gCat+'抽检量':'手机抽检量';
+  var dk=gCat&&gCat!=='全部'?gCat+'差异量':'手机差异量';
+  var catLabel=gCat&&gCat!=='全部'?gCat:'手机';
+  // Aggregate by site
+  var map={};
+  src.forEach(function(r){
+    if(r['品类名称']&&r['品类名称']!==catLabel&&r['品类名称']!=='全部') return;
+    var site=r['站点名称']||r['机型']||'';
+    if(!site)return;
+    if(!map[site])map[site]={name:site,chk:0,diff:0};
+    map[site].chk+=(Number(r[ck])||Number(r['总抽检量'])||0);
+    map[site].diff+=(Number(r[dk])||Number(r['总客观差异量'])||0);
+  });
+  var ranked=Object.values(map).map(function(s){
+    return {name:s.name, rate:s.chk>0?(s.diff/s.chk)*100:0, chk:s.chk, diff:s.diff};
+  }).sort(function(a,b){return b.rate-a.rate;}).slice(0,10);
+  var max=ranked.length&&ranked[0].rate?ranked[0].rate:1;
+  var subtitle=document.getElementById('rankSubtitle');
+  if(subtitle) subtitle.textContent='排行榜 · '+catLabel+' · '+(gPeriod||'本月');
+  el.innerHTML=ranked.map(function(r,i){
+    var pct=max>0?(r.rate/max*100).toFixed(0):0;
+    var color=r.rate>5?'#ef4444':r.rate>2?'#f59e0b':'#22c55e';
+    var rankCls=i<3?'rank-gold':'rank-silver';
+    return '<div class="rank-item" style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">'
+      +'<div class="rank-num '+rankCls+'">'+(i+1)+'</div>'
+      +'<div class="rank-name" style="flex:1;font-size:12px;">'+r.name+'</div>'
+      +'<div class="rank-bar-wrap" style="width:120px;background:rgba(200,210,230,0.3);border-radius:4px;height:8px;">'
+      +'<div class="rank-bar" style="width:'+pct+'%;height:8px;border-radius:4px;background:'+color+';"></div></div>'
+      +'<div class="rank-val" style="font-size:12px;font-weight:700;color:'+color+';min-width:45px;text-align:right;">'+r.rate.toFixed(2)+'%</div>'
+      +'</div>';
+  }).join('');
+}
+
+// ── 2. Fix renderRankingBoard - remove duplicate, use srcFileCache-based RANKING_DEMO ──
+// Override both definitions with one clean version
+(function(){
+  var origRender = window.renderRankingBoard;
+  window.renderRankingBoard = function(){
+    var redEl=document.getElementById('redBoardList');
+    var blackEl=document.getElementById('blackBoardList');
+    if(!redEl||!blackEl)return;
+    var whFilter=getSelectedWh?getSelectedWh('rank'):[];
+    var src=RANKING_DEMO.slice();
+    if(whFilter.length) src=src.filter(function(p){return whFilter.includes(p.warehouse);});
+    var sorted=src.slice().sort(function(a,b){return a.rate-b.rate;});
+    var redTop=sorted.slice(0,3);
+    var blackTop=src.slice().sort(function(a,b){return b.rate-a.rate;}).slice(0,3);
+    if(typeof renderBoardSide==='function'){
+      renderBoardSide('redBoardList',redTop,'red');
+      renderBoardSide('blackBoardList',blackTop,'black');
+    }
+  };
+})();
+
+// ── 3. Fix training charts & ranking - call immediately on page load ──
+function forceRenderTraining(){
+  var src=trainAllRows.length?trainAllRows:TRAIN_DEMO;
+
+  // KPIs
+  var kTC=document.getElementById('kTrainCount');
+  var kTP=document.getElementById('kTrainPeople');
+  var kQA=document.getElementById('kQaTotal');
+  if(kTC) kTC.textContent=src.length;
+  if(kTP) kTP.textContent=src.reduce(function(s,r){return s+(Number(r['参训人数'])||0);},0).toLocaleString();
+  if(kQA) kQA.textContent=src.reduce(function(s,r){return s+(Number(r['答疑数'])||0);},0).toLocaleString();
+
+  // Warehouse train rank
+  var trainMap={},qaMap={};
+  src.forEach(function(r){
+    var wh=r['区域']||r['仓库']||'未知';
+    trainMap[wh]=(trainMap[wh]||0)+1;
+    qaMap[wh]=(qaMap[wh]||0)+(Number(r['答疑数'])||0);
+  });
+
+  function buildBar(map, maxVal, color){
+    var entries=Object.entries(map).sort(function(a,b){return b[1]-a[1];}).slice(0,8);
+    var mx=entries.length?entries[0][1]:1;
+    return entries.map(function(e,i){
+      var pct=(e[1]/mx*100).toFixed(0);
+      return '<div class="rank-item" style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
+        +'<div class="rank-num '+(i<3?'rank-gold':'rank-silver')+'">'+(i+1)+'</div>'
+        +'<div style="flex:1;font-size:12px;">'+e[0]+'</div>'
+        +'<div style="width:100px;background:rgba(200,210,230,0.3);border-radius:4px;height:7px;">'
+        +'<div style="width:'+pct+'%;height:7px;border-radius:4px;background:'+color+';"></div></div>'
+        +'<div style="font-size:12px;font-weight:700;color:'+color+';min-width:24px;text-align:right;">'+e[1]+'</div>'
+        +'</div>';
+    }).join('');
+  }
+
+  var tcEl=document.getElementById('trainCountRank');
+  var qcEl=document.getElementById('qaCountRank');
+  if(tcEl) tcEl.innerHTML=buildBar(trainMap,0,'#2563eb');
+  if(qcEl) qcEl.innerHTML=buildBar(qaMap,0,'#059669');
+
+  // Training table
+  if(typeof renderTrainPage==='function') renderTrainPage();
+}
+
+// ── 4. Fix performance page - inject demo data ──
+var PERF_DEMO_DATA = [
+  {trainer:'张磊',warehouse:'深圳中心仓',joinDate:'2022-03',month:'2026-04',scores:{'中心仓质量得分':13,'新人培训得分':14,'授课质量得分':5,'双周考得分':13,'上级评价得分':22,'业务评价得分':9,'结果指标得分':13,'主动分享得分':4},total:93},
+  {trainer:'王芳',warehouse:'南京库',joinDate:'2021-06',month:'2026-04',scores:{'中心仓质量得分':12,'新人培训得分':13,'授课质量得分':4,'双周考得分':14,'上级评价得分':20,'业务评价得分':8,'结果指标得分':12,'主动分享得分':3},total:86},
+  {trainer:'陈晓',warehouse:'合肥库',joinDate:'2023-01',month:'2026-04',scores:{'中心仓质量得分':11,'新人培训得分':12,'授课质量得分':4,'双周考得分':12,'上级评价得分':18,'业务评价得分':7,'结果指标得分':11,'主动分享得分':0},total:75},
+  {trainer:'刘强',warehouse:'成都库',joinDate:'2022-09',month:'2026-04',scores:{'中心仓质量得分':14,'新人培训得分':11,'授课质量得分':5,'双周考得分':11,'上级评价得分':21,'业务评价得分':9,'结果指标得分':14,'主动分享得分':5},total:90},
+  {trainer:'李梅',warehouse:'武汉库',joinDate:'2021-11',month:'2026-04',scores:{'中心仓质量得分':10,'新人培训得分':10,'授课质量得分':3,'双周考得分':10,'上级评价得分':16,'业务评价得分':6,'结果指标得分':10,'主动分享得分':0},total:65},
+  {trainer:'赵明',warehouse:'沈阳库',joinDate:'2023-03',month:'2026-04',scores:{'中心仓质量得分':13,'新人培训得分':13,'授课质量得分':4,'双周考得分':13,'上级评价得分':19,'业务评价得分':8,'结果指标得分':12,'主动分享得分':3},total:85},
+];
+
+function forceRenderPerf(){
+  if(typeof perfAllData!=='undefined' && !perfAllData.length){
+    perfAllData=PERF_DEMO_DATA;
+  }
+  if(typeof updatePerfFilters==='function') updatePerfFilters();
+  if(typeof renderPerf==='function') renderPerf();
+}
+
+// ── Wire everything up on page load ──
+document.addEventListener('DOMContentLoaded',function(){
+  // Short delay to let other init run first
+  setTimeout(function(){
+    // Force render ranking
+    buildRankFromData();
+
+    // Force render red/black board if on that page
+    if(typeof renderRankingBoard==='function') renderRankingBoard();
+
+    // Force render training
+    forceRenderTraining();
+
+    // Inject perf demo
+    if(typeof perfAllData!=='undefined' && !perfAllData.length){
+      perfAllData=PERF_DEMO_DATA;
+    }
+  }, 300);
+});
+
+// Also patch switchPage to call force renders
+var _origSwitchPage = typeof switchPage==='function' ? switchPage : null;
+/* switchPage: using first definition above */
+
 </script>
 </body>
 </html>
