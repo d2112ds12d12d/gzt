@@ -223,7 +223,20 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
 .mbtn.oon{background:#475569;color:#fff;}
 .warnbox{display:none;margin-top:8px;padding:8px 12px;border-radius:8px;background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.2);font-size:11px;color:#dc2626;align-items:center;justify-content:space-between;gap:8px;}
 .warnbox.show{display:flex;}
-/* 配置存档 */
+/* 字段角色映射 */
+.role-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:4px;margin-top:6px;}
+.role-row{display:flex;align-items:center;gap:6px;padding:5px 8px;border-radius:7px;background:rgba(255,255,255,0.7);border:1px solid rgba(200,210,230,0.4);font-size:11px;}
+.role-colname{flex:1;color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.role-sel{font-size:11px;padding:2px 6px;border-radius:6px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.9);color:#475569;outline:none;font-family:inherit;cursor:pointer;}
+.role-sel.assigned{border-color:#2563eb;color:#2563eb;background:rgba(37,99,235,0.06);}
+.role-badge{display:inline-block;padding:1px 7px;border-radius:10px;font-size:10px;font-weight:600;}
+.rb-site{background:rgba(37,99,235,0.1);color:#1d4ed8;}
+.rb-cat{background:rgba(124,58,237,0.1);color:#6d28d9;}
+.rb-date{background:rgba(14,165,233,0.1);color:#0369a1;}
+.rb-check{background:rgba(5,150,105,0.1);color:#047857;}
+.rb-diff{background:rgba(239,68,68,0.1);color:#dc2626;}
+.rb-diffrow{background:rgba(217,119,6,0.1);color:#b45309;}
+.src-mode-row{display:flex;align-items:center;gap:8px;margin-top:8px;padding:7px 10px;border-radius:8px;background:rgba(241,245,249,0.7);border:1px solid rgba(200,210,230,0.4);font-size:11px;}
 .preset-bar{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:9px 12px;background:rgba(248,250,255,0.8);border-radius:10px;border:1px solid rgba(200,210,230,0.5);margin-bottom:10px;}
 .preset-tag{display:inline-flex;align-items:center;gap:5px;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600;cursor:pointer;border:1px solid rgba(37,99,235,0.25);background:rgba(37,99,235,0.06);color:#2563eb;transition:all .15s;user-select:none;}
 .preset-tag:hover{background:rgba(37,99,235,0.12);}
@@ -1115,23 +1128,43 @@ let dsUploadHistory = JSON.parse(localStorage.getItem('ds_upload_history')||'[]'
 
 const DS_DEFAULTS = [
   {
-    id:'ds_quality_overview', icon:'📊',
-    name:'抽检质量数据 · 本月总览和排行榜',
-    desc:'更新后：首页5个品类卡片、全国站点排行榜、趋势图',
-    mode:'overwrite', targetKey:'quality_site_data', rowCount:0, lastUpload:'',
+    id:'ds_quality_phone', icon:'📱',
+    name:'抽检质量数据 · 手机',
+    desc:'更新后：手机品类卡片、站点排行榜、趋势图',
+    mode:'overwrite', targetKey:'quality_phone_data', rowCount:0, lastUpload:'',
     fileSources:[
-      {id:'src_q1',label:'文件① · 表1（抽检量来源）',
+      {id:'src_qp1',label:'文件① · 抽检量来源（手机）',
        fileName:'',sheetName:'Sheet0',matchKeyword:'QA差异率',
        columns:['抽检日期','站点名称','品类名称','总抽检量'],
-       filters:[]},
-      {id:'src_q5',label:'文件② · 表5（执行问题差异量）',
+       filters:[], diffMode:'col'},
+      {id:'src_qp2',label:'文件② · 执行问题差异量（手机）',
        fileName:'',sheetName:'Sheet0',matchKeyword:'日维度差异明细',
        columns:['日期','站点名称','品类名称','策略类别','主客观问题分类','抽检判定的问题类型'],
        filters:[
          {col:'策略类别',op:'equals',val:'大盘评估/站点'},
          {col:'主客观问题分类',op:'contains',val:'客观问题'},
          {col:'抽检判定的问题类型',op:'equals',val:'执行问题'}
-       ]}
+       ], diffMode:'rowcount'}
+    ]
+  },
+  {
+    id:'ds_quality_multi', icon:'📊',
+    name:'抽检质量数据 · 四品类',
+    desc:'更新后：笔记本/平板/耳机/相机卡片、站点排行榜',
+    mode:'overwrite', targetKey:'quality_multi_data', rowCount:0, lastUpload:'',
+    fileSources:[
+      {id:'src_qm1',label:'文件① · 抽检量来源（四品类）',
+       fileName:'',sheetName:'Sheet0',matchKeyword:'QA差异率',
+       columns:['抽检日期','站点名称','品类名称','总抽检量'],
+       filters:[], diffMode:'col'},
+      {id:'src_qm2',label:'文件② · 执行问题差异量（四品类）',
+       fileName:'',sheetName:'Sheet0',matchKeyword:'日维度差异明细',
+       columns:['日期','站点名称','品类名称','策略类别','主客观问题分类','抽检判定的问题类型'],
+       filters:[
+         {col:'策略类别',op:'equals',val:'大盘评估/站点'},
+         {col:'主客观问题分类',op:'contains',val:'客观问题'},
+         {col:'抽检判定的问题类型',op:'equals',val:'执行问题'}
+       ], diffMode:'rowcount'}
     ]
   },
   {
@@ -1212,7 +1245,7 @@ const DS_DEFAULTS = [
   }
 ];
 
-const DS_CONFIG_VER = 'v3_board_centric'; // bump this when DS_DEFAULTS changes
+const DS_CONFIG_VER = 'v4_phone_multi_split'; // bump this when DS_DEFAULTS changes
 
 function initDsCfg(){
   const savedVer = localStorage.getItem('ds_config_ver');
@@ -1371,6 +1404,22 @@ function dsCfgCardHtml(ds){
       +'</div>'
       +'<div class="cgrid" id="fsColGrid_'+src.id+'">'+colItems+'</div>'
       +'</div>'
+      // Field role mapping
+      +'<div style="margin-top:10px;">'
+      +'<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px;">'
+      +'<div class="flabel" style="margin:0;">字段角色 <span class="fhint">告诉看板每列是什么含义</span></div>'
+      +'</div>'
+      +renderRoleGrid(ds.id, src)
+      +'<div class="src-mode-row">'
+      +'<span style="color:#475569;font-weight:600;">差异量来源：</span>'
+      +'<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">'
+      +'<input type="radio" name="srcmode_'+src.id+'" value="col" '+((!src.diffMode||src.diffMode==='col')?'checked':'')+' onchange="setSrcMode(\''+ds.id+'\',\''+src.id+'\',\'col\')">'
+      +'取列的值</label>'
+      +'<label style="display:flex;align-items:center;gap:4px;cursor:pointer;">'
+      +'<input type="radio" name="srcmode_'+src.id+'" value="rowcount" '+(src.diffMode==='rowcount'?'checked':'')+' onchange="setSrcMode(\''+ds.id+'\',\''+src.id+'\',\'rowcount\')">'
+      +'用行数计算（每行=1条差异）</label>'
+      +'</div>'
+      +'</div>'
       // Filters
       +'<div style="margin-top:9px;">'
       +'<div class="flabel">筛选条件 <span class="fhint">多值用英文逗号，多条件取交集</span></div>'
@@ -1428,6 +1477,7 @@ function dsCfgCardHtml(ds){
     +'<button class="save-btn" style="padding:7px 12px;background:rgba(37,99,235,0.08);color:#2563eb;border:1px solid rgba(37,99,235,0.25);" onclick="doCfgPreview(\''+ds.id+'\')">👁 预览清洗结果</button>'
     +'<button class="save-btn" style="padding:7px 12px;background:rgba(5,150,105,0.08);color:#059669;border:1px solid rgba(5,150,105,0.25);" onclick="exportDsHistory(\''+ds.id+'\')">⬇ 导出历史</button>'
     +'<button class="save-btn" style="padding:7px 12px;background:rgba(239,68,68,0.06);color:#dc2626;border:1px solid rgba(239,68,68,0.2);margin-left:auto;" onclick="removeDsCard(\''+ds.id+'\')">删除</button>'
+    +'<button class="save-btn" style="padding:7px 12px;background:rgba(239,68,68,0.06);color:#dc2626;border:1px solid rgba(239,68,68,0.2);" onclick="clearCloudData(\''+ds.id+'\',\''+ds.targetKey+'\',\''+ds.name+'\')">🗑 清空云上数据</button>'
     +'</div></div>'
     +'<div id="mprev_'+ds.id+'" style="margin-top:8px;"></div>'
     +'</div></div>';
@@ -1591,20 +1641,38 @@ async function doCfgUpload(dsId){
   }
   var allRows=[];
   var srcSummary=[];
+  // 先收集每个来源的行数据（带来源引用）
+  var sourcesWithRows=[];
   withFile.forEach(function(src){
     var rows=cleanSrcRows(src);
     if(!rows)return;
     srcSummary.push(src.label+': '+rows.length+'行');
-    if(withFile.length>1) rows.forEach(function(r){r['_来源']=src.label;});
-    allRows=allRows.concat(rows);
+    sourcesWithRows.push({src:src, rows:rows});
   });
+
+  // 尝试用角色映射合并（新逻辑）
+  var mergedByRole=null;
+  if(ds.targetKey==='quality_phone_data'||ds.targetKey==='quality_multi_data'||ds.targetKey==='quality_site_data'){
+    mergedByRole=mergeSourcesByRole(ds, sourcesWithRows);
+  }
+
+  if(mergedByRole){
+    allRows=mergedByRole;
+    showToast('按字段角色合并：共 '+allRows.length+' 个站点');
+  } else {
+    // 旧逻辑：直接拼接
+    sourcesWithRows.forEach(function(sw){
+      if(sourcesWithRows.length>1) sw.rows.forEach(function(r){r['_来源']=sw.src.label;});
+      allRows=allRows.concat(sw.rows);
+    });
+  }
   if(dsCfg.computedCols) dsCfg.computedCols.forEach(function(cc){
     if(cc.dsId!==dsId)return;
     allRows=allRows.map(function(r){var n=parseFloat(r[cc.numCol])||0,d=parseFloat(r[cc.denCol])||1;return Object.assign({},r,{[cc.outCol]:(n/d*100).toFixed(2)+'%'});});
   });
 
   // 自动转换：如果是 quality_site_data 且数据是"竖表"格式（含品类名称列），自动聚合成看板需要的宽表
-  if(ds.targetKey==='quality_site_data' && allRows.length && allRows[0]['品类名称']!==undefined){
+  if((ds.targetKey==='quality_phone_data'||ds.targetKey==='quality_multi_data'||ds.targetKey==='quality_site_data') && allRows.length && allRows[0]['品类名称']!==undefined && !mergedByRole){
     // 品类名称 → 看板列名前缀映射
     var catMap={'手机':'手机','笔记本电脑':'笔记本','笔记本':'笔记本','平板电脑':'平板','平板':'平板','耳机':'耳机','相机':'相机','摄像机':'相机'};
     // 抽检量/差异量的原始列名兼容多种叫法
@@ -1622,7 +1690,7 @@ async function doCfgUpload(dsId){
       row[cat+'抽检量']=(row[cat+'抽检量']||0)+chk;
       row[cat+'差异量']=(row[cat+'差异量']||0)+dif;
     });
-    // 补全差异率
+    // 补全差异率，并清除竖表残留的品类名称字段
     var allCats=['手机','笔记本','平板','耳机','相机'];
     allRows=Object.values(siteMap).map(function(row){
       allCats.forEach(function(cat){
@@ -1635,6 +1703,10 @@ async function doCfgUpload(dsId){
       row['总抽检量']=totalChk;
       row['总客观差异量']=totalDif;
       row['总客观差异率']=totalChk>0?(totalDif/totalChk*100).toFixed(2)+'%':'0.00%';
+      // 清除竖表残留字段，避免排行榜品类过滤错误
+      delete row['品类名称'];
+      delete row['品类ID'];
+      delete row['站点ID'];
       return row;
     });
     showToast('自动转换：竖表 → 宽表，共 '+allRows.length+' 个站点');
@@ -1673,7 +1745,13 @@ async function doCfgUpload(dsId){
     setTimeout(async function(){
       try{
         var dk=ds.targetKey;
-        if(dk==='quality_site_data'){var d=await readFromGitHub(DATA_PREFIX+'/'+dk+'.json');allRows=d.rows||[];filteredRows=[...allRows];setUpdateTime(d.uploadTime);renderAll();}
+        if(dk==='quality_phone_data'||dk==='quality_multi_data'||dk==='quality_site_data'){
+          // 重新拉取两个品类数据合并
+          var pd=[],md=[];
+          try{var dp=await readFromGitHub(DATA_PREFIX+'/quality_phone_data.json');pd=dp.rows||[];setUpdateTime(dp.uploadTime);}catch(e){}
+          try{var dm=await readFromGitHub(DATA_PREFIX+'/quality_multi_data.json');md=dm.rows||[];}catch(e){}
+          allRows=[...pd,...md];filteredRows=[...allRows];renderAll();
+        }
         else if(dk==='quality_engineer_data'){
           var d2=await readFromGitHub(DATA_PREFIX+'/'+dk+'.json');var rows2=d2.rows||[];
           var map2={};rows2.forEach(function(r){var nm=r['检验员']||r['质检员']||r['姓名']||'';var wh=r['站点名称']||r['仓库']||'';var rt=parseFloat(r['计算差异率'])||parseFloat(r['手机差异率'])||0;if(!nm)return;if(!map2[nm])map2[nm]={name:nm,warehouse:wh,rate:rt,monthCount:0,yearCount:0};if(rt>map2[nm].rate)map2[nm].rate=rt;});
@@ -1688,10 +1766,35 @@ async function doCfgUpload(dsId){
   }catch(err){showToast('✗ 上传失败：'+err.message);}
 }
 
+async function clearCloudData(dsId, targetKey, dsName){
+  if(!getToken()){showToast('✗ 请先输入创造者密钥');return;}
+  var env=DATA_PREFIX==='data'?'【正式版】':'【内测版】';
+  var confirmed=confirm(
+    '⚠️ 确认清空云上数据？\n\n'
+    +'数据源：'+dsName+'\n'
+    +'环境：'+env+'（'+DATA_PREFIX+'/'+targetKey+'.json）\n\n'
+    +'清空后看板该板块将显示空数据，此操作不可撤销。\n'
+    +'确定继续？'
+  );
+  if(!confirmed) return;
+  // 二次确认
+  var confirmed2=confirm('再次确认：清空 '+env+' 的「'+dsName+'」数据？');
+  if(!confirmed2) return;
+  try{
+    showToast('正在清空…');
+    var emptyPayload={uploadTime:new Date().toISOString(),mode:'overwrite',sources:['手动清空'],rows:[]};
+    await writeToGitHub(DATA_PREFIX+'/'+targetKey+'.json', emptyPayload);
+    // 更新本地记录
+    var ds=getDs(dsId);
+    if(ds){ds.rowCount=0;ds.lastUpload='';saveDsCfg();renderDsCfgGrid();}
+    showToast('✓ 已清空「'+dsName+'」'+env+'云上数据');
+  }catch(err){showToast('✗ 清空失败：'+err.message);}
+}
+
 async function exportDsHistory(dsId){
   const ds=getDs(dsId);if(!ds.rowCount){showToast('暂无历史数据');return;}
   try{
-    const url=`https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/data/${ds.targetKey}.json?t=${Date.now()}`;
+    const url=`https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/${DATA_PREFIX}/${ds.targetKey}.json?t=${Date.now()}`;
     const res=await fetch(url);const data=await res.json();
     const rows=data.rows||[];if(!rows.length){showToast('历史数据为空');return;}
     const ws=XLSX.utils.json_to_sheet(rows);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'历史');
@@ -1798,8 +1901,15 @@ async function handleUpload(input,type){
 async function syncCloud(){
   showToast('正在同步…');
   let ok=0;
-  // Fix 1: 文件名与 targetKey 对齐（quality_site_data）
-  try{const d=await readFromGitHub(DATA_PREFIX+'/quality_site_data.json');allRows=d.rows||[];filteredRows=[...allRows];setUpdateTime(d.uploadTime);renderAll();ok++;}catch(e){}
+  // Fix 1: 读取手机 + 四品类，合并后一起渲染
+  try{
+    var phoneData=[], multiData=[];
+    try{const d=await readFromGitHub(DATA_PREFIX+'/quality_phone_data.json');phoneData=d.rows||[];setUpdateTime(d.uploadTime);}catch(e){}
+    try{const d=await readFromGitHub(DATA_PREFIX+'/quality_multi_data.json');multiData=d.rows||[];}catch(e){}
+    allRows=[...phoneData,...multiData];
+    filteredRows=[...allRows];
+    if(allRows.length){renderAll();ok++;}
+  }catch(e){}
   // 培训数据（原有，保持不变）
   try{const d=await readFromGitHub(DATA_PREFIX+'/training_data.json');trainAllRows=d.rows||[];trainVisibleRows=[...trainAllRows];rebuildTrainFilters();renderTrainPage();}catch(e){}
   // Fix 2: 补加排行榜数据读取（quality_engineer_data）
@@ -1850,11 +1960,6 @@ async function syncCloud(){
 }
 
 /* ===== FILTERS ===== */
-function applyFilters(){
-  const wh=document.getElementById('filterWarehouse').value;
-  filteredRows=allRows.filter(r=>wh==='全部'||(r['站点名称']||r['机型']||'')=== wh);
-  currentPage=1;renderAll();
-}
 
 /* ===== RENDER ALL ===== */
 function renderAll(){renderOverview(filteredRows);rebuildDetailFilters();renderDetailPage();updateRankAndTrend();}
@@ -1879,7 +1984,7 @@ function renderOverview(rows){
       <div class="ov-cat"><span class="ov-icon">${cat.icon}</span>${cat.key}</div>
       <div class="ov-big">${total>0?total.toLocaleString():'—'}</div>
       <div class="ov-row">
-        <div><div class="ov-label">差异量</div><div style="font-size:14px;font-weight:700;margin-top:2px;">${diff>0?diff.toLocaleString():'—'}</div></div>
+        <div><div class="ov-label">差异量</div><div style="font-size:14px;font-weight:700;margin-top:2px;">${has?diff.toLocaleString():'—'}</div></div>
         <div style="text-align:right;"><div class="ov-label">差异率</div><div class="ov-rate ${rateCls}" style="margin-top:2px;">${rate}</div></div>
       </div>
       <div class="ov-sub">抽检量</div>
@@ -1950,42 +2055,6 @@ function setTrendCmp(el,cmp){
   el.classList.add('active');trendCmp=cmp;updateTrendChart();
 }
 function updateRankAndTrend(){buildRankFromData();updateTrendChart();}
-function buildRankFromData(){
-  var el=document.getElementById('rankList');
-  if(!el)return;
-  var catLabel=(typeof gCat!=='undefined'&&gCat&&gCat!=='全部')?gCat:'手机';
-  var ckKey=catLabel+'抽检量';
-  var dkKey=catLabel+'差异量';
-  var src=filteredRows.length?filteredRows:(allRows.length?allRows:DEMO_ROWS);
-  var map={};
-  src.forEach(function(r){
-    if(r['品类名称']&&r['品类名称']!==catLabel)return;
-    var site=r['站点名称']||'';if(!site)return;
-    if(!map[site])map[site]={name:site,chk:0,diff:0};
-    var c=Number(r[ckKey])||Number(r['总抽检量'])||0;
-    var d=Number(r[dkKey])||Number(r['总客观差异量'])||0;
-    map[site].chk+=c; map[site].diff+=d;
-  });
-  var ranked=Object.values(map).filter(function(s){return s.chk>0;}).map(function(s){
-    return {name:s.name,rate:s.chk>0?(s.diff/s.chk*100):0,chk:s.chk,diff:s.diff};
-  }).sort(function(a,b){return b.rate-a.rate;}).slice(0,10);
-  if(!ranked.length){el.innerHTML='<div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px;">暂无数据</div>';return;}
-  var max=ranked[0].rate||1;
-  var sub=document.getElementById('rankSubtitle');
-  if(sub)sub.textContent='排行榜 · '+catLabel+' · '+(typeof gPeriod!=='undefined'?gPeriod:'本月');
-  el.innerHTML=ranked.map(function(r,i){
-    var pct=max>0?(r.rate/max*100).toFixed(0):0;
-    var color=r.rate>5?'#ef4444':r.rate>2?'#f59e0b':'#22c55e';
-    var medal=i===0?'🥇':i===1?'🥈':i===2?'🥉':String(i+1);
-    return '<div class="rank-item" style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">'
-      +'<div style="width:22px;text-align:center;font-size:'+(i<3?'14':'11')+'px;">'+medal+'</div>'
-      +'<div style="flex:1;font-size:12px;color:#334155;">'+r.name+'</div>'
-      +'<div style="width:90px;background:rgba(200,210,230,0.3);border-radius:4px;height:6px;">'
-      +'<div style="width:'+pct+'%;height:6px;border-radius:4px;background:'+color+'"></div></div>'
-      +'<div style="font-size:12px;font-weight:700;color:'+color+';min-width:44px;text-align:right;">'+r.rate.toFixed(2)+'%</div>'
-      +'</div>';
-  }).join('');
-}
 function updateTrendChart(){
   const isWeek=trendCmp==='上周';
   const labels=isWeek?['周一','周二','周三','周四','周五','周六','周日']:['第1周','第2周','第3周','第4周'];
@@ -2103,25 +2172,6 @@ function initTrainingCharts(){
 
 /* ===== RED BLACK BOARD ===== */
 const RANKING_DEMO = [{"name":"冯晨明","warehouse":"南京库","rate":0.0,"check":11,"diff":0,"monthCount":0,"yearCount":0},{"name":"吴川","warehouse":"南京库","rate":0.0,"check":14,"diff":0,"monthCount":0,"yearCount":0},{"name":"孙新生","warehouse":"南京库","rate":0.0,"check":6,"diff":0,"monthCount":0,"yearCount":0},{"name":"尹向东","warehouse":"南京库","rate":0.0,"check":14,"diff":0,"monthCount":0,"yearCount":0},{"name":"张伟东","warehouse":"南京库","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"李想","warehouse":"南京库","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"柳梦宇","warehouse":"南京库","rate":0.0,"check":30,"diff":0,"monthCount":0,"yearCount":0},{"name":"王岚","warehouse":"南京库","rate":0.0,"check":8,"diff":0,"monthCount":0,"yearCount":0},{"name":"王康杰","warehouse":"南京库","rate":0.0,"check":15,"diff":0,"monthCount":0,"yearCount":0},{"name":"胡正轩","warehouse":"南京库","rate":0.0,"check":41,"diff":0,"monthCount":0,"yearCount":0},{"name":"谭龙泉","warehouse":"南京库","rate":0.0,"check":15,"diff":0,"monthCount":0,"yearCount":0},{"name":"郭诚","warehouse":"南京库","rate":0.0,"check":10,"diff":0,"monthCount":0,"yearCount":0},{"name":"高鹏旭","warehouse":"南京库","rate":0.0,"check":13,"diff":0,"monthCount":0,"yearCount":0},{"name":"鲁鸿蔚","warehouse":"南京库","rate":0.0,"check":14,"diff":0,"monthCount":0,"yearCount":0},{"name":"万向荣","warehouse":"南昌库","rate":0.0,"check":6,"diff":0,"monthCount":0,"yearCount":0},{"name":"吴泽阳","warehouse":"南昌库","rate":0.0,"check":6,"diff":0,"monthCount":0,"yearCount":0},{"name":"杨承峰","warehouse":"南昌库","rate":0.0,"check":7,"diff":0,"monthCount":0,"yearCount":0},{"name":"秦杰","warehouse":"南昌库","rate":0.0,"check":15,"diff":0,"monthCount":0,"yearCount":0},{"name":"邓星星","warehouse":"南昌库","rate":0.0,"check":13,"diff":0,"monthCount":0,"yearCount":0},{"name":"阎文轩","warehouse":"南昌库","rate":0.0,"check":8,"diff":0,"monthCount":0,"yearCount":0},{"name":"黄潮","warehouse":"南昌库","rate":0.0,"check":10,"diff":0,"monthCount":0,"yearCount":0},{"name":"冯兵盐","warehouse":"合肥库","rate":0.0,"check":11,"diff":0,"monthCount":0,"yearCount":0},{"name":"卫宇杨","warehouse":"合肥库","rate":0.0,"check":9,"diff":0,"monthCount":0,"yearCount":0},{"name":"吴万科","warehouse":"合肥库","rate":0.0,"check":9,"diff":0,"monthCount":0,"yearCount":0},{"name":"柳奇","warehouse":"合肥库","rate":0.0,"check":10,"diff":0,"monthCount":0,"yearCount":0},{"name":"武旭","warehouse":"合肥库","rate":0.0,"check":6,"diff":0,"monthCount":0,"yearCount":0},{"name":"王晨辉","warehouse":"合肥库","rate":0.0,"check":10,"diff":0,"monthCount":0,"yearCount":0},{"name":"胡江","warehouse":"合肥库","rate":0.0,"check":8,"diff":0,"monthCount":0,"yearCount":0},{"name":"苏宝童","warehouse":"合肥库","rate":0.0,"check":8,"diff":0,"monthCount":0,"yearCount":0},{"name":"陈世龙","warehouse":"合肥库","rate":0.0,"check":14,"diff":0,"monthCount":0,"yearCount":0},{"name":"高岩松","warehouse":"合肥库","rate":0.0,"check":16,"diff":0,"monthCount":0,"yearCount":0},{"name":"代仁杰","warehouse":"成都库","rate":0.0,"check":11,"diff":0,"monthCount":0,"yearCount":0},{"name":"何礼","warehouse":"成都库","rate":0.0,"check":8,"diff":0,"monthCount":0,"yearCount":0},{"name":"冯万林","warehouse":"成都库","rate":0.0,"check":10,"diff":0,"monthCount":0,"yearCount":0},{"name":"刘川","warehouse":"成都库","rate":0.0,"check":20,"diff":0,"monthCount":0,"yearCount":0},{"name":"刘苹","warehouse":"成都库","rate":0.0,"check":8,"diff":0,"monthCount":0,"yearCount":0},{"name":"姚凡","warehouse":"成都库","rate":0.0,"check":15,"diff":0,"monthCount":0,"yearCount":0},{"name":"孙小飞","warehouse":"成都库","rate":0.0,"check":16,"diff":0,"monthCount":0,"yearCount":0},{"name":"曾凡周","warehouse":"成都库","rate":0.0,"check":36,"diff":0,"monthCount":0,"yearCount":0},{"name":"曾凡祥","warehouse":"成都库","rate":0.0,"check":35,"diff":0,"monthCount":0,"yearCount":0},{"name":"李泊","warehouse":"成都库","rate":0.0,"check":19,"diff":0,"monthCount":0,"yearCount":0},{"name":"李洪权","warehouse":"成都库","rate":0.0,"check":6,"diff":0,"monthCount":0,"yearCount":0},{"name":"杨鑫","warehouse":"成都库","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"王珈岐","warehouse":"成都库","rate":0.0,"check":13,"diff":0,"monthCount":0,"yearCount":0},{"name":"赵丁","warehouse":"成都库","rate":0.0,"check":9,"diff":0,"monthCount":0,"yearCount":0},{"name":"车方向","warehouse":"成都库","rate":0.0,"check":18,"diff":0,"monthCount":0,"yearCount":0},{"name":"郭洪波","warehouse":"成都库","rate":0.0,"check":33,"diff":0,"monthCount":0,"yearCount":0},{"name":"金伟","warehouse":"成都库","rate":0.0,"check":15,"diff":0,"monthCount":0,"yearCount":0},{"name":"陈定棚","warehouse":"成都库","rate":0.0,"check":11,"diff":0,"monthCount":0,"yearCount":0},{"name":"龚维双","warehouse":"成都库","rate":0.0,"check":11,"diff":0,"monthCount":0,"yearCount":0},{"name":"刘乾","warehouse":"昆明库","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"刘春开","warehouse":"昆明库","rate":0.0,"check":18,"diff":0,"monthCount":0,"yearCount":0},{"name":"李攀","warehouse":"昆明库","rate":0.0,"check":9,"diff":0,"monthCount":0,"yearCount":0},{"name":"沈童","warehouse":"昆明库","rate":0.0,"check":15,"diff":0,"monthCount":0,"yearCount":0},{"name":"任新瑞","warehouse":"杭州库","rate":0.0,"check":14,"diff":0,"monthCount":0,"yearCount":0},{"name":"斯晨浩","warehouse":"杭州库","rate":0.0,"check":6,"diff":0,"monthCount":0,"yearCount":0},{"name":"李晨阳","warehouse":"杭州库","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"李阳阳","warehouse":"杭州库","rate":0.0,"check":16,"diff":0,"monthCount":0,"yearCount":0},{"name":"王俊","warehouse":"杭州库","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"王凯","warehouse":"杭州库","rate":0.0,"check":8,"diff":0,"monthCount":0,"yearCount":0},{"name":"金俊凯","warehouse":"杭州库","rate":0.0,"check":19,"diff":0,"monthCount":0,"yearCount":0},{"name":"金富成","warehouse":"杭州库","rate":0.0,"check":25,"diff":0,"monthCount":0,"yearCount":0},{"name":"陈登科","warehouse":"杭州库","rate":0.0,"check":8,"diff":0,"monthCount":0,"yearCount":0},{"name":"黄亮","warehouse":"杭州库","rate":0.0,"check":11,"diff":0,"monthCount":0,"yearCount":0},{"name":"岳文","warehouse":"武汉库","rate":0.0,"check":24,"diff":0,"monthCount":0,"yearCount":0},{"name":"张辰","warehouse":"武汉库","rate":0.0,"check":28,"diff":0,"monthCount":0,"yearCount":0},{"name":"李波","warehouse":"武汉库","rate":0.0,"check":25,"diff":0,"monthCount":0,"yearCount":0},{"name":"苏杰","warehouse":"武汉库","rate":0.0,"check":32,"diff":0,"monthCount":0,"yearCount":0},{"name":"陈金伟","warehouse":"武汉库","rate":0.0,"check":17,"diff":0,"monthCount":0,"yearCount":0},{"name":"任嘉聪","warehouse":"沈阳库","rate":0.0,"check":22,"diff":0,"monthCount":0,"yearCount":0},{"name":"孙铭阳","warehouse":"沈阳库","rate":0.0,"check":7,"diff":0,"monthCount":0,"yearCount":0},{"name":"张硕","warehouse":"沈阳库","rate":0.0,"check":6,"diff":0,"monthCount":0,"yearCount":0},{"name":"戴恩臣","warehouse":"沈阳库","rate":0.0,"check":7,"diff":0,"monthCount":0,"yearCount":0},{"name":"柴荣","warehouse":"沈阳库","rate":0.0,"check":20,"diff":0,"monthCount":0,"yearCount":0},{"name":"王志远","warehouse":"沈阳库","rate":0.0,"check":6,"diff":0,"monthCount":0,"yearCount":0},{"name":"范佳欢","warehouse":"沈阳库","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"袁宇兴","warehouse":"沈阳库","rate":0.0,"check":11,"diff":0,"monthCount":0,"yearCount":0},{"name":"郭振启","warehouse":"沈阳库","rate":0.0,"check":7,"diff":0,"monthCount":0,"yearCount":0},{"name":"刘加壮","warehouse":"济南库","rate":0.0,"check":37,"diff":0,"monthCount":0,"yearCount":0},{"name":"刘汉林","warehouse":"济南库","rate":0.0,"check":25,"diff":0,"monthCount":0,"yearCount":0},{"name":"卢鹏","warehouse":"济南库","rate":0.0,"check":34,"diff":0,"monthCount":0,"yearCount":0},{"name":"宁昆鹏","warehouse":"济南库","rate":0.0,"check":37,"diff":0,"monthCount":0,"yearCount":0},{"name":"宋昌民","warehouse":"济南库","rate":0.0,"check":27,"diff":0,"monthCount":0,"yearCount":0},{"name":"朱亚辉","warehouse":"济南库","rate":0.0,"check":32,"diff":0,"monthCount":0,"yearCount":0},{"name":"李俊楠","warehouse":"济南库","rate":0.0,"check":6,"diff":0,"monthCount":0,"yearCount":0},{"name":"王京宇","warehouse":"济南库","rate":0.0,"check":18,"diff":0,"monthCount":0,"yearCount":0},{"name":"王康","warehouse":"济南库","rate":0.0,"check":28,"diff":0,"monthCount":0,"yearCount":0},{"name":"金桂民","warehouse":"济南库","rate":0.0,"check":29,"diff":0,"monthCount":0,"yearCount":0},{"name":"马辉","warehouse":"济南库","rate":0.0,"check":22,"diff":0,"monthCount":0,"yearCount":0},{"name":"刘俊佳","warehouse":"深圳中心仓","rate":0.0,"check":13,"diff":0,"monthCount":0,"yearCount":0},{"name":"刘奔","warehouse":"深圳中心仓","rate":0.0,"check":8,"diff":0,"monthCount":0,"yearCount":0},{"name":"刘灿","warehouse":"深圳中心仓","rate":0.0,"check":10,"diff":0,"monthCount":0,"yearCount":0},{"name":"区嘉明","warehouse":"深圳中心仓","rate":0.0,"check":10,"diff":0,"monthCount":0,"yearCount":0},{"name":"吴少孟","warehouse":"深圳中心仓","rate":0.0,"check":11,"diff":0,"monthCount":0,"yearCount":0},{"name":"徐陈","warehouse":"深圳中心仓","rate":0.0,"check":16,"diff":0,"monthCount":0,"yearCount":0},{"name":"朱佳伟","warehouse":"深圳中心仓","rate":0.0,"check":18,"diff":0,"monthCount":0,"yearCount":0},{"name":"李宇豪","warehouse":"深圳中心仓","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"林真飞","warehouse":"深圳中心仓","rate":0.0,"check":10,"diff":0,"monthCount":0,"yearCount":0},{"name":"汪家吉","warehouse":"深圳中心仓","rate":0.0,"check":9,"diff":0,"monthCount":0,"yearCount":0},{"name":"罗江辉","warehouse":"深圳中心仓","rate":0.0,"check":19,"diff":0,"monthCount":0,"yearCount":0},{"name":"聂霖","warehouse":"深圳中心仓","rate":0.0,"check":20,"diff":0,"monthCount":0,"yearCount":0},{"name":"苏志荣","warehouse":"深圳中心仓","rate":0.0,"check":25,"diff":0,"monthCount":0,"yearCount":0},{"name":"邱超伟","warehouse":"深圳中心仓","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"陈科","warehouse":"深圳中心仓","rate":0.0,"check":9,"diff":0,"monthCount":0,"yearCount":0},{"name":"高经纬","warehouse":"深圳中心仓","rate":0.0,"check":17,"diff":0,"monthCount":0,"yearCount":0},{"name":"黄其峰","warehouse":"深圳中心仓","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"黎帆","warehouse":"深圳中心仓","rate":0.0,"check":6,"diff":0,"monthCount":0,"yearCount":0},{"name":"冯哲","warehouse":"石家庄库","rate":0.0,"check":9,"diff":0,"monthCount":0,"yearCount":0},{"name":"史新民","warehouse":"石家庄库","rate":0.0,"check":18,"diff":0,"monthCount":0,"yearCount":0},{"name":"宋子恒","warehouse":"石家庄库","rate":0.0,"check":8,"diff":0,"monthCount":0,"yearCount":0},{"name":"康硕","warehouse":"石家庄库","rate":0.0,"check":9,"diff":0,"monthCount":0,"yearCount":0},{"name":"李世龙","warehouse":"石家庄库","rate":0.0,"check":10,"diff":0,"monthCount":0,"yearCount":0},{"name":"杜咏发","warehouse":"石家庄库","rate":0.0,"check":16,"diff":0,"monthCount":0,"yearCount":0},{"name":"盖东会","warehouse":"石家庄库","rate":0.0,"check":15,"diff":0,"monthCount":0,"yearCount":0},{"name":"相博阳","warehouse":"石家庄库","rate":0.0,"check":6,"diff":0,"monthCount":0,"yearCount":0},{"name":"罗立俊","warehouse":"石家庄库","rate":0.0,"check":19,"diff":0,"monthCount":0,"yearCount":0},{"name":"鹿铁军","warehouse":"石家庄库","rate":0.0,"check":18,"diff":0,"monthCount":0,"yearCount":0},{"name":"万永鹏","warehouse":"襄阳中心仓","rate":0.0,"check":9,"diff":0,"monthCount":0,"yearCount":0},{"name":"张雷雨","warehouse":"襄阳中心仓","rate":0.0,"check":23,"diff":0,"monthCount":0,"yearCount":0},{"name":"曾华玲","warehouse":"襄阳中心仓","rate":0.0,"check":18,"diff":0,"monthCount":0,"yearCount":0},{"name":"谢展鹏","warehouse":"襄阳中心仓","rate":0.0,"check":32,"diff":0,"monthCount":0,"yearCount":0},{"name":"高俊翔","warehouse":"襄阳中心仓","rate":0.0,"check":7,"diff":0,"monthCount":0,"yearCount":0},{"name":"黄怡鹤","warehouse":"襄阳中心仓","rate":0.0,"check":24,"diff":0,"monthCount":0,"yearCount":0},{"name":"侯泽超","warehouse":"西安库","rate":0.0,"check":26,"diff":0,"monthCount":0,"yearCount":0},{"name":"刘冰","warehouse":"西安库","rate":0.0,"check":26,"diff":0,"monthCount":0,"yearCount":0},{"name":"刘航","warehouse":"西安库","rate":0.0,"check":37,"diff":0,"monthCount":0,"yearCount":0},{"name":"周涛","warehouse":"西安库","rate":0.0,"check":32,"diff":0,"monthCount":0,"yearCount":0},{"name":"张佳豪","warehouse":"西安库","rate":0.0,"check":9,"diff":0,"monthCount":0,"yearCount":0},{"name":"张训林","warehouse":"西安库","rate":0.0,"check":35,"diff":0,"monthCount":0,"yearCount":0},{"name":"杨存利","warehouse":"西安库","rate":0.0,"check":16,"diff":0,"monthCount":0,"yearCount":0},{"name":"杨森尧","warehouse":"西安库","rate":0.0,"check":15,"diff":0,"monthCount":0,"yearCount":0},{"name":"苏敏文","warehouse":"西安库","rate":0.0,"check":30,"diff":0,"monthCount":0,"yearCount":0},{"name":"邓杰","warehouse":"西安库","rate":0.0,"check":28,"diff":0,"monthCount":0,"yearCount":0},{"name":"陈川","warehouse":"西安库","rate":0.0,"check":10,"diff":0,"monthCount":0,"yearCount":0},{"name":"高哲","warehouse":"西安库","rate":0.0,"check":24,"diff":0,"monthCount":0,"yearCount":0},{"name":"任鸿运","warehouse":"郑州库","rate":0.0,"check":10,"diff":0,"monthCount":0,"yearCount":0},{"name":"吕乾文","warehouse":"郑州库","rate":0.0,"check":11,"diff":0,"monthCount":0,"yearCount":0},{"name":"吕瑞涛","warehouse":"郑州库","rate":0.0,"check":9,"diff":0,"monthCount":0,"yearCount":0},{"name":"张成恺","warehouse":"郑州库","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"张政","warehouse":"郑州库","rate":0.0,"check":22,"diff":0,"monthCount":0,"yearCount":0},{"name":"杨嘉沆","warehouse":"郑州库","rate":0.0,"check":22,"diff":0,"monthCount":0,"yearCount":0},{"name":"杨腾飞","warehouse":"郑州库","rate":0.0,"check":13,"diff":0,"monthCount":0,"yearCount":0},{"name":"郑玉晨","warehouse":"郑州库","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"郭振南","warehouse":"郑州库","rate":0.0,"check":8,"diff":0,"monthCount":0,"yearCount":0},{"name":"魏天宇","warehouse":"郑州库","rate":0.0,"check":8,"diff":0,"monthCount":0,"yearCount":0},{"name":"余宗琳","warehouse":"重庆库","rate":0.0,"check":28,"diff":0,"monthCount":0,"yearCount":0},{"name":"张亚锋","warehouse":"重庆库","rate":0.0,"check":34,"diff":0,"monthCount":0,"yearCount":0},{"name":"李代富","warehouse":"重庆库","rate":0.0,"check":19,"diff":0,"monthCount":0,"yearCount":0},{"name":"蒋金才","warehouse":"重庆库","rate":0.0,"check":24,"diff":0,"monthCount":0,"yearCount":0},{"name":"郑豪","warehouse":"重庆库","rate":0.0,"check":30,"diff":0,"monthCount":0,"yearCount":0},{"name":"陈珍珍","warehouse":"重庆库","rate":0.0,"check":23,"diff":0,"monthCount":0,"yearCount":0},{"name":"何兴","warehouse":"长沙库","rate":0.0,"check":25,"diff":0,"monthCount":0,"yearCount":0},{"name":"孙庆泽","warehouse":"长沙库","rate":0.0,"check":18,"diff":0,"monthCount":0,"yearCount":0},{"name":"曾波","warehouse":"长沙库","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"王鹏","warehouse":"长沙库","rate":0.0,"check":19,"diff":0,"monthCount":0,"yearCount":0},{"name":"肖什涛","warehouse":"长沙库","rate":0.0,"check":12,"diff":0,"monthCount":0,"yearCount":0},{"name":"李爽","warehouse":"襄阳中心仓","rate":3.33,"check":30,"diff":1,"monthCount":1,"yearCount":2},{"name":"朱震皓","warehouse":"重庆库","rate":3.45,"check":29,"diff":1,"monthCount":1,"yearCount":2},{"name":"王彪","warehouse":"武汉库","rate":3.7,"check":27,"diff":1,"monthCount":1,"yearCount":1},{"name":"梁鹏欣","warehouse":"石家庄库","rate":4.0,"check":25,"diff":1,"monthCount":1,"yearCount":4},{"name":"钟成","warehouse":"重庆库","rate":4.0,"check":25,"diff":1,"monthCount":1,"yearCount":1},{"name":"蒋俊辉","warehouse":"重庆库","rate":4.35,"check":23,"diff":1,"monthCount":1,"yearCount":3},{"name":"李康健","warehouse":"襄阳中心仓","rate":5.0,"check":20,"diff":1,"monthCount":1,"yearCount":2},{"name":"植钏贵","warehouse":"成都库","rate":5.26,"check":19,"diff":1,"monthCount":1,"yearCount":2},{"name":"刘成清","warehouse":"成都库","rate":5.56,"check":18,"diff":1,"monthCount":1,"yearCount":2},{"name":"崔梦飞","warehouse":"石家庄库","rate":5.56,"check":18,"diff":1,"monthCount":1,"yearCount":3},{"name":"卢树峰","warehouse":"长沙库","rate":5.56,"check":18,"diff":1,"monthCount":1,"yearCount":1},{"name":"张中南","warehouse":"深圳中心仓","rate":5.88,"check":17,"diff":1,"monthCount":1,"yearCount":4},{"name":"龙灵辉","warehouse":"长沙库","rate":5.88,"check":17,"diff":1,"monthCount":1,"yearCount":3},{"name":"顾浩","warehouse":"郑州库","rate":6.25,"check":16,"diff":1,"monthCount":1,"yearCount":4},{"name":"高兴","warehouse":"深圳中心仓","rate":6.67,"check":15,"diff":1,"monthCount":1,"yearCount":2},{"name":"刘立文","warehouse":"成都库","rate":7.69,"check":13,"diff":1,"monthCount":1,"yearCount":2},{"name":"雷登洪","warehouse":"成都库","rate":7.69,"check":13,"diff":1,"monthCount":1,"yearCount":1},{"name":"刘华","warehouse":"昆明库","rate":8.33,"check":12,"diff":1,"monthCount":1,"yearCount":3},{"name":"李佳鹏","warehouse":"沈阳库","rate":8.33,"check":12,"diff":1,"monthCount":1,"yearCount":4},{"name":"苗广辉","warehouse":"沈阳库","rate":8.33,"check":12,"diff":1,"monthCount":1,"yearCount":2},{"name":"苏磊","warehouse":"昆明库","rate":9.09,"check":11,"diff":1,"monthCount":1,"yearCount":4},{"name":"王晓宇","warehouse":"合肥库","rate":10.0,"check":10,"diff":1,"monthCount":1,"yearCount":2},{"name":"王强","warehouse":"合肥库","rate":11.11,"check":9,"diff":1,"monthCount":1,"yearCount":2},{"name":"熊之博","warehouse":"长沙库","rate":11.11,"check":9,"diff":1,"monthCount":1,"yearCount":4},{"name":"曾骏昊","warehouse":"合肥库","rate":12.5,"check":8,"diff":1,"monthCount":1,"yearCount":4},{"name":"刘文庆","warehouse":"南京库","rate":14.29,"check":7,"diff":1,"monthCount":1,"yearCount":4}];
-
-function renderRankingBoard(){
-  var redEl=document.getElementById('redBoardList');
-  var blackEl=document.getElementById('blackBoardList');
-  if(!redEl||!blackEl)return;
-  var src=RANKING_DEMO.slice();
-  if(!src.length){
-    redEl.innerHTML='<div style="text-align:center;padding:20px;color:#94a3b8;font-size:12px;">暂无数据</div>';
-    blackEl.innerHTML=redEl.innerHTML; return;
-  }
-  // Filter by multi-select if available
-  if(typeof getSelectedWh==='function'){
-    var whs=getSelectedWh('rank');
-    if(whs&&whs.length) src=src.filter(function(p){return whs.includes(p.warehouse);});
-  }
-  var byRate=src.slice().sort(function(a,b){return a.rate-b.rate;});
-  renderBoardSide('redBoardList',byRate.slice(0,3),'red');
-  renderBoardSide('blackBoardList',src.slice().sort(function(a,b){return b.rate-a.rate;}).slice(0,3),'black');
-}
 
 const rankColors = {
   red:  ['red-rank1','red-rank2','red-rank3'],
@@ -2703,7 +2753,16 @@ async function handleSrcFile(dsId,srcId,input){
   }
   showToast('✓ 已读取 '+wb.SheetNames.length+' 个子表，列名已加载，请勾选需要的列');
   // 检测列名是否和上次记忆一致，一致则显示"和上次一样"按钮
-  setTimeout(function(){ checkColMemory(dsId, srcId); }, 80);
+  setTimeout(function(){
+    checkColMemory(dsId, srcId);
+    // 刷新字段角色区域（文件加载后列名才能显示）
+    var src=getSrc(dsId,srcId);
+    if(src){
+      var roleArea=document.querySelector('#fsblock_'+srcId+' .role-grid');
+      if(roleArea) roleArea.outerHTML=renderRoleGrid(dsId,src);
+      // 如果还没渲染过（第一次），整个卡片已经重渲了，不需要额外处理
+    }
+  }, 80);
 }
 function onSrcSheetChange(dsId,srcId){var sel=document.getElementById('fssheet_'+srcId);if(!sel)return;var src=getSrc(dsId,srcId);if(!src)return;src.sheetName=sel.value;loadSrcCols(dsId,srcId,sel.value);saveDsCfg();}
 function loadSrcCols(dsId,srcId,sn){
@@ -3020,6 +3079,162 @@ function validateColumnsBeforeUpload(ds){
   return warnings;
 }
 
+/* ===== 字段角色映射 ===== */
+var ROLE_OPTIONS=[
+  {val:'',      label:'不使用'},
+  {val:'site',  label:'站点名称'},
+  {val:'cat',   label:'品类'},
+  {val:'date',  label:'日期'},
+  {val:'check', label:'抽检量'},
+  {val:'diff',  label:'差异量'},
+];
+var ROLE_BADGE={'site':'rb-site','cat':'rb-cat','date':'rb-date','check':'rb-check','diff':'rb-diff','rowcount':'rb-diffrow'};
+var ROLE_LABEL={'site':'站点','cat':'品类','date':'日期','check':'抽检量','diff':'差异量','rowcount':'行数差异'};
+var CAT_MAP_NORM={'手机':'手机','移动电话':'手机','笔记本电脑':'笔记本','笔记本':'笔记本','平板电脑':'平板','平板':'平板','耳机':'耳机','相机':'相机','摄像机':'相机'};
+
+function getRoleMap(srcId){
+  try{return JSON.parse(localStorage.getItem('role_map_'+srcId)||'{}');}catch(e){return{};}
+}
+function saveRoleMap(srcId,map){localStorage.setItem('role_map_'+srcId,JSON.stringify(map));}
+
+function renderRoleGrid(dsId, src){
+  // 获取当前文件的列名（已缓存）或已保存的列列表
+  var cols=[];
+  var cache=srcFileCache[src.id];
+  if(cache){
+    var ws=cache.wb.Sheets[src.sheetName||cache.wb.SheetNames[0]];
+    var rows=XLSX.utils.sheet_to_json(ws,{header:1,range:0,raw:false});
+    cols=(rows[0]||[]).filter(function(h){return h||h===0;}).map(String);
+  } else if(src.columns&&src.columns.length){
+    cols=src.columns;
+  }
+  if(!cols.length) return '<div style="font-size:11px;color:#94a3b8;padding:4px 0;">上传文件后自动显示列名，可在此设置每列角色</div>';
+  var roleMap=getRoleMap(src.id);
+  return '<div class="role-grid">'+cols.map(function(col){
+    var curRole=roleMap[col]||'';
+    var badgeCls=ROLE_BADGE[curRole]||'';
+    var opts=ROLE_OPTIONS.map(function(o){
+      return '<option value="'+o.val+'"'+(curRole===o.val?' selected':'')+'>'+o.label+'</option>';
+    }).join('');
+    return '<div class="role-row">'
+      +'<span class="role-colname" title="'+col+'">'+col+'</span>'
+      +(curRole?'<span class="role-badge '+badgeCls+'">'+ROLE_LABEL[curRole]+'</span>':'')
+      +'<select class="role-sel'+(curRole?' assigned':'')+'" onchange="setColRole(\''+src.id+'\',\''+col+'\',this.value,this)">'+opts+'</select>'
+      +'</div>';
+  }).join('')+'</div>';
+}
+
+function setColRole(srcId, col, role, sel){
+  var map=getRoleMap(srcId);
+  if(role) map[col]=role; else delete map[col];
+  saveRoleMap(srcId, map);
+  sel.className='role-sel'+(role?' assigned':'');
+  // 刷新角色标签
+  var row=sel.closest('.role-row');
+  var badge=row.querySelector('.role-badge');
+  if(badge) badge.remove();
+  if(role){
+    var sp=document.createElement('span');
+    sp.className='role-badge '+(ROLE_BADGE[role]||'');
+    sp.textContent=ROLE_LABEL[role]||'';
+    row.insertBefore(sp, sel);
+  }
+}
+
+function setSrcMode(dsId, srcId, mode){
+  var src=getSrc(dsId,srcId);if(!src)return;
+  src.diffMode=mode; saveDsCfg();
+}
+
+// 根据角色配置，把多个文件来源合并成标准宽表
+function mergeSourcesByRole(ds, sourcesWithRows){
+  // 检查是否有任何文件配置了角色
+  var anyRole=sourcesWithRows.some(function(sw){
+    var m=getRoleMap(sw.src.id);
+    return Object.keys(m).length>0;
+  });
+  if(!anyRole) return null; // 没配角色，走旧逻辑
+
+  var allCats=['手机','笔记本','平板','耳机','相机'];
+  var siteMap={};  // site → {站点名称, 手机抽检量, ...}
+
+  sourcesWithRows.forEach(function(sw){
+    var src=sw.src, rows=sw.rows;
+    var roleMap=getRoleMap(src.id);
+    var siteCol=Object.keys(roleMap).find(function(c){return roleMap[c]==='site';});
+    var catCol =Object.keys(roleMap).find(function(c){return roleMap[c]==='cat';});
+    var checkCol=Object.keys(roleMap).find(function(c){return roleMap[c]==='check';});
+    var diffCol =Object.keys(roleMap).find(function(c){return roleMap[c]==='diff';});
+    var isRowCount=src.diffMode==='rowcount';
+
+    if(!siteCol) return; // 没有站点列，跳过
+
+    rows.forEach(function(r){
+      var site=String(r[siteCol]||'').trim();if(!site)return;
+      var rawCat=catCol?String(r[catCol]||'').trim():'';
+      var cat=CAT_MAP_NORM[rawCat]||rawCat;
+
+      if(!siteMap[site]) siteMap[site]={站点名称:site,站点类型:'中心仓'};
+      var row=siteMap[site];
+
+      if(checkCol){
+        var chk=parseFloat(r[checkCol])||0;
+        if(cat && allCats.includes(cat)){
+          row[cat+'抽检量']=(row[cat+'抽检量']||0)+chk;
+        } else {
+          // 没有品类列或品类不认识，加到总量
+          row['总抽检量']=(row['总抽检量']||0)+chk;
+        }
+      }
+
+      if(isRowCount){
+        // 每行算1条差异
+        if(cat && allCats.includes(cat)){
+          row[cat+'差异量']=(row[cat+'差异量']||0)+1;
+        } else {
+          row['总客观差异量']=(row['总客观差异量']||0)+1;
+        }
+      } else if(diffCol){
+        var dif=parseFloat(r[diffCol])||0;
+        if(cat && allCats.includes(cat)){
+          row[cat+'差异量']=(row[cat+'差异量']||0)+dif;
+        } else {
+          row['总客观差异量']=(row['总客观差异量']||0)+dif;
+        }
+      }
+    });
+  });
+
+  // 补全差异率
+  var result=Object.values(siteMap).map(function(row){
+    allCats.forEach(function(cat){
+      var chk=row[cat+'抽检量']||0;
+      var dif=row[cat+'差异量'];
+      // 没有抽检量 → 品类不存在，保持 undefined（显示 —）
+      if(chk>0){
+        row[cat+'抽检量']=chk;
+        row[cat+'差异量']=dif||0;
+        row[cat+'差异率']=(dif||0)>0?((dif/chk)*100).toFixed(2)+'%':'0.00%';
+      }
+    });
+    // 如果没有分品类，用总量兜底
+    if(!row['手机抽检量']&&row['总抽检量']){
+      var tChk=row['总抽检量']||0;
+      var tDif=row['总客观差异量']||0;
+      row['手机抽检量']=tChk;
+      row['手机差异量']=tDif;
+      row['手机差异率']=tChk>0?(tDif/tChk*100).toFixed(2)+'%':'0.00%';
+    }
+    var totalChk=allCats.reduce(function(s,c){return s+(row[c+'抽检量']||0);},0)||row['总抽检量']||0;
+    var totalDif=allCats.reduce(function(s,c){return s+(row[c+'差异量']||0);},0)||row['总客观差异量']||0;
+    row['总抽检量']=totalChk;
+    row['总客观差异量']=totalDif;
+    row['总客观差异率']=totalChk>0?(totalDif/totalChk*100).toFixed(2)+'%':'0.00%';
+    return row;
+  });
+  return result;
+}
+
 function migrateDsFileSources(){
   if(!dsCfg||!dsCfg.dataSources)return;
   dsCfg.dataSources.forEach(function(ds){
@@ -3087,27 +3302,6 @@ function buildRankFromData(){
       +'</div>';
   }).join('');
 }
-
-// ── 2. Fix renderRankingBoard - remove duplicate, use srcFileCache-based RANKING_DEMO ──
-// Override both definitions with one clean version
-(function(){
-  var origRender = window.renderRankingBoard;
-  window.renderRankingBoard = function(){
-    var redEl=document.getElementById('redBoardList');
-    var blackEl=document.getElementById('blackBoardList');
-    if(!redEl||!blackEl)return;
-    var whFilter=getSelectedWh?getSelectedWh('rank'):[];
-    var src=RANKING_DEMO.slice();
-    if(whFilter.length) src=src.filter(function(p){return whFilter.includes(p.warehouse);});
-    var sorted=src.slice().sort(function(a,b){return a.rate-b.rate;});
-    var redTop=sorted.slice(0,3);
-    var blackTop=src.slice().sort(function(a,b){return b.rate-a.rate;}).slice(0,3);
-    if(typeof renderBoardSide==='function'){
-      renderBoardSide('redBoardList',redTop,'red');
-      renderBoardSide('blackBoardList',blackTop,'black');
-    }
-  };
-})();
 
 // ── 3. Fix training charts & ranking - call immediately on page load ──
 function forceRenderTraining(){
