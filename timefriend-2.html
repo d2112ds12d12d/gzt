@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>时迹 · TimeFriend</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&display=swap');
+:root{
+  --bg:#f0f2f5;--surface:#fff;--surface2:#f8f9fb;
+  --border:rgba(0,0,0,.07);--border2:rgba(0,0,0,.13);
+  --text1:#1a1d23;--text2:#5c6170;--text3:#9ca3af;
+  --blue:#2563eb;--blue-bg:#eff6ff;--blue-bd:#bfdbfe;
+  --green:#16a34a;--green-bg:#f0fdf4;--green-bd:#86efac;
+  --purple:#7c3aed;--purple-bg:#f5f3ff;--purple-bd:#c4b5fd;
+  --red:#dc2626;--red-bg:#fef2f2;--red-bd:#fecaca;
+  --amber:#d97706;--amber-bg:#fffbeb;--amber-bd:#fde68a;
+  --teal:#0d9488;--teal-bg:#f0fdfa;
+  --r:10px;--rs:6px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:var(--text1);height:100vh;display:flex;flex-direction:column;overflow:hidden;font-size:14px}
+
+/* ── FLASH BANNER (灵感随机展示) ── */
+.flash-banner{background:linear-gradient(135deg,#1e1b4b,#312e81);color:#e0e7ff;font-size:13px;padding:8px 20px;display:flex;align-items:center;gap:10px;flex-shrink:0;min-height:36px}
+.flash-banner.hidden{display:none}
+.flash-icon{font-size:14px;flex-shrink:0}
+.flash-text{flex:1;line-height:1.4;font-style:italic}
+.flash-close{background:none;border:none;color:#a5b4fc;cursor:pointer;font-size:16px;padding:0 2px;line-height:1}
+.flash-close:hover{color:#fff}
+
+/* ── TOPBAR ── */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);height:52px;display:flex;align-items:center;padding:0 20px;gap:4px;flex-shrink:0;z-index:10}
+.worktable-logo{
+  font-size:15px;font-weight:700;letter-spacing:.01em;cursor:default;user-select:none;
+  background:linear-gradient(105deg,#1a1d23 0%,#1a1d23 30%,#6b7aff 48%,#fff 54%,#6b7aff 60%,#1a1d23 70%,#1a1d23 100%);
+  background-size:300% 100%;-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+  animation:shimmer 3.5s linear infinite;
+}
+.version-badge{font-size:11px;color:var(--text3);font-weight:400;margin-left:6px;margin-right:auto;-webkit-text-fill-color:var(--text3)}
+@keyframes shimmer{0%{background-position:100% 0}100%{background-position:-100% 0}}
+.nav-tab{padding:6px 12px;border-radius:var(--rs);font-size:13px;cursor:pointer;color:var(--text2);border:none;background:none;font-family:inherit;transition:background .15s,color .15s}
+.nav-tab:hover{background:var(--surface2)}
+.nav-tab.active{background:var(--surface2);color:var(--text1);font-weight:500}
+
+/* ── TOOLBAR ── */
+.toolbar{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:10px;flex-shrink:0;flex-wrap:wrap}
+.tleft{display:flex;align-items:center;gap:10px;margin-right:auto;flex-wrap:wrap}
+.page-title{font-size:15px;font-weight:600}
+.date-nav{display:flex;align-items:center;gap:6px}
+.darr{width:28px;height:28px;border:1px solid var(--border2);border-radius:var(--rs);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text2);transition:background .15s;font-family:inherit;flex-shrink:0}
+.darr:hover{background:var(--surface2)}
+.dchip{font-size:13px;color:var(--text2);padding:4px 12px;border:1px solid var(--border);border-radius:var(--rs);background:var(--surface2);white-space:nowrap}
+.inbox-btn{background:var(--purple);color:#fff;border:none;border-radius:var(--rs);padding:6px 13px;font-size:13px;cursor:pointer;display:flex;align-items:center;gap:5px;font-family:inherit;transition:background .15s}
+.inbox-btn:hover{background:#6d28d9}
+.bgrp{display:flex;border:1px solid var(--border2);border-radius:var(--rs);overflow:hidden}
+.bgrp button{padding:5px 13px;font-size:13px;cursor:pointer;border:none;background:var(--surface);color:var(--text2);font-family:inherit;display:flex;align-items:center;gap:5px;transition:background .15s,color .15s}
+.bgrp button+button{border-left:1px solid var(--border2)}
+.bgrp button.active{background:var(--blue);color:#fff}
+.bgrp button:not(.active):hover{background:var(--surface2)}
+
+/* ── MAIN ── */
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column;padding:16px 20px}
+
+/* ── KANBAN ── */
+.kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;flex:1;overflow:hidden;min-height:0}
+.kcol{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden;transition:border-color .15s}
+.kcol.dragover{border:2px dashed var(--blue)}
+.kch{padding:11px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.kcdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.kct{font-size:13px;font-weight:500;flex:1}
+.kcc{font-size:12px;color:var(--text2);background:var(--surface2);border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-weight:500}
+.kbody{flex:1;padding:10px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;position:relative}
+.kbody::-webkit-scrollbar{width:4px}
+.kbody::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.kdblhint{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);white-space:nowrap;font-size:12px;color:var(--text3);pointer-events:none}
+.kfoot{padding:9px 14px;border-top:1px solid var(--border);font-size:12px;color:var(--text3);display:flex;flex-direction:column;gap:2px}
+
+/* ── TASK CARD ── */
+.tcard{border-radius:var(--rs);padding:10px 12px;border:1px solid var(--border2);cursor:pointer;position:relative;transition:transform .12s,box-shadow .12s;background:var(--surface);user-select:none}
+.tcard:hover{transform:translateY(-1px);box-shadow:0 2px 10px rgba(0,0,0,.08)}
+.tcard.s-done{background:var(--red-bg);border-color:var(--red-bd)}
+.tcard.s-inprogress{background:var(--blue-bg);border-color:var(--blue-bd)}
+.tcard.s-cancelled{background:#f9fafb;opacity:.7}
+.tcard.dragging{opacity:.35}
+.ttitle{font-size:13px;font-weight:500;color:var(--text1);margin-bottom:6px;line-height:1.45}
+.ttitle.done{text-decoration:line-through;color:var(--text3)}
+.tmeta{font-size:11px;color:var(--text2);display:flex;align-items:center;gap:8px;margin-bottom:5px;flex-wrap:wrap}
+.ttag{display:inline-block;font-size:11px;padding:2px 7px;border-radius:4px;margin-bottom:6px;background:var(--purple-bg);color:var(--purple)}
+.ttag.g{background:var(--green-bg);color:var(--green)}
+.tacts{display:flex;gap:10px;margin-top:6px;align-items:center}
+.tact{background:none;border:none;cursor:pointer;padding:3px;color:var(--text3);transition:color .12s;display:flex;align-items:center;justify-content:center;position:relative}
+.tact:hover{color:var(--text1)}
+.tact svg{width:15px;height:15px;stroke:currentColor;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+
+/* ── POSTPONE POPUP ── */
+.ppop{position:absolute;bottom:26px;left:0;z-index:80;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);box-shadow:0 4px 20px rgba(0,0,0,.12);min-width:150px;overflow:hidden}
+.ppop-item{padding:10px 16px;font-size:13px;color:var(--text1);cursor:pointer;transition:background .12s}
+.ppop-item:hover{background:var(--surface2)}
+
+/* ── LIST ── */
+.listview{display:flex;flex-direction:column;gap:6px;overflow-y:auto;flex:1}
+.listview::-webkit-scrollbar{width:4px}
+.listview::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.litem{background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:11px 16px;display:flex;align-items:center;gap:12px;cursor:pointer;transition:border-color .15s}
+.litem:hover{border-color:var(--border2)}
+.lchk{width:20px;height:20px;border-radius:5px;background:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.lchk svg{stroke:#fff;fill:none;width:12px;height:12px;stroke-width:2.5}
+.ltit{flex:1;font-size:13px;color:var(--text3);text-decoration:line-through}
+.lbadges{display:flex;gap:6px;flex-wrap:wrap}
+.pill{font-size:11px;padding:2px 9px;border-radius:10px;font-weight:500}
+.pill.done{background:var(--green-bg);color:var(--green)}
+.pill.inprogress{background:var(--blue-bg);color:var(--blue)}
+.pill.todo{background:#f3f4f6;color:var(--text2)}
+.pill.cancelled{background:#f3f4f6;color:var(--text3)}
+.pill.tag{background:var(--purple-bg);color:var(--purple)}
+
+/* ── MATRIX ── */
+.mxwrap{flex:1;overflow:hidden;display:flex;flex-direction:column;gap:6px;min-height:0}
+.mxaxis{display:flex;justify-content:space-between;font-size:11px;color:var(--text3);padding:0 4px}
+.mxgrid{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr;gap:0;border:1px solid var(--border);border-radius:var(--r);overflow:hidden;flex:1;min-height:0}
+.mxcell{padding:13px 14px;display:flex;flex-direction:column;overflow-y:auto}
+.mxcell.q1{background:#fff5f5;border-right:1px solid #fed7d7;border-bottom:1px solid #fed7d7}
+.mxcell.q2{background:var(--blue-bg);border-bottom:1px solid var(--blue-bd)}
+.mxcell.q3{background:var(--amber-bg);border-right:1px solid var(--amber-bd)}
+.mxcell.q4{background:#fafafa}
+.mxhdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;flex-shrink:0}
+.mxlbl{font-size:12px;font-weight:600}
+.mxcell.q1 .mxlbl{color:var(--red)}.mxcell.q2 .mxlbl{color:var(--blue)}.mxcell.q3 .mxlbl{color:var(--amber)}.mxcell.q4 .mxlbl{color:var(--text2)}
+.mxact{font-size:11px;color:var(--text3)}
+.mxitems{flex:1;display:flex;flex-direction:column;gap:5px}
+.mxitem{display:flex;align-items:flex-start;gap:7px}
+.mxitem input[type=checkbox]{width:14px;height:14px;margin-top:2px;cursor:pointer;flex-shrink:0;accent-color:var(--blue)}
+.mxitem label{font-size:12px;color:var(--text2);cursor:pointer;line-height:1.4}
+.mxitem label.done{text-decoration:line-through;color:var(--text3)}
+.mxadd{font-size:12px;color:var(--text3);cursor:pointer;margin-top:8px;display:block;flex-shrink:0}
+.mxadd:hover{color:var(--text2)}
+.mxcell.dragover{outline:2px dashed var(--blue);outline-offset:-2px}
+
+/* ── WEEK ── */
+.weekview{flex:1;overflow:hidden;display:flex;flex-direction:column;gap:0;min-height:0}
+.weekcard{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);overflow:hidden;flex:1;display:flex;flex-direction:column}
+.wcardh{padding:12px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;flex-shrink:0}
+.wcardh-title{font-size:14px;font-weight:600;margin-right:auto}
+.warr{width:28px;height:28px;border:1px solid var(--border2);border-radius:var(--rs);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--text2);transition:background .15s;font-family:inherit}
+.warr:hover{background:var(--surface2)}
+.wdays-h{display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--border);flex-shrink:0}
+.wdayh{padding:10px 6px;text-align:center}
+.wdayname{font-size:11px;color:var(--text3);margin-bottom:4px}
+.wdaynum{font-size:15px;font-weight:500;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto}
+.wdaynum.today{background:var(--blue);color:#fff}
+.wbody{display:grid;grid-template-columns:repeat(7,1fr);flex:1;overflow:hidden}
+.wcell{padding:8px 6px;border-right:1px solid var(--border);overflow-y:auto}
+.wcell:last-child{border-right:none}
+.wcell.today{background:#f0f6ff}
+.wtchip{font-size:10px;padding:2px 5px;border-radius:4px;border-left:3px solid var(--green-bd);background:var(--green-bg);color:var(--green);margin-bottom:3px;line-height:1.4;display:block;cursor:pointer}
+.wtchip.notdone{border-left-color:var(--blue-bd);background:var(--blue-bg);color:var(--blue);text-decoration:none}
+.wempty{font-size:11px;color:var(--text3);text-align:center;margin-top:14px}
+.wfoot{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-top:1px solid var(--border);flex-shrink:0}
+
+/* ── INBOX ── */
+.inboxpage{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:32px;background:var(--surface);border-radius:var(--r);border:1px solid var(--border)}
+.inboxpage h2{font-size:16px;font-weight:600}
+.inboxpage p{font-size:13px;color:var(--text2)}
+.inboxadd{background:var(--green);color:#fff;border:none;border-radius:var(--r);padding:14px 36px;font-size:14px;cursor:pointer;display:flex;align-items:center;gap:8px;font-family:inherit;transition:background .15s}
+.inboxadd:hover{background:#15803d}
+.inboxtip{background:#f0f9ff;border-left:3px solid #38bdf8;border-radius:0 var(--rs) var(--rs) 0;padding:12px 16px;font-size:12px;color:var(--text2);text-align:left;max-width:400px;line-height:1.6}
+.inboxhdr{display:flex;align-items:center;gap:10px;padding-bottom:12px;border-bottom:1px solid var(--border);margin-bottom:14px;flex-shrink:0}
+.backbtn{background:none;border:1px solid var(--border2);border-radius:var(--rs);padding:5px 12px;cursor:pointer;font-size:13px;font-family:inherit;color:var(--text2);transition:background .15s}
+.backbtn:hover{background:var(--surface2)}
+
+/* ── RECORD MODULE ── */
+.record-wrap{flex:1;display:flex;flex-direction:column;overflow:hidden;gap:12px}
+.record-toolbar{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.record-search{flex:1;padding:8px 14px;border:1px solid var(--border2);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none;background:var(--surface);color:var(--text1)}
+.record-search:focus{border-color:var(--blue)}
+.record-filter{display:flex;gap:6px;flex-shrink:0}
+.rfbtn{padding:5px 12px;border-radius:var(--rs);font-size:12px;cursor:pointer;border:1px solid var(--border2);background:var(--surface);color:var(--text2);font-family:inherit;transition:all .15s}
+.rfbtn:hover,.rfbtn.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.record-new-btn{padding:7px 16px;background:var(--teal);color:#fff;border:none;border-radius:var(--rs);font-size:13px;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:5px;transition:background .15s;flex-shrink:0}
+.record-new-btn:hover{background:#0f766e}
+.record-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px;overflow-y:auto;flex:1;align-content:start;padding-bottom:4px}
+.record-grid::-webkit-scrollbar{width:4px}
+.record-grid::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.rcard{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);padding:14px 16px;cursor:pointer;transition:transform .12s,box-shadow .12s;position:relative;display:flex;flex-direction:column;gap:8px}
+.rcard:hover{transform:translateY(-1px);box-shadow:0 3px 12px rgba(0,0,0,.08)}
+.rcard-type{font-size:11px;font-weight:500;padding:2px 8px;border-radius:4px;display:inline-flex;align-items:center;gap:4px;align-self:flex-start}
+.rcard-type.idea{background:#fdf4ff;color:#9333ea}
+.rcard-type.note{background:var(--blue-bg);color:var(--blue)}
+.rcard-type.quote{background:var(--amber-bg);color:var(--amber)}
+.rcard-type.link{background:var(--teal-bg);color:var(--teal)}
+.rcard-content{font-size:13px;color:var(--text1);line-height:1.6;display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden}
+.rcard-meta{font-size:11px;color:var(--text3);display:flex;align-items:center;justify-content:space-between;margin-top:auto}
+.rcard-tags{display:flex;gap:4px;flex-wrap:wrap;margin-top:2px}
+.rtag{font-size:10px;padding:1px 6px;border-radius:3px;background:var(--surface2);color:var(--text3)}
+.rcard-del{position:absolute;top:10px;right:10px;background:none;border:none;color:var(--text3);cursor:pointer;font-size:15px;opacity:0;transition:opacity .15s;padding:2px 5px;border-radius:4px}
+.rcard:hover .rcard-del{opacity:1}
+.rcard-del:hover{background:var(--red-bg);color:var(--red)}
+.record-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;flex:1;color:var(--text3);text-align:center}
+.record-empty-icon{font-size:40px;opacity:.4}
+.rcard-img{max-width:100%;border-radius:var(--rs);margin-top:4px;object-fit:cover;max-height:120px}
+.rcard-link{font-size:12px;color:var(--teal);text-decoration:none;display:flex;align-items:center;gap:4px;margin-top:2px}
+.rcard-link:hover{text-decoration:underline}
+
+/* ── RECORD MODAL ── */
+.rec-overlay{position:fixed;inset:0;background:rgba(0,0,0,.38);display:none;align-items:center;justify-content:center;z-index:300;padding:20px}
+.rec-overlay.open{display:flex}
+.rec-modal{background:var(--surface);border-radius:var(--r);width:100%;max-width:520px;max-height:90vh;overflow-y:auto;padding:22px;box-shadow:0 8px 40px rgba(0,0,0,.2);position:relative}
+.rec-modal::-webkit-scrollbar{width:4px}
+.rec-modal::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+
+/* ── SETTINGS PAGE ── */
+.settings-wrap{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:16px}
+.settings-wrap::-webkit-scrollbar{width:4px}
+.scard{background:var(--surface);border-radius:var(--r);border:1px solid var(--border);padding:18px 20px}
+.scard h3{font-size:14px;font-weight:600;margin-bottom:14px;display:flex;align-items:center;gap:6px}
+.srow{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);gap:12px}
+.srow:last-child{border-bottom:none;padding-bottom:0}
+.srow-left{flex:1}
+.srow-label{font-size:13px;font-weight:500;color:var(--text1)}
+.srow-sub{font-size:12px;color:var(--text3);margin-top:2px}
+/* toggle switch */
+.toggle{width:42px;height:24px;border-radius:12px;background:#d1d5db;cursor:pointer;position:relative;transition:background .2s;flex-shrink:0;border:none}
+.toggle.on{background:var(--blue)}
+.toggle::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:3px;left:3px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle.on::after{left:21px}
+.srow select,.srow input[type=number]{padding:6px 10px;border:1px solid var(--border2);border-radius:var(--rs);font-size:13px;font-family:inherit;outline:none;background:var(--surface);color:var(--text1);min-width:100px}
+.srow input[type=number]{min-width:70px}
+
+/* ── MODAL (task) ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.38);display:none;align-items:center;justify-content:center;z-index:200;padding:20px}
+.overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--r);width:100%;max-width:600px;max-height:92vh;overflow-y:auto;padding:22px 26px;box-shadow:0 8px 40px rgba(0,0,0,.18);position:relative}
+.modal::-webkit-scrollbar{width:4px}
+.modal::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.modal-layout{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.mtitle{font-size:15px;font-weight:700;margin-bottom:18px}
+.mclose{position:absolute;top:14px;right:14px;background:none;border:none;font-size:20px;cursor:pointer;color:var(--text3);line-height:1;transition:color .12s}
+.mclose:hover{color:var(--text1)}
+.field{margin-bottom:14px}
+.field>label,.flabel{display:block;font-size:12px;color:var(--text2);margin-bottom:5px;font-weight:500}
+.field input,.field textarea,.field select{width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--rs);font-size:13px;background:var(--surface);color:var(--text1);font-family:inherit;outline:none;transition:border-color .15s}
+.field input:focus,.field textarea:focus,.field select:focus{border-color:var(--blue)}
+.field textarea{resize:none;line-height:1.5}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.locbtns{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.locbtn{padding:10px;border-radius:var(--rs);cursor:pointer;text-align:center;font-size:12px;font-family:inherit;border:1.5px solid transparent;transition:all .15s}
+.locbtn.sdate{background:var(--blue-bg);border-color:var(--blue);color:var(--blue);font-weight:500}
+.locbtn.sinbox{background:var(--green-bg);border-color:var(--green-bd);color:var(--green)}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.popt{padding:8px 10px;border-radius:var(--rs);font-size:12px;cursor:pointer;border:1px solid var(--border2);background:var(--surface2);color:var(--text2);transition:all .12s;text-align:center;font-family:inherit}
+.popt:hover{background:var(--surface)}
+.popt.sel{border-color:var(--blue);background:var(--blue-bg);color:var(--blue);font-weight:500}
+.progval{font-size:13px;color:var(--blue);font-weight:600}
+.divider{border:none;border-top:1px solid var(--border);margin:14px 0}
+.dtoggle{display:flex;align-items:center;justify-content:center;gap:6px;padding:6px;font-size:12px;color:var(--text3);cursor:pointer;margin-bottom:10px}
+.macts{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:18px}
+.macts-right{display:flex;gap:10px}
+.bcanel{padding:8px 18px;border:1px solid var(--border2);border-radius:var(--rs);background:none;cursor:pointer;font-size:13px;font-family:inherit;color:var(--text1);transition:background .15s}
+.bcanel:hover{background:var(--surface2)}
+.bcreat{padding:8px 22px;background:var(--blue);color:#fff;border:none;border-radius:var(--rs);cursor:pointer;font-size:13px;font-family:inherit;font-weight:500;transition:background .15s}
+.bcreat:hover{background:#1d4ed8}
+.bdel{padding:8px 16px;background:var(--red);color:#fff;border:none;border-radius:var(--rs);cursor:pointer;font-size:13px;font-family:inherit;display:flex;align-items:center;gap:5px;transition:background .15s}
+.bdel:hover{background:#b91c1c}
+.status-sel-wrap{position:relative}
+.status-bar{position:absolute;left:0;top:0;bottom:0;width:4px;border-radius:4px 0 0 4px}
+.status-bar.todo{background:#9ca3af}.status-bar.inprogress{background:var(--blue)}.status-bar.done{background:var(--green)}.status-bar.cancelled{background:var(--text3)}
+.status-sel-wrap select{padding-left:14px}
+.attach-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.attach-chip{display:flex;align-items:center;gap:5px;padding:4px 8px;border-radius:var(--rs);border:1px solid var(--border2);font-size:12px;color:var(--text2);background:var(--surface2);cursor:pointer}
+.attach-chip:hover{border-color:var(--blue);color:var(--blue)}
+.attach-chip svg{width:13px;height:13px;stroke:currentColor;fill:none;stroke-width:1.8;flex-shrink:0}
+.attach-add{display:flex;align-items:center;gap:5px;padding:6px 10px;border-radius:var(--rs);border:1px dashed var(--border2);font-size:12px;color:var(--text3);cursor:pointer;transition:all .15s}
+.attach-add:hover{border-color:var(--blue);color:var(--blue)}
+.attach-img-preview{max-width:100%;max-height:80px;border-radius:var(--rs);border:1px solid var(--border);object-fit:cover;cursor:pointer}
+
+.fab{position:fixed;bottom:26px;right:26px;width:50px;height:50px;background:var(--blue);color:#fff;border:none;border-radius:50%;font-size:26px;cursor:pointer;display:flex;align-items:center;justify-content:center;z-index:50;box-shadow:0 4px 16px rgba(37,99,235,.35);transition:transform .15s,background .15s}
+.fab:hover{background:#1d4ed8;transform:scale(1.07)}
+input[type=range]{width:100%;accent-color:var(--blue)}
+.empty-tip{text-align:center;color:var(--text3);padding:40px 0;font-size:13px}
+</style>
+</head>
+<body>
+
+<!-- FLASH BANNER -->
+<div class="flash-banner hidden" id="flash-banner">
+  <span class="flash-icon">✨</span>
+  <span class="flash-text" id="flash-text"></span>
+  <button class="flash-close" onclick="dismissFlash()" title="关闭">×</button>
+</div>
+
+<!-- TOPBAR -->
+<div class="topbar">
+  <span class="worktable-logo">工作台</span>
+  <span class="version-badge">v1.0</span>
+  <button class="nav-tab active" id="tab-todo" onclick="switchPage('todo')">☑ 待办</button>
+  <button class="nav-tab" id="tab-record" onclick="switchPage('record')">📝 记录</button>
+  <button class="nav-tab" id="tab-timeline" onclick="switchPage('timeline')">⏱ 时间线</button>
+  <button class="nav-tab" id="tab-diary" onclick="switchPage('diary')">📋 时记</button>
+  <button class="nav-tab" id="tab-analysis" onclick="switchPage('analysis')">📊 数据分析</button>
+  <button class="nav-tab" id="tab-settings" onclick="switchPage('settings')">⚙ 设置</button>
+</div>
+
+<!-- TOOLBAR (todo only) -->
+<div class="toolbar" id="toolbar">
+  <div class="tleft">
+    <span style="font-size:17px">☑</span>
+    <span class="page-title">今日工作台</span>
+    <div class="date-nav">
+      <button class="darr" onclick="shiftDate(-1)">‹</button>
+      <span class="dchip" id="dchip"></span>
+      <button class="darr" onclick="shiftDate(1)">›</button>
+    </div>
+    <button class="inbox-btn" onclick="openInbox()">☁ 收集箱</button>
+  </div>
+  <div class="bgrp" id="dwg">
+    <button class="active" id="btn-today" onclick="setDayMode('today')">📅 今日任务</button>
+    <button id="btn-week" onclick="setDayMode('week')">📆 周任务</button>
+  </div>
+  <div class="bgrp" id="vg">
+    <button class="active" id="vb-kanban" onclick="setView('kanban')">▦</button>
+    <button id="vb-list" onclick="setView('list')">☰</button>
+    <button id="vb-matrix" onclick="setView('matrix')">⊞</button>
+  </div>
+</div>
+
+<div class="main" id="main"></div>
+<button class="fab" id="fab" onclick="fabClick()">+</button>
+
+<!-- TASK MODAL -->
+<div class="overlay" id="overlay" onclick="ovClick(event)">
+  <div class="modal">
+    <button class="mclose" onclick="closeModal()">×</button>
+    <div class="mtitle" id="mtitle">新建待办</div>
+    <div class="modal-layout">
+      <div>
+        <div class="field"><label>任务标题 <span style="color:var(--red)">*</span></label>
+          <textarea id="m-title" rows="2" placeholder="请输入任务标题（支持换行）"></textarea></div>
+        <div class="field"><label>任务标签（可选）</label>
+          <input id="m-tag" placeholder="如：工作/项目/测试">
+          <div style="font-size:11px;color:var(--text3);margin-top:4px">支持多级标签，如：工作/项目/测试</div></div>
+        <div class="field"><label>任务状态</label>
+          <div class="status-sel-wrap"><div class="status-bar todo" id="status-bar"></div>
+            <select id="m-status" onchange="updStatusBar()">
+              <option value="todo">○ 未开始</option>
+              <option value="inprogress">↻ 进行中</option>
+              <option value="done">✔ 已完成</option>
+              <option value="cancelled">⊗ 已取消</option>
+            </select></div></div>
+        <div class="flabel">任务位置</div>
+        <div class="locbtns">
+          <button class="locbtn sdate" id="loc-date" onclick="selLoc('date')">📅 设置日期（立即规划）</button>
+          <button class="locbtn sinbox" id="loc-inbox" onclick="selLoc('inbox')">☁ 加入收集箱（稍后规划）</button>
+        </div>
+        <div class="frow field" id="tfields">
+          <div><label class="flabel">计划开始</label><input type="datetime-local" id="m-start"></div>
+          <div><label class="flabel">计划结束</label><input type="datetime-local" id="m-end"></div>
+        </div>
+        <div class="field" style="display:flex;align-items:center;justify-content:space-between;border:1px solid var(--border);border-radius:var(--rs);padding:8px 12px">
+          <span style="font-size:13px;color:var(--text2)">↻ 重复</span>
+          <select id="m-repeat" style="border:none;background:none;font-size:13px;color:var(--text2);outline:none;cursor:pointer;font-family:inherit">
+            <option value="none">关闭</option><option value="daily">每天</option>
+            <option value="weekly">每周</option><option value="monthly">每月</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <div class="field"><label>任务描述（可选）</label>
+          <textarea id="m-desc" rows="4" placeholder="可以添加任务的详细说明…" style="max-height:120px"></textarea>
+          <div style="font-size:11px;color:var(--text3);margin-top:3px;text-align:right">最多5000字符</div></div>
+        <div class="field"><label>附件链接（可选）</label>
+          <div style="display:flex;gap:6px">
+            <input id="m-link" placeholder="粘贴链接 https://..." style="flex:1">
+            <button onclick="addLink()" style="padding:0 12px;border:1px solid var(--border2);border-radius:var(--rs);background:var(--surface2);cursor:pointer;font-family:inherit;font-size:12px;color:var(--text2);white-space:nowrap">添加</button>
+          </div>
+          <div id="link-list" class="attach-row"></div></div>
+        <div class="field"><label>附件图片（可选）</label>
+          <div class="attach-add" onclick="byId('img-upload').click()">📎 点击上传图片</div>
+          <input type="file" id="img-upload" accept="image/*" multiple style="display:none" onchange="handleImgUpload(event)">
+          <div id="img-list" class="attach-row"></div></div>
+      </div>
+    </div>
+    <hr class="divider">
+    <div class="dtoggle" onclick="togDet()"><span id="dettxt">▼ 展开详情</span></div>
+    <div id="detsec" style="display:none">
+      <div class="field"><label>任务优先级（可选）</label>
+        <div class="pgrid">
+          <button class="popt" data-p="q1" onclick="selP('q1')">🔴 重要紧急</button>
+          <button class="popt" data-p="q2" onclick="selP('q2')">🔵 重要不紧急</button>
+          <button class="popt" data-p="q3" onclick="selP('q3')">🟡 紧急不重要</button>
+          <button class="popt sel" data-p="q4" onclick="selP('q4')">⚪ 不重要不紧急</button>
+        </div></div>
+      <div class="frow field">
+        <div><label class="flabel">预估时长（小时）</label><input type="number" id="m-hours" value="0" min="0" step="0.5"></div>
+        <div><label class="flabel">任务日期 <span style="color:var(--red)">*</span></label><input type="date" id="m-date"></div>
+      </div>
+      <div class="field">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <label class="flabel" style="margin:0">完成进度</label><span class="progval" id="pval">0%</span></div>
+        <input type="range" min="0" max="100" step="1" id="m-prog" value="0" oninput="byId('pval').textContent=this.value+'%'">
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">0%=待开始，1-99%=进行中，100%=已完成</div>
+      </div>
+    </div>
+    <div class="macts">
+      <div id="del-btn-wrap"></div>
+      <div class="macts-right">
+        <button class="bcanel" onclick="closeModal()">取消</button>
+        <button class="bcreat" onclick="saveTask()" id="bsave">创建</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- RECORD MODAL -->
+<div class="rec-overlay" id="rec-overlay" onclick="recOvClick(event)">
+  <div class="rec-modal">
+    <button class="mclose" onclick="closeRecModal()">×</button>
+    <div class="mtitle" id="rec-mtitle">新建记录</div>
+    <div class="field"><label>类型</label>
+      <select id="rec-type">
+        <option value="idea">💡 灵感想法</option>
+        <option value="note">📝 笔记</option>
+        <option value="quote">💬 摘录引用</option>
+        <option value="link">🔗 链接收藏</option>
+      </select></div>
+    <div class="field"><label>内容 <span style="color:var(--red)">*</span></label>
+      <textarea id="rec-content" rows="5" placeholder="记录你的想法、灵感、笔记…" style="max-height:200px"></textarea></div>
+    <div class="field"><label>标签（可选，空格分隔）</label>
+      <input id="rec-tags" placeholder="如：读书 工作 设计"></div>
+    <div class="field"><label>链接（可选）</label>
+      <input id="rec-link" placeholder="https://..."></div>
+    <div class="field"><label>附图（可选）</label>
+      <div class="attach-add" onclick="byId('rec-img-upload').click()">📎 点击上传图片</div>
+      <input type="file" id="rec-img-upload" accept="image/*" style="display:none" onchange="handleRecImg(event)">
+      <div id="rec-img-preview" style="margin-top:6px"></div></div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+        <input type="checkbox" id="rec-flash" style="width:15px;height:15px;accent-color:var(--blue)">
+        <span>加入随机展示池（顶部随机显示此条内容）</span></label></div>
+    <div class="macts">
+      <div id="rec-del-wrap"></div>
+      <div class="macts-right">
+        <button class="bcanel" onclick="closeRecModal()">取消</button>
+        <button class="bcreat" onclick="saveRecord()">保存</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ════════════════════════════════════════════
+   STATE
+════════════════════════════════════════════ */
+var S={
+  page:'todo',
+  view:'kanban',dayMode:'today',
+  cur:new Date(),weekOff:0,
+  editId:null,loc:'date',pri:'q4',detOpen:false,
+  dragId:null,
+  links:[],imgs:[],
+  tasks:[
+    {id:1,title:'撰写周报（只待附上周报）',desc:'',status:'done',tag:'每周待办',tagType:'purple',pri:'q4',prog:100,repeat:'weekly',hours:0,ds:ds(new Date()),links:[],imgs:[],loc:'date'},
+    {id:2,title:'等昨日差异确认，再统计 T-7 尾部人员',desc:'',status:'done',tag:'一次性任务',tagType:'green',pri:'q4',prog:100,repeat:'none',hours:0,ds:ds(new Date()),links:[],imgs:[],loc:'date'}
+  ],
+  nid:3,
+  /* RECORDS */
+  records:[
+    {id:101,type:'idea',content:'用颜色深浅来表达任务优先级，比图标更直觉',tags:['设计','产品'],link:'',imgSrc:'',flash:true,ts:Date.now()-86400000*2},
+    {id:102,type:'quote',content:'"最好的工具是你真正会用的那一个。" — 来自某篇效率文章',tags:['效率'],link:'',imgSrc:'',flash:true,ts:Date.now()-86400000},
+    {id:103,type:'note',content:'GTD 核心：收集→处理→组织→回顾→执行。收集箱是入口，处理是关键。',tags:['GTD','效率'],link:'https://gtd.com',imgSrc:'',flash:false,ts:Date.now()-3600000}
+  ],
+  recId:104,
+  recEdit:null, recImgSrc:'',
+  recFilter:'all',
+  /* SETTINGS */
+  cfg:{flashOn:true,flashInterval:30,flashDismissed:false}
+};
+
+var flashTimer=null;
+
+/* ════════════════════════════════════════════
+   UTILS
+════════════════════════════════════════════ */
+function pad(n){return('0'+n).slice(-2)}
+function ds(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate())}
+function fmtDate(d){var w=['周日','周一','周二','周三','周四','周五','周六'];return d.getFullYear()+'年'+pad(d.getMonth()+1)+'月'+pad(d.getDate())+'日 '+w[d.getDay()]}
+function esc(s){var d=document.createElement('div');d.textContent=s||'';return d.innerHTML}
+function byId(id){return document.getElementById(id)}
+function calcH(tasks){return tasks.reduce(function(a,t){return a+(t.hours||0)},0).toFixed(1)}
+function todayDs(){return ds(new Date())}
+
+var ICON={
+  list:'<svg viewBox="0 0 24 24"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></svg>',
+  postpone:'<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>',
+  inbox:'<svg viewBox="0 0 24 24"><polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 002 2h16a2 2 0 002-2v-6l-3.45-6.89A2 2 0 0016.76 4H7.24a2 2 0 00-1.79 1.11z"/></svg>',
+  check:'<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>'
+};
+
+/* ════════════════════════════════════════════
+   FLASH BANNER
+════════════════════════════════════════════ */
+function startFlash(){
+  clearInterval(flashTimer);
+  if(!S.cfg.flashOn) return;
+  showFlash();
+  var ms=(S.cfg.flashInterval||30)*60*1000;
+  flashTimer=setInterval(showFlash,ms);
+}
+function showFlash(){
+  var pool=S.records.filter(function(r){return r.flash});
+  if(!pool.length){byId('flash-banner').classList.add('hidden');return}
+  var r=pool[Math.floor(Math.random()*pool.length)];
+  byId('flash-text').textContent=r.content;
+  byId('flash-banner').classList.remove('hidden');
+}
+function dismissFlash(){byId('flash-banner').classList.add('hidden')}
+
+/* ════════════════════════════════════════════
+   NAVIGATION
+════════════════════════════════════════════ */
+function switchPage(page){
+  S.page=page;
+  document.querySelectorAll('.nav-tab').forEach(function(b){b.classList.remove('active')});
+  var t=byId('tab-'+page);if(t) t.classList.add('active');
+  byId('toolbar').style.display=page==='todo'?'flex':'none';
+  byId('fab').style.display=(page==='todo'||page==='record')?'flex':'none';
+  byId('fab').onclick=page==='record'?function(){openRecModal(null)}:function(){openModal(null,null)};
+  render();
+}
+
+function shiftDate(n){
+  S.cur=new Date(S.cur.getTime()+n*86400000);
+  byId('dchip').textContent=fmtDate(S.cur);
+  render();
+}
+function setDayMode(m){
+  S.dayMode=m;S.weekOff=0;
+  byId('btn-today').classList.toggle('active',m==='today');
+  byId('btn-week').classList.toggle('active',m==='week');
+  byId('vg').style.display=m==='week'?'none':'flex';
+  render();
+}
+function setView(v){
+  S.view=v;
+  ['kanban','list','matrix'].forEach(function(x){byId('vb-'+x).classList.toggle('active',x===v)});
+  render();
+}
+function openInbox(){S.view='inbox';render()}
+function fabClick(){
+  if(S.page==='record') openRecModal(null);
+  else openModal(null,null);
+}
+
+/* ════════════════════════════════════════════
+   RENDER DISPATCHER
+════════════════════════════════════════════ */
+function render(){
+  var m=byId('main');
+  closeAllPops();
+  if(S.page==='record'){renderRecord(m);return}
+  if(S.page==='settings'){renderSettings(m);return}
+  if(S.page!=='todo'){
+    m.innerHTML='<div class="empty-tip">【'+S.page+'】模块开发中…</div>';return}
+  if(S.dayMode==='week'){renderWeek(m);return}
+  if(S.view==='inbox'){renderInbox(m);return}
+  if(S.view==='kanban') renderKanban(m);
+  else if(S.view==='list') renderList(m);
+  else renderMatrix(m);
+}
+
+/* ════════════════════════════════════════════
+   KANBAN
+════════════════════════════════════════════ */
+function renderKanban(m){
+  var cols=[
+    {key:'todo',dot:'#9ca3af',label:'○ 未开始'},
+    {key:'inprogress',dot:'#2563eb',label:'↻ 进行中'},
+    {key:'done',dot:'#2563eb',label:'✔ 已完成'},
+    {key:'cancelled',dot:'#d1d5db',label:'⊗ 已取消'}
+  ];
+  var curDs=ds(S.cur);
+  var h='<div class="kanban">';
+  cols.forEach(function(col){
+    // Only show tasks matching current date (or all if switched)
+    var tasks=S.tasks.filter(function(t){return t.status===col.key&&t.ds===curDs});
+    var isActive=col.key==='todo'||col.key==='inprogress';
+    h+='<div class="kcol" id="col-'+col.key+'"';
+    h+=' ondragover="event.preventDefault();this.classList.add(\'dragover\')"';
+    h+=' ondragleave="this.classList.remove(\'dragover\')"';
+    h+=' ondrop="dropCard(event,\''+col.key+'\')">';
+    h+='<div class="kch"><div class="kcdot" style="background:'+col.dot+'"></div><div class="kct">'+col.label+'</div><div class="kcc">'+tasks.length+'</div></div>';
+    h+='<div class="kbody" ondblclick="kbodyDbl(event,\''+col.key+'\')">';
+    tasks.forEach(function(t){
+      var tc=t.tagType==='green'?'g':'';
+      h+='<div class="tcard s-'+t.status+'" draggable="true" id="tc-'+t.id+'"';
+      h+=' ondragstart="startDrag(event,'+t.id+')"';
+      h+=' onclick="event.stopPropagation();openModal('+t.id+',null)">';
+      h+='<div class="ttitle'+(t.status==='done'?' done':'')+'">'+esc(t.title)+'</div>';
+      h+='<div class="tmeta"><span>⏰ '+t.ds+'</span><span>🕐 09:00-18:00</span></div>';
+      if(t.tag) h+='<div class="ttag '+tc+'">'+esc(t.tag)+'</div>';
+      if((t.links&&t.links.length)||(t.imgs&&t.imgs.length)){
+        h+='<div style="font-size:11px;color:var(--text3);margin-bottom:4px">';
+        if(t.links&&t.links.length) h+='🔗 '+t.links.length+' ';
+        if(t.imgs&&t.imgs.length) h+='🖼 '+t.imgs.length;
+        h+='</div>';
+      }
+      h+='<div class="tacts" onclick="event.stopPropagation()">';
+      // 编辑详情 — always shown
+      h+='<button class="tact" title="编辑详情" onclick="openModal('+t.id+',null)">'+ICON.list+'</button>';
+      if(isActive){
+        // 顺延
+        h+='<button class="tact" title="顺延" onclick="togglePop('+t.id+',event)">'+ICON.postpone;
+        h+='<div class="ppop" id="pop-'+t.id+'" style="display:none">';
+        h+='<div class="ppop-item" onclick="postpone('+t.id+',1)">顺延到明天</div>';
+        h+='<div class="ppop-item" onclick="postpone('+t.id+',2)">顺延到后天</div>';
+        h+='<div class="ppop-item" onclick="postponeNextMon('+t.id+')">顺延到下周一</div>';
+        h+='</div></button>';
+        // 撤回收集箱
+        h+='<button class="tact" title="撤回到收集箱" onclick="moveToInbox('+t.id+')">'+ICON.inbox+'</button>';
+        // 标记完成
+        h+='<button class="tact" title="标记为完成" onclick="markDone('+t.id+')">'+ICON.check+'</button>';
+      } else {
+        // done/cancelled: only edit (已有) + delete
+        h+='<button class="tact" title="删除" onclick="delTask('+t.id+')" style="color:var(--red)">';
+        h+='<svg viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg></button>';
+      }
+      h+='</div>';
+      h+='</div>';
+    });
+    if(!tasks.length) h+='<div class="kdblhint">💡 双击空白区域快速添加</div>';
+    h+='</div>';
+    h+='<div class="kfoot"><span>☑ '+tasks.length+' 个任务</span><span>⏱ '+calcH(tasks)+'h</span></div>';
+    h+='</div>';
+  });
+  h+='</div>';
+  m.innerHTML=h;
+}
+
+function kbodyDbl(e,colKey){
+  var el=e.target;
+  if(el.classList.contains('kbody')||el.classList.contains('kdblhint')){
+    openModalWithStatus(colKey);
+  }
+}
+
+/* ════════════════════════════════════════════
+   LIST
+════════════════════════════════════════════ */
+function renderList(m){
+  var curDs=ds(S.cur);
+  var tasks=S.tasks.filter(function(t){return t.ds===curDs});
+  var h='<div class="listview">';
+  if(!tasks.length) h+='<div class="empty-tip">今日暂无任务，点击右下角 + 添加</div>';
+  var sl={todo:'未开始',inprogress:'进行中',done:'已完成',cancelled:'已取消'};
+  tasks.forEach(function(t){
+    h+='<div class="litem" onclick="openModal('+t.id+',null)">';
+    h+='<div class="lchk"><svg viewBox="0 0 12 12"><polyline points="1,6 5,10 11,2"/></svg></div>';
+    h+='<span class="ltit">'+esc(t.title)+'</span>';
+    h+='<div class="lbadges"><span class="pill '+t.status+'">'+sl[t.status]+'</span>';
+    if(t.tag) h+='<span class="pill tag">#'+esc(t.tag)+'</span>';
+    h+='</div></div>';
+  });
+  h+='</div>';
+  m.innerHTML=h;
+}
+
+/* ════════════════════════════════════════════
+   MATRIX
+════════════════════════════════════════════ */
+function renderMatrix(m){
+  var qm={q1:{label:'重要紧急',act:'立即执行'},q2:{label:'重要不紧急',act:'计划安排'},q3:{label:'紧急不重要',act:'委托他人'},q4:{label:'不重要不紧急',act:'考虑删除'}};
+  var g={q1:[],q2:[],q3:[],q4:[]};
+  var curDs=ds(S.cur);
+  S.tasks.filter(function(t){return t.ds===curDs}).forEach(function(t){if(g[t.pri]) g[t.pri].push(t)});
+  var h='<div class="mxwrap"><div class="mxaxis"><span>◀ 紧急</span><span>不紧急 ▶</span></div><div class="mxgrid">';
+  ['q1','q2','q3','q4'].forEach(function(k){
+    var q=qm[k];var items=g[k];
+    h+='<div class="mxcell '+k+'" ondragover="event.preventDefault();this.classList.add(\'dragover\')" ondragleave="this.classList.remove(\'dragover\')" ondrop="dropMatrix(event,\''+k+'\')">';
+    h+='<div class="mxhdr"><div class="mxlbl">'+q.label+'</div><div class="mxact">'+q.act+' '+items.length+'</div></div>';
+    h+='<div class="mxitems">';
+    items.forEach(function(t){
+      h+='<div class="mxitem"><input type="checkbox" id="mx'+t.id+'" '+(t.status==='done'?'checked':'')+' onchange="toggleChk('+t.id+',this)">';
+      h+='<label for="mx'+t.id+'" class="'+(t.status==='done'?'done':'')+'">'+esc(t.title)+'</label></div>';
+    });
+    h+='</div><span class="mxadd" onclick="openModal(null,\''+k+'\')">+ 添加任务...</span></div>';
+  });
+  h+='</div></div>';
+  m.innerHTML=h;
+}
+
+/* ════════════════════════════════════════════
+   WEEK VIEW (with ‹ › navigation)
+════════════════════════════════════════════ */
+function renderWeek(m){
+  var base=new Date(S.cur);base.setDate(base.getDate()+S.weekOff*7);
+  var dow=base.getDay();
+  var mon=new Date(base);mon.setDate(base.getDate()-(dow===0?6:dow-1));
+  var sun=new Date(mon);sun.setDate(mon.getDate()+6);
+  var dnames=['一','二','三','四','五','六','日'];
+  var td=todayDs();
+  var sy=new Date(mon.getFullYear(),0,1);
+  var weekNum=Math.ceil(((mon-sy)/86400000+sy.getDay()+1)/7);
+  var h='<div class="weekview"><div class="weekcard">';
+  h+='<div class="wcardh">';
+  h+='<span class="wcardh-title">📅 本周日历</span>';
+  h+='<button class="warr" onclick="shiftWeek(-1)">‹</button>';
+  h+='<span style="font-size:12px;color:var(--text2)">'+mon.getFullYear()+'年 第'+weekNum+'周（'+(mon.getMonth()+1)+'月'+mon.getDate()+'日－'+(sun.getMonth()+1)+'月'+sun.getDate()+'日）</span>';
+  h+='<button class="warr" onclick="shiftWeek(1)">›</button>';
+  h+='<button onclick="S.weekOff=0;render()" style="padding:4px 10px;border:1px solid var(--border2);border-radius:var(--rs);background:var(--surface);cursor:pointer;font-size:12px;font-family:inherit;color:var(--text2)">本周</button>';
+  h+='</div>';
+  h+='<div class="wdays-h">';
+  for(var i=0;i<7;i++){
+    var dd=new Date(mon);dd.setDate(mon.getDate()+i);
+    var isT=ds(dd)===td;
+    var cnt=S.tasks.filter(function(t){return t.ds===ds(dd)}).length;
+    h+='<div class="wdayh"><div class="wdayname">周'+dnames[i]+'</div>';
+    h+='<div class="wdaynum'+(isT?' today':'')+'">'+dd.getDate()+'</div>';
+    if(cnt) h+='<div style="font-size:10px;color:var(--text3)">'+cnt+'</div>';
+    h+='</div>';
+  }
+  h+='</div><div class="wbody">';
+  for(var i=0;i<7;i++){
+    var dd=new Date(mon);dd.setDate(mon.getDate()+i);
+    var dstr=ds(dd);var isT=dstr===td;
+    var dt=S.tasks.filter(function(t){return t.ds===dstr});
+    h+='<div class="wcell'+(isT?' today':'')+'">';
+    if(dt.length){
+      var done=dt.filter(function(t){return t.status==='done'});
+      if(done.length) h+='<div style="font-size:10px;color:var(--green);background:var(--green-bg);padding:2px 4px;border-radius:3px;margin-bottom:4px">已完成</div>';
+      dt.forEach(function(t){
+        var isDone=t.status==='done';
+        h+='<span class="wtchip'+(isDone?'':' notdone')+'" onclick="openModal('+t.id+',null)" style="text-decoration:'+(isDone?'line-through':'none')+'">'+esc(t.title)+'</span>';
+      });
+    } else {
+      h+='<div class="wempty">拖入任务</div>';
+    }
+    h+='</div>';
+  }
+  h+='</div>';
+  var wt=S.tasks.filter(function(t){return t.ds>=ds(mon)&&t.ds<=ds(sun)});
+  var wd=wt.filter(function(t){return t.status==='done'});
+  h+='<div class="wfoot"><span style="font-size:13px;font-weight:500">本周任务</span><div style="display:flex;gap:8px"><span class="pill todo">'+(wt.length-wd.length)+' 待办</span><span class="pill done">'+wd.length+' 已完</span></div></div>';
+  h+='</div></div>';
+  m.innerHTML=h;
+}
+function shiftWeek(n){S.weekOff+=n;render()}
+
+/* ════════════════════════════════════════════
+   INBOX
+════════════════════════════════════════════ */
+function renderInbox(m){
+  var inboxTasks=S.tasks.filter(function(t){return t.loc==='inbox'});
+  var h='<div style="display:flex;flex-direction:column;height:100%">';
+  h+='<div class="inboxhdr"><button class="backbtn" onclick="S.view=\'kanban\';render()">← 返回</button>';
+  h+='<span style="font-size:15px;font-weight:600">☁ 收集箱</span>';
+  h+='<span style="background:var(--blue);color:#fff;border-radius:50%;min-width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:12px;padding:0 4px">'+inboxTasks.length+'</span></div>';
+  if(!inboxTasks.length){
+    h+='<div class="inboxpage">';
+    h+='<div style="font-size:44px;opacity:.3">☁</div>';
+    h+='<h2>收集箱是空的</h2><p>还没有未安排日期的任务</p>';
+    h+='<button class="inboxadd" onclick="openModal(null,null)">+ 添加第一个任务</button>';
+    h+='<div class="inboxtip">💡 收集箱用于存放暂时不确定何时执行的任务，稍后可以分配到具体日期</div>';
+    h+='</div>';
+  } else {
+    h+='<div class="listview">';
+    inboxTasks.forEach(function(t){
+      h+='<div class="litem" onclick="openModal('+t.id+',null)">';
+      h+='<span style="flex:1;font-size:13px">'+esc(t.title)+'</span>';
+      if(t.tag) h+='<span class="pill tag">#'+esc(t.tag)+'</span>';
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+  h+='</div>';
+  m.innerHTML=h;
+}
+
+/* ════════════════════════════════════════════
+   RECORD MODULE
+════════════════════════════════════════════ */
+var REC_TYPES={idea:'💡 灵感',note:'📝 笔记',quote:'💬 摘录',link:'🔗 链接'};
+function renderRecord(m){
+  var filter=S.recFilter;
+  var recs=S.records.filter(function(r){return filter==='all'||r.type===filter});
+  var h='<div class="record-wrap">';
+  // toolbar
+  h+='<div class="record-toolbar">';
+  h+='<input class="record-search" placeholder="搜索记录…" oninput="searchRec(this.value)">';
+  h+='<div class="record-filter">';
+  ['all','idea','note','quote','link'].forEach(function(f){
+    var lbl=f==='all'?'全部':REC_TYPES[f];
+    h+='<button class="rfbtn'+(filter===f?' active':'')+'" onclick="S.recFilter=\''+f+'\';render()">'+lbl+'</button>';
+  });
+  h+='</div>';
+  h+='<button class="record-new-btn" onclick="openRecModal(null)">+ 新建记录</button>';
+  h+='</div>';
+  // grid
+  if(!recs.length){
+    h+='<div class="record-empty"><div class="record-empty-icon">📝</div><div style="font-size:14px;font-weight:500">暂无记录</div><div style="font-size:13px">点击右下角 + 或「新建记录」开始记录灵感</div></div>';
+  } else {
+    h+='<div class="record-grid">';
+    recs.slice().reverse().forEach(function(r){
+      var d=new Date(r.ts);
+      var dstr=d.getMonth()+1+'/'+d.getDate()+' '+pad(d.getHours())+':'+pad(d.getMinutes());
+      h+='<div class="rcard" onclick="openRecModal('+r.id+')">';
+      h+='<button class="rcard-del" onclick="delRecord('+r.id+',event)" title="删除">×</button>';
+      h+='<div class="rcard-type '+r.type+'">'+REC_TYPES[r.type]+(r.flash?' ✨':'')+'</div>';
+      h+='<div class="rcard-content">'+esc(r.content)+'</div>';
+      if(r.imgSrc) h+='<img class="rcard-img" src="'+r.imgSrc+'" onclick="event.stopPropagation();window.open(\''+r.imgSrc+'\')">';
+      if(r.link) h+='<a class="rcard-link" href="'+esc(r.link)+'" target="_blank" onclick="event.stopPropagation()">🔗 '+esc(r.link.replace(/^https?:\/\//,'').substring(0,40))+'</a>';
+      if(r.tags&&r.tags.length) h+='<div class="rcard-tags">'+r.tags.map(function(t){return'<span class="rtag">#'+esc(t)+'</span>'}).join('')+'</div>';
+      h+='<div class="rcard-meta"><span>'+dstr+'</span></div>';
+      h+='</div>';
+    });
+    h+='</div>';
+  }
+  h+='</div>';
+  m.innerHTML=h;
+}
+function searchRec(v){
+  var q=v.trim().toLowerCase();
+  var m=byId('main');
+  var grid=m.querySelector('.record-grid');
+  if(!grid) return;
+  var cards=grid.querySelectorAll('.rcard');
+  cards.forEach(function(c){
+    var txt=c.textContent.toLowerCase();
+    c.style.display=(!q||txt.indexOf(q)>=0)?'':'none';
+  });
+}
+function delRecord(id,e){
+  e.stopPropagation();
+  if(!confirm('确认删除这条记录？')) return;
+  S.records=S.records.filter(function(r){return r.id!==id});
+  render();
+}
+
+/* ── RECORD MODAL ── */
+function openRecModal(id){
+  S.recEdit=id; S.recImgSrc='';
+  byId('rec-content').value='';byId('rec-tags').value='';byId('rec-link').value='';
+  byId('rec-type').value='idea';byId('rec-flash').checked=false;
+  byId('rec-img-preview').innerHTML='';byId('rec-del-wrap').innerHTML='';
+  if(id){
+    var r=S.records.find(function(x){return x.id===id});
+    if(r){
+      byId('rec-type').value=r.type;
+      byId('rec-content').value=r.content;
+      byId('rec-tags').value=(r.tags||[]).join(' ');
+      byId('rec-link').value=r.link||'';
+      byId('rec-flash').checked=!!r.flash;
+      S.recImgSrc=r.imgSrc||'';
+      if(S.recImgSrc) byId('rec-img-preview').innerHTML='<img style="max-height:80px;border-radius:6px;border:1px solid var(--border)" src="'+S.recImgSrc+'">';
+      byId('rec-del-wrap').innerHTML='<button class="bdel" onclick="delRecord('+id+',{stopPropagation:function(){}});closeRecModal()">🗑 删除</button>';
+    }
+    byId('rec-mtitle').textContent='编辑记录';
+  } else {
+    byId('rec-mtitle').textContent='新建记录';
+  }
+  byId('rec-overlay').classList.add('open');
+}
+function closeRecModal(){byId('rec-overlay').classList.remove('open')}
+function recOvClick(e){if(e.target===byId('rec-overlay')) closeRecModal()}
+function handleRecImg(e){
+  var f=e.target.files[0];if(!f) return;
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    S.recImgSrc=ev.target.result;
+    byId('rec-img-preview').innerHTML='<img style="max-height:80px;border-radius:6px;border:1px solid var(--border)" src="'+S.recImgSrc+'">';
+  };
+  reader.readAsDataURL(f);
+  e.target.value='';
+}
+function saveRecord(){
+  var content=byId('rec-content').value.trim();
+  if(!content){alert('请输入记录内容');return}
+  var tags=byId('rec-tags').value.trim().split(/\s+/).filter(Boolean);
+  var obj={
+    type:byId('rec-type').value,
+    content:content,
+    tags:tags,
+    link:byId('rec-link').value.trim(),
+    imgSrc:S.recImgSrc,
+    flash:byId('rec-flash').checked,
+    ts:Date.now()
+  };
+  if(S.recEdit){
+    var r=S.records.find(function(x){return x.id===S.recEdit});
+    if(r) Object.assign(r,obj);
+  } else {
+    obj.id=S.recId++;
+    S.records.push(obj);
+  }
+  closeRecModal();
+  startFlash(); // refresh flash pool
+  render();
+}
+
+/* ════════════════════════════════════════════
+   SETTINGS
+════════════════════════════════════════════ */
+function renderSettings(m){
+  var c=S.cfg;
+  var h='<div class="settings-wrap">';
+  // Flash settings
+  h+='<div class="scard">';
+  h+='<h3>✨ 灵感随机展示</h3>';
+  h+='<div class="srow"><div class="srow-left"><div class="srow-label">顶部随机展示</div><div class="srow-sub">在顶部横幅随机显示记录中标记了「展示」的内容</div></div>';
+  h+='<button class="toggle'+(c.flashOn?' on':'')+'" id="tog-flash" onclick="toggleCfg(\'flashOn\')"></button></div>';
+  h+='<div class="srow"><div class="srow-left"><div class="srow-label">更新间隔</div><div class="srow-sub">每隔多少分钟随机切换一次展示内容</div></div>';
+  h+='<select onchange="S.cfg.flashInterval=parseInt(this.value);startFlash()">';
+  [5,10,15,30,60].forEach(function(v){
+    h+='<option value="'+v+'"'+(c.flashInterval===v?' selected':'')+'>'+v+' 分钟</option>';
+  });
+  h+='</select></div>';
+  h+='</div>';
+  // About
+  h+='<div class="scard">';
+  h+='<h3>📋 关于</h3>';
+  h+='<div class="srow"><div class="srow-left"><div class="srow-label">版本</div></div><span style="font-size:13px;color:var(--text3)">v1.0</span></div>';
+  h+='<div class="srow"><div class="srow-left"><div class="srow-label">记录条数</div></div><span style="font-size:13px;color:var(--text3)">'+S.records.length+' 条</span></div>';
+  h+='<div class="srow"><div class="srow-left"><div class="srow-label">任务总数</div></div><span style="font-size:13px;color:var(--text3)">'+S.tasks.length+' 个</span></div>';
+  h+='</div>';
+  h+='</div>';
+  m.innerHTML=h;
+}
+function toggleCfg(key){
+  S.cfg[key]=!S.cfg[key];
+  if(key==='flashOn'){
+    startFlash();
+    if(!S.cfg.flashOn) byId('flash-banner').classList.add('hidden');
+  }
+  render();
+}
+
+/* ════════════════════════════════════════════
+   DRAG
+════════════════════════════════════════════ */
+function startDrag(e,id){S.dragId=id}
+function dropCard(e,status){
+  e.preventDefault();
+  document.querySelectorAll('.kcol').forEach(function(c){c.classList.remove('dragover')});
+  if(S.dragId==null) return;
+  var t=S.tasks.find(function(x){return x.id===S.dragId});
+  if(t){t.status=status;t.ds=ds(S.cur);}
+  S.dragId=null;render();
+}
+function dropMatrix(e,p){
+  e.preventDefault();
+  document.querySelectorAll('.mxcell').forEach(function(c){c.classList.remove('dragover')});
+  if(S.dragId==null) return;
+  var t=S.tasks.find(function(x){return x.id===S.dragId});
+  if(t) t.pri=p;
+  S.dragId=null;render();
+}
+
+/* ════════════════════════════════════════════
+   TASK ACTIONS
+════════════════════════════════════════════ */
+function delTask(id){
+  if(!confirm('确认删除此任务？')) return;
+  S.tasks=S.tasks.filter(function(t){return t.id!==id});
+  closeModal();render();
+}
+function toggleChk(id,cb){
+  var t=S.tasks.find(function(x){return x.id===id});
+  if(t){t.status=cb.checked?'done':'todo';t.prog=cb.checked?100:0}
+  render();
+}
+function markDone(id){
+  var t=S.tasks.find(function(x){return x.id===id});
+  if(t){t.status=t.status==='done'?'todo':'done';t.prog=t.status==='done'?100:0}
+  render();
+}
+function moveToInbox(id){
+  var t=S.tasks.find(function(x){return x.id===id});
+  if(t){t.loc='inbox';t.ds='';}
+  S.view='inbox';
+  render();
+}
+function postpone(id,days){
+  var t=S.tasks.find(function(x){return x.id===id});
+  if(!t) return;
+  var d=t.ds?new Date(t.ds):new Date();
+  d.setDate(d.getDate()+days);
+  t.ds=ds(d);
+  closeAllPops();render();
+}
+function postponeNextMon(id){
+  var t=S.tasks.find(function(x){return x.id===id});
+  if(!t) return;
+  var d=t.ds?new Date(t.ds):new Date();
+  var dow=d.getDay();var diff=dow===0?1:8-dow;
+  d.setDate(d.getDate()+diff);
+  t.ds=ds(d);
+  closeAllPops();render();
+}
+
+/* ════════════════════════════════════════════
+   POPUP
+════════════════════════════════════════════ */
+function togglePop(id,e){
+  e.stopPropagation();
+  var pop=byId('pop-'+id);if(!pop) return;
+  var was=pop.style.display==='block';
+  closeAllPops();
+  if(!was) pop.style.display='block';
+}
+function closeAllPops(){
+  document.querySelectorAll('.ppop').forEach(function(p){p.style.display='none'});
+}
+document.addEventListener('click',closeAllPops);
+
+/* ════════════════════════════════════════════
+   ATTACHMENTS
+════════════════════════════════════════════ */
+function addLink(){
+  var v=byId('m-link').value.trim();
+  if(!v) return;
+  if(!/^https?:\/\//i.test(v)) v='https://'+v;
+  S.links.push(v);byId('m-link').value='';renderLinks();
+}
+function removeLink(i){S.links.splice(i,1);renderLinks()}
+function renderLinks(){
+  var el=byId('link-list');if(!el) return;
+  el.innerHTML=S.links.map(function(l,i){
+    var label=l.replace(/^https?:\/\//,'').substring(0,28);
+    return '<div class="attach-chip"><svg viewBox="0 0 24 24"><path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"/></svg>'+esc(label)+'<span onclick="removeLink('+i+')" style="margin-left:4px;color:var(--text3);font-size:14px;cursor:pointer">×</span></div>';
+  }).join('');
+}
+function handleImgUpload(e){
+  Array.from(e.target.files).forEach(function(f){
+    var reader=new FileReader();
+    reader.onload=function(ev){S.imgs.push({name:f.name,src:ev.target.result});renderImgs()};
+    reader.readAsDataURL(f);
+  });
+  e.target.value='';
+}
+function removeImg(i){S.imgs.splice(i,1);renderImgs()}
+function renderImgs(){
+  var el=byId('img-list');if(!el) return;
+  el.innerHTML=S.imgs.map(function(img,i){
+    return '<div style="position:relative;display:inline-block"><img class="attach-img-preview" src="'+img.src+'" onclick="window.open(\''+img.src+'\')" title="'+esc(img.name)+'">'
+      +'<span onclick="removeImg('+i+')" style="position:absolute;top:-4px;right:-4px;background:var(--red);color:#fff;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer">×</span></div>';
+  }).join('');
+}
+
+/* ════════════════════════════════════════════
+   TASK MODAL
+════════════════════════════════════════════ */
+function updStatusBar(){
+  var v=byId('m-status').value;
+  var bar=byId('status-bar');if(bar) bar.className='status-bar '+v;
+}
+function openModalWithStatus(status){
+  openModal(null,null);
+  byId('m-status').value=status||'todo';
+  updStatusBar();
+}
+function openModal(id,priStr){
+  S.editId=id||null;S.loc='date';S.detOpen=false;S.links=[];S.imgs=[];
+  resetModal();
+  if(typeof priStr==='string'&&/^q[1-4]$/.test(priStr)){S.pri=priStr;applyP(priStr);}
+  if(id){
+    var t=S.tasks.find(function(x){return x.id===id});
+    if(t){
+      byId('m-title').value=t.title;byId('m-tag').value=t.tag||'';
+      byId('m-status').value=t.status;updStatusBar();
+      byId('m-repeat').value=t.repeat||'none';
+      byId('m-hours').value=t.hours||0;
+      byId('m-date').value=t.ds||todayDs();
+      byId('m-prog').value=t.prog||0;byId('pval').textContent=(t.prog||0)+'%';
+      byId('m-desc').value=t.desc||'';
+      S.pri=t.pri;applyP(t.pri);
+      S.links=(t.links||[]).slice();S.imgs=(t.imgs||[]).slice();
+      renderLinks();renderImgs();
+      byId('detsec').style.display='block';byId('dettxt').textContent='▲ 收起详情';S.detOpen=true;
+      byId('del-btn-wrap').innerHTML='<button class="bdel" onclick="delTask('+id+')">🗑 删除</button>';
+    }
+    byId('mtitle').textContent='编辑待办';byId('bsave').textContent='保存';
+  } else {
+    byId('mtitle').textContent='新建待办';byId('bsave').textContent='创建';
+    byId('del-btn-wrap').innerHTML='';
+  }
+  byId('overlay').classList.add('open');
+}
+function resetModal(){
+  ['m-title','m-tag','m-desc','m-link'].forEach(function(id){byId(id).value=''});
+  byId('m-status').value='todo';updStatusBar();
+  byId('m-repeat').value='none';byId('m-hours').value=0;
+  byId('m-prog').value=0;byId('pval').textContent='0%';
+  byId('detsec').style.display='none';byId('dettxt').textContent='▼ 展开详情';
+  S.detOpen=false;S.pri='q4';
+  var n=new Date(),base=ds(n);
+  byId('m-start').value=base+'T09:00';byId('m-end').value=base+'T18:00';byId('m-date').value=base;
+  applyLoc('date');applyP('q4');
+  byId('link-list').innerHTML='';byId('img-list').innerHTML='';byId('del-btn-wrap').innerHTML='';
+}
+function closeModal(){byId('overlay').classList.remove('open')}
+function ovClick(e){if(e.target===byId('overlay')) closeModal()}
+function selLoc(l){S.loc=l;applyLoc(l)}
+function applyLoc(l){
+  byId('loc-date').className='locbtn '+(l==='date'?'sdate':'sinbox');
+  byId('loc-inbox').className='locbtn '+(l==='inbox'?'sdate':'sinbox');
+  byId('tfields').style.display=l==='date'?'grid':'none';
+}
+function selP(p){S.pri=p;applyP(p)}
+function applyP(p){document.querySelectorAll('.popt').forEach(function(b){b.classList.toggle('sel',b.dataset.p===p)})}
+function togDet(){
+  S.detOpen=!S.detOpen;
+  byId('detsec').style.display=S.detOpen?'block':'none';
+  byId('dettxt').textContent=S.detOpen?'▲ 收起详情':'▼ 展开详情';
+}
+function saveTask(){
+  var title=byId('m-title').value.trim();
+  if(!title){alert('请输入任务标题');return}
+  var status=byId('m-status').value;
+  var tag=byId('m-tag').value.trim();
+  var repeat=byId('m-repeat').value;
+  var hours=parseFloat(byId('m-hours').value)||0;
+  var dateStr=byId('m-date').value||todayDs();
+  var prog=parseInt(byId('m-prog').value)||0;
+  var desc=byId('m-desc').value.trim();
+  if(prog>=100) status='done'; else if(prog>0) status='inprogress';
+  var tagType=tag.indexOf('周')>=0?'purple':'green';
+  var loc=S.loc;
+  if(S.editId!==null){
+    var t=S.tasks.find(function(x){return x.id===S.editId});
+    if(t) Object.assign(t,{title:title,desc:desc,status:status,tag:tag,tagType:tagType,pri:S.pri,prog:prog,repeat:repeat,hours:hours,ds:dateStr,links:S.links.slice(),imgs:S.imgs.slice(),loc:loc});
+  } else {
+    S.tasks.push({id:S.nid++,title:title,desc:desc,status:status,tag:tag,tagType:tagType,pri:S.pri,prog:prog,repeat:repeat,hours:hours,ds:dateStr,links:S.links.slice(),imgs:S.imgs.slice(),loc:loc});
+  }
+  closeModal();render();
+}
+
+/* ════════════════════════════════════════════
+   INIT
+════════════════════════════════════════════ */
+function init(){
+  byId('dchip').textContent=fmtDate(S.cur);
+  var n=new Date(),base=ds(n);
+  byId('m-start').value=base+'T09:00';byId('m-end').value=base+'T18:00';byId('m-date').value=base;
+  startFlash();
+  render();
+}
+init();
+</script>
+</body>
+</html>
