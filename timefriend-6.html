@@ -916,12 +916,23 @@ function ghLog(msg,color){var el=byId('gh-log');if(!el)return;el.textContent=msg
 function saveToken(){
   var inp=byId('gh-token-input');var v=inp?inp.value.trim():'';
   if(!v){ghLog('请输入 Token','var(--red)');return}
-  setToken(v);ghLog('验证中…');
-  fetch('https://api.github.com/repos/'+GH_USER+'/'+GH_REPO,{headers:{Authorization:'token '+v,'Accept':'application/vnd.github.v3+json'}})
-    .then(function(r){
-      if(r.ok){ghLog('✓ 连接成功，正在拉取数据…','var(--green)');render();ghPull();}
-      else{setToken('');ghLog('✗ Token 无效或无仓库权限','var(--red)');}
-    }).catch(function(){ghLog('✗ 网络错误','var(--red)')});
+  setToken(v);ghLog('验证中… 请稍候');
+  fetch('https://api.github.com/repos/'+GH_USER+'/'+GH_REPO,{
+    headers:{Authorization:'Bearer '+v,'Accept':'application/vnd.github.v3+json','X-GitHub-Api-Version':'2022-11-28'}
+  }).then(function(r){
+    return r.json().then(function(body){return{status:r.status,ok:r.ok,body:body}});
+  }).then(function(res){
+    if(res.ok){
+      ghLog('✓ 连接成功，正在拉取数据…','var(--green)');render();ghPull();
+    } else {
+      setToken('');
+      var msg=res.body&&res.body.message?res.body.message:'未知错误';
+      ghLog('✗ HTTP '+res.status+': '+msg,'var(--red)');
+    }
+  }).catch(function(e){
+    setToken('');
+    ghLog('✗ 网络错误: '+e.message,'var(--red)');
+  });
 }
 
 function ghFetch(path){
