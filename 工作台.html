@@ -52,17 +52,24 @@ body{font-family:'Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:
 
 /* ══ FLASH BANNER ══ */
 .flash-banner{
-  background:linear-gradient(135deg,rgba(91,110,245,.25) 0%,rgba(124,143,255,.12) 100%);
-  border-bottom:2px solid var(--accent-border);
-  border-top:none;border-left:none;border-right:none;
-  color:#c7d0ff;font-size:13px;padding:9px 20px;
+  background:linear-gradient(135deg,rgba(91,110,245,.2),rgba(124,143,255,.1));
+  border-bottom:1px solid var(--accent-border);
+  color:#c7d0ff;font-size:12.5px;padding:0 20px;
   display:flex;align-items:center;gap:10px;
-  flex-shrink:0;cursor:pointer;transition:background .2s,box-shadow .2s;
-  animation:fadeIn .3s var(--ease);position:relative;
-  box-shadow:0 3px 12px rgba(91,110,245,.18);
+  flex-shrink:0;cursor:pointer;
+  position:relative;overflow:hidden;
+  max-height:36px;transition:max-height .3s var(--ease),padding .3s var(--ease),box-shadow .2s;
+  box-shadow:0 2px 8px rgba(91,110,245,.15);
 }
-.flash-banner:hover{box-shadow:0 4px 18px rgba(91,110,245,.28)}
-html.light .flash-banner{background:linear-gradient(135deg,rgba(67,85,232,.1),rgba(91,110,245,.06));border-bottom-color:var(--accent-border);box-shadow:0 3px 12px rgba(67,85,232,.12)}
+.flash-banner.collapsed{max-height:0;padding-top:0;padding-bottom:0;border-bottom:none;box-shadow:none}
+.flash-banner:not(.collapsed){padding:7px 20px}
+.flash-banner:hover{box-shadow:0 3px 14px rgba(91,110,245,.25)}
+html.light .flash-banner{background:linear-gradient(135deg,rgba(67,85,232,.08),rgba(91,110,245,.05));border-bottom-color:var(--accent-border)}
+/* collapse toggle button fixed to right of topbar */
+.flash-toggle-btn{position:fixed;right:220px;top:0;height:46px;display:flex;align-items:center;z-index:101;padding:0 6px;cursor:pointer;border:none;background:none;color:var(--text3);font-size:11px;font-family:inherit;transition:color .15s;gap:3px}
+.flash-toggle-btn:hover{color:var(--accent2)}
+.flash-toggle-btn svg{width:12px;height:12px;transition:transform .3s var(--ease)}
+.flash-toggle-btn.collapsed svg{transform:rotate(180deg)}
 .flash-banner:hover{background:linear-gradient(135deg,rgba(91,110,245,.28),rgba(124,143,255,.18))}
 .flash-banner.hidden{display:none!important}
 html.light .flash-banner{background:linear-gradient(135deg,rgba(67,85,232,.08),rgba(91,110,245,.05));color:var(--accent)}
@@ -436,6 +443,38 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 .spill.todo{background:var(--surface2);color:var(--text3)}
 .empty-tip{text-align:center;color:var(--text3);padding:48px 0;font-size:13px}
 
+/* settings dock management */
+
+/* ══ SHORTCUT MENU (topbar button) ══ */
+.shortcut-menu-btn{height:28px;padding:0 10px;border-radius:var(--rxs);font-size:12px;cursor:pointer;color:var(--text2);border:1px solid var(--border2);background:var(--surface2);font-family:inherit;transition:all .15s;display:flex;align-items:center;gap:5px;white-space:nowrap;flex-shrink:0}
+.shortcut-menu-btn:hover,.shortcut-menu-btn.active{background:var(--accent-bg);color:var(--accent2);border-color:var(--accent-border)}
+.shortcut-menu-btn svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.shortcut-popup{position:fixed;top:48px;z-index:500;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);box-shadow:0 12px 40px rgba(0,0,0,.35);padding:12px;min-width:200px;max-width:320px;display:none;animation:fadeIn .15s var(--ease)}
+.shortcut-popup.open{display:block}
+.shortcut-popup-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.shortcut-popup-item{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border-radius:var(--rs);cursor:pointer;border:none;background:transparent;transition:background .12s,transform .12s;font-family:inherit}
+.shortcut-popup-item:hover{background:var(--surface2);transform:translateY(-2px)}
+.shortcut-popup-icon{width:38px;height:38px;border-radius:10px;background:var(--surface2);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:20px;overflow:hidden;transition:box-shadow .12s}
+.shortcut-popup-item:hover .shortcut-popup-icon{box-shadow:0 3px 10px rgba(0,0,0,.2);border-color:var(--border2)}
+.shortcut-popup-icon img{width:22px;height:22px;object-fit:contain;border-radius:4px}
+.shortcut-popup-name{font-size:10.5px;color:var(--text2);text-align:center;max-width:52px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.3}
+.shortcut-popup-footer{border-top:1px solid var(--border);margin-top:10px;padding-top:8px;display:flex;justify-content:center}
+.shortcut-popup-manage{font-size:11.5px;color:var(--text3);cursor:pointer;background:none;border:none;font-family:inherit;transition:color .12s}
+.shortcut-popup-manage:hover{color:var(--accent2)}
+.shortcut-popup-empty{text-align:center;color:var(--text3);font-size:12px;padding:12px 0}
+
+
+
+/* settings dock management */
+.dock-manage-grid{display:flex;flex-direction:column;gap:6px;margin-top:8px}
+.dock-manage-item{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--surface2);border-radius:var(--rs);border:1px solid var(--border)}
+.dock-manage-emoji{font-size:20px;width:32px;text-align:center;flex-shrink:0}
+.dock-manage-info{flex:1;min-width:0}
+.dock-manage-name{font-size:12.5px;font-weight:500;color:var(--text1)}
+.dock-manage-url{font-size:11px;color:var(--text3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dock-manage-del{background:none;border:none;color:var(--text3);cursor:pointer;padding:4px 7px;border-radius:4px;font-size:13px;transition:all .15s;flex-shrink:0}
+.dock-manage-del:hover{background:var(--red-bg);color:var(--red)}
+
 /* ══ ANALYSIS ══ */
 .analysis-wrap{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;min-height:0}
 .analysis-wrap::-webkit-scrollbar{width:3px}
@@ -479,7 +518,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 <body>
 
 <!-- FLASH BANNER -->
-<div class="flash-banner hidden" id="flash-strip" onclick="flashClick(event)" ondblclick="flashDblClick(event)" onpointerdown="flashPointerDown(event)" onpointerup="flashPointerUp(event)" onpointerleave="flashPointerUp(event)">
+<div class="flash-banner hidden collapsed" id="flash-strip" onclick="flashClick(event)" ondblclick="flashDblClick(event)" onpointerdown="flashPointerDown(event)" onpointerup="flashPointerUp(event)" onpointerleave="flashPointerUp(event)">
   <span class="flash-icon" id="flash-icon">✨</span>
   <span class="flash-text" id="flash-text">正在加载灵感…</span>
   <span class="flash-liked" id="flash-liked">♡</span>
@@ -503,13 +542,22 @@ input[type=range]{width:100%;accent-color:var(--accent)}
 
   <button class="nav-tab" id="tab-analysis" onclick="switchPage('analysis')">数据分析</button>
   <button class="nav-tab" id="tab-settings" onclick="switchPage('settings')">设置</button>
+  <button class="shortcut-menu-btn" id="shortcut-menu-btn" onclick="toggleShortcutMenu(event)" title="网站快捷入口">
+    <svg viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    入口
+  </button>
   <button class="theme-btn" onclick="toggleTheme()" title="切换主题">
     <svg id="ti-moon" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
     <svg id="ti-sun" style="display:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
   </button>
   <div class="nav-sep"></div>
-  <div class="logo"><span class="logo-text">工作台</span><span class="logo-ver">v1.5</span></div>
+  <div class="logo"><span class="logo-text">工作台</span><span class="logo-ver">v1.6</span></div>
 </div>
+<!-- Flash collapse toggle (sits over topbar right area) -->
+<button class="flash-toggle-btn collapsed" id="flash-toggle-btn" onclick="toggleFlashCollapse()" title="展开/收起灵感展示">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"/></svg>
+  <span id="flash-toggle-label">灵感</span>
+</button>
 
 <!-- TOOLBAR -->
 <div class="toolbar" id="toolbar">
@@ -741,6 +789,18 @@ input[type=range]{width:100%;accent-color:var(--accent)}
   </div>
 </div>
 
+
+
+<!-- SHORTCUT POPUP -->
+<div class="shortcut-popup" id="shortcut-popup">
+  <div class="shortcut-popup-grid" id="shortcut-popup-grid"></div>
+  <div class="shortcut-popup-footer">
+    <button class="shortcut-popup-manage" onclick="switchPage('settings');S.settingsTab='shortcuts';render();closeShortcutMenu()">⚙ 管理入口</button>
+  </div>
+</div>
+
+
+
 <script>
 /* ══ SOLID ICONS ══ */
 var IC={
@@ -862,7 +922,7 @@ function ghPull(){
   .then(function(res){
     if(res[0]){S.tasks=res[0];S.nid=res[0].reduce(function(m,t){return Math.max(m,t.id+1)},S.nid)}
     if(res[1]){S.records=res[1];S.recId=res[1].reduce(function(m,r){return Math.max(m,r.id+1)},S.recId)}
-    if(res[2]){if(res[2].recTypes)S.recTypes=res[2].recTypes;if(res[2].cfg)Object.assign(S.cfg,res[2].cfg);if(res[2].taskTags&&res[2].taskTags.length)S.taskTags=res[2].taskTags}
+    if(res[2]){if(res[2].recTypes)S.recTypes=res[2].recTypes;if(res[2].cfg)Object.assign(S.cfg,res[2].cfg);if(res[2].taskTags&&res[2].taskTags.length)S.taskTags=res[2].taskTags;if(res[2].shortcuts)S.shortcuts=res[2].shortcuts;if(res[2].shortcutId)S.shortcutId=res[2].shortcutId;}
     ghLog('✓ 已拉取 — 任务 '+S.tasks.length+' 个 · 记录 '+S.records.length+' 条','var(--green)');
     localSave(); /* mirror GitHub data to local */
     render();startFlash();
@@ -870,7 +930,7 @@ function ghPull(){
 }
 function ghPushAll(){
   if(!getToken())return;
-  Promise.all([ghWrite(GH_DIR+'/tasks.json',S.tasks,'同步任务'),ghWrite(GH_DIR+'/records.json',S.records,'同步记录'),ghWrite(GH_DIR+'/config.json',{recTypes:S.recTypes,cfg:S.cfg,taskTags:S.taskTags},'同步配置')])
+  Promise.all([ghWrite(GH_DIR+'/tasks.json',S.tasks,'同步任务'),ghWrite(GH_DIR+'/records.json',S.records,'同步记录'),ghWrite(GH_DIR+'/config.json',{recTypes:S.recTypes,cfg:S.cfg,taskTags:S.taskTags,shortcuts:S.shortcuts,shortcutId:S.shortcutId},'同步配置')])
   .then(function(){ghLog('✓ 已推送 · '+new Date().toLocaleTimeString(),'var(--green)')})
   .catch(function(e){ghLog('✗ 推送失败：'+e,'var(--red)')});
 }
@@ -879,7 +939,7 @@ var LS_KEY='tf_local_v1';
 function localSave(){
   try{
     localStorage.setItem(LS_KEY,JSON.stringify({
-      tasks:S.tasks,records:S.records,recTypes:S.recTypes,cfg:S.cfg,taskTags:S.taskTags,nid:S.nid,recId:S.recId,
+      tasks:S.tasks,records:S.records,recTypes:S.recTypes,cfg:S.cfg,taskTags:S.taskTags,shortcuts:S.shortcuts,shortcutId:S.shortcutId,nid:S.nid,recId:S.recId,
       savedAt:Date.now()
     }));
   }catch(e){/* storage full or unavailable */}
@@ -893,6 +953,8 @@ function localLoad(){
     if(d.records){S.records=d.records;S.recId=d.recId||S.recId}
     if(d.recTypes&&d.recTypes.length)S.recTypes=d.recTypes;
     if(d.taskTags&&d.taskTags.length)S.taskTags=d.taskTags;
+    if(d.shortcuts)S.shortcuts=d.shortcuts;
+    if(d.shortcutId)S.shortcutId=d.shortcutId;
     if(d.cfg)Object.assign(S.cfg,d.cfg);
     return d.savedAt||0;
   }catch(e){return false}
@@ -907,6 +969,24 @@ function updateInboxBadge(){
 
 /* ══ FLASH ══ */
 var flashClickTimer=null;
+var _flashCollapsed=true; /* start collapsed */
+function toggleFlashCollapse(){
+  _flashCollapsed=!_flashCollapsed;
+  var banner=byId('flash-strip');
+  var btn=byId('flash-toggle-btn');
+  var lbl=byId('flash-toggle-label');
+  if(_flashCollapsed){
+    banner.classList.add('collapsed');
+    if(btn)btn.classList.add('collapsed');
+    if(lbl)lbl.textContent='灵感';
+  } else {
+    banner.classList.remove('collapsed');
+    if(banner.classList.contains('hidden'))showFlash();
+    if(btn)btn.classList.remove('collapsed');
+    if(lbl)lbl.textContent='收起';
+  }
+  try{localStorage.setItem('tf-flash-collapsed',_flashCollapsed?'1':'0')}catch(e){}
+}
 function startFlash(){
   clearInterval(flashTimer);if(!S.cfg.flashOn)return;
   showFlash();flashTimer=setInterval(showFlash,(S.cfg.flashInterval||30)*60000);
@@ -939,9 +1019,19 @@ function showFlash(){
   var el=byId('flash-text');
   el.innerHTML='<span style="font-weight:700;color:var(--text1)">'+esc(parts.main)+'</span>'+(parts.sub?'<span style="color:var(--text3);font-weight:400;margin-left:8px">'+esc(parts.sub)+'</span>':'');
   var liked=byId('flash-liked');liked.textContent='♡';liked.style.color='var(--text3)';
-  byId('flash-strip').classList.remove('hidden');
+  var strip=byId('flash-strip');
+  strip.classList.remove('hidden');
+  if(_flashCollapsed){strip.classList.add('collapsed');}
+  else{strip.classList.remove('collapsed');}
 }
-function dismissFlash(){byId('flash-strip').classList.add('hidden')}
+function dismissFlash(){
+  _flashCollapsed=true;
+  var banner=byId('flash-strip');
+  if(banner)banner.classList.add('collapsed');
+  var btn=byId('flash-toggle-btn');if(btn)btn.classList.add('collapsed');
+  var lbl=byId('flash-toggle-label');if(lbl)lbl.textContent='灵感';
+  try{localStorage.setItem('tf-flash-collapsed','1')}catch(e){}
+}
 /* single click = like, double click = edit thought, long press = next */
 var flashLongPressTimer=null,flashPressStart=0;
 function flashPointerDown(e){
@@ -1731,8 +1821,8 @@ function drawTodayDonut(pct){
 /* ══ SETTINGS ══ */
 function renderSettings(m){
   var c=S.cfg,connected=!!getToken();
-  var tabs=['github','flash','types','about'];
-  var labels={'github':'☁ 存储','flash':'✨ 灵感展示','types':'📂 类型管理','about':'📋 关于'};
+  var tabs=['github','flash','types','shortcuts','about'];
+  var labels={'github':'☁ 存储','flash':'✨ 灵感展示','types':'📂 类型管理','shortcuts':'🔗 快捷入口','about':'📋 关于'};
   var h='<div class="settings-wrap"><div class="stabs">';
   tabs.forEach(function(t){h+='<button class="stab'+(S.settingsTab===t?' active':'')+'" onclick="S.settingsTab=\''+t+'\';render()">'+labels[t]+'</button>'});
   h+='</div><div class="spanel">';
@@ -1758,9 +1848,15 @@ function renderSettings(m){
     h+='<div class="type-chips">';
     S.recTypes.forEach(function(tp,i){h+='<div class="type-chip">'+esc(tp)+'<button class="type-chip-del" onclick="delRecType('+i+')">×</button></div>'});
     h+='</div><div class="type-add-row"><input class="type-add-input" id="new-type-input" placeholder="新类型名称" maxlength="10"><button onclick="addRecType()" class="btn btn-ghost" style="height:32px;padding:0 12px;font-size:12px">添加</button></div></div>';
+  } else if(S.settingsTab==='shortcuts'){
+    h+='<div id="shortcuts-panel"></div>';
+    h+='</div></div>';
+    m.innerHTML=h;
+    renderShortcutsSettings(byId('shortcuts-panel'));
+    return;
   } else {
     h+='<div class="scard"><h3>关于</h3>';
-    h+='<div class="srow"><div class="srow-label">版本</div><span style="font-size:12px;color:var(--text3)">v1.5</span></div>';
+    h+='<div class="srow"><div class="srow-label">版本</div><span style="font-size:12px;color:var(--text3)">v1.6</span></div>';
     h+='<div class="srow"><div class="srow-label">仓库</div><span style="font-size:12px;color:var(--text3)">'+GH_USER+' / '+GH_REPO+'</span></div>';
     h+='<div class="srow"><div class="srow-label">存储文件夹</div><span style="font-size:12px;color:var(--text3)">'+GH_DIR+'</span></div>';
     h+='<div class="srow"><div class="srow-label">任务数</div><span style="font-size:12px;color:var(--text3)">'+S.tasks.length+'</span></div>';
@@ -1950,6 +2046,160 @@ function saveTask(){
   closeModal();render();autoPush();
 }
 
+/* ══ LEFT DOCK ══ */
+/* default shortcuts */
+if(!S.shortcuts){
+  S.shortcuts=[
+    {id:1,name:'OA系统',url:'',emoji:'🏢',openMode:'new-tab'},
+    {id:2,name:'会议室预订',url:'',emoji:'📅',openMode:'new-tab'},
+    {id:3,name:'手机标准',url:'',emoji:'📱',openMode:'new-tab'}
+  ];
+  S.shortcutId=4;
+}
+
+function renderShortcutPopup(){
+  var grid=byId('shortcut-popup-grid');if(!grid)return;
+  var items=S.shortcuts||[];
+  if(!items.length){
+    grid.innerHTML='<div class="shortcut-popup-empty">暂无快捷入口<br>点击下方「管理入口」添加</div>';
+    return;
+  }
+  var h='';
+  items.forEach(function(item){
+    var faviconUrl=item.url?('https://www.google.com/s2/favicons?domain='+encodeURIComponent(item.url)+'&sz=32'):'';
+    var itemJson=JSON.stringify(item).replace(/"/g,'&quot;');
+    h+='<button class="shortcut-popup-item" onclick="openDockSite('+itemJson+');closeShortcutMenu()">';
+    h+='<div class="shortcut-popup-icon">';
+    if(item.imgSrc){
+      h+='<img src="'+item.imgSrc+'" style="width:100%;height:100%;object-fit:cover;border-radius:9px" alt="">';
+    } else if(faviconUrl&&item.url){
+      h+='<img src="'+faviconUrl+'" onerror="this.style.display=\'none\';this.nextSibling.style.display=\'flex\'" alt="">';
+      h+='<span style="display:none;align-items:center;justify-content:center;font-size:20px;width:100%;height:100%">'+item.emoji+'</span>';
+    } else {
+      h+='<span style="font-size:20px">'+item.emoji+'</span>';
+    }
+    h+='</div>';
+    h+='<span class="shortcut-popup-name">'+esc(item.name)+'</span>';
+    h+='</button>';
+  });
+  grid.innerHTML=h;
+}
+function toggleShortcutMenu(e){
+  e.stopPropagation();
+  var popup=byId('shortcut-popup');
+  var btn=byId('shortcut-menu-btn');
+  if(!popup)return;
+  var isOpen=popup.classList.contains('open');
+  closeShortcutMenu();
+  if(!isOpen){
+    renderShortcutPopup();
+    /* position popup below the button */
+    var rect=btn.getBoundingClientRect();
+    popup.style.left=rect.left+'px';
+    popup.classList.add('open');
+    btn.classList.add('active');
+  }
+}
+function closeShortcutMenu(){
+  var popup=byId('shortcut-popup');
+  var btn=byId('shortcut-menu-btn');
+  if(popup)popup.classList.remove('open');
+  if(btn)btn.classList.remove('active');
+}
+/* close on outside click */
+document.addEventListener('click',function(e){
+  var popup=byId('shortcut-popup');
+  if(popup&&popup.classList.contains('open')&&!popup.contains(e.target))closeShortcutMenu();
+});
+
+
+function openDockSite(item){
+  if(!item.url){showToast('请先在设置中配置网址');return}
+  window.open(item.url,'_blank');
+}
+
+
+
+/* Settings shortcuts tab render */
+function renderShortcutsSettings(container){
+  var h='<div class="scard"><h3>快捷入口管理</h3>';
+  h+='<div style="font-size:11.5px;color:var(--text3);margin-bottom:10px">配置左侧 Dock 栏的网站快捷入口，鼠标移到左边缘即可触发</div>';
+  h+='<div class="dock-manage-grid" id="dock-manage-grid">';
+  (S.shortcuts||[]).forEach(function(item,i){
+    h+='<div class="dock-manage-item">';
+    h+='<div class="dock-manage-emoji" style="position:relative;overflow:hidden;border-radius:6px;width:36px;height:36px;display:flex;align-items:center;justify-content:center;background:var(--surface3)">';
+    if(item.imgSrc){h+='<img src="'+item.imgSrc+'" style="width:100%;height:100%;object-fit:cover" alt="">';}
+    else{h+='<span style="font-size:20px">'+item.emoji+'</span>';}
+    h+='</div>';
+    h+='<div class="dock-manage-info"><div class="dock-manage-name">'+esc(item.name)+'</div><div class="dock-manage-url">'+esc(item.url||'未配置网址')+'</div></div>';
+    h+='<span style="font-size:11px;color:var(--teal);padding:2px 6px;background:var(--teal-bg);border-radius:4px;flex-shrink:0">↗ 新标签</span>';
+    h+='<button class="dock-manage-del" onclick="editShortcut('+i+')">✎</button>';
+    h+='<button class="dock-manage-del" onclick="delShortcut('+i+')">×</button>';
+    h+='</div>';
+  });
+  h+='</div>';
+  /* Add new shortcut form */
+  h+='<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border)">';
+  h+='<div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px">添加新快捷入口</div>';
+  h+='<div style="display:grid;grid-template-columns:60px 1fr 1fr;gap:6px;margin-bottom:6px">';
+  h+='<div style="position:relative;width:60px;height:38px">';
+  h+='<input id="sc-emoji" placeholder="🌐" maxlength="4" style="width:100%;height:100%;padding:0 6px;text-align:center;font-size:18px;border:1px solid var(--border2);border-radius:var(--rs);background:var(--surface2);color:var(--text1);font-family:inherit;outline:none;cursor:pointer" onclick="triggerScImgUpload()" title="点击上传图片或直接输入emoji">';
+  h+='<input type="file" id="sc-img-upload" accept="image/*" style="display:none" onchange="handleScImgUpload(event)">';
+  h+='<div id="sc-img-preview" style="position:absolute;inset:0;border-radius:var(--rs);overflow:hidden;pointer-events:none;display:none"><img id="sc-img-preview-img" style="width:100%;height:100%;object-fit:cover"></div>';
+  h+='</div>';
+  h+='<input id="sc-name" placeholder="网站名称" style="padding:7px 10px;border:1px solid var(--border2);border-radius:var(--rs);font-size:12.5px;background:var(--surface2);color:var(--text1);font-family:inherit;outline:none">';
+  h+='<select id="sc-mode" style="padding:7px 10px;border:1px solid var(--border2);border-radius:var(--rs);font-size:12.5px;background:var(--surface2);color:var(--text1);font-family:inherit;outline:none">';
+  h+='<option value="new-tab">↗ 新标签打开</option><option value="iframe">▣ 侧边嵌入</option></select>';
+  h+='</div>';
+  h+='<input id="sc-url" placeholder="https://..." style="width:100%;padding:7px 10px;border:1px solid var(--border2);border-radius:var(--rs);font-size:12.5px;background:var(--surface2);color:var(--text1);font-family:inherit;outline:none;margin-bottom:6px">';
+  h+='<button onclick="addShortcut()" class="btn btn-primary" style="width:100%;height:34px;font-size:12.5px">添加到 Dock</button>';
+  h+='</div></div>';
+  container.innerHTML=h;
+}
+
+var _scImgSrc='';
+function triggerScImgUpload(){var el=byId('sc-img-upload');if(el)el.click();}
+function handleScImgUpload(e){
+  var f=e.target.files[0];if(!f)return;
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    _scImgSrc=ev.target.result;
+    var prev=byId('sc-img-preview');var img=byId('sc-img-preview-img');
+    if(prev&&img){img.src=_scImgSrc;prev.style.display='block';}
+    var inp=byId('sc-emoji');if(inp)inp.value='';
+  };
+  reader.readAsDataURL(f);e.target.value='';
+}
+function addShortcut(){
+  var name=(byId('sc-name')||{}).value&&byId('sc-name').value.trim();
+  var url=(byId('sc-url')||{}).value&&byId('sc-url').value.trim();
+  var emoji=(byId('sc-emoji')||{}).value&&byId('sc-emoji').value.trim()||'🌐';
+  var mode=(byId('sc-mode')||{}).value||'new-tab';
+  if(!name){showToast('请填写网站名称');return}
+  if(url&&!/^https?:\/\//i.test(url))url='https://'+url;
+  if(!S.shortcuts)S.shortcuts=[];
+  S.shortcuts.push({id:S.shortcutId++,name:name,url:url||'',emoji:emoji,imgSrc:_scImgSrc||'',openMode:mode});
+  _scImgSrc='';
+  autoPush();renderSettings(byId('main'));
+}
+function delShortcut(i){
+  if(!confirm('确认删除？'))return;
+  S.shortcuts.splice(i,1);autoPush();renderSettings(byId('main'));
+}
+
+function editShortcut(i){
+  var item=S.shortcuts[i];if(!item)return;
+  var newUrl=prompt('修改网址（当前：'+(item.url||'未设置')+'）',item.url||'https://');
+  if(newUrl===null)return;
+  if(newUrl&&!/^https?:\/\//i.test(newUrl))newUrl='https://'+newUrl;
+  item.url=newUrl||'';
+  var newName=prompt('修改名称（当前：'+item.name+'）',item.name);
+  if(newName!==null&&newName.trim())item.name=newName.trim();
+  var newEmoji=prompt('修改图标 emoji（当前：'+item.emoji+'）',item.emoji);
+  if(newEmoji!==null&&newEmoji.trim())item.emoji=newEmoji.trim();
+  autoPush();renderSettings(byId('main'));
+}
+
 /* ══ THEME ══ */
 function toggleTheme(){
   var isLight=document.documentElement.classList.toggle('light');
@@ -1972,8 +2222,13 @@ function init(){
     var agoStr=ago<60?ago+'秒前':ago<3600?Math.round(ago/60)+'分钟前':Math.round(ago/3600)+'小时前';
     console.log('[本地备份] 已恢复，保存于 '+agoStr);
   }
+  /* restore flash collapsed state */
+  try{var fc=localStorage.getItem('tf-flash-collapsed');if(fc==='0'){_flashCollapsed=false;var btn=byId('flash-toggle-btn');if(btn)btn.classList.remove('collapsed');var lbl=byId('flash-toggle-label');if(lbl)lbl.textContent='收起';}}catch(e){}
   startFlash();
   updateInboxBadge();
+  /* init dock shortcuts if not set */
+  if(!S.shortcuts){S.shortcuts=[{id:1,name:'OA系统',url:'',emoji:'🏢',openMode:'new-tab'},{id:2,name:'会议室预订',url:'',emoji:'📅',openMode:'new-tab'},{id:3,name:'手机标准',url:'',emoji:'📱',openMode:'new-tab'}];S.shortcutId=4;}
+  /* shortcut popup ready (renders on demand) */
   if(getToken()){
     /* GitHub pulls latest and overwrites local */
     ghPull();
