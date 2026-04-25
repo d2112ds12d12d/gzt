@@ -134,7 +134,7 @@
     "id": 9,
     "title": "`11111",
     "desc": "",
-    "status": "done",
+    "status": "cancelled",
     "tag": "",
     "tagType": "green",
     "pri": "q4",
@@ -150,13 +150,13 @@
       }
     ],
     "loc": "date",
-    "order": 5
+    "order": 1
   },
   {
     "id": 10,
     "title": "开会",
     "desc": "",
-    "status": "inprogress",
+    "status": "todo",
     "tag": "",
     "tagType": "green",
     "pri": "q4",
@@ -167,7 +167,7 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 6
+    "order": 3
   },
   {
     "id": 11,
