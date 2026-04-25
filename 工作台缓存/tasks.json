@@ -153,7 +153,9 @@
     "repeat": "none",
     "hours": 0,
     "ds": "2026-04-27",
-    "links": [],
+    "links": [
+      "https://doc.weixin.qq.com/mind/m4_ASMAYgabAOkCNmDvId8HcTIuGiuIK?scode=AJ4AfQfgAAw1IlTbDjASMAYgabAOk"
+    ],
     "imgs": [],
     "loc": "date",
     "order": 4
