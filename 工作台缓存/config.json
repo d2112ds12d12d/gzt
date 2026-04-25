@@ -34,7 +34,14 @@
       "url": "https://doc.weixin.qq.com/sheet/e3_ANkABQbsAOkQHPtZVP1TNmzVfW75M?scode=AJ4AfQfgAAwupK70AaASMAYgabAOk&tab=35breu",
       "emoji": "🌐",
       "openMode": "new-tab"
+    },
+    {
+      "id": 6,
+      "name": "现象值",
+      "url": "https://doc.weixin.qq.com/sheet/e3_AAcAzwYpAOosVvs6GslSnyfZjmqO9?scode=AJ4AfQfgAAwibJsiIVASMAYgabAOk&tab=cm2hpi",
+      "emoji": "🌐",
+      "openMode": "new-tab"
     }
   ],
-  "shortcutId": 6
+  "shortcutId": 7
 }
