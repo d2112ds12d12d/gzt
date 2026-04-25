@@ -51,5 +51,22 @@
     "imgs": [],
     "loc": "date",
     "order": 2
+  },
+  {
+    "id": 15,
+    "title": "拆修专项开始时间确认",
+    "desc": "月考后的刷题任务啥时候开始，怎样的规则",
+    "status": "todo",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "none",
+    "hours": 0,
+    "ds": "2026-04-25",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 3
   }
 ]
