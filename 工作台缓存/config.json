@@ -41,7 +41,14 @@
       "url": "https://doc.weixin.qq.com/sheet/e3_AAcAzwYpAOosVvs6GslSnyfZjmqO9?scode=AJ4AfQfgAAwibJsiIVASMAYgabAOk&tab=cm2hpi",
       "emoji": "🌐",
       "openMode": "new-tab"
+    },
+    {
+      "id": 7,
+      "name": "学堂",
+      "url": "https://wxdaxue.zhuanspirit.com/admin/?t=1709516884399#/",
+      "emoji": "🌐",
+      "openMode": "new-tab"
     }
   ],
-  "shortcutId": 7
+  "shortcutId": 8
 }
