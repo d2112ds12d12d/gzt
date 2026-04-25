@@ -14,7 +14,7 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 1
+    "order": 0
   },
   {
     "id": 13,
@@ -50,7 +50,7 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 2
+    "order": 1
   },
   {
     "id": 15,
@@ -105,7 +105,7 @@
     ],
     "imgs": [],
     "loc": "date",
-    "order": 4
+    "order": 2
   },
   {
     "id": 19,
@@ -122,7 +122,7 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 5
+    "order": 4
   },
   {
     "id": 20,
@@ -166,18 +166,18 @@
     "id": 22,
     "title": "固定任务盘点",
     "desc": "",
-    "status": "done",
+    "status": "inprogress",
     "tag": "工作提效",
     "tagType": "green",
     "pri": "q4",
-    "prog": 100,
+    "prog": 0,
     "repeat": "none",
     "hours": 0,
     "ds": "2026-04-27",
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 5
+    "order": 3
   },
   {
     "id": 23,
