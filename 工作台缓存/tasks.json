@@ -132,7 +132,7 @@
     "id": 9,
     "title": "`11111",
     "desc": "",
-    "status": "inprogress",
+    "status": "done",
     "tag": "",
     "tagType": "green",
     "pri": "q4",
@@ -147,6 +147,7 @@
         "src": "https://raw.githubusercontent.com/d2112ds12d12d/gzt/main/工作台缓存/images/1777088817633_IMG_0164_2.HEIC"
       }
     ],
-    "loc": "date"
+    "loc": "date",
+    "order": 3
   }
 ]
