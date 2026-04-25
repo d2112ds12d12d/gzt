@@ -179,7 +179,7 @@
     "id": 22,
     "title": "固定任务盘点",
     "desc": "",
-    "status": "todo",
+    "status": "inprogress",
     "tag": "工作提效",
     "tagType": "green",
     "pri": "q4",
@@ -190,7 +190,7 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 6
+    "order": 5
   },
   {
     "id": 23,
