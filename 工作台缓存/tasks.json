@@ -1,41 +1,19 @@
 [
   {
-    "id": 2,
-    "title": "等昨日差异确认，再统计 T-7 尾部人员",
+    "id": 12,
+    "title": "近期培训数据更新到公表",
     "desc": "",
-    "status": "done",
-    "tag": "一次性任务",
-    "tagType": "green",
+    "status": "todo",
+    "tag": "每周待办",
+    "tagType": "purple",
     "pri": "q4",
-    "prog": 100,
-    "repeat": "none",
+    "prog": 0,
+    "repeat": "weekly",
     "hours": 0,
     "ds": "2026-04-25",
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 2
-  },
-  {
-    "id": 9,
-    "title": "`11111",
-    "desc": "",
-    "status": "cancelled",
-    "tag": "",
-    "tagType": "green",
-    "pri": "q4",
-    "prog": 0,
-    "repeat": "none",
-    "hours": 0,
-    "ds": "2026-04-25",
-    "links": [],
-    "imgs": [
-      {
-        "name": "IMG_0164 2.HEIC",
-        "src": "https://raw.githubusercontent.com/d2112ds12d12d/gzt/main/工作台缓存/images/1777088817633_IMG_0164_2.HEIC"
-      }
-    ],
-    "loc": "date",
-    "order": 1
+    "order": 0
   }
 ]
