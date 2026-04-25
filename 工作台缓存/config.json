@@ -9,5 +9,12 @@
     "flashOn": true,
     "flashInterval": 5,
     "flashTypes": []
-  }
+  },
+  "taskTags": [
+    "日常待办",
+    "每周待办",
+    "每月待办",
+    "工作提效",
+    "日常工作"
+  ]
 }
