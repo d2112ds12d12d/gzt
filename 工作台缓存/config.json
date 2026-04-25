@@ -41,7 +41,14 @@
       "url": "",
       "emoji": "📱",
       "openMode": "new-tab"
+    },
+    {
+      "id": 4,
+      "name": "11",
+      "url": "https://doc.weixin.qq.com/sheet/e3_ANkABQbsAOkQHPtZVP1TNmzVfW75M?scode=AJ4AfQfgAAwupK70AaASMAYgabAOk&tab=35breu",
+      "emoji": "🌐",
+      "openMode": "iframe"
     }
   ],
-  "shortcutId": 4
+  "shortcutId": 5
 }
