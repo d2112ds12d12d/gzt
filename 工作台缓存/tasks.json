@@ -225,7 +225,9 @@
     "repeat": "none",
     "hours": 0,
     "ds": "2026-04-27",
-    "links": [],
+    "links": [
+      "https://oa.zhuanspirit.com/oa_meeting/reserve-meetroom"
+    ],
     "imgs": [],
     "loc": "date",
     "order": 8
