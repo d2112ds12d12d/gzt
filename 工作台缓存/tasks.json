@@ -33,38 +33,6 @@
     "order": 2
   },
   {
-    "id": 3,
-    "title": "完成 X-ray 考试模块排期",
-    "desc": "",
-    "status": "todo",
-    "tag": "工作",
-    "tagType": "green",
-    "pri": "q1",
-    "prog": 0,
-    "repeat": "none",
-    "hours": 2,
-    "ds": "2026-04-25",
-    "links": [],
-    "imgs": [],
-    "loc": "date"
-  },
-  {
-    "id": 5,
-    "title": "手机拆修答疑案例培训",
-    "desc": "",
-    "status": "todo",
-    "tag": "培训",
-    "tagType": "purple",
-    "pri": "q3",
-    "prog": 0,
-    "repeat": "none",
-    "hours": 2,
-    "ds": "2026-04-25",
-    "links": [],
-    "imgs": [],
-    "loc": "date"
-  },
-  {
     "id": 9,
     "title": "`11111",
     "desc": "",
