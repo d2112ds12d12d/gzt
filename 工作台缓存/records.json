@@ -1,0 +1,40 @@
+[
+  {
+    "id": 101,
+    "type": "idea",
+    "content": "用颜色深浅来表达任务优先级，比图标更直觉",
+    "tags": [
+      "设计",
+      "产品"
+    ],
+    "link": "",
+    "imgSrc": "",
+    "flash": true,
+    "ts": 1776915693607
+  },
+  {
+    "id": 102,
+    "type": "quote",
+    "content": "\"最好的工具是你真正会用的那一个。\" — 某篇效率文章",
+    "tags": [
+      "效率"
+    ],
+    "link": "",
+    "imgSrc": "",
+    "flash": true,
+    "ts": 1777002093607
+  },
+  {
+    "id": 103,
+    "type": "note",
+    "content": "GTD 核心：收集→处理→组织→回顾→执行。收集箱是入口，处理是关键。",
+    "tags": [
+      "GTD",
+      "效率"
+    ],
+    "link": "https://gtd.com",
+    "imgSrc": "",
+    "flash": false,
+    "ts": 1777084893607
+  }
+]
