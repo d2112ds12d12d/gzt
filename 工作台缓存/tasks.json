@@ -124,7 +124,9 @@
     "repeat": "none",
     "hours": 0,
     "ds": "2026-04-25",
-    "links": [],
+    "links": [
+      "https://www.xiaohongshu.com/search_result?keyword=github%2520%25E5%2588%259B%25E5%25BB%25BA%25E6%2596%2587%25E4%25BB%25B6%25E5%25A4%25B9&source=web_explore_feed"
+    ],
     "imgs": [],
     "loc": "date"
   },
