@@ -48,7 +48,15 @@
       "url": "https://wxdaxue.zhuanspirit.com/admin/?t=1709516884399#/",
       "emoji": "🌐",
       "openMode": "new-tab"
+    },
+    {
+      "id": 8,
+      "name": "考试计算",
+      "url": "https://d2112ds12d12d.github.io/gzt/%E8%80%83%E8%AF%95%E6%95%B0%E6%8D%AE%E5%A4%84%E7%90%86.html",
+      "emoji": "🌐",
+      "imgSrc": "",
+      "openMode": "new-tab"
     }
   ],
-  "shortcutId": 8
+  "shortcutId": 9
 }
