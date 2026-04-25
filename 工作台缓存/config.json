@@ -1,0 +1,13 @@
+{
+  "recTypes": [
+    "灵感",
+    "笔记",
+    "摘录",
+    "链接"
+  ],
+  "cfg": {
+    "flashOn": true,
+    "flashInterval": 30,
+    "flashTypes": []
+  }
+}
