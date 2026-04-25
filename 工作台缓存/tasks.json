@@ -49,22 +49,6 @@
     "loc": "date"
   },
   {
-    "id": 4,
-    "title": "质量数据周报更新",
-    "desc": "",
-    "status": "inprogress",
-    "tag": "数据",
-    "tagType": "green",
-    "pri": "q2",
-    "prog": 40,
-    "repeat": "none",
-    "hours": 1,
-    "ds": "2026-04-25",
-    "links": [],
-    "imgs": [],
-    "loc": "date"
-  },
-  {
     "id": 5,
     "title": "手机拆修答疑案例培训",
     "desc": "",
