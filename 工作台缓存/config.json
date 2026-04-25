@@ -19,5 +19,29 @@
     "每月待办",
     "工作提效",
     "日常工作"
-  ]
+  ],
+  "shortcuts": [
+    {
+      "id": 1,
+      "name": "会议室预定",
+      "url": "https://oa.zhuanspirit.com/oa_meeting/reserve-meetroom",
+      "emoji": "🏢",
+      "openMode": "new-tab"
+    },
+    {
+      "id": 2,
+      "name": "会议室预订",
+      "url": "",
+      "emoji": "📅",
+      "openMode": "new-tab"
+    },
+    {
+      "id": 3,
+      "name": "手机标准",
+      "url": "",
+      "emoji": "📱",
+      "openMode": "new-tab"
+    }
+  ],
+  "shortcutId": 4
 }
