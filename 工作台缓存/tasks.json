@@ -138,5 +138,39 @@
     "imgs": [],
     "loc": "date",
     "order": 7
+  },
+  {
+    "id": 20,
+    "title": "杨秀峰的现象值标准培训",
+    "desc": "",
+    "status": "todo",
+    "tag": "",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "none",
+    "hours": 0,
+    "ds": "2026-04-25",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 8
+  },
+  {
+    "id": 21,
+    "title": "培训师授课认证填写",
+    "desc": "",
+    "status": "todo",
+    "tag": "",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "none",
+    "hours": 0,
+    "ds": "2026-04-25",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 9
   }
 ]
