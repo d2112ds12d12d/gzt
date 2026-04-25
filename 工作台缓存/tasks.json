@@ -170,14 +170,14 @@
     "tag": "工作提效",
     "tagType": "green",
     "pri": "q4",
-    "prog": 0,
+    "prog": 100,
     "repeat": "none",
     "hours": 0,
     "ds": "2026-04-27",
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 3
+    "order": 5
   },
   {
     "id": 23,
