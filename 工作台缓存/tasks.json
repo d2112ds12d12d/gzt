@@ -139,7 +139,7 @@
     "prog": 0,
     "repeat": "none",
     "hours": 0,
-    "ds": "2026-04-25",
+    "ds": "",
     "links": [],
     "imgs": [
       {
@@ -147,7 +147,7 @@
         "src": "https://raw.githubusercontent.com/d2112ds12d12d/gzt/main/工作台缓存/images/1777088817633_IMG_0164_2.HEIC"
       }
     ],
-    "loc": "date",
+    "loc": "inbox",
     "order": 5
   }
 ]
