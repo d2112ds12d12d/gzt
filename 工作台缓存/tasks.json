@@ -121,5 +121,22 @@
     "imgs": [],
     "loc": "inbox",
     "order": 999
+  },
+  {
+    "id": 19,
+    "title": "新人方案继续了解，尽快推送网课",
+    "desc": "",
+    "status": "todo",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "none",
+    "hours": 0,
+    "ds": "2026-04-25",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 7
   }
 ]
