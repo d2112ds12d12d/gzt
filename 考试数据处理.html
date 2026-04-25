@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>考试数据处理工具</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root {
+  --bg: #f2f1ed;
+  --surface: #ffffff;
+  --surface2: #f7f6f3;
+  --border: #e4e0d8;
+  --accent: #18181f;
+  --red: #d63031;
+  --green: #00897b;
+  --blue: #2563eb;
+  --text: #18181f;
+  --text2: #7a7670;
+  --radius: 8px;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); font-family: 'PingFang SC','Helvetica Neue',sans-serif; color: var(--text); font-size: 13px; }
+
+/* ── Nav ── */
+nav {
+  background: var(--accent); display: flex; align-items: center;
+  padding: 0 24px; height: 48px; gap: 0; position: sticky; top: 0; z-index: 100;
+}
+.nav-brand { color: #fff; font-size: 14px; font-weight: 700; letter-spacing: .3px; margin-right: 28px; display: flex; align-items: center; gap: 8px; }
+.nav-brand .dot { width: 8px; height: 8px; background: var(--red); border-radius: 50%; }
+.nav-tab {
+  color: rgba(255,255,255,.5); padding: 0 14px; height: 48px;
+  display: flex; align-items: center; cursor: pointer; font-size: 13px;
+  border-bottom: 2px solid transparent; transition: color .15s, border-color .15s;
+  white-space: nowrap;
+}
+.nav-tab:hover { color: rgba(255,255,255,.85); }
+.nav-tab.active { color: #fff; border-bottom-color: var(--red); }
+
+/* ── Pages ── */
+.page { display: none; }
+.page.active { display: block; }
+.wrap { max-width: 780px; margin: 0 auto; padding: 24px 20px 48px; }
+
+/* ── Upload ── */
+.upload-zone {
+  border: 1.5px dashed var(--border); border-radius: var(--radius);
+  background: var(--surface); padding: 28px 24px; text-align: center;
+  cursor: pointer; transition: border-color .15s, background .15s; position: relative; margin-bottom: 16px;
+}
+.upload-zone:hover, .upload-zone.drag { border-color: var(--red); background: #fff8f7; }
+.upload-zone input { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.upload-zone h3 { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.upload-zone p { font-size: 12px; color: var(--text2); }
+.file-tag { display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 5px; padding: 4px 10px; font-size: 12px; color: var(--text); font-weight: 500; }
+
+/* ── Stats row ── */
+.stats-row { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-bottom: 14px; }
+.stat { background: var(--surface); border-radius: var(--radius); padding: 10px 12px; border: 1px solid var(--border); }
+.stat label { font-size: 10px; color: var(--text2); text-transform: uppercase; letter-spacing: .4px; display: block; margin-bottom: 3px; }
+.stat .v { font-size: 18px; font-weight: 700; color: var(--text); line-height: 1; }
+.stat.g .v { color: var(--green); }
+.stat.r .v { color: var(--red); }
+.stat.b .v { color: var(--blue); }
+
+/* ── Panels ── */
+.panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; margin-bottom: 12px; }
+.panel-head {
+  background: var(--accent); color: #fff; padding: 9px 14px;
+  font-size: 12px; font-weight: 600; display: flex; align-items: center; justify-content: space-between;
+}
+.panel-body { padding: 14px; }
+
+/* Notice */
+.notice-text { font-size: 13px; line-height: 2; white-space: pre-wrap; color: var(--text); }
+
+/* Table */
+.table-wrap { overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; font-size: 12px; }
+th { background: var(--surface2); padding: 7px 12px; text-align: left; font-weight: 600; color: var(--text2); font-size: 11px; border-bottom: 1px solid var(--border); white-space: nowrap; }
+td { padding: 7px 12px; border-bottom: 1px solid var(--border); }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface2); }
+.badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+.badge.p { background: #e6f4f0; color: var(--green); }
+.badge.f { background: #fdecea; color: var(--red); }
+.badge.w { background: #fdf6e3; color: #9a7000; }
+.score-hi { color: var(--green); font-weight: 700; }
+.score-lo { color: var(--red); font-weight: 700; }
+.score-md { color: #d97706; font-weight: 700; }
+
+/* Buttons */
+.btn-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+.btn { padding: 7px 16px; border-radius: 6px; font-size: 12px; font-weight: 600; cursor: pointer; border: none; transition: opacity .15s, transform .1s; }
+.btn:hover { opacity: .85; }
+.btn:active { transform: scale(.97); }
+.btn-primary { background: var(--accent); color: #fff; }
+.btn-red { background: var(--red); color: #fff; }
+.btn-ghost { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+.copy-btn { background: rgba(255,255,255,.15); border: 1px solid rgba(255,255,255,.3); color: #fff; padding: 3px 10px; border-radius: 4px; cursor: pointer; font-size: 11px; }
+.copy-btn:hover { background: rgba(255,255,255,.25); }
+.copy-btn.ok { background: var(--green); border-color: var(--green); }
+
+#process-page .empty { padding: 40px 24px; text-align: center; color: var(--text2); }
+#results-block { display: none; }
+
+/* ── Config page ── */
+.config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.cfg-group { margin-bottom: 14px; }
+.cfg-group.full { grid-column: 1/-1; }
+.cfg-group label { display: block; font-size: 11px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 5px; }
+.cfg-group input, .cfg-group textarea, .cfg-group select {
+  width: 100%; border: 1px solid var(--border); border-radius: 6px;
+  padding: 7px 10px; font-size: 13px; font-family: inherit; background: var(--surface2);
+  color: var(--text); outline: none; transition: border-color .15s;
+}
+.cfg-group input:focus, .cfg-group textarea:focus { border-color: var(--accent); background: #fff; }
+.cfg-group textarea { resize: vertical; min-height: 90px; line-height: 1.6; }
+.cfg-hint { font-size: 11px; color: var(--text2); margin-top: 4px; }
+.cfg-save { margin-top: 16px; }
+
+/* Rule list */
+.rule-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.rule-item {
+  display: grid; grid-template-columns: 1fr 20px 1fr auto;
+  gap: 6px; align-items: center;
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px;
+}
+.rule-item input { background: #fff; }
+.rule-item select { background: #fff; border: 1px solid var(--border); border-radius: 6px; padding: 7px 8px; font-size: 12px; font-family: inherit; color: var(--text); outline: none; }
+.rule-arrow { color: var(--text2); font-size: 13px; text-align: center; user-select: none; }
+.rule-col-label { font-size: 10px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .4px; margin-bottom: 3px; }
+.rule-del { background: none; border: none; color: var(--text2); cursor: pointer; font-size: 16px; padding: 0 4px; line-height: 1; }
+.rule-del:hover { color: var(--red); }
+.add-rule-btn { background: none; border: 1.5px dashed var(--border); border-radius: 6px; color: var(--text2); width: 100%; padding: 7px; cursor: pointer; font-size: 12px; }
+.add-rule-btn:hover { border-color: var(--accent); color: var(--text); }
+
+/* Formula box */
+.formula-box { background: var(--surface2); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+.formula-row { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--border); }
+.formula-row:last-child { border-bottom: none; padding-bottom: 0; }
+.formula-name { font-size: 12px; font-weight: 700; color: var(--text); min-width: 56px; }
+.formula-eq { font-size: 12px; color: var(--text2); flex: 1; }
+.formula-eq code { background: #fff; border: 1px solid var(--border); border-radius: 4px; padding: 2px 7px; font-family: 'Menlo','Courier New',monospace; font-size: 11px; color: var(--accent); }
+.formula-badge { font-size: 10px; background: #e8f0fe; color: var(--blue); border-radius: 4px; padding: 2px 7px; font-weight: 600; white-space: nowrap; }
+
+.section-label { font-size: 11px; font-weight: 700; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; margin: 20px 0 10px; border-bottom: 1px solid var(--border); padding-bottom: 6px; }
+.save-toast { position: fixed; bottom: 24px; right: 24px; background: var(--green); color: #fff; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 600; opacity: 0; transition: opacity .3s; pointer-events: none; }
+.save-toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-brand"><div class="dot"></div>考试数据处理工具</div>
+  <div class="nav-tab active" onclick="switchPage('process')">📊 数据处理</div>
+  <div class="nav-tab" onclick="switchPage('config')">⚙️ 配置规则</div>
+</nav>
+
+<!-- ══ 数据处理页 ══ -->
+<div id="process-page" class="page active">
+  <div class="wrap">
+
+    <!-- Upload -->
+    <div class="upload-zone" id="uploadZone">
+      <input type="file" id="fileInput" accept=".xlsx,.xls" />
+      <h3>上传考试结果 Excel 文件</h3>
+      <p>点击选择或直接拖拽 · 自动识别「考试结果导出」工作表</p>
+      <div class="file-tag" id="fileName" style="display:none">📄 <span id="fileNameText"></span></div>
+    </div>
+
+    <!-- Config selector -->
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
+      <span style="font-size:12px;color:var(--text2);white-space:nowrap;">使用配置：</span>
+      <select id="configSelector" style="flex:1;border:1px solid var(--border);border-radius:6px;padding:6px 10px;font-size:12px;background:var(--surface);color:var(--text);outline:none;"></select>
+      <button class="btn btn-ghost" style="white-space:nowrap;" onclick="switchPage('config')">管理配置</button>
+    </div>
+
+    <!-- Empty hint -->
+    <div id="empty-hint" class="panel" style="margin-bottom:0">
+      <div class="empty">上传文件后自动计算并生成群通知</div>
+    </div>
+
+    <!-- Results -->
+    <div id="results-block">
+
+      <!-- Stats -->
+      <div class="stats-row">
+        <div class="stat"><label>应参考</label><div class="v" id="s-total">—</div></div>
+        <div class="stat b"><label>实参考</label><div class="v" id="s-actual">—</div></div>
+        <div class="stat"><label>未参考</label><div class="v" id="s-wait">—</div></div>
+        <div class="stat g"><label>已通过</label><div class="v" id="s-pass">—</div></div>
+        <div class="stat r"><label>未通过</label><div class="v" id="s-fail">—</div></div>
+      </div>
+
+      <div class="stats-row" style="grid-template-columns:1fr 1fr 1fr;margin-bottom:14px;">
+        <div class="stat b"><label>参考率</label><div class="v" id="s-arate">—</div></div>
+        <div class="stat g"><label>通过率</label><div class="v" id="s-prate">—</div></div>
+        <div class="stat"><label>考试日期</label><div class="v" id="s-date" style="font-size:14px;">—</div></div>
+      </div>
+
+      <!-- Actions -->
+      <div class="btn-row">
+        <button class="btn btn-red" onclick="downloadExcel()">⬇ 下载成绩明细 Excel</button>
+        <button class="btn btn-ghost" onclick="resetAll()">↩ 重新上传</button>
+      </div>
+
+      <!-- Notice -->
+      <div class="panel">
+        <div class="panel-head">
+          群通知文本
+          <button class="copy-btn" id="copyBtn" onclick="copyNotice()">复制</button>
+        </div>
+        <div class="panel-body">
+          <div class="notice-text" id="noticeText"></div>
+        </div>
+      </div>
+
+      <!-- Table -->
+      <div class="panel">
+        <div class="panel-head">成绩明细（已通过 › 未通过 › 待考试，组内按分数降序）</div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr><th>#</th><th>姓名</th><th>考试用时(分钟)</th><th>考试分数</th><th>学习状态</th></tr>
+            </thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+    </div><!-- /results-block -->
+  </div>
+</div>
+
+<!-- ══ 配置规则页 ══ -->
+<div id="config-page" class="page">
+  <div class="wrap">
+
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
+      <div>
+        <div style="font-size:15px;font-weight:700;">配置规则管理</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:2px;">不同考试类型可保存独立配置，处理时按需选择</div>
+      </div>
+      <button class="btn btn-primary" onclick="addNewConfig()">+ 新建配置</button>
+    </div>
+
+    <!-- Config list tabs -->
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px;" id="configTabs"></div>
+
+    <!-- Config editor -->
+    <div class="panel" id="configEditor">
+      <div class="panel-head">
+        <span id="editorTitle">配置详情</span>
+        <button class="btn-ghost btn" style="font-size:11px;padding:3px 10px;" onclick="deleteCurrentConfig()">删除此配置</button>
+      </div>
+      <div class="panel-body">
+
+        <div class="section-label">基础信息</div>
+        <div class="config-grid">
+          <div class="cfg-group">
+            <label>配置名称</label>
+            <input type="text" id="cfg-name" placeholder="如：深圳 X-ray 专项考试" />
+          </div>
+          <div class="cfg-group">
+            <label>通知标题前缀</label>
+            <input type="text" id="cfg-title-prefix" placeholder="如：深圳X-ray" />
+            <div class="cfg-hint">生成：【{前缀} x月x日专项考试成绩】</div>
+          </div>
+        </div>
+
+        <div class="section-label">考试规则说明</div>
+        <div class="cfg-group full">
+          <label>规则文本（显示在通知里）</label>
+          <input type="text" id="cfg-rule-text" placeholder="如：10 道试题，2 次补考机会；满分100分，100分及格；" />
+        </div>
+
+        <div class="section-label">通知模板</div>
+        <div class="cfg-group full">
+          <label>通知正文模板</label>
+          <textarea id="cfg-template" rows="7"></textarea>
+          <div class="cfg-hint">
+            可用变量：<code>{title}</code> 标题 &nbsp;|&nbsp; <code>{rule}</code> 规则文本 &nbsp;|&nbsp;
+            <code>{total}</code> 应参考 &nbsp;|&nbsp; <code>{actual}</code> 实参考 &nbsp;|&nbsp;
+            <code>{notTaken}</code> 未参考 &nbsp;|&nbsp; <code>{attendRate}</code> 参考率 &nbsp;|&nbsp;
+            <code>{passed}</code> 已通过 &nbsp;|&nbsp; <code>{failed}</code> 未通过 &nbsp;|&nbsp;
+            <code>{passRate}</code> 通过率
+          </div>
+        </div>
+
+        <div class="section-label">计算规则说明（固定逻辑，仅供参考）</div>
+        <div class="formula-box">
+          <div class="formula-row">
+            <span class="formula-name">应参考</span>
+            <span class="formula-eq">= 原始数据的 <code>总行数</code>（姓名列非空的所有人）</span>
+          </div>
+          <div class="formula-row">
+            <span class="formula-name">实参考</span>
+            <span class="formula-eq">= 学习状态为 <code>已通过</code> + <code>未通过</code> 的人数之和</span>
+          </div>
+          <div class="formula-row">
+            <span class="formula-name">未参考</span>
+            <span class="formula-eq">= 学习状态为 <code>待考试</code> 的人数</span>
+          </div>
+          <div class="formula-row">
+            <span class="formula-name">参考率</span>
+            <span class="formula-eq"><code>实参考</code> ÷ <code>应参考</code> × 100%</span>
+            <span class="formula-badge">保留2位小数</span>
+          </div>
+          <div class="formula-row">
+            <span class="formula-name">通过率</span>
+            <span class="formula-eq"><code>已通过</code> ÷ <code>实参考</code> × 100%</span>
+            <span class="formula-badge">保留2位小数</span>
+          </div>
+          <div class="formula-row">
+            <span class="formula-name">排序规则</span>
+            <span class="formula-eq">第一优先级：<code>已通过 › 未通过 › 待考试</code>；同状态内按分数从高到低</span>
+          </div>
+        </div>
+
+        <div class="section-label" style="margin-top:20px;">输出 Excel 列配置</div>
+        <div style="display:grid;grid-template-columns:1fr 20px 1fr auto;gap:6px;align-items:center;padding:0 10px 6px;margin-bottom:2px;">
+          <span style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;">输出表格的列标题</span>
+          <span></span>
+          <span style="font-size:10px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;">数据来源（原始文件哪一列）</span>
+          <span></span>
+        </div>
+        <div class="rule-list" id="colRuleList"></div>
+        <button class="add-rule-btn" onclick="addColRule()">＋ 添加输出列</button>
+
+        <div class="cfg-save">
+          <button class="btn btn-primary" onclick="saveCurrentConfig()">保存配置</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="save-toast" id="saveToast">已保存 ✓</div>
+
+<script>
+// ─── Default configs ───
+const DEFAULT_TEMPLATE = `【{title}】
+
+📋考试规则：{rule}
+
+🔖以下为考试成绩明细，请组长查收：
+▶️应参考人数{total}人，实参考{actual}人，未参考{notTaken}人，参考率{attendRate}%，已通过{passed}人，未通过{failed}人，通过率{passRate}%；
+⚠️对于待考试、未通过的同学请组长及时关注了解原因，如有数据问题可随时沟通～`;
+
+const DEFAULT_COLS = [
+  { label: '姓名', key: '姓名' },
+  { label: '考试用时', key: '考试用时' },
+  { label: '考试分数', key: '得分' },
+  { label: '学习状态', key: '学习状态' },
+];
+
+const INIT_CONFIGS = [
+  {
+    id: 'xray-sz',
+    name: '深圳 X-ray 专项考试',
+    titlePrefix: '深圳X-ray',
+    ruleText: '10 道试题，2 次补考机会；满分100分，100分及格；',
+    template: DEFAULT_TEMPLATE,
+    cols: JSON.parse(JSON.stringify(DEFAULT_COLS)),
+  }
+];
+
+// ─── Storage ───
+function loadConfigs() {
+  try {
+    const s = localStorage.getItem('exam_configs');
+    return s ? JSON.parse(s) : JSON.parse(JSON.stringify(INIT_CONFIGS));
+  } catch { return JSON.parse(JSON.stringify(INIT_CONFIGS)); }
+}
+function saveConfigs(configs) {
+  localStorage.setItem('exam_configs', JSON.stringify(configs));
+}
+
+let configs = loadConfigs();
+let currentConfigId = configs[0]?.id;
+let currentFile = null;
+let processedRows = [];
+let noticeStr = '';
+
+// ─── Page switch ───
+function switchPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+  document.getElementById(name + '-page').classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach(t => {
+    if (t.textContent.includes(name === 'process' ? '数据' : '配置')) t.classList.add('active');
+  });
+  if (name === 'config') renderConfigPage();
+  if (name === 'process') renderConfigSelector();
+}
+
+// ─── Config selector (process page) ───
+function renderConfigSelector() {
+  const sel = document.getElementById('configSelector');
+  sel.innerHTML = configs.map(c => `<option value="${c.id}">${c.name}</option>`).join('');
+  if (currentConfigId) sel.value = currentConfigId;
+}
+
+// ─── Upload ───
+const zone = document.getElementById('uploadZone');
+const input = document.getElementById('fileInput');
+zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag'); });
+zone.addEventListener('dragleave', () => zone.classList.remove('drag'));
+zone.addEventListener('drop', e => { e.preventDefault(); zone.classList.remove('drag'); if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); });
+input.addEventListener('change', () => { if (input.files[0]) processFile(input.files[0]); });
+
+function processFile(file) {
+  currentFile = file;
+  document.getElementById('fileNameText').textContent = file.name;
+  document.getElementById('fileName').style.display = 'inline-flex';
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+    const sheetName = wb.SheetNames.find(n => n.includes('考试结果导出')) || wb.SheetNames[0];
+    const ws = wb.Sheets[sheetName];
+    const raw = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    if (!raw.length) { alert('未找到有效数据，请确认文件格式。'); return; }
+
+    function colVal(row, keyword) {
+      const k = Object.keys(row).find(rk => rk.includes(keyword));
+      return k !== undefined ? row[k] : '';
+    }
+
+    const rows = raw.map(r => ({
+      name:     colVal(r, '姓名'),
+      duration: colVal(r, '考试用时'),
+      score:    colVal(r, '得分') !== '' ? colVal(r, '得分') : colVal(r, '考试分数'),
+      status:   colVal(r, '学习状态'),
+      pushTime: colVal(r, '推送时间'),
+    })).filter(r => r.name && String(r.name).trim());
+
+    if (!rows.length) { alert('未能解析到人员数据，请检查文件格式。'); return; }
+
+    // Date
+    const dates = rows.map(r => {
+      const v = r.pushTime;
+      if (!v) return null;
+      if (v instanceof Date) return v;
+      const d = new Date(String(v));
+      return isNaN(d) ? null : d;
+    }).filter(Boolean);
+    let month = '?', day = '?';
+    if (dates.length) {
+      const earliest = new Date(Math.min(...dates.map(d => d.getTime())));
+      month = earliest.getMonth() + 1; day = earliest.getDate();
+    }
+
+    // Stats
+    const total   = rows.length;
+    const passed  = rows.filter(r => String(r.status).trim() === '已通过').length;
+    const failed  = rows.filter(r => String(r.status).trim() === '未通过').length;
+    const waiting = rows.filter(r => String(r.status).trim() === '待考试').length;
+    const actual  = passed + failed;
+    const notTaken = waiting;
+    const attendRate = total > 0 ? (actual / total * 100).toFixed(2) : '0.00';
+    const passRate   = actual > 0 ? (passed / actual * 100).toFixed(2) : '0.00';
+
+    // Sort
+    const order = { '已通过': 0, '未通过': 1, '待考试': 2 };
+    const sorted = [...rows].sort((a, b) => {
+      const sa = order[String(a.status).trim()] ?? 3;
+      const sb = order[String(b.status).trim()] ?? 3;
+      if (sa !== sb) return sa - sb;
+      return (parseFloat(b.score) || 0) - (parseFloat(a.score) || 0);
+    });
+    processedRows = sorted;
+
+    // Get active config
+    const cfg = configs.find(c => c.id === document.getElementById('configSelector').value) || configs[0];
+
+    // Build title
+    const titleStr = `${cfg.titlePrefix} ${month}月${day}日专项考试成绩`;
+
+    // Build notice from template
+    noticeStr = (cfg.template || DEFAULT_TEMPLATE)
+      .replace(/\{title\}/g, titleStr)
+      .replace(/\{rule\}/g, cfg.ruleText || '')
+      .replace(/\{total\}/g, total)
+      .replace(/\{actual\}/g, actual)
+      .replace(/\{notTaken\}/g, notTaken)
+      .replace(/\{attendRate\}/g, attendRate)
+      .replace(/\{passed\}/g, passed)
+      .replace(/\{failed\}/g, failed)
+      .replace(/\{passRate\}/g, passRate);
+
+    // Render
+    document.getElementById('s-total').textContent  = total;
+    document.getElementById('s-actual').textContent = actual;
+    document.getElementById('s-wait').textContent   = notTaken;
+    document.getElementById('s-pass').textContent   = passed;
+    document.getElementById('s-fail').textContent   = failed;
+    document.getElementById('s-arate').textContent  = attendRate + '%';
+    document.getElementById('s-prate').textContent  = passRate + '%';
+    document.getElementById('s-date').textContent   = `${month}月${day}日`;
+    document.getElementById('noticeText').textContent = noticeStr;
+
+    const tbody = document.getElementById('tableBody');
+    tbody.innerHTML = '';
+    sorted.forEach((r, i) => {
+      const st = String(r.status).trim();
+      const bc = st === '已通过' ? 'p' : st === '未通过' ? 'f' : 'w';
+      const sn = parseFloat(r.score);
+      let sc = '';
+      if (!isNaN(sn)) sc = sn >= 100 ? 'score-hi' : sn >= 90 ? 'score-md' : 'score-lo';
+      const scoreDisplay = r.score !== '' && r.score !== null ? r.score : '—';
+      const durDisplay   = r.duration !== '' && r.duration !== null ? r.duration : '—';
+      tbody.innerHTML += `<tr>
+        <td style="color:var(--text2);font-size:11px;">${i+1}</td>
+        <td style="font-weight:500;">${r.name}</td>
+        <td>${durDisplay}</td>
+        <td class="${sc}">${scoreDisplay}</td>
+        <td><span class="badge ${bc}">${st || '—'}</span></td>
+      </tr>`;
+    });
+
+    document.getElementById('empty-hint').style.display = 'none';
+    document.getElementById('results-block').style.display = 'block';
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function copyNotice() {
+  const btn = document.getElementById('copyBtn');
+  const doMark = () => { btn.textContent = '已复制 ✓'; btn.classList.add('ok'); setTimeout(() => { btn.textContent = '复制'; btn.classList.remove('ok'); }, 2000); };
+  if (navigator.clipboard) { navigator.clipboard.writeText(noticeStr).then(doMark); }
+  else { const t = document.createElement('textarea'); t.value = noticeStr; document.body.appendChild(t); t.select(); document.execCommand('copy'); document.body.removeChild(t); doMark(); }
+}
+
+function downloadExcel() {
+  if (!processedRows.length) return;
+  const cfg = configs.find(c => c.id === document.getElementById('configSelector').value) || configs[0];
+  const dateStr = document.getElementById('s-date').textContent;
+  const cols = cfg.cols || DEFAULT_COLS;
+
+  // Map col keys to row data
+  const keyMap = { '姓名': 'name', '考试用时': 'duration', '得分': 'score', '考试分数': 'score', '学习状态': 'status' };
+
+  const header = cols.map(c => c.label);
+  const dataRows = processedRows.map(r =>
+    cols.map(c => {
+      const mapped = keyMap[c.key];
+      const val = mapped ? r[mapped] : '';
+      return val !== '' && val !== null && val !== undefined ? val : '';
+    })
+  );
+
+  const wsData = [header, ...dataRows];
+  const ws = XLSX.utils.aoa_to_sheet(wsData);
+  ws['!cols'] = cols.map(() => ({ wch: 14 }));
+
+  const wb = XLSX.utils.book_new();
+  const sheetTitle = `${cfg.titlePrefix} ${dateStr}专项考试成绩`.substring(0, 31);
+  XLSX.utils.book_append_sheet(wb, ws, sheetTitle);
+  XLSX.writeFile(wb, `${cfg.titlePrefix}${dateStr}专项考试成绩明细.xlsx`);
+}
+
+function resetAll() {
+  document.getElementById('results-block').style.display = 'none';
+  document.getElementById('empty-hint').style.display = 'block';
+  document.getElementById('fileName').style.display = 'none';
+  document.getElementById('fileInput').value = '';
+  processedRows = []; noticeStr = '';
+}
+
+// ─── Config page ───
+let editingId = null;
+
+function renderConfigPage() {
+  renderConfigTabs();
+  if (!editingId && configs.length) editingId = configs[0].id;
+  if (editingId) loadConfigIntoEditor(editingId);
+}
+
+function renderConfigTabs() {
+  const container = document.getElementById('configTabs');
+  container.innerHTML = configs.map(c => `
+    <div onclick="selectConfigTab('${c.id}')" style="
+      padding:5px 14px;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;
+      background:${editingId===c.id?'var(--accent)':'var(--surface)'};
+      color:${editingId===c.id?'#fff':'var(--text)'};
+      border:1px solid ${editingId===c.id?'var(--accent)':'var(--border)'};
+    ">${c.name}</div>
+  `).join('');
+}
+
+function selectConfigTab(id) {
+  // Save current edits first
+  if (editingId) syncEditorToConfig(editingId);
+  editingId = id;
+  renderConfigTabs();
+  loadConfigIntoEditor(id);
+}
+
+function loadConfigIntoEditor(id) {
+  const cfg = configs.find(c => c.id === id);
+  if (!cfg) return;
+  document.getElementById('editorTitle').textContent = cfg.name;
+  document.getElementById('cfg-name').value = cfg.name || '';
+  document.getElementById('cfg-title-prefix').value = cfg.titlePrefix || '';
+  document.getElementById('cfg-rule-text').value = cfg.ruleText || '';
+  document.getElementById('cfg-template').value = cfg.template || DEFAULT_TEMPLATE;
+  renderColRules(cfg.cols || DEFAULT_COLS);
+}
+
+function syncEditorToConfig(id) {
+  const cfg = configs.find(c => c.id === id);
+  if (!cfg) return;
+  cfg.name = document.getElementById('cfg-name').value.trim() || cfg.name;
+  cfg.titlePrefix = document.getElementById('cfg-title-prefix').value.trim();
+  cfg.ruleText = document.getElementById('cfg-rule-text').value.trim();
+  cfg.template = document.getElementById('cfg-template').value;
+  cfg.cols = getColRulesFromDOM();
+}
+
+const SOURCE_COLS = [
+  { key: '姓名',    label: '姓名' },
+  { key: '考试用时', label: '考试用时（分钟）' },
+  { key: '得分',    label: '得分 / 考试分数' },
+  { key: '学习状态', label: '学习状态（已通过/未通过/待考试）' },
+  { key: '考试次数', label: '考试次数' },
+  { key: '推送时间', label: '推送时间' },
+  { key: '考试名称', label: '考试名称' },
+];
+
+function renderColRules(cols) {
+  const list = document.getElementById('colRuleList');
+  const opts = SOURCE_COLS.map(s => `<option value="${s.key}">${s.key}（${s.label}）</option>`).join('');
+  list.innerHTML = cols.map((c, i) => `
+    <div class="rule-item">
+      <div>
+        <div class="rule-col-label">输出表格显示的列标题</div>
+        <input type="text" placeholder="自定义名称，如：考试分数" value="${c.label || ''}" data-i="${i}" data-f="label" />
+      </div>
+      <div class="rule-arrow">→</div>
+      <div>
+        <div class="rule-col-label">数据来自原始文件哪一列</div>
+        <select data-i="${i}" data-f="key">
+          ${SOURCE_COLS.map(s => `<option value="${s.key}" ${c.key === s.key ? 'selected' : ''}>${s.key}（${s.label}）</option>`).join('')}
+        </select>
+      </div>
+      <button class="rule-del" onclick="removeColRule(${i})">×</button>
+    </div>
+  `).join('');
+}
+
+
+
+function getColRulesFromDOM() {
+  const items = document.querySelectorAll('#colRuleList .rule-item');
+  return Array.from(items).map(item => ({
+    label: item.querySelector('input[data-f="label"]').value.trim(),
+    key:   item.querySelector('select[data-f="key"]').value,
+  })).filter(c => c.label || c.key);
+}
+
+function addColRule() {
+  const cfg = configs.find(c => c.id === editingId);
+  if (!cfg) return;
+  cfg.cols = getColRulesFromDOM();
+  cfg.cols.push({ label: '', key: '' });
+  renderColRules(cfg.cols);
+}
+
+function removeColRule(i) {
+  const cols = getColRulesFromDOM();
+  cols.splice(i, 1);
+  renderColRules(cols);
+}
+
+function saveCurrentConfig() {
+  if (!editingId) return;
+  syncEditorToConfig(editingId);
+  saveConfigs(configs);
+  renderConfigTabs();
+  renderConfigSelector();
+  document.getElementById('editorTitle').textContent = configs.find(c => c.id === editingId)?.name || '';
+  showToast();
+}
+
+function addNewConfig() {
+  if (editingId) syncEditorToConfig(editingId);
+  const id = 'cfg_' + Date.now();
+  configs.push({
+    id, name: '新配置', titlePrefix: '',
+    ruleText: '', template: DEFAULT_TEMPLATE,
+    cols: JSON.parse(JSON.stringify(DEFAULT_COLS)),
+  });
+  saveConfigs(configs);
+  editingId = id;
+  renderConfigTabs();
+  loadConfigIntoEditor(id);
+  renderConfigSelector();
+}
+
+function deleteCurrentConfig() {
+  if (configs.length <= 1) { alert('至少保留一个配置。'); return; }
+  if (!confirm('确定删除此配置？')) return;
+  configs = configs.filter(c => c.id !== editingId);
+  saveConfigs(configs);
+  editingId = configs[0].id;
+  renderConfigTabs();
+  loadConfigIntoEditor(editingId);
+  renderConfigSelector();
+}
+
+function showToast() {
+  const t = document.getElementById('saveToast');
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ─── Init ───
+renderConfigSelector();
+</script>
+</body>
+</html>
