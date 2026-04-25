@@ -7,7 +7,7 @@
   ],
   "cfg": {
     "flashOn": true,
-    "flashInterval": 30,
+    "flashInterval": 5,
     "flashTypes": []
   }
 }
