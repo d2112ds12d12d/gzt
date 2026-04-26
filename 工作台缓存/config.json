@@ -68,5 +68,7 @@
       "openMode": "new-tab"
     }
   ],
-  "shortcutId": 10
+  "shortcutId": 10,
+  "books": [],
+  "apRecords": []
 }
