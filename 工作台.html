@@ -339,6 +339,149 @@ html.light .tcard.cancelled{background:rgba(217,119,6,.06)}
 .rcard-thought-count{font-size:11px;color:var(--red);display:flex;align-items:center;gap:3px}
 .record-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--text3);text-align:center}
 
+/* ══ SUIJI CARDS ══ */
+.suiji-toolbar{display:flex;align-items:center;gap:8px;flex-shrink:0;margin-bottom:12px;flex-wrap:wrap}
+.suiji-sort-btn{height:28px;padding:0 10px;border-radius:var(--rxs);font-size:11.5px;cursor:pointer;color:var(--text2);border:1px solid var(--border2);background:var(--surface2);font-family:inherit;transition:all .15s;display:flex;align-items:center;gap:4px;white-space:nowrap}
+.suiji-sort-btn:hover,.suiji-sort-btn.active{background:var(--accent-bg);color:var(--accent2);border-color:var(--accent-border)}
+.suiji-sort-sep{width:1px;height:18px;background:var(--border2);flex-shrink:0}
+.suiji-grid{flex:1;overflow-y:auto;columns:2;column-gap:10px;align-content:start;padding-bottom:8px}
+.suiji-grid::-webkit-scrollbar{width:3px}
+.suiji-grid::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px}
+.suiji-card{break-inside:avoid;margin-bottom:10px;border-radius:var(--r);padding:14px;cursor:pointer;position:relative;border:1.5px solid transparent;transition:transform .15s var(--ease),box-shadow .15s,border-color .15s;animation:slideUp .22s var(--ease);display:block}
+.suiji-card:hover{transform:translateY(-3px);box-shadow:0 8px 24px rgba(0,0,0,.18)}
+.suiji-card.type-灵感{background:linear-gradient(135deg,rgba(167,139,250,.18),rgba(167,139,250,.08));border-color:rgba(167,139,250,.25)}
+.suiji-card.type-笔记{background:linear-gradient(135deg,rgba(91,110,245,.16),rgba(91,110,245,.07));border-color:rgba(91,110,245,.22)}
+.suiji-card.type-摘录{background:linear-gradient(135deg,rgba(251,191,36,.18),rgba(251,191,36,.07));border-color:rgba(251,191,36,.28)}
+.suiji-card.type-链接{background:linear-gradient(135deg,rgba(45,212,191,.16),rgba(45,212,191,.07));border-color:rgba(45,212,191,.22)}
+.suiji-card.type-default{background:linear-gradient(135deg,rgba(91,110,245,.13),rgba(91,110,245,.05));border-color:rgba(91,110,245,.18)}
+html.light .suiji-card.type-灵感{background:linear-gradient(135deg,rgba(167,139,250,.14),rgba(167,139,250,.05));border-color:rgba(167,139,250,.3)}
+html.light .suiji-card.type-笔记{background:linear-gradient(135deg,rgba(91,94,245,.1),rgba(91,94,245,.04));border-color:rgba(91,94,245,.25)}
+html.light .suiji-card.type-摘录{background:linear-gradient(135deg,rgba(245,158,11,.12),rgba(245,158,11,.04));border-color:rgba(245,158,11,.3)}
+html.light .suiji-card.type-链接{background:linear-gradient(135deg,rgba(6,182,212,.1),rgba(6,182,212,.04));border-color:rgba(6,182,212,.25)}
+.suiji-card-head{display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.suiji-card-type{font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:10px;flex-shrink:0}
+.suiji-card-date{font-size:10.5px;color:var(--text3);flex-shrink:0}
+.suiji-heart{background:none;border:none;cursor:pointer;font-size:16px;flex-shrink:0;line-height:1;padding:0 2px;transition:transform .2s;color:var(--text3);margin-left:auto}
+.suiji-heart:hover{transform:scale(1.25)}
+.suiji-heart.liked{color:var(--red);animation:heartBeat .4s ease}
+.suiji-card-content{font-size:13px;color:var(--text1);line-height:1.6;display:-webkit-box;-webkit-line-clamp:6;-webkit-box-orient:vertical;overflow:hidden;white-space:pre-wrap;word-break:break-word}
+.suiji-card-content.editing{-webkit-line-clamp:unset;overflow:visible;outline:none;cursor:text;border-radius:6px;padding:4px 6px;min-height:60px;background:rgba(255,255,255,.12)}
+.suiji-card-foot{display:flex;align-items:center;gap:6px;margin-top:8px;flex-wrap:wrap}
+.suiji-card-tag{font-size:10.5px;padding:1px 7px;border-radius:10px;font-weight:500}
+.suiji-card-link{font-size:11px;color:var(--teal);text-decoration:none;opacity:.8;transition:opacity .12s}
+.suiji-card-link:hover{opacity:1;text-decoration:underline}
+.suiji-card-del{position:absolute;bottom:10px;right:10px;background:none;border:none;color:var(--text3);cursor:pointer;font-size:14px;opacity:0;transition:opacity .15s,color .15s;padding:2px 5px;border-radius:4px;line-height:1}
+.suiji-card:hover .suiji-card-del{opacity:1}
+.suiji-card-del:hover{background:var(--red-bg);color:var(--red)}
+.suiji-thought-count{font-size:11px;color:var(--red);display:flex;align-items:center;gap:2px}
+
+/* ══ BOOK NOTES ══ */
+/* shelf: card grid */
+.book-shelf-toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-shrink:0}
+.book-shelf-toolbar h3{font-size:13px;font-weight:600;color:var(--text1)}
+.book-card-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:16px;overflow-y:auto;flex:1;align-content:start;padding-bottom:8px}
+.book-card-grid::-webkit-scrollbar{width:3px}
+.book-card-grid::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:2px}
+.book-card{display:flex;flex-direction:column;gap:8px;cursor:pointer;transition:transform .15s var(--ease);animation:slideUp .2s var(--ease);position:relative}
+.book-card:hover{transform:translateY(-4px)}
+.book-card:hover .book-card-cover{box-shadow:0 10px 30px rgba(0,0,0,.28)}
+.book-card-cover{width:100%;aspect-ratio:2/3;border-radius:8px;overflow:hidden;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 14px rgba(0,0,0,.2);position:relative;flex-shrink:0}
+.book-card-cover img{width:100%;height:100%;object-fit:cover}
+.book-card-cover-char{font-size:28px;font-weight:800;color:#fff;text-shadow:0 2px 8px rgba(0,0,0,.3)}
+.book-card-del{position:absolute;top:6px;right:6px;width:22px;height:22px;border-radius:50%;background:rgba(0,0,0,.45);border:none;color:#fff;font-size:13px;cursor:pointer;display:none;align-items:center;justify-content:center;line-height:1;transition:background .12s}
+.book-card:hover .book-card-del{display:flex}
+.book-card-del:hover{background:var(--red)}
+.book-card-title{font-size:12.5px;font-weight:600;color:var(--text1);line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.book-card-meta{font-size:11px;color:var(--text3)}
+/* full-screen reader */
+.book-reader{position:fixed;inset:0;z-index:600;background:var(--bg);display:flex;flex-direction:column;animation:fadeIn .2s var(--ease)}
+.book-reader-header{background:var(--surface);border-bottom:1px solid var(--border);padding:10px 20px;display:flex;align-items:center;gap:12px;flex-shrink:0;box-shadow:0 1px 6px rgba(0,0,0,.08)}
+.book-reader-back{background:none;border:1px solid var(--border2);border-radius:var(--rxs);padding:5px 12px;cursor:pointer;font-size:12.5px;font-family:inherit;color:var(--text2);transition:all .15s;display:flex;align-items:center;gap:5px}
+.book-reader-back:hover{background:var(--surface2);color:var(--text1);transform:translateX(-2px)}
+.book-reader-cover-mini{width:28px;height:38px;border-radius:4px;overflow:hidden;flex-shrink:0;box-shadow:0 2px 6px rgba(0,0,0,.2);display:flex;align-items:center;justify-content:center;font-size:16px}
+.book-reader-cover-mini img{width:100%;height:100%;object-fit:cover}
+.book-reader-titles{flex:1}
+.book-reader-title{font-size:14px;font-weight:700;color:var(--text1)}
+.book-reader-author{font-size:11.5px;color:var(--text3);margin-top:1px}
+.book-reader-actions{display:flex;gap:6px;align-items:center}
+.book-reader-body{display:flex;flex:1;min-height:0;overflow:hidden}
+/* search bar in reader */
+.book-search-wrap{position:relative;display:flex;align-items:center}
+.book-search-input{height:28px;padding:0 10px 0 28px;border:1px solid var(--border2);border-radius:var(--rxs);background:var(--surface2);color:var(--text1);font-size:12px;font-family:inherit;outline:none;width:160px;transition:border-color .14s,width .2s}
+.book-search-input:focus{border-color:var(--accent);width:200px}
+.book-search-icon{position:absolute;left:8px;color:var(--text3);pointer-events:none;font-size:12px}
+.book-search-results{position:absolute;top:calc(100% + 4px);right:0;width:320px;max-height:320px;overflow-y:auto;background:var(--surface);border:1px solid var(--border2);border-radius:var(--rs);box-shadow:0 8px 28px rgba(0,0,0,.25);z-index:700;display:none;animation:fadeIn .15s var(--ease)}
+.book-search-results.open{display:block}
+.book-search-results::-webkit-scrollbar{width:3px}
+.book-search-result-item{padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border);transition:background .12s}
+.book-search-result-item:last-child{border-bottom:none}
+.book-search-result-item:hover{background:var(--surface2)}
+.book-search-result-text{font-size:12.5px;color:var(--text1);line-height:1.5;margin-bottom:3px}
+.book-search-result-text mark{background:rgba(251,191,36,.4);color:inherit;border-radius:2px;padding:0 2px}
+.book-search-result-chapter{font-size:10.5px;color:var(--text3)}
+.book-search-empty{padding:16px;text-align:center;font-size:12.5px;color:var(--text3)}
+/* reading area */
+.book-reading-area{flex:1;overflow-y:auto;padding:32px 0}
+.book-reading-area::-webkit-scrollbar{width:6px}
+.book-reading-area::-webkit-scrollbar-thumb{background:var(--surface3);border-radius:3px}
+.book-reading-inner{max-width:740px;margin:0 auto;padding:0 40px}
+/* chapter heading */
+.br-chapter{font-size:16px;font-weight:700;color:var(--text1);margin:32px 0 14px;padding-bottom:10px;border-bottom:2px solid var(--border2);line-height:1.4;display:flex;align-items:center;gap:8px}
+.br-chapter-num{font-size:12px;font-weight:600;color:var(--accent2);background:var(--accent-bg);border-radius:10px;padding:2px 8px;flex-shrink:0}
+/* note card */
+.br-note-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);margin-bottom:10px;overflow:hidden;transition:border-color .15s,box-shadow .15s;cursor:pointer}
+.br-note-card:hover{border-color:var(--border2);box-shadow:0 2px 10px rgba(0,0,0,.1)}
+.br-note-card.has-thought{border-left:3px solid rgba(201,127,42,.5)}
+/* highlight line */
+.br-note-main{padding:12px 14px;display:flex;gap:10px;align-items:flex-start}
+.br-dot{width:7px;height:7px;border-radius:50%;background:var(--text1);flex-shrink:0;margin-top:6px}
+.br-note-text{font-size:13.5px;color:var(--text1);line-height:1.75;flex:1}
+/* thought/comment below highlight */
+.br-thought-wrap{border-top:1px solid rgba(201,127,42,.15);background:linear-gradient(135deg,rgba(201,127,42,.07),rgba(201,127,42,.03));padding:10px 14px 10px 31px}
+.br-thought-text{font-size:13px;color:#c17f27;line-height:1.65;font-style:italic}
+html.light .br-thought-text{color:#a06820}
+/* annotation (user-added) */
+.br-anno-wrap{border-top:1px solid rgba(167,139,250,.2);background:linear-gradient(135deg,rgba(167,139,250,.08),rgba(167,139,250,.03));padding:8px 14px 8px 31px}
+.br-anno-item{display:flex;align-items:flex-start;gap:6px;margin-bottom:5px;font-size:12.5px;color:var(--purple);line-height:1.55;font-style:italic}
+.br-anno-item:last-child{margin-bottom:0}
+.br-anno-del{background:none;border:none;cursor:pointer;color:var(--purple);opacity:.4;font-size:12px;flex-shrink:0;padding:0 2px;line-height:1;transition:opacity .12s}
+.br-anno-del:hover{opacity:1}
+/* pure text block */
+.br-text-block{font-size:13px;color:var(--text2);line-height:1.7;padding:4px 0;margin-bottom:6px}
+/* comment modal */
+.book-comment-modal{position:fixed;z-index:800;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);box-shadow:0 12px 40px rgba(0,0,0,.35);padding:16px;width:300px;animation:slideUp .15s var(--ease)}
+.book-comment-modal textarea{width:100%;padding:8px 10px;border:1px solid var(--border2);border-radius:var(--rs);font-size:12.5px;background:var(--surface2);color:var(--text1);font-family:inherit;outline:none;resize:none;transition:border-color .14s;line-height:1.55}
+.book-comment-modal textarea:focus{border-color:var(--accent)}
+/* right sidebar */
+.book-sidebar{width:260px;flex-shrink:0;border-left:1px solid var(--border);display:flex;flex-direction:column;overflow:hidden}
+.book-sidebar-tabs{display:flex;border-bottom:1px solid var(--border);flex-shrink:0}
+.book-sidebar-tab{flex:1;padding:9px;text-align:center;font-size:12px;cursor:pointer;color:var(--text3);border:none;background:none;font-family:inherit;transition:all .14s;border-bottom:2px solid transparent;margin-bottom:-1px}
+.book-sidebar-tab.active{color:var(--accent2);border-bottom-color:var(--accent2);font-weight:600}
+.book-sidebar-panel{flex:1;overflow-y:auto;padding:12px}
+.book-sidebar-panel::-webkit-scrollbar{width:3px}
+.book-review-label{font-size:10px;font-weight:700;color:var(--text3);letter-spacing:.05em;text-transform:uppercase;margin-bottom:5px}
+.book-review-input{width:100%;background:var(--surface2);border:1px solid var(--border2);border-radius:var(--rs);outline:none;font-size:12.5px;color:var(--text1);font-family:inherit;resize:none;line-height:1.55;padding:8px 10px;transition:border-color .14s;max-height:200px}
+.book-review-input:focus{border-color:var(--accent)}
+.book-review-input::placeholder{color:var(--text3)}
+.book-toc-item{font-size:12.5px;color:var(--text2);padding:6px 8px;border-radius:var(--rxs);cursor:pointer;transition:all .12s}
+.book-toc-item:hover{background:var(--surface2);color:var(--accent2)}
+/* highlight on search */
+.br-search-hl{background:rgba(251,191,36,.45);border-radius:2px;padding:0 1px}
+/* ══ TIMELINE ══ */
+.tl-date-group{margin-bottom:16px}
+.tl-date-label{font-size:11.5px;font-weight:600;color:var(--text3);letter-spacing:.04em;margin-bottom:8px;padding-left:20px;position:relative}
+.tl-date-label::before{content:'';position:absolute;left:6px;top:50%;transform:translateY(-50%);width:8px;height:8px;border-radius:50%;background:var(--accent)}
+.tl-item{display:flex;gap:10px;padding:10px 14px 10px 20px;background:var(--surface);border-radius:var(--rs);border:1px solid var(--border);margin-bottom:6px;cursor:pointer;transition:all .15s;position:relative}
+.tl-item:hover{border-color:var(--accent-border);background:var(--surface2)}
+.tl-item::before{content:'';position:absolute;left:8px;top:16px;width:6px;height:6px;border-radius:50%;background:var(--accent-border)}
+.tl-item-body{flex:1}
+.tl-item-title{font-size:13px;font-weight:600;color:var(--text1);margin-bottom:6px}
+.tl-item-row{display:flex;align-items:flex-start;gap:7px;margin-bottom:4px;font-size:12px;color:var(--text2);line-height:1.5}
+.tl-badge{font-size:10px;font-weight:700;padding:1px 6px;border-radius:3px;flex-shrink:0;margin-top:2px}
+.tl-badge.consensus{background:rgba(91,110,245,.18);color:var(--accent2)}
+.tl-badge.action{background:rgba(74,222,128,.12);color:var(--green)}
+.tl-badge.owner{background:rgba(251,191,36,.12);color:var(--amber)}
+
 /* ── journal tab ── */
 .journal-list{overflow-y:auto;flex:1}
 .journal-list::-webkit-scrollbar{width:3px}
@@ -843,7 +986,7 @@ var S={
   flashRecId:null,flashLiked:false,
   settingsTab:'github',
   recTab:'records', recFilter:'all',
-  notesTab:'随记', /* 随记 | 时间线 | 读书笔记 */
+  notesTab:'随记', suijiSort:'time-desc', /* time-desc | time-asc | type */
   books:[], bookId:1, /* reading notes */
   apRecords:[], /* timeline AP records */
   inboxDragId:null, datepickTaskId:null,
@@ -1417,35 +1560,85 @@ function renderNotes(m){
 }
 
 /* ── 随记：horizontal list cards ── */
+function setSuijiSort(s){S.suijiSort=s;render()}
+function toggleSuijiHeart(id,e){
+  e.stopPropagation();
+  var r=S.records.find(function(x){return x.id===id});
+  if(!r)return;
+  r.flash=!r.flash;
+  var btn=e.currentTarget;
+  btn.textContent=r.flash?'❤':'♡';
+  btn.classList.toggle('liked',r.flash);
+  autoPush();
+}
+function startSuijiEdit(id,el,e){
+  e.stopPropagation();
+  el.classList.add('editing');
+  el.contentEditable='true';
+  el.focus();
+  /* select all */
+  var range=document.createRange();range.selectNodeContents(el);
+  var sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);
+  function finish(){
+    var r=S.records.find(function(x){return x.id===id});
+    if(r){r.content=el.textContent.trim();autoPush();}
+    el.contentEditable='false';el.classList.remove('editing');
+    el.removeEventListener('blur',finish);
+    el.removeEventListener('keydown',onKey);
+  }
+  function onKey(ev){if(ev.key==='Escape'){el.textContent=S.records.find(function(x){return x.id===id}).content||'';finish();}}
+  el.addEventListener('blur',finish);
+  el.addEventListener('keydown',onKey);
+}
 function buildSuiji(){
   var filter=S.recFilter;
+  var sort=S.suijiSort||'time-desc';
   var recs=S.records.filter(function(r){return filter==='all'||r.type===filter});
+  /* sort */
+  recs=recs.slice();
+  if(sort==='time-desc') recs.sort(function(a,b){return b.ts-a.ts});
+  else if(sort==='time-asc') recs.sort(function(a,b){return a.ts-b.ts});
+  else recs.sort(function(a,b){return (a.type||'').localeCompare(b.type||'')});
+  /* toolbar */
   var h='<div class="suiji-toolbar">';
-  h+='<input class="record-search" placeholder="搜索随记…" oninput="searchRec(this.value)" style="flex:1">';
-  h+='<div style="display:flex;gap:5px">';
+  h+='<input class="record-search" placeholder="搜索随记…" oninput="searchRec(this.value)" style="flex:1;min-width:120px">';
+  /* type filter */
   h+='<button class="rfbtn'+(filter==='all'?' active':'')+' filter-btn" data-f="all" onclick="S.recFilter=this.dataset.f;render()">全部</button>';
   S.recTypes.forEach(function(tp){h+='<button class="rfbtn'+(filter===tp?' active':'')+' filter-btn" data-f="'+esc(tp)+'" onclick="S.recFilter=this.dataset.f;render()">'+esc(tp)+'</button>'});
-  h+='</div>';
+  h+='<div class="suiji-sort-sep"></div>';
+  /* sort buttons */
+  h+='<button class="suiji-sort-btn'+(sort==='time-desc'?' active':'')+'" onclick="setSuijiSort(\'time-desc\')">↓ 最新</button>';
+  h+='<button class="suiji-sort-btn'+(sort==='time-asc'?' active':'')+'" onclick="setSuijiSort(\'time-asc\')">↑ 最早</button>';
+  h+='<button class="suiji-sort-btn'+(sort==='type'?' active':'')+'" onclick="setSuijiSort(\'type\')">类型</button>';
   h+='<button class="record-new-btn" onclick="openRecModal(null)">+ 新建</button>';
   h+='</div>';
-  if(!recs.length){h+='<div class="record-empty"><div style="font-size:36px;opacity:.2">📝</div><div style="font-size:13px">暂无随记</div></div>';return h;}
-  h+='<div class="suiji-list">';
-  recs.slice().reverse().forEach(function(r){
-    var d=new Date(r.ts);var dstr=(d.getMonth()+1)+'/'+d.getDate()+' '+pad(d.getHours())+':'+pad(d.getMinutes());
+  if(!recs.length){
+    h+='<div class="record-empty"><div style="font-size:36px;opacity:.2">📝</div><div>暂无随记</div></div>';
+    return h;
+  }
+  h+='<div class="suiji-grid">';
+  recs.forEach(function(r){
+    var d=new Date(r.ts);
+    var dstr=(d.getMonth()+1)+'/'+d.getDate()+' '+pad(d.getHours())+':'+pad(d.getMinutes());
     var tc=(r.thoughts&&r.thoughts.length)||0;
-    var tagHtml=r.tags&&r.tags.length?r.tags.map(function(t){return'<span class="rtag" style="background:var(--accent-bg);color:var(--accent2);font-weight:600;font-size:11px">#'+esc(t)+'</span>'}).join(''):'';
-    h+='<div class="suiji-item" onclick="openRecModal('+r.id+')">';
-    h+='<div class="suiji-item-left">';
-    h+='<span class="suiji-type" style="'+typeColor(r.type)+'">'+esc(r.type)+(r.flash?' ✨':'')+'</span>';
-    h+='<span class="suiji-date">'+dstr+'</span>';
-    if(tc)h+='<span style="font-size:11px;color:var(--red)">❤ '+tc+'</span>';
+    var typeClass='type-'+(r.type||'default');
+    h+='<div class="suiji-card '+typeClass+'" onclick="openRecModal('+r.id+')" ondblclick="event.stopPropagation()">';
+    /* header */
+    h+='<div class="suiji-card-head">';
+    h+='<span class="suiji-card-type" style="'+typeColor(r.type)+'">'+esc(r.type)+'</span>';
+    h+='<span class="suiji-card-date">'+dstr+'</span>';
+    h+='<button class="suiji-heart'+(r.flash?' liked':'')+'" onclick="toggleSuijiHeart('+r.id+',event)">'+(r.flash?'❤':'♡')+'</button>';
     h+='</div>';
-    h+='<div class="suiji-item-content">'+renderWithWikilinks(r.content)+'</div>';
-    h+='<div class="suiji-item-right">';
-    if(tagHtml)h+='<div style="display:flex;gap:4px;flex-wrap:wrap">'+tagHtml+'</div>';
-    if(r.link)h+='<a class="rcard-link" href="'+esc(r.link)+'" target="_blank" onclick="event.stopPropagation()">🔗</a>';
-    h+='<button class="rcard-del" style="position:static;opacity:1;font-size:13px" onclick="delRecord('+r.id+',event)">×</button>';
-    h+='</div></div>';
+    /* content - dblclick to inline edit */
+    h+='<div class="suiji-card-content" id="sc-content-'+r.id+'" ondblclick="startSuijiEdit('+r.id+',this,event)">'+esc(r.content)+'</div>';
+    /* footer */
+    h+='<div class="suiji-card-foot">';
+    if(r.tags&&r.tags.length){r.tags.forEach(function(t){h+='<span class="suiji-card-tag" style="'+typeColor(r.type)+'">'+esc('#'+t)+'</span>'});}
+    if(tc)h+='<span class="suiji-thought-count">❤ '+tc+'</span>';
+    if(r.link)h+='<a class="suiji-card-link" href="'+esc(r.link)+'" target="_blank" onclick="event.stopPropagation()">🔗</a>';
+    h+='</div>';
+    h+='<button class="suiji-card-del" onclick="delRecord('+r.id+',event)">×</button>';
+    h+='</div>';
   });
   h+='</div>';
   return h;
@@ -1485,23 +1678,254 @@ function buildTimeline(){
 }
 
 /* ── 读书笔记 ── */
+function bookCoverGradient(title){
+  var palettes=[
+    ['#667eea','#764ba2'],['#f093fb','#f5576c'],['#4facfe','#00f2fe'],
+    ['#43e97b','#38f9d7'],['#fa709a','#fee140'],['#a18cd1','#fbc2eb'],
+    ['#fd7743','#fda085'],['#a1c4fd','#c2e9fb'],['#30cfd0','#330867'],['#f7971e','#ffd200']
+  ];
+  var idx=0;for(var i=0;i<title.length;i++)idx=(idx+title.charCodeAt(i))%palettes.length;
+  return palettes[idx];
+}
+function renderBookCoverEl(book,size){
+  var cls={'sm':'book-cover','lg':'book-detail-cover','card':'book-card-cover','mini':'book-reader-cover-mini'}[size]||'book-cover';
+  var fs={'sm':'22px','lg':'32px','card':'36px','mini':'18px'}[size]||'22px';
+  if(book.coverSrc){
+    return '<div class="'+cls+'"><img src="'+book.coverSrc+'" alt=""></div>';
+  }
+  var firstChar=book.title.replace(/[《》\s]/g,'').charAt(0)||'书';
+  var g=bookCoverGradient(book.title);
+  return '<div class="'+cls+'" style="background:linear-gradient(135deg,'+g[0]+','+g[1]+')"><span class="book-card-cover-char" style="font-size:'+fs+'">'+firstChar+'</span></div>';
+}
+var _activeBookId=null, _readerSidebarTab='review';
 function buildBookNotes(){
   var books=S.books||[];
-  var h='<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;flex-shrink:0">';
-  h+='<span style="font-size:13px;font-weight:600;color:var(--text1)">读书笔记</span>';
-  h+='<button class="record-new-btn" onclick="openBookImport()">+ 导入</button></div>';
-  if(!books.length){h+='<div class="record-empty"><div style="font-size:36px;opacity:.2">📖</div><div>暂无读书笔记，点击「+ 导入」粘贴微信读书导出内容</div></div>';return h;}
-  h+='<div class="book-list">';
+  var h='<div style="display:flex;flex-direction:column;height:100%;min-height:0">';
+  h+='<div class="book-shelf-toolbar">';
+  h+='<h3>读书笔记（'+books.length+'本）</h3>';
+  h+='<div style="display:flex;gap:8px;align-items:center">';
+  h+='<div style="position:relative"><span style="position:absolute;left:8px;top:50%;transform:translateY(-50%);font-size:12px;pointer-events:none">🔍</span><input style="height:28px;padding:0 10px 0 26px;border:1px solid var(--border2);border-radius:var(--rxs);background:var(--surface2);color:var(--text1);font-size:12px;font-family:inherit;outline:none;width:140px" placeholder="搜索书名…" oninput="filterBookShelf(this.value)" id="shelf-search"></div>';
+  h+='<button class="record-new-btn" onclick="openBookImport()">+ 导入</button>';
+  h+='</div></div>';
+  if(!books.length){
+    h+='<div class="record-empty"><div style="font-size:48px;opacity:.15">📚</div><div>暂无读书笔记</div><div style="font-size:12px;color:var(--text3)">点击「+ 导入」粘贴微信读书导出内容</div></div>';
+    h+='</div>';return h;
+  }
+  h+='<div class="book-card-grid">';
   books.forEach(function(book){
-    h+='<div class="book-item" onclick="openBookDetail('+book.id+')">';
-    h+='<div class="book-cover">'+book.emoji+'</div>';
-    h+='<div class="book-info"><div class="book-title">'+esc(book.title)+'</div>';
-    h+='<div class="book-meta">'+esc(book.author||'')+(book.noteCount?' · '+book.noteCount+'条笔记':'')+'</div></div>';
-    h+='<button onclick="delBook('+book.id+',event)" class="book-del-btn">×</button>';
+    h+='<div class="book-card" onclick="openBookReader('+book.id+')">';
+    h+=renderBookCoverEl(book,'card');
+    h+='<button class="book-card-del" onclick="delBook('+book.id+',event)" title="删除">×</button>';
+    h+='<div class="book-card-title">'+esc(book.title)+'</div>';
+    h+='<div class="book-card-meta">'+(book.author?esc(book.author)+' · ':'')+( book.noteCount||0)+'条笔记</div>';
     h+='</div>';
   });
+  h+='</div></div>';
+  return h;
+}
+function openBookReader(id){
+  _activeBookId=id;
+  var book=(S.books||[]).find(function(x){return x.id===id});
+  if(!book)return;
+  /* build reader overlay */
+  var el=document.createElement('div');
+  el.id='book-reader-el';
+  el.className='book-reader';
+  el.innerHTML=renderBookReaderHTML(book);
+  document.body.appendChild(el);
+}
+function closeBookReader(){
+  var el=byId('book-reader-el');if(el)el.remove();
+  _activeBookId=null;
+  closeNoteComment();
+}
+function filterBookShelf(q){
+  var grid=document.querySelector('.book-card-grid');if(!grid)return;
+  var cards=grid.querySelectorAll('.book-card');
+  var lower=q.trim().toLowerCase();
+  cards.forEach(function(c){c.style.display=(!lower||c.querySelector('.book-card-title').textContent.toLowerCase().indexOf(lower)>=0)?'flex':'none'});
+}
+function renderBookReaderHTML(book){
+  var h='<div class="book-reader-header">';
+  h+='<button class="book-reader-back" onclick="closeBookReader()">← 返回书架</button>';
+  h+=renderBookCoverEl(book,'mini');
+  h+='<div class="book-reader-titles"><div class="book-reader-title">'+esc(book.title)+'</div>';
+  if(book.author)h+='<div class="book-reader-author">'+esc(book.author)+'</div>';
+  h+='</div>';
+  h+='<div class="book-reader-actions">';
+  /* search */
+  h+='<div class="book-search-wrap" id="book-search-wrap">';
+  h+='<span class="book-search-icon">🔍</span>';
+  h+='<input class="book-search-input" id="book-search-input" placeholder="搜索笔记…" oninput="bookSearch('+book.id+',this.value)" onblur="setTimeout(function(){closeBookSearch()},200)">';
+  h+='<div class="book-search-results" id="book-search-results"></div>';
+  h+='</div>';
+  h+='<button class="btn btn-ghost" style="height:28px;padding:0 10px;font-size:12px" onclick="openBookCoverEdit('+book.id+')">✎ 封面</button>';
+  h+='</div></div>';
+  h+='<div class="book-reader-body">';
+  h+='<div class="book-reading-area" id="book-reading-area"><div class="book-reading-inner" id="book-reading-inner">';
+  h+=parseBookContentNew(book);
+  h+='</div></div>';
+  h+='<div class="book-sidebar">';
+  h+='<div class="book-sidebar-tabs">';
+  h+='<button class="book-sidebar-tab'+(_readerSidebarTab==='review'?' active':'')+'" onclick="switchReaderTab(\'review\','+book.id+')">书评</button>';
+  h+='<button class="book-sidebar-tab'+(_readerSidebarTab==='toc'?' active':'')+'" onclick="switchReaderTab(\'toc\','+book.id+')">目录</button>';
+  h+='</div>';
+  h+='<div class="book-sidebar-panel" id="reader-sidebar-panel">';
+  h+=renderReaderSidebarContent(book);
+  h+='</div></div>';
   h+='</div>';
   return h;
+}
+function switchReaderTab(tab,bookId){
+  _readerSidebarTab=tab;
+  var book=(S.books||[]).find(function(x){return x.id===bookId});
+  document.querySelectorAll('.book-sidebar-tab').forEach(function(b){b.classList.remove('active')});
+  document.querySelectorAll('.book-sidebar-tab').forEach(function(b){if((tab==='review'&&b.textContent==='书评')||(tab==='toc'&&b.textContent==='目录'))b.classList.add('active')});
+  var panel=byId('reader-sidebar-panel');
+  if(panel&&book)panel.innerHTML=renderReaderSidebarContent(book);
+}
+function renderReaderSidebarContent(book){
+  if(_readerSidebarTab==='toc'){
+    var chapters=[];
+    (book.content||'').split('\n').forEach(function(line){
+      line=line.trim();
+      if(line.match(/^第[一二三四五六七八九十〇百千\d]+[章节部]/)||line.match(/^Chapter\s*\d+/i))
+        chapters.push(line);
+    });
+    if(!chapters.length)return '<div style="color:var(--text3);font-size:12px;text-align:center;padding:16px">未检测到章节目录</div>';
+    return chapters.map(function(c,i){return'<div class="book-toc-item" onclick="scrollToChapter('+i+')">'+esc(c)+'</div>'}).join('');
+  }
+  /* review */
+  return '<div class="book-review-label">我的书评</div>'+
+    '<textarea class="book-review-input" id="book-review-'+book.id+'" rows="8" placeholder="写下对这本书的总体评价、关键收获、推荐指数…" onblur="saveBookReview('+book.id+')">'+esc(book.review||'')+'</textarea>'+
+    '<div style="margin-top:12px;font-size:11px;color:var(--text3)">失焦自动保存</div>';
+}
+function parseBookContentNew(book){
+  var rawLines=book.content.split('\n');
+  var annos=book.annotations||{};
+
+  var isChapter=function(s){
+    return s.match(/^第[一二三四五六七八九十〇百千\d]+[章节部卷]/)||
+           s.match(/^Chapter\s*\d+/i)||
+           s.match(/^[一二三四五六七八九十〇]+$/)||
+           s.match(/^[一二三四五六七八九十〇]+、/)||
+           s.match(/^前言$|^后记$|^序言?$|^附录/);
+  };
+  var isThoughtHeader=function(s){return (s.startsWith('*')||s.startsWith('◆'))&&s.includes('发表想法');};
+  var isHighlight=function(s){return (s.startsWith('*')||s.startsWith('◆'))&&!s.includes('发表想法');};
+  var isSkip=function(s){return s.match(/^《[^》]+》/)||s.match(/^\d+个笔记$/)||s==='来自微信读书'||s.startsWith('-- 来自微信读书');};
+
+  var items=[];
+  var i=0;
+  while(i<rawLines.length){
+    var line=rawLines[i].trim(); i++;
+    if(!line||isSkip(line)) continue;
+
+    if(isThoughtHeader(line)){
+      /* collect thought lines + optional 原文 */
+      var tl=[],origin='';
+      while(i<rawLines.length){
+        var nl=rawLines[i].trim();
+        if(!nl){i++;continue;} /* skip blank lines inside thought block */
+        if(isHighlight(nl)||isThoughtHeader(nl)||isChapter(nl)) break;
+        if(nl.startsWith('原文：')){origin=nl.replace('原文：','').trim();i++;break;}
+        tl.push(nl); i++;
+      }
+      if(!tl.length&&!origin) continue; /* nothing useful */
+
+      /* key rule: last item type determines TYPE2 vs TYPE3 */
+      var lastItem=items.length?items[items.length-1]:null;
+      var lastIsNote=lastItem&&lastItem.type==='note';
+
+      if(lastIsNote&&tl.length){
+        /* TYPE2: attach thought to the preceding note */
+        lastItem.thoughts=(lastItem.thoughts||[]).concat(tl);
+        /* origin line is context reference only, ignore */
+      } else if(origin&&tl.length){
+        /* TYPE3: origin becomes the highlight, thought goes below */
+        items.push({type:'note',highlight:origin,thoughts:tl});
+      } else if(origin&&!tl.length){
+        /* origin only, no thought: plain highlight */
+        items.push({type:'note',highlight:origin,thoughts:[]});
+      } else if(tl.length){
+        /* orphan thought, no origin: show as text */
+        items.push({type:'text',text:tl.join(' ')});
+      }
+      continue;
+    }
+
+    if(isChapter(line)){items.push({type:'chapter',text:line});continue;}
+    if(isHighlight(line)){
+      items.push({type:'note',highlight:line.replace(/^[*◆]\s*/,''),thoughts:[]});continue;
+    }
+    items.push({type:'text',text:line});
+  }
+
+  /* render */
+  var h='';
+  var noteIdx=0,chapterCount=0;
+  var chapterColors=['#5b6ef5','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f43f5e','#a78bfa'];
+
+  items.forEach(function(sec){
+    if(sec.type==='chapter'){
+      var cc=chapterColors[chapterCount%chapterColors.length];
+      h+='<div class="br-chapter" id="chapter-'+chapterCount+'" style="border-bottom-color:'+cc+'40">';
+      h+='<span class="br-chapter-num" style="background:'+cc+'1a;color:'+cc+'">§'+(chapterCount+1)+'</span>';
+      h+=esc(sec.text)+'</div>';
+      chapterCount++;return;
+    }
+    if(sec.type==='text'){h+='<div class="br-text-block">'+esc(sec.text)+'</div>';return;}
+    var ni=noteIdx++;
+    var annoList=annos[ni]||[];
+    var hasThought=sec.thoughts&&sec.thoughts.length>0;
+    var leftBorder=hasThought?'3px solid #c17f27':'3px solid transparent';
+    h+='<div class="br-note-card" id="note-'+ni+'" style="background:var(--surface);margin-bottom:8px;border-radius:8px;border:1px solid var(--border);border-left:'+leftBorder+';overflow:hidden;cursor:pointer;transition:box-shadow .15s" onclick="openNoteComment('+book.id+','+ni+',event)">';
+    h+='<div style="padding:12px 16px;display:flex;gap:10px;align-items:flex-start">';
+    h+='<div style="width:6px;height:6px;border-radius:50%;background:var(--text3);flex-shrink:0;margin-top:8px"></div>';
+    h+='<div style="font-size:13.5px;color:var(--text1);line-height:1.75;flex:1">'+esc(sec.highlight)+'</div>';
+    h+='</div>';
+    if(hasThought){
+      h+='<div style="border-top:1px solid rgba(193,127,39,.18);background:linear-gradient(135deg,rgba(193,127,39,.08),rgba(193,127,39,.03));padding:10px 16px 10px 33px">';
+      sec.thoughts.forEach(function(t){h+='<div style="font-size:13px;color:#b8650a;line-height:1.65;font-style:italic;margin-bottom:3px">'+esc(t)+'</div>';});
+      h+='</div>';
+    }
+    if(annoList.length){
+      h+='<div style="border-top:1px solid rgba(167,139,250,.18);background:linear-gradient(135deg,rgba(167,139,250,.07),rgba(167,139,250,.02));padding:8px 16px 8px 33px">';
+      annoList.forEach(function(a,ai){
+        h+='<div style="display:flex;align-items:flex-start;gap:6px;margin-bottom:4px;font-size:12.5px;color:var(--purple);line-height:1.55;font-style:italic"><span style="flex:1">💬 '+esc(a)+'</span>';
+        h+='<button onclick="delBookAnno('+book.id+','+ni+','+ai+',event)" style="background:none;border:none;cursor:pointer;color:var(--purple);opacity:.4;font-size:12px;flex-shrink:0;padding:0;line-height:1">×</button></div>';
+      });
+      h+='</div>';
+    }
+    h+='</div>';
+  });
+  return h||'<div style="color:var(--text3);text-align:center;padding:40px;font-size:13px">暂无笔记内容</div>';
+}
+function scrollToNote(ni){
+  closeBookSearch();
+  var el=byId('note-'+ni);var area=byId('book-reading-area');
+  if(el&&area){area.scrollTop=el.offsetTop-32;el.style.outline='2px solid var(--accent)';el.style.outlineOffset='2px';setTimeout(function(){el.style.outline='';el.style.outlineOffset='';},1500);}
+}
+function delBookAnno(bookId,noteIdx,annoIdx,e){
+  if(e)e.stopPropagation();
+  var book=(S.books||[]).find(function(x){return x.id===bookId});
+  if(!book||!book.annotations||!book.annotations[noteIdx])return;
+  book.annotations[noteIdx].splice(annoIdx,1);autoPush();
+  var el=byId('book-reader-el');if(el)el.innerHTML=renderBookReaderHTML(book);
+}
+function openBookCoverEdit(id){
+  var book=(S.books||[]).find(function(x){return x.id===id});if(!book)return;
+  var inp=document.createElement('input');inp.type='file';inp.accept='image/*';
+  inp.onchange=function(e){
+    var f=e.target.files[0];if(!f)return;
+    var reader=new FileReader();
+    reader.onload=function(ev){
+      book.coverSrc=ev.target.result;autoPush();
+      render();
+      var el=byId('book-reader-el');if(el)el.innerHTML=renderBookReaderHTML(book);
+    };
+    reader.readAsDataURL(f);
+  };inp.click();
 }
 
 /* ══ RECORD (legacy - now inside 随记) ══ */
@@ -1553,10 +1977,23 @@ function openBookImport(){
   var h='<div class="overlay open" id="book-import-overlay" onclick="if(event.target===this)closeBookImport()">';
   h+='<div class="modal"><button class="mclose" onclick="closeBookImport()">×</button>';
   h+='<div class="mtitle">导入微信读书笔记</div>';
-  h+='<div style="font-size:12px;color:var(--text3);margin-bottom:10px">微信读书 → 笔记 → 导出 → 复制全部内容粘贴到下方</div>';
-  h+='<div class="field"><label>书名（自定义）</label><input id="bi-title" placeholder="留空则自动识别"></div>';
-  h+='<div class="field"><label>Emoji 封面</label><input id="bi-emoji" value="📖" maxlength="2" style="width:60px;text-align:center;font-size:20px"></div>';
-  h+='<div class="field"><label>笔记内容（粘贴）</label><textarea id="bi-content" rows="12" placeholder="粘贴微信读书导出的全部文本…" style="max-height:300px"></textarea></div>';
+  h+='<div style="display:flex;gap:16px;margin-bottom:14px;align-items:flex-start">';
+  /* cover upload */
+  h+='<div>';
+  h+='<div class="book-import-cover" id="bi-cover-wrap" onclick="byId(\'bi-cover-file\').click()" title="点击上传封面图片">';
+  h+='<span id="bi-cover-emoji" style="font-size:24px;position:relative;z-index:1">📖</span>';
+  h+='<div class="book-import-cover-label">封面</div>';
+  h+='<img id="bi-cover-preview" style="display:none;position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:6px" src="">';
+  h+='</div>';
+  h+='<input type="file" id="bi-cover-file" accept="image/*" style="display:none" onchange="handleBiCover(event)">';
+  h+='</div>';
+  /* fields */
+  h+='<div style="flex:1">';
+  h+='<div class="field"><label>书名（自动识别，可修改）</label><input id="bi-title" placeholder="《书名》"></div>';
+  h+='<div class="field"><label>作者</label><input id="bi-author" placeholder="作者名（可选）"></div>';
+  h+='<div class="frow"><div class="field"><label>Emoji（无封面时显示）</label><input id="bi-emoji" value="📖" maxlength="2" style="width:60px;text-align:center;font-size:20px"></div></div>';
+  h+='</div></div>';
+  h+='<div class="field"><label>笔记内容 <span style="color:var(--red)">*</span></label><textarea id="bi-content" rows="10" placeholder="微信读书 → 笔记 → 导出 → 复制全部内容粘贴到此处…" style="max-height:260px"></textarea></div>';
   h+='<div class="macts"><div></div><div class="macts-right"><button class="btn btn-ghost" onclick="closeBookImport()">取消</button>';
   h+='<button class="btn btn-primary" onclick="saveBook()">导入</button></div></div>';
   h+='</div></div>';
@@ -1564,20 +2001,42 @@ function openBookImport(){
   document.body.appendChild(el.firstChild);
   setTimeout(function(){var t=byId('bi-content');if(t)t.focus()},80);
 }
+var _biCoverSrc='';
+function handleBiCover(e){
+  var f=e.target.files[0];if(!f)return;
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    _biCoverSrc=ev.target.result;
+    var prev=byId('bi-cover-preview');var emoji=byId('bi-cover-emoji');
+    if(prev){prev.src=ev.target.result;prev.style.display='block';}
+    if(emoji)emoji.style.display='none';
+  };
+  reader.readAsDataURL(f);e.target.value='';
+}
 function closeBookImport(){var el=byId('book-import-overlay');if(el)el.remove()}
 function saveBook(){
-  var content=byId('bi-content').value.trim();if(!content){alert('请粘贴笔记内容');return}
+  var rawContent=byId('bi-content').value.trim();if(!rawContent){alert('请粘贴笔记内容');return}
   var customTitle=byId('bi-title').value.trim();
-  var emoji=byId('bi-emoji').value.trim()||'📖';
-  /* auto-detect title from first line like《xxx》*/
+  var customAuthor=byId('bi-author').value.trim();
+  var emoji=(byId('bi-emoji')||{}).value&&byId('bi-emoji').value.trim()||'📖';
   var title=customTitle;
-  if(!title){var m=content.match(/《([^》]+)》/);title=m?m[1]:'未命名书籍';}
-  /* count notes */
-  var noteCount=(content.match(/\*/g)||[]).length;
-  var author='';var am=content.match(/\n([^\n《\*#]{2,30})\n[^\n]*?个笔记/);if(am)author=am[1].trim();
+  if(!title){var m=rawContent.match(/《([^》]+)》/);title=m?m[1]:'未命名书籍';}
+  var noteCount=(rawContent.match(/^\*/gm)||[]).length;
+  var author=customAuthor;
+  if(!author){var am=rawContent.match(/\n([^\n《\*#]{2,30})\n[^\n]*?个笔记/);if(am)author=am[1].trim();}
   var id=S.books.length?(Math.max.apply(null,S.books.map(function(x){return x.id}))+1):1;
-  S.books.push({id:id,title:title,author:author,emoji:emoji,content:content,noteCount:noteCount,ts:Date.now()});
-  closeBookImport();render();autoPush();showToast('《'+title+'》导入成功');
+  /* check if same title exists -> overwrite */
+  var existingIdx=S.books.findIndex(function(b){return b.title===title});
+  if(existingIdx>=0){
+    var existing=S.books[existingIdx];
+    S.books[existingIdx]=Object.assign({},existing,{content:rawContent,noteCount:noteCount,author:author||existing.author,emoji:emoji||existing.emoji,coverSrc:_biCoverSrc||existing.coverSrc||'',ts:Date.now()});
+    showToast('《'+title+'》已覆盖更新 ✓');
+  } else {
+    S.books.push({id:id,title:title,author:author,emoji:emoji,coverSrc:_biCoverSrc||'',content:rawContent,noteCount:noteCount,review:'',annotations:{},ts:Date.now()});
+    showToast('《'+title+'》导入成功 ✓');
+  }
+  _biCoverSrc='';_activeBookId=id;
+  closeBookImport();render();autoPush();showToast('《'+title+'》导入成功 ✓');
 }
 function openBookDetail(id){
   var book=S.books.find(function(x){return x.id===id});if(!book)return;
