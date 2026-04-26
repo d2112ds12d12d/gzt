@@ -214,5 +214,22 @@
     "imgs": [],
     "loc": "date",
     "order": 8
+  },
+  {
+    "id": 25,
+    "title": "接力claude更新",
+    "desc": "完成“读书笔记”的更新设计和评论设计",
+    "status": "todo",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "none",
+    "hours": 0,
+    "ds": "2026-04-27",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 7
   }
 ]
