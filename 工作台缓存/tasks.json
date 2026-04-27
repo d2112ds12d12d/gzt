@@ -465,5 +465,26 @@
     "imgs": [],
     "loc": "date",
     "order": 4
+  },
+  {
+    "id": 41,
+    "title": "争议问题评审会",
+    "desc": "",
+    "status": "inprogress",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "weekly",
+    "repeatWeekdays": [
+      0
+    ],
+    "repeatMonthday": null,
+    "hours": 0,
+    "ds": "2026-04-27",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 5
   }
 ]
