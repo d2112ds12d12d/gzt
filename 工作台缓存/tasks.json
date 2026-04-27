@@ -50,7 +50,7 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 2
+    "order": 0
   },
   {
     "id": 15,
@@ -92,7 +92,7 @@
     "id": 17,
     "title": "实操质检10台",
     "desc": "",
-    "status": "inprogress",
+    "status": "done",
     "tag": "日常待办",
     "tagType": "green",
     "pri": "q4",
@@ -105,7 +105,7 @@
     ],
     "imgs": [],
     "loc": "date",
-    "order": 1,
+    "order": 2,
     "repeatWeekdays": [],
     "repeatMonthday": 1
   },
@@ -266,7 +266,7 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 3
+    "order": 1
   },
   {
     "id": 30,
@@ -312,7 +312,7 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 4
+    "order": 5
   },
   {
     "id": 33,
@@ -369,7 +369,7 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 4
+    "order": 6
   },
   {
     "id": 36,
