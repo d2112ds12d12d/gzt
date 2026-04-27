@@ -423,5 +423,24 @@
     "imgs": [],
     "loc": "date",
     "order": 13
+  },
+  {
+    "id": 39,
+    "title": "群内培训通知",
+    "desc": "",
+    "status": "inprogress",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "none",
+    "repeatWeekdays": [],
+    "repeatMonthday": null,
+    "hours": 0,
+    "ds": "2026-04-27",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 2
   }
 ]
