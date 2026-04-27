@@ -387,5 +387,41 @@
     "loc": "date",
     "order": 0,
     "parentId": 35
+  },
+  {
+    "id": 37,
+    "title": "T-7 名单公布&差异赋能",
+    "desc": "",
+    "status": "todo",
+    "tag": "每天待办",
+    "tagType": "green",
+    "pri": "q4",
+    "repeat": "none",
+    "hours": 0,
+    "ds": "2026-04-28",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 0,
+    "parentId": 35
+  },
+  {
+    "id": 38,
+    "title": "月度标准变更培训；16:30-18:00",
+    "desc": "",
+    "status": "todo",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "none",
+    "repeatWeekdays": [],
+    "repeatMonthday": null,
+    "hours": 0,
+    "ds": "2026-04-28",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 13
   }
 ]
