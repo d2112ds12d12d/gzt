@@ -282,5 +282,22 @@
     "imgs": [],
     "loc": "date",
     "order": 9
+  },
+  {
+    "id": 29,
+    "title": "抽检问题核减",
+    "desc": "",
+    "status": "inprogress",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "none",
+    "hours": 0,
+    "ds": "2026-04-27",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 3
   }
 ]
