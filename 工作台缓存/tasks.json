@@ -185,7 +185,7 @@
     "id": 24,
     "title": "预约会议室，思考一下，月度标准变更和答疑案例是否可以一起培？",
     "desc": "",
-    "status": "todo",
+    "status": "cancelled",
     "tag": "日常待办",
     "tagType": "green",
     "pri": "q4",
@@ -198,7 +198,7 @@
     ],
     "imgs": [],
     "loc": "date",
-    "order": 8
+    "order": 2
   },
   {
     "id": 25,
