@@ -267,23 +267,6 @@
     "order": 9
   },
   {
-    "id": 28,
-    "title": "主板审核差异跟进",
-    "desc": "",
-    "status": "todo",
-    "tag": "日常待办",
-    "tagType": "green",
-    "pri": "q4",
-    "prog": 0,
-    "repeat": "none",
-    "hours": 0,
-    "ds": "2026-04-27",
-    "links": [],
-    "imgs": [],
-    "loc": "date",
-    "order": 9
-  },
-  {
     "id": 29,
     "title": "主板审核问题核减",
     "desc": "",
