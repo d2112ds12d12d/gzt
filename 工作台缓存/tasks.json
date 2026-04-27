@@ -40,19 +40,17 @@
     "title": "近期质量数据更新",
     "desc": "",
     "status": "done",
-    "tag": "日常待办",
+    "tag": "每日待办",
     "tagType": "green",
     "pri": "q4",
-    "prog": 0,
-    "repeat": "daily",
+    "prog": 100,
+    "repeat": "none",
     "hours": 0,
     "ds": "2026-04-27",
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 2,
-    "repeatWeekdays": [],
-    "repeatMonthday": null
+    "order": 2
   },
   {
     "id": 15,
@@ -292,7 +290,7 @@
       }
     ],
     "loc": "date",
-    "order": 2,
+    "order": 3,
     "timerMs": 14013
   },
   {
@@ -312,6 +310,6 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 3
+    "order": 2
   }
 ]
