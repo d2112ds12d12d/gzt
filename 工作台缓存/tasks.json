@@ -275,7 +275,7 @@
     "tagType": "green",
     "pri": "q4",
     "prog": 0,
-    "repeat": "none",
+    "repeat": "weekly",
     "hours": 0,
     "ds": "2026-04-27",
     "links": [],
