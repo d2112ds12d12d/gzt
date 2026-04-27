@@ -444,5 +444,24 @@
     "imgs": [],
     "loc": "date",
     "order": 2
+  },
+  {
+    "id": 40,
+    "title": "新人表公表更新",
+    "desc": "",
+    "status": "inprogress",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "none",
+    "repeatWeekdays": [],
+    "repeatMonthday": null,
+    "hours": 0,
+    "ds": "2026-04-27",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 3
   }
 ]
