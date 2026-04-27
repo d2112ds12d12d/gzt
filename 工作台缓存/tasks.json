@@ -269,7 +269,7 @@
   {
     "id": 30,
     "title": "新人上岗考核规则确认与考核安排",
-    "desc": "",
+    "desc": "1、具体考核内容：考试与质量数据公布？\n2、交付时间与计薪日期冲突确认问题是否存在？",
     "status": "inprogress",
     "tag": "日常待办",
     "tagType": "green",
@@ -279,7 +279,16 @@
     "hours": 0,
     "ds": "2026-04-27",
     "links": [],
-    "imgs": [],
+    "imgs": [
+      {
+        "name": "企业微信截图_84be6951-a68a-48cf-8d3d-091ca1547755.png",
+        "src": "https://raw.githubusercontent.com/d2112ds12d12d/gzt/main/工作台缓存/images/1777261721656________84be6951-a68a-48cf-8d3d-091ca1547755.png"
+      },
+      {
+        "name": "企业微信截图_84be6951-a68a-48cf-8d3d-091ca1547755.png",
+        "src": "https://raw.githubusercontent.com/d2112ds12d12d/gzt/main/工作台缓存/images/1777261731054________84be6951-a68a-48cf-8d3d-091ca1547755.png"
+      }
+    ],
     "loc": "date",
     "order": 2
   }
