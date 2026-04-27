@@ -339,6 +339,26 @@ html.light .tcard.cancelled{background:rgba(217,119,6,.06)}
 .rcard-thought-count{font-size:11px;color:var(--red);display:flex;align-items:center;gap:3px}
 .record-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--text3);text-align:center}
 
+/* ══ LONG-PRESS DROP ZONES ══ */
+.lp-overlay{position:fixed;inset:0;z-index:500;pointer-events:none;display:none}
+.lp-overlay.active{display:block;pointer-events:all}
+.lp-zones{position:fixed;bottom:0;left:0;right:0;height:130px;display:flex;gap:0;z-index:501;transform:translateY(100%);transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
+.lp-zones.show{transform:translateY(0)}
+.lp-zone{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;cursor:pointer;transition:background .15s;border-top:2px solid transparent;font-size:12px;font-weight:600;letter-spacing:.02em}
+.lp-zone .lp-icon{font-size:26px;transition:transform .2s}
+.lp-zone:hover,.lp-zone.drag-over{border-top-color:currentColor}
+.lp-zone:hover .lp-icon,.lp-zone.drag-over .lp-icon{transform:scale(1.25)}
+.lp-zone-timer{background:rgba(91,110,245,.92);color:#c7d0ff}
+.lp-zone-inbox{background:rgba(45,212,191,.88);color:#d0faf6}
+.lp-zone-ap{background:rgba(251,191,36,.92);color:#5a3a00}
+.lp-zone-del{background:rgba(239,68,68,.88);color:#ffd5d5}
+.lp-close-hint{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,.55);color:#fff;padding:8px 18px;border-radius:20px;font-size:13px;pointer-events:none;z-index:502;opacity:0;transition:opacity .2s}
+.lp-close-hint.show{opacity:1}
+/* timer badge on card */
+.tc-timer-badge{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;color:var(--accent2);background:var(--accent-bg);border-radius:8px;padding:1px 6px;margin-left:4px;font-weight:600;vertical-align:middle}
+.tc-timer-badge.running{color:var(--green);background:rgba(74,222,128,.15);animation:pulse 1.5s ease infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
 /* ══ SUIJI CARDS ══ */
 .suiji-toolbar{display:flex;align-items:center;gap:8px;flex-shrink:0;margin-bottom:12px;flex-wrap:wrap}
 .suiji-sort-btn{height:28px;padding:0 10px;border-radius:var(--rxs);font-size:11.5px;cursor:pointer;color:var(--text2);border:1px solid var(--border2);background:var(--surface2);font-family:inherit;transition:all .15s;display:flex;align-items:center;gap:4px;white-space:nowrap}
@@ -836,7 +856,14 @@ input[type=range]{width:100%;accent-color:var(--accent)}
             <select id="m-status" onchange="updStatusBar()">
               <option value="todo">未开始</option><option value="inprogress">进行中</option>
               <option value="done">已完成</option><option value="cancelled">已取消</option>
-            </select></div></div>
+            </select></div>
+          <div><div class="flabel">优先级</div>
+          <div style="display:flex;gap:6px;margin-top:6px">
+            <button type="button" id="pri-normal" onclick="selPri('normal')" style="flex:1;height:32px;border-radius:var(--rxs);border:1.5px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:12px;font-family:inherit;transition:all .14s">⚪ 普通</button>
+            <button type="button" id="pri-important" onclick="selPri('important')" style="flex:1;height:32px;border-radius:var(--rxs);border:1.5px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:12px;font-family:inherit;transition:all .14s">🟡 重要</button>
+            <button type="button" id="pri-urgent" onclick="selPri('urgent')" style="flex:1;height:32px;border-radius:var(--rxs);border:1.5px solid var(--border2);background:var(--surface2);cursor:pointer;font-size:12px;font-family:inherit;transition:all .14s">🔴 紧急</button>
+          </div></div>
+          </div>
         <div class="flabel">位置</div>
         <div class="locbtns">
           <button class="locbtn sdate" id="loc-date" onclick="selLoc('date')">📅 设置日期</button>
@@ -985,7 +1012,7 @@ var S={
   dragId:null,dragIdx:null,links:[],imgs:[],
   flashRecId:null,flashLiked:false,
   settingsTab:'github',
-  recTab:'records', recFilter:'all',
+  recTab:'records', recFilter:'all', taskPriColors:{'urgent':'#ef4444','important':'#f59e0b','normal':'var(--text3)'},
   notesTab:'随记', suijiSort:'time-desc', /* time-desc | time-asc | type */
   books:[], bookId:1, /* reading notes */
   apRecords:[], /* timeline AP records */
@@ -1093,7 +1120,7 @@ function ghPull(){
     if(res[2]){if(res[2].recTypes)S.recTypes=res[2].recTypes;if(res[2].cfg)Object.assign(S.cfg,res[2].cfg);if(res[2].taskTags&&res[2].taskTags.length)S.taskTags=res[2].taskTags;if(res[2].shortcuts)S.shortcuts=res[2].shortcuts;if(res[2].shortcutId)S.shortcutId=res[2].shortcutId;}
     ghLog('✓ 已拉取 — 任务 '+S.tasks.length+' 个 · 记录 '+S.records.length+' 条','var(--green)');
     localSave(); /* mirror GitHub data to local */
-    render();startFlash();
+    rolloverTasks();checkRepeatTasks();render();startFlash();
   }).catch(function(e){ghLog('✗ 拉取失败：'+e,'var(--red)')});
 }
 function ghPushAll(){
@@ -1107,7 +1134,7 @@ var LS_KEY='tf_local_v1';
 function localSave(){
   try{
     localStorage.setItem(LS_KEY,JSON.stringify({
-      tasks:S.tasks,records:S.records,recTypes:S.recTypes,cfg:S.cfg,taskTags:S.taskTags,shortcuts:S.shortcuts,shortcutId:S.shortcutId,books:S.books,apRecords:S.apRecords,nid:S.nid,recId:S.recId,
+      tasks:S.tasks,records:S.records,recTypes:S.recTypes,cfg:S.cfg,taskTags:S.taskTags,shortcuts:S.shortcuts,shortcutId:S.shortcutId,books:S.books,apRecords:S.apRecords,nid:S.nid,recId:S.recId,suijiSort:S.suijiSort,recFilter:S.recFilter,
       savedAt:Date.now()
     }));
   }catch(e){/* storage full or unavailable */}
@@ -1123,6 +1150,8 @@ function localLoad(){
     if(d.taskTags&&d.taskTags.length)S.taskTags=d.taskTags;
     if(d.shortcuts)S.shortcuts=d.shortcuts;
     if(d.shortcutId)S.shortcutId=d.shortcutId;
+    if(d.suijiSort)S.suijiSort=d.suijiSort;
+    if(d.recFilter)S.recFilter=d.recFilter;
     if(d.books)S.books=d.books;
     if(d.apRecords)S.apRecords=d.apRecords;
     if(d.cfg)Object.assign(S.cfg,d.cfg);
@@ -1279,7 +1308,7 @@ function switchPage(page){
   byId('fab').style.display=(page==='todo'||page==='notes')?'flex':'none';
   render();
 }
-function shiftDate(n){S.cur=new Date(S.cur.getTime()+n*86400000);byId('dchip').textContent=fmtDate(S.cur);render()}
+function shiftDate(n){S.cur=new Date(S.cur.getTime()+n*86400000);byId('dchip').textContent=fmtDate(S.cur);checkRepeatTasks();render()}
 function setDayMode(m){
   S.dayMode=m;S.weekOff=0;
   byId('btn-today').classList.toggle('active',m==='today');
@@ -1337,8 +1366,12 @@ function renderKanban(m){
 function renderCard(t,isActive,idx,colKey){
   /* wikilinks in title */
   var titleHtml=renderWithWikilinks(t.title);
-  var h='<div class="tcard '+t.status+'" id="tc-'+t.id+'" draggable="true" ondragstart="cardDragStart(event,'+t.id+',\''+colKey+'\','+idx+')" ondragover="cardDragOver(event,'+idx+')" ondragleave="cardDragLeave(event)" ondrop="cardDrop(event,\''+colKey+'\','+idx+')" onclick="event.stopPropagation();openModal('+t.id+',null)">';
-  h+='<div class="tc-title'+(t.status==='done'?' done':'')+'" style="padding-right:'+(isActive?'70px':'50px')+'">'+titleHtml+'</div>';
+  var h='<div class="tcard '+t.status+'" id="tc-'+t.id+'" data-task-id="'+t.id+'" draggable="true" ondragstart="cardDragStart(event,'+t.id+',\''+colKey+'\','+idx+')" ondragover="cardDragOver(event,'+idx+')" ondragleave="cardDragLeave(event)" ondrop="cardDrop(event,\''+colKey+'\','+idx+')" onclick="event.stopPropagation();openModal('+t.id+',null)" onmousedown="lpMouseDown(event,'+t.id+')" onmouseup="lpMouseUp()" onmouseleave="lpMouseUp()" ontouchstart="lpTouchStart(event,'+t.id+')" ontouchend="lpMouseUp()" ontouchmove="lpTouchMove(event)">';
+  var priDot=t.pri==='urgent'?'🔴 ':t.pri==='important'?'🟡 ':'';
+  var timerBadge='';
+  if(_timerRunning[t.id]){var telapsed=_timerRunning[t.id].elapsed+(Date.now()-_timerRunning[t.id].start);timerBadge='<span class="tc-timer-badge running" data-timer-id="'+t.id+'">⏱ '+fmtMs((t.timerMs||0)+telapsed)+'</span>';}
+  else if(t.timerMs){timerBadge='<span class="tc-timer-badge" data-timer-id="'+t.id+'">⏱ '+fmtMs(t.timerMs)+'</span>';}
+  h+='<div class="tc-title'+(t.status==='done'?' done':'')+'" style="padding-right:'+(isActive?'70px':'50px')+'">'+priDot+titleHtml+timerBadge+'</div>';
   h+='<div class="tc-meta">';
   if(t.tag)h+='<span class="tc-tag '+(t.tagType||'green')+'">'+esc(t.tag)+'</span>';
   if(t.links&&t.links.length){t.links.forEach(function(l){h+='<a class="tc-link-icon" href="'+esc(l)+'" target="_blank" onclick="event.stopPropagation()" title="'+esc(l)+'">🔗</a>'})}
@@ -1610,7 +1643,6 @@ function buildSuiji(){
   h+='<button class="suiji-sort-btn'+(sort==='time-desc'?' active':'')+'" onclick="setSuijiSort(\'time-desc\')">↓ 最新</button>';
   h+='<button class="suiji-sort-btn'+(sort==='time-asc'?' active':'')+'" onclick="setSuijiSort(\'time-asc\')">↑ 最早</button>';
   h+='<button class="suiji-sort-btn'+(sort==='type'?' active':'')+'" onclick="setSuijiSort(\'type\')">类型</button>';
-  h+='<button class="record-new-btn" onclick="openRecModal(null)">+ 新建</button>';
   h+='</div>';
   if(!recs.length){
     h+='<div class="record-empty"><div style="font-size:36px;opacity:.2">📝</div><div>暂无随记</div></div>';
@@ -1734,6 +1766,41 @@ function openBookReader(id){
   el.innerHTML=renderBookReaderHTML(book);
   document.body.appendChild(el);
 }
+function openBookUpdate(id){
+  var book=(S.books||[]).find(function(x){return x.id===id});if(!book)return;
+  var el=document.createElement('div');
+  el.id='book-update-overlay';
+  el.className='overlay open';
+  el.onclick=function(e){if(e.target===el)closeBookUpdate();};
+  el.innerHTML='<div class="modal"><button class="mclose" onclick="closeBookUpdate()">×</button>'+
+    '<div class="mtitle">更新笔记内容</div>'+
+    '<div style="font-size:12px;color:var(--text3);margin-bottom:4px">书名：'+esc(book.title)+'　评注和书评将保留</div>'+
+    '<div class="field"><label>粘贴最新导出内容 <span style="color:var(--red)">*</span></label>'+
+    '<textarea id="book-update-content" rows="12" placeholder="微信读书 → 笔记 → 导出 → 复制全部内容粘贴到此处…" style="max-height:320px"></textarea></div>'+
+    '<div class="macts"><div></div><div class="macts-right">'+
+    '<button class="btn btn-ghost" onclick="closeBookUpdate()">取消</button>'+
+    '<button class="btn btn-primary" onclick="saveBookUpdate('+id+')">覆盖更新</button>'+
+    '</div></div></div>';
+  document.body.appendChild(el);
+  setTimeout(function(){var t=byId('book-update-content');if(t)t.focus();},80);
+}
+function closeBookUpdate(){var el=byId('book-update-overlay');if(el)el.remove();}
+function saveBookUpdate(id){
+  var raw=byId('book-update-content').value.trim();
+  if(!raw){alert('请粘贴笔记内容');return;}
+  var book=(S.books||[]).find(function(x){return x.id===id});if(!book)return;
+  var noteCount=(raw.match(/^◆/gm)||raw.match(/^\*/gm)||[]).length;
+  /* overwrite content only, preserve review + annotations + cover */
+  book.content=raw;
+  book.noteCount=noteCount;
+  book.ts=Date.now();
+  closeBookUpdate();
+  autoPush();
+  showToast('《'+book.title+'》已更新 ✓');
+  /* re-render reader */
+  var readerEl=byId('book-reader-el');
+  if(readerEl)readerEl.innerHTML=renderBookReaderHTML(book);
+}
 function closeBookReader(){
   var el=byId('book-reader-el');if(el)el.remove();
   _activeBookId=null;
@@ -1753,12 +1820,12 @@ function renderBookReaderHTML(book){
   if(book.author)h+='<div class="book-reader-author">'+esc(book.author)+'</div>';
   h+='</div>';
   h+='<div class="book-reader-actions">';
-  /* search */
   h+='<div class="book-search-wrap" id="book-search-wrap">';
   h+='<span class="book-search-icon">🔍</span>';
   h+='<input class="book-search-input" id="book-search-input" placeholder="搜索笔记…" oninput="bookSearch('+book.id+',this.value)" onblur="setTimeout(function(){closeBookSearch()},200)">';
   h+='<div class="book-search-results" id="book-search-results"></div>';
   h+='</div>';
+  h+='<button class="btn btn-ghost" style="height:28px;padding:0 10px;font-size:12px" onclick="openBookUpdate('+book.id+')">↻ 更新</button>';
   h+='<button class="btn btn-ghost" style="height:28px;padding:0 10px;font-size:12px" onclick="openBookCoverEdit('+book.id+')">✎ 封面</button>';
   h+='</div></div>';
   h+='<div class="book-reader-body">';
@@ -1913,6 +1980,43 @@ function delBookAnno(bookId,noteIdx,annoIdx,e){
   book.annotations[noteIdx].splice(annoIdx,1);autoPush();
   var el=byId('book-reader-el');if(el)el.innerHTML=renderBookReaderHTML(book);
 }
+function openBookUpdate(id){
+  var book=(S.books||[]).find(function(x){return x.id===id});if(!book)return;
+  var h='<div class="overlay open" id="book-update-overlay" onclick="if(event.target===this)closeBookUpdate()">';
+  h+='<div class="modal"><button class="mclose" onclick="closeBookUpdate()">×</button>';
+  h+='<div class="mtitle">更新笔记内容</div>';
+  h+='<div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;padding:10px 12px;background:var(--surface2);border-radius:var(--rs)">';
+  h+=renderBookCoverEl(book,'sm');
+  h+='<div><div style="font-size:13px;font-weight:600;color:var(--text1)">'+esc(book.title)+'</div>';
+  h+='<div style="font-size:11.5px;color:var(--text3);margin-top:2px">书评和评注将保留，笔记内容将被覆盖</div></div></div>';
+  h+='<div class="field"><label>粘贴最新导出内容 <span style="color:var(--red)">*</span></label>';
+  h+='<textarea id="book-update-content" rows="12" placeholder="微信读书 → 笔记 → 导出 → 复制全部内容粘贴到此处…" style="max-height:320px"></textarea></div>';
+  h+='<div class="macts"><div></div><div class="macts-right">';
+  h+='<button class="btn btn-ghost" onclick="closeBookUpdate()">取消</button>';
+  h+='<button class="btn btn-primary" onclick="saveBookUpdate('+id+')">覆盖更新</button>';
+  h+='</div></div></div></div>';
+  var el=document.createElement('div');el.innerHTML=h;
+  var reader=byId('book-reader-el');
+  (reader||document.body).appendChild(el.firstChild);
+  setTimeout(function(){var t=byId('book-update-content');if(t)t.focus();},80);
+}
+function closeBookUpdate(){var el=byId('book-update-overlay');if(el)el.remove();}
+function saveBookUpdate(id){
+  var rawContent=(byId('book-update-content')||{}).value;
+  if(!rawContent||!rawContent.trim()){alert('请粘贴笔记内容');return;}
+  rawContent=rawContent.trim();
+  var book=(S.books||[]).find(function(x){return x.id===id});if(!book)return;
+  var noteCount=(rawContent.match(/^◆/gm)||rawContent.match(/^\*/gm)||[]).length;
+  book.content=rawContent;
+  book.noteCount=noteCount;
+  book.ts=Date.now();
+  /* preserve review and annotations */
+  autoPush();closeBookUpdate();
+  var el=byId('book-reader-el');
+  if(el)el.innerHTML=renderBookReaderHTML(book);
+  showToast('《'+book.title+'》笔记已更新 ✓');
+}
+
 function openBookCoverEdit(id){
   var book=(S.books||[]).find(function(x){return x.id===id});if(!book)return;
   var inp=document.createElement('input');inp.type='file';inp.accept='image/*';
@@ -1938,13 +2042,14 @@ function searchRec(v){
 function delRecord(id,e){e.stopPropagation();if(!confirm('确认删除？'))return;S.records=S.records.filter(function(r){return r.id!==id});render();autoPush()}
 
 /* ── AP Record Modal ── */
-function openApModal(id){
+function openApModal(id,defaultTitle){
   S._apEdit=id;
   var ap=id?S.apRecords.find(function(x){return x.id===id}):null;
   var h='<div class="overlay open" id="ap-overlay" onclick="if(event.target===this)closeApModal()">';
   h+='<div class="modal modal-sm"><button class="mclose" onclick="closeApModal()">×</button>';
   h+='<div class="mtitle">'+(ap?'编辑记录':'新建时间线记录')+'</div>';
-  h+='<div class="field"><label>标题/事项</label><input id="ap-title" value="'+esc(ap?ap.title||'':'')+'" placeholder="例：周会/项目讨论/客户沟通"></div>';
+  var initTitle=ap?ap.title||'':(defaultTitle||'');
+  h+='<div class="field"><label>标题/事项</label><input id="ap-title" value="'+esc(initTitle)+'" placeholder="例：周会/项目讨论/客户沟通"></div>';
   h+='<div class="field"><label>工作共识</label><textarea id="ap-consensus" rows="2" placeholder="达成的共识、结论…">'+esc(ap?ap.consensus||'':'')+'</textarea></div>';
   h+='<div class="field"><label>行动项（每行一条）</label><textarea id="ap-actions" rows="3" placeholder="- 完成xxx&#10;- 跟进yyy">'+esc(ap?(ap.actions||[]).join('\n'):'')+'</textarea></div>';
   h+='<div class="frow field"><div><label class="flabel">负责人</label><input id="ap-owner" value="'+esc(ap?ap.owner||'':'')+'" placeholder="我/某某"></div>';
@@ -2604,6 +2709,16 @@ function renderImgs(){var el=byId('img-list');if(!el)return;el.innerHTML=S.imgs.
 
 /* ══ TASK MODAL ══ */
 function updStatusBar(){var v=byId('m-status').value;var bar=byId('status-bar');if(bar)bar.className='status-bar '+v}
+function selPri(p){
+  S.pri=p;
+  ['normal','important','urgent'].forEach(function(k){
+    var el=byId('pri-'+k);if(!el)return;
+    el.style.borderColor=k===p?'var(--accent)':'var(--border2)';
+    el.style.background=k===p?'var(--accent-bg)':'var(--surface2)';
+    el.style.color=k===p?'var(--accent2)':'var(--text2)';
+    el.style.fontWeight=k===p?'600':'400';
+  });
+}
 function openModalWithStatus(status){
   openModal(null,null);
   byId('m-status').value=status||'todo';updStatusBar();
@@ -2702,8 +2817,8 @@ function saveTask(){
   var prog=0,desc=byId('m-desc').value.trim();
   
   var tagType=tag.indexOf('周')>=0?'purple':'green';
-  if(S.editId!==null){var t=S.tasks.find(function(x){return x.id===S.editId});if(t)Object.assign(t,{title:title,desc:desc,status:status,tag:tag,tagType:tagType,pri:S.pri,prog:prog,repeat:repeat,hours:hours,ds:dateStr,links:S.links.slice(),imgs:S.imgs.slice(),loc:S.loc});}
-  else{var mo=S.tasks.filter(function(x){return x.status===status}).length;var newId=S.nid++;S.tasks.push({id:newId,title:title,desc:desc,status:status,tag:tag,tagType:tagType,pri:S.pri,prog:prog,repeat:repeat,hours:hours,ds:dateStr,links:S.links.slice(),imgs:S.imgs.slice(),loc:S.loc,order:mo});
+  if(S.editId!==null){var t=S.tasks.find(function(x){return x.id===S.editId});if(t)Object.assign(t,{title:title,desc:desc,status:status,tag:tag,tagType:tagType,pri:S.pri,prog:prog,repeat:repeat,repeatWeekdays:repeatWeekdays,repeatMonthday:repeatMonthday,hours:hours,ds:dateStr,links:S.links.slice(),imgs:S.imgs.slice(),loc:S.loc});}
+  else{var mo=S.tasks.filter(function(x){return x.status===status}).length;var newId=S.nid++;S.tasks.push({id:newId,title:title,desc:desc,status:status,tag:tag,tagType:tagType,pri:S.pri,prog:prog,repeat:repeat,repeatWeekdays:repeatWeekdays,repeatMonthday:repeatMonthday,hours:hours,ds:dateStr,links:S.links.slice(),imgs:S.imgs.slice(),loc:S.loc,order:mo});
     /* link back to source record if converted */
     if(S._convertFromRec){var srcRec=S.records.find(function(x){return x.id===S._convertFromRec});if(srcRec)srcRec.linkedTaskId=newId;S._convertFromRec=null;}
   }
@@ -2943,6 +3058,198 @@ function toggleTheme(){
   try{localStorage.setItem('tf-theme',isLight?'light':'dark')}catch(e){}
 }
 
+
+/* ── ROLLOVER: uncompleted tasks from past → today ── */
+function rolloverTasks(){
+  var today=todayDs();
+  var changed=false;
+  S.tasks.forEach(function(t){
+    if(t.status==='done'||t.status==='cancelled') return;
+    if(t.repeat&&t.repeat!=='none') return; /* skip repeat templates */
+    if(!t.ds||t.ds>=today) return;
+    t.ds=today;
+    changed=true;
+  });
+  if(changed) autoPush();
+}
+
+/* ── REPEAT TASK ENGINE ── */
+function checkRepeatTasks(){
+  /* check for ALL dates that have been visited or are current */
+  var todayStr=todayDs();
+  var curStr=S.cur?ds(S.cur):todayStr;
+  var datesToCheck=[todayStr];
+  if(curStr&&curStr!==todayStr) datesToCheck.push(curStr);
+  var added=false;
+  datesToCheck.forEach(function(checkDate){
+    S.tasks.slice().forEach(function(t){
+      if(!t.repeat||t.repeat==='none') return;
+      if(t.parentId) return; /* skip instances */
+      var shouldGenerate=false;
+      if(t.repeat==='weekly'&&t.repeatWeekdays&&t.repeatWeekdays.length){
+        var parts=checkDate.split('-');
+        var d=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
+        var dow=d.getDay();
+        var weekday=dow===0?7:dow;
+        shouldGenerate=t.repeatWeekdays.indexOf(weekday)>=0;
+      } else if(t.repeat==='monthly'&&t.repeatMonthday){
+        var dm=parseInt(checkDate.split('-')[2],10);
+        shouldGenerate=dm===t.repeatMonthday;
+      }
+      if(!shouldGenerate) return;
+      var exists=S.tasks.some(function(x){
+        return x.parentId===t.id&&x.ds===checkDate;
+      });
+      if(exists) return;
+      var newId=S.nid++;
+      S.tasks.push({
+        id:newId,title:t.title,desc:t.desc||'',status:'todo',
+        tag:t.tag,tagType:t.tagType,pri:t.pri||'normal',
+        repeat:'none',hours:t.hours||0,ds:checkDate,
+        links:(t.links||[]).slice(),imgs:(t.imgs||[]).slice(),
+        loc:'date',order:0,parentId:t.id
+      });
+      added=true;
+    });
+  });
+  if(added) autoPush();
+}
+
+/* ══ LONG-PRESS ENGINE ══ */
+var _lpTaskId=null,_lpPressTimer=null,_lpStartX=0,_lpStartY=0;
+function lpMouseDown(e,id){
+  if(e.button!==0)return;
+  _lpStartX=e.clientX;_lpStartY=e.clientY;
+  _lpPressTimer=setTimeout(function(){startLpZones(id);},300);
+}
+function lpTouchStart(e,id){
+  var t=e.touches[0];_lpStartX=t.clientX;_lpStartY=t.clientY;
+  _lpPressTimer=setTimeout(function(){startLpZones(id);},600);
+}
+function lpTouchMove(e){
+  var t=e.touches[0];
+  if(Math.abs(t.clientX-_lpStartX)>10||Math.abs(t.clientY-_lpStartY)>10){clearTimeout(_lpPressTimer);_lpPressTimer=null;}
+}
+function lpMouseUp(){clearTimeout(_lpPressTimer);_lpPressTimer=null;}
+
+function attachLongPress(el,taskId){
+  var pressTimer=null;
+  el.addEventListener('mousedown',function(e){
+    if(e.button!==0)return;
+    _lpStartX=e.clientX;_lpStartY=e.clientY;
+    pressTimer=setTimeout(function(){startLpZones(taskId,el);},300);
+  });
+  el.addEventListener('mousemove',function(e){
+    if(pressTimer&&(Math.abs(e.clientX-_lpStartX)>8||Math.abs(e.clientY-_lpStartY)>8)){
+      clearTimeout(pressTimer);pressTimer=null;
+    }
+  });
+  el.addEventListener('mouseup',function(){clearTimeout(pressTimer);pressTimer=null;});
+  el.addEventListener('mouseleave',function(){clearTimeout(pressTimer);pressTimer=null;});
+  /* touch */
+  el.addEventListener('touchstart',function(e){
+    var t=e.touches[0];_lpStartX=t.clientX;_lpStartY=t.clientY;
+    pressTimer=setTimeout(function(){startLpZones(taskId,el);},600);
+  },{passive:true});
+  el.addEventListener('touchmove',function(e){
+    var t=e.touches[0];
+    if(pressTimer&&(Math.abs(t.clientX-_lpStartX)>10||Math.abs(t.clientY-_lpStartY)>10)){
+      clearTimeout(pressTimer);pressTimer=null;
+    }
+  },{passive:true});
+  el.addEventListener('touchend',function(){clearTimeout(pressTimer);pressTimer=null;});
+}
+
+function startLpZones(taskId){
+  _lpTaskId=taskId;
+  var overlay=byId('lp-overlay');var zones=byId('lp-zones');
+  if(overlay)overlay.classList.add('active');
+  if(zones)zones.classList.add('show');
+  if(navigator.vibrate)navigator.vibrate(40);
+  /* allow card to be dragged into zones */
+  var card=document.getElementById('tc-'+taskId);
+  if(card)card.addEventListener('dragend',closeLpZones,{once:true});
+}
+function closeLpZones(){
+  _lpTaskId=null;
+  var overlay=byId('lp-overlay');var zones=byId('lp-zones');
+  if(overlay)overlay.classList.remove('active');
+  if(zones)zones.classList.remove('show');
+  document.querySelectorAll('.lp-zone').forEach(function(z){z.classList.remove('drag-over')});
+}
+function lpZoneDragOver(e,zone){
+  e.preventDefault();
+  document.querySelectorAll('.lp-zone').forEach(function(z){z.classList.remove('drag-over')});
+  var el=byId('lp-zone-'+zone);if(el)el.classList.add('drag-over');
+}
+function lpZoneDragLeave(e,zone){
+  var el=byId('lp-zone-'+zone);if(el)el.classList.remove('drag-over');
+}
+function lpZoneDrop(e,zone){
+  e.preventDefault();
+  var taskId=_lpTaskId;
+  closeLpZones();
+  if(taskId===null)return;
+  if(zone==='timer') lpDoTimer(taskId);
+  else if(zone==='inbox') lpDoInbox(taskId);
+  else if(zone==='ap') lpDoAP(taskId);
+  else if(zone==='del') lpDoDel(taskId);
+}
+function lpDoInbox(id){
+  var t=S.tasks.find(function(x){return x.id===id});
+  if(!t)return;
+  t.loc='inbox';t.ds='';
+  render();autoPush();showToast('已移入收集箱');
+}
+function lpDoDel(id){
+  if(!confirm('确认删除这个任务？'))return;
+  S.tasks=S.tasks.filter(function(x){return x.id!==id});
+  render();autoPush();
+}
+function lpDoAP(id){
+  var t=S.tasks.find(function(x){return x.id===id});
+  if(!t)return;
+  openApModal(null,t.title); /* pass task title as default */
+}
+
+/* ══ TIMER ENGINE ══ */
+var _timerRunning={}; /* taskId → {start, elapsed} */
+var _timerInterval=null;
+
+function lpDoTimer(id){
+  var t=S.tasks.find(function(x){return x.id===id});if(!t)return;
+  if(_timerRunning[id]){
+    /* stop */
+    var elapsed=_timerRunning[id].elapsed+(Date.now()-_timerRunning[id].start);
+    delete _timerRunning[id];
+    t.timerMs=(t.timerMs||0)+elapsed;
+    if(Object.keys(_timerRunning).length===0&&_timerInterval){clearInterval(_timerInterval);_timerInterval=null;}
+    autoPush();render();
+    showToast('计时停止：'+fmtMs(t.timerMs));
+  } else {
+    /* start */
+    _timerRunning[id]={start:Date.now(),elapsed:0};
+    if(!_timerInterval)_timerInterval=setInterval(function(){updateTimerBadges();},1000);
+    render();showToast('开始计时');
+  }
+}
+function fmtMs(ms){
+  var s=Math.floor(ms/1000);var m=Math.floor(s/60);var h=Math.floor(m/60);
+  if(h>0)return h+'h'+pad(m%60)+'m';
+  return m+'m'+pad(s%60)+'s';
+}
+function updateTimerBadges(){
+  Object.keys(_timerRunning).forEach(function(id){
+    var badge=document.querySelector('[data-timer-id="'+id+'"]');
+    if(badge){
+      var elapsed=_timerRunning[id].elapsed+(Date.now()-_timerRunning[id].start);
+      var t=S.tasks.find(function(x){return x.id===parseInt(id)});
+      var total=(t?t.timerMs||0:0)+elapsed;
+      badge.textContent='⏱ '+fmtMs(total);
+    }
+  });
+}
+
 /* ══ INIT ══ */
 function init(){
   try{if(localStorage.getItem('tf-theme')==='light'){document.documentElement.classList.add('light');byId('ti-moon').style.display='none';byId('ti-sun').style.display='block'}}catch(e){}
@@ -2968,11 +3275,125 @@ function init(){
     /* GitHub pulls latest and overwrites local */
     ghPull();
   } else {
-    render();
+    rolloverTasks();checkRepeatTasks();render();
     if(savedAt) showToast('已从本地恢复数据（'+new Date(savedAt).toLocaleTimeString()+'）');
   }
 }
-init();
+init();function openNoteComment(bookId,noteIdx,e){
+  e.stopPropagation();
+  /* remove any existing modal */
+  var existing=byId('note-comment-modal');if(existing)existing.remove();
+  var book=(S.books||[]).find(function(x){return x.id===bookId});if(!book)return;
+  var annoList=(book.annotations&&book.annotations[noteIdx])||[];
+  /* build modal */
+  var modal=document.createElement('div');
+  modal.id='note-comment-modal';
+  modal.className='book-comment-modal';
+  /* position near click */
+  var rect=e.currentTarget?e.currentTarget.getBoundingClientRect():{bottom:300,left:300};
+  var top=Math.min(rect.bottom+8,window.innerHeight-240);
+  var left=Math.min(rect.left,window.innerWidth-320);
+  modal.style.cssText='position:fixed;top:'+top+'px;left:'+left+'px;width:300px;z-index:900;background:var(--surface);border:1px solid var(--border2);border-radius:var(--r);box-shadow:0 12px 40px rgba(0,0,0,.3);padding:14px;animation:slideUp .15s var(--ease)';
+  var existingHtml='';
+  annoList.forEach(function(a,ai){
+    existingHtml+='<div style="display:flex;gap:6px;align-items:flex-start;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px;color:var(--purple);font-style:italic">'+
+      '<span style="flex:1">💬 '+esc(a)+'</span>'+
+      '<button onclick="delBookAnno('+bookId+','+noteIdx+','+ai+',event)" style="background:none;border:none;cursor:pointer;color:var(--purple);opacity:.5;font-size:12px;flex-shrink:0;padding:0">×</button></div>';
+  });
+  modal.innerHTML=
+    '<div style="font-size:11px;font-weight:700;color:var(--text3);letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px">评注</div>'+
+    (existingHtml?'<div style="margin-bottom:8px;max-height:120px;overflow-y:auto">'+existingHtml+'</div>':'')+
+    '<textarea id="note-anno-input" rows="3" style="width:100%;padding:7px 9px;border:1px solid var(--border2);border-radius:var(--rs);font-size:12.5px;background:var(--surface2);color:var(--text1);font-family:inherit;outline:none;resize:none;line-height:1.55;transition:border-color .14s" placeholder="写下你的评注…"></textarea>'+
+    '<div style="display:flex;gap:6px;margin-top:8px;justify-content:flex-end">'+
+    '<button class="btn btn-ghost" style="height:28px;padding:0 10px;font-size:12px" onclick="closeNoteComment()">取消</button>'+
+    '<button class="btn btn-primary" style="height:28px;padding:0 10px;font-size:12px" onclick="saveNoteComment('+bookId+','+noteIdx+')">保存</button>'+
+    '</div>';
+  document.body.appendChild(modal);
+  setTimeout(function(){
+    var t=byId('note-anno-input');
+    if(t){t.focus();t.style.borderColor='var(--accent)';}
+  },60);
+  setTimeout(function(){document.addEventListener('click',_noteCommentOutside,{once:true});},100);
+}
+function _noteCommentOutside(e){var m=byId('note-comment-modal');if(m&&!m.contains(e.target))closeNoteComment();}/* note comment modal */
+var _commentModal=null;
+function openNoteComment(bookId,noteIdx,e){
+  if(e)e.stopPropagation();
+  closeNoteComment();
+  var book=(S.books||[]).find(function(x){return x.id===bookId});
+  if(!book)return;
+  var annoList=(book.annotations&&book.annotations[noteIdx])||[];
+  /* build modal */
+  var modal=document.createElement('div');
+  modal.id='book-comment-modal';
+  modal.className='book-comment-modal';
+  /* position near click */
+  var top=200,left=300;
+  if(e&&e.currentTarget){
+    var rect=e.currentTarget.getBoundingClientRect();
+    top=Math.min(rect.bottom+8,window.innerHeight-260);
+    left=Math.min(rect.left,window.innerWidth-320);
+    left=Math.max(left,8);
+  }
+  modal.style.cssText='top:'+top+'px;left:'+left+'px;';
+  var existHtml='';
+  if(annoList.length){
+    existHtml='<div style="margin-bottom:8px;padding-bottom:8px;border-bottom:1px solid var(--border)">';
+    annoList.forEach(function(a,ai){
+      existHtml+='<div style="display:flex;gap:6px;align-items:flex-start;margin-bottom:4px;font-size:12px;color:var(--purple);font-style:italic">';
+      existHtml+='<span style="flex:1">💬 '+esc(a)+'</span>';
+      existHtml+='<button onclick="delBookAnno('+bookId+','+noteIdx+','+ai+',event)" style="background:none;border:none;cursor:pointer;color:var(--purple);opacity:.5;font-size:12px;padding:0;flex-shrink:0;line-height:1">×</button>';
+      existHtml+='</div>';
+    });
+    existHtml+='</div>';
+  }
+  modal.innerHTML=
+    '<div style="font-size:10.5px;font-weight:700;color:var(--text3);letter-spacing:.05em;text-transform:uppercase;margin-bottom:8px">评注</div>'+
+    existHtml+
+    '<textarea id="note-comment-input" rows="3" placeholder="写下你对这段话的评注…" style="width:100%;padding:7px 9px;border:1px solid var(--border2);border-radius:var(--rs);font-size:12.5px;background:var(--surface2);color:var(--text1);font-family:inherit;outline:none;resize:none;line-height:1.55;box-sizing:border-box"></textarea>'+
+    '<div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px">'+
+    '<button class="btn btn-ghost" style="height:28px;padding:0 10px;font-size:12px" onclick="closeNoteComment()">取消</button>'+
+    '<button class="btn btn-primary" style="height:28px;padding:0 10px;font-size:12px" onclick="saveNoteComment('+bookId+','+noteIdx+')">保存</button>'+
+    '</div>';
+  document.body.appendChild(modal);
+  _commentModal=modal;
+  setTimeout(function(){var t=byId('note-comment-input');if(t)t.focus();},60);
+  setTimeout(function(){document.addEventListener('click',_closeCommentOutside,{once:true});},120);
+}
+function _closeCommentOutside(e){if(_commentModal&&!_commentModal.contains(e.target))closeNoteComment();}
+function closeNoteComment(){if(_commentModal){_commentModal.remove();_commentModal=null;}}
+function saveNoteComment(bookId,noteIdx){
+  var inp=byId('note-comment-input');
+  var text=inp?inp.value.trim():'';
+  if(!text){closeNoteComment();return;}
+  var book=(S.books||[]).find(function(x){return x.id===bookId});if(!book)return;
+  if(!book.annotations)book.annotations={};
+  if(!book.annotations[noteIdx])book.annotations[noteIdx]=[];
+  book.annotations[noteIdx].push(text);
+  autoPush();closeNoteComment();
+  var inner=byId('book-reading-inner');
+  if(inner)inner.innerHTML=parseBookContentNew(book);
+}
+function addBookAnno(bookId,noteIdx){
+  openNoteComment(bookId,noteIdx,null);
+}
+
 </script>
+  <!-- Long-press drop zones -->
+  <div class="lp-overlay" id="lp-overlay" onclick="closeLpZones()"></div>
+  <div class="lp-zones" id="lp-zones">
+    <div class="lp-zone lp-zone-timer" id="lp-zone-timer" ondragover="lpZoneDragOver(event,'timer')" ondragleave="lpZoneDragLeave(event,'timer')" ondrop="lpZoneDrop(event,'timer')">
+      <span class="lp-icon">⏱</span><span>计时</span>
+    </div>
+    <div class="lp-zone lp-zone-inbox" id="lp-zone-inbox" ondragover="lpZoneDragOver(event,'inbox')" ondragleave="lpZoneDragLeave(event,'inbox')" ondrop="lpZoneDrop(event,'inbox')">
+      <span class="lp-icon">📥</span><span>收集箱</span>
+    </div>
+    <div class="lp-zone lp-zone-ap" id="lp-zone-ap" ondragover="lpZoneDragOver(event,'ap')" ondragleave="lpZoneDragLeave(event,'ap')" ondrop="lpZoneDrop(event,'ap')">
+      <span class="lp-icon">📋</span><span>AP记录</span>
+    </div>
+    <div class="lp-zone lp-zone-del" id="lp-zone-del" ondragover="lpZoneDragOver(event,'del')" ondragleave="lpZoneDragLeave(event,'del')" ondrop="lpZoneDrop(event,'del')">
+      <span class="lp-icon">🗑</span><span>删除</span>
+    </div>
+  </div>
 </body>
 </html>
