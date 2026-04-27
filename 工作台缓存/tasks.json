@@ -330,5 +330,43 @@
     "imgs": [],
     "loc": "date",
     "order": 9
+  },
+  {
+    "id": 34,
+    "title": "T-7 触发人袁伟差异培训",
+    "desc": "",
+    "status": "todo",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "none",
+    "repeatWeekdays": [],
+    "repeatMonthday": null,
+    "hours": 0,
+    "ds": "2026-04-28",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 10
+  },
+  {
+    "id": 35,
+    "title": "T-7 名单公布&差异赋能",
+    "desc": "",
+    "status": "inprogress",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "daily",
+    "repeatWeekdays": [],
+    "repeatMonthday": null,
+    "hours": 0,
+    "ds": "2026-04-27",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 4
   }
 ]
