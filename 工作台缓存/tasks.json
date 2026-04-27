@@ -290,6 +290,7 @@
       }
     ],
     "loc": "date",
-    "order": 2
+    "order": 2,
+    "timerMs": 14013
   }
 ]
