@@ -74,9 +74,9 @@
     "title": "月度标准变更评审会回放查看+备课",
     "desc": "GYZM",
     "status": "inprogress",
-    "tag": "",
+    "tag": "日常待办",
     "tagType": "green",
-    "pri": "q4",
+    "pri": "urgent",
     "prog": 0,
     "repeat": "none",
     "hours": 0,
@@ -86,7 +86,9 @@
     ],
     "imgs": [],
     "loc": "date",
-    "order": 5
+    "order": 5,
+    "repeatWeekdays": [],
+    "repeatMonthday": null
   },
   {
     "id": 17,
