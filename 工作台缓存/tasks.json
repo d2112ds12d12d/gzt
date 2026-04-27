@@ -130,7 +130,7 @@
     "id": 20,
     "title": "杨秀峰的现象值标准培训",
     "desc": "",
-    "status": "todo",
+    "status": "cancelled",
     "tag": "",
     "tagType": "green",
     "pri": "q4",
@@ -143,7 +143,7 @@
     ],
     "imgs": [],
     "loc": "date",
-    "order": 3
+    "order": 1
   },
   {
     "id": 21,
