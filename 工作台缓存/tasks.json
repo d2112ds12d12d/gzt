@@ -236,7 +236,7 @@
     "id": 26,
     "title": "月度标准变更培训",
     "desc": "",
-    "status": "inprogress",
+    "status": "todo",
     "tag": "日常待办",
     "tagType": "green",
     "pri": "q4",
@@ -247,6 +247,6 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 5
+    "order": 1
   }
 ]
