@@ -14,7 +14,7 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 0
+    "order": 1
   },
   {
     "id": 13,
@@ -86,7 +86,7 @@
     ],
     "imgs": [],
     "loc": "date",
-    "order": 1,
+    "order": 0,
     "repeatWeekdays": [],
     "repeatMonthday": null
   },
