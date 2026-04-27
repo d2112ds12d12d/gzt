@@ -339,6 +339,31 @@ html.light .tcard.cancelled{background:rgba(217,119,6,.06)}
 .rcard-thought-count{font-size:11px;color:var(--red);display:flex;align-items:center;gap:3px}
 .record-empty{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;color:var(--text3);text-align:center}
 
+/* ══ TASK SEARCH ══ */
+.task-search-btn{background:none;border:none;cursor:pointer;padding:4px 7px;border-radius:var(--rxs);color:var(--text2);font-size:16px;transition:all .15s;flex-shrink:0}
+.task-search-btn:hover{background:var(--surface2);color:var(--accent2)}
+.task-search-panel{position:fixed;top:44px;left:0;right:0;background:var(--surface);border-bottom:1px solid var(--border);box-shadow:0 8px 32px rgba(0,0,0,.18);z-index:400;padding:14px 20px;animation:slideDown .2s var(--ease);display:none}
+@keyframes slideDown{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.task-search-panel.open{display:block}
+.task-search-input-wrap{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+.task-search-main{flex:1;padding:8px 12px;border:1.5px solid var(--border2);border-radius:var(--rs);font-size:13.5px;background:var(--surface2);color:var(--text1);font-family:inherit;outline:none;transition:border-color .14s}
+.task-search-main:focus{border-color:var(--accent)}
+.task-search-filters{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px}
+.tsf-btn{padding:3px 10px;border-radius:10px;border:1px solid var(--border2);background:var(--surface2);font-size:11.5px;cursor:pointer;font-family:inherit;color:var(--text2);transition:all .14s}
+.tsf-btn.active{background:var(--accent-bg);border-color:var(--accent-border);color:var(--accent2);font-weight:600}
+.task-search-results{max-height:320px;overflow-y:auto;display:flex;flex-direction:column;gap:4px}
+.task-search-results::-webkit-scrollbar{width:3px}
+.task-search-result{padding:9px 13px;border-radius:var(--rs);border:1px solid var(--border);background:var(--surface2);cursor:pointer;display:flex;align-items:center;gap:10px;transition:all .14s}
+.task-search-result:hover{border-color:var(--accent-border);background:var(--accent-bg)}
+.tsr-title{flex:1;font-size:13px;color:var(--text1);font-weight:500}
+.tsr-meta{font-size:11px;color:var(--text3);display:flex;gap:8px;align-items:center;flex-shrink:0}
+.tsr-status{padding:1px 7px;border-radius:8px;font-size:10.5px;font-weight:600}
+.tsr-status.todo{background:rgba(91,110,245,.12);color:var(--accent2)}
+.tsr-status.inprogress{background:rgba(45,212,191,.12);color:var(--teal)}
+.tsr-status.done{background:rgba(74,222,128,.12);color:var(--green)}
+.tsr-status.cancelled{background:rgba(239,68,68,.1);color:var(--red)}
+.task-search-empty{text-align:center;padding:24px;color:var(--text3);font-size:13px}
+
 /* ══ LONG-PRESS DROP ZONES ══ */
 .lp-overlay{position:fixed;inset:0;z-index:500;pointer-events:none;display:none}
 .lp-overlay.active{display:block;pointer-events:all}
@@ -737,6 +762,7 @@ input[type=range]{width:100%;accent-color:var(--accent)}
     <span class="quick-capture-hint" id="qc-hint">收集箱</span>
   </div>
   <div class="nav-sep"></div>
+  <button class="task-search-btn" onclick="toggleTaskSearch()" title="搜索任务" id="task-search-toggle">🔍</button>
   <button class="nav-tab active" id="tab-todo" onclick="switchPage('todo')">待办</button>
   <button class="nav-tab" id="tab-notes" onclick="switchPage('notes')">笔记</button>
   <button class="nav-tab" id="tab-analysis" onclick="switchPage('analysis')">数据分析</button>
@@ -1366,7 +1392,7 @@ function renderKanban(m){
 function renderCard(t,isActive,idx,colKey){
   /* wikilinks in title */
   var titleHtml=renderWithWikilinks(t.title);
-  var h='<div class="tcard '+t.status+'" id="tc-'+t.id+'" data-task-id="'+t.id+'" draggable="true" ondragstart="cardDragStart(event,'+t.id+',\''+colKey+'\','+idx+')" ondragover="cardDragOver(event,'+idx+')" ondragleave="cardDragLeave(event)" ondrop="cardDrop(event,\''+colKey+'\','+idx+')" onclick="event.stopPropagation();openModal('+t.id+',null)" onmousedown="lpMouseDown(event,'+t.id+')" onmouseup="lpMouseUp()" onmouseleave="lpMouseUp()" ontouchstart="lpTouchStart(event,'+t.id+')" ontouchend="lpMouseUp()" ontouchmove="lpTouchMove(event)">';
+  var h='<div class="tcard '+t.status+'" id="tc-'+t.id+'" data-task-id="'+t.id+'" draggable="true" ondragstart="cardDragStart(event,'+t.id+',\''+colKey+'\','+idx+')" ondragover="cardDragOver(event,'+idx+')" ondragleave="cardDragLeave(event)" ondrop="cardDrop(event,\''+colKey+'\','+idx+')" onclick="event.stopPropagation();openModal('+t.id+',null)" onmousedown="lpMouseDown(event,'+t.id+')" onmousemove="lpMouseMove(event)" onmouseup="lpMouseUp()" onmouseleave="lpMouseUp()" ontouchstart="lpTouchStart(event,'+t.id+')" ontouchend="lpMouseUp()" ontouchmove="lpTouchMove(event)">';
   var priDot=t.pri==='urgent'?'🔴 ':t.pri==='important'?'🟡 ':'';
   var timerBadge='';
   if(_timerRunning[t.id]){var telapsed=_timerRunning[t.id].elapsed+(Date.now()-_timerRunning[t.id].start);timerBadge='<span class="tc-timer-badge running" data-timer-id="'+t.id+'">⏱ '+fmtMs((t.timerMs||0)+telapsed)+'</span>';}
@@ -1409,6 +1435,7 @@ function cardDragStart(e,id,colKey,idx){
   setTimeout(function(){var el=byId('tc-'+id);if(el)el.classList.add('dragging')},0);
 }
 function cardDragOver(e,idx){
+  if(_lpTaskId!==null){e.preventDefault();return;} /* block normal drag when LP active */
   e.preventDefault();e.stopPropagation();
   var tgt=e.currentTarget;var rect=tgt.getBoundingClientRect();var isTop=e.clientY<rect.top+rect.height/2;
   document.querySelectorAll('.tcard').forEach(function(c){c.classList.remove('drag-over-top','drag-over-bot')});
@@ -2046,12 +2073,12 @@ function openApModal(id,defaultTitle){
   S._apEdit=id;
   var ap=id?S.apRecords.find(function(x){return x.id===id}):null;
   var h='<div class="overlay open" id="ap-overlay" onclick="if(event.target===this)closeApModal()">';
-  h+='<div class="modal modal-sm"><button class="mclose" onclick="closeApModal()">×</button>';
+  h+='<div class="modal" style="max-width:680px"><button class="mclose" onclick="closeApModal()">×</button>';
   h+='<div class="mtitle">'+(ap?'编辑记录':'新建时间线记录')+'</div>';
   var initTitle=ap?ap.title||'':(defaultTitle||'');
   h+='<div class="field"><label>标题/事项</label><input id="ap-title" value="'+esc(initTitle)+'" placeholder="例：周会/项目讨论/客户沟通"></div>';
-  h+='<div class="field"><label>工作共识</label><textarea id="ap-consensus" rows="2" placeholder="达成的共识、结论…">'+esc(ap?ap.consensus||'':'')+'</textarea></div>';
-  h+='<div class="field"><label>行动项（每行一条）</label><textarea id="ap-actions" rows="3" placeholder="- 完成xxx&#10;- 跟进yyy">'+esc(ap?(ap.actions||[]).join('\n'):'')+'</textarea></div>';
+  h+='<div class="field"><label>工作共识</label><textarea id="ap-consensus" rows="4" placeholder="达成的共识、结论…">'+esc(ap?ap.consensus||'':'')+'</textarea></div>';
+  h+='<div class="field"><label>行动项（每行一条）</label><textarea id="ap-actions" rows="4" placeholder="- 完成xxx&#10;- 跟进yyy">'+esc(ap?(ap.actions||[]).join('\n'):'')+'</textarea></div>';
   h+='<div class="frow field"><div><label class="flabel">负责人</label><input id="ap-owner" value="'+esc(ap?ap.owner||'':'')+'" placeholder="我/某某"></div>';
   h+='<div><label class="flabel">日期</label><input type="date" id="ap-date" value="'+(ap?ap.date||ds0():ds0())+'"></div></div>';
   h+='<div class="macts"><div>'+(ap?'<button class="btn btn-danger" onclick="delAp('+id+')">删除</button>':'')+'</div>';
@@ -3059,6 +3086,76 @@ function toggleTheme(){
 }
 
 
+/* ══ TASK SEARCH ══ */
+var _searchFilter='all';
+function toggleTaskSearch(){
+  var panel=byId('task-search-panel');
+  if(!panel)return;
+  var isOpen=panel.classList.contains('open');
+  panel.classList.toggle('open');
+  if(!isOpen){
+    setTimeout(function(){var inp=byId('task-search-input');if(inp){inp.value='';inp.focus();}runTaskSearch('');},60);
+  }
+}
+function setSearchFilter(f,btn){
+  _searchFilter=f;
+  document.querySelectorAll('.tsf-btn').forEach(function(b){b.classList.remove('active')});
+  if(btn)btn.classList.add('active');
+  var inp=byId('task-search-input');
+  runTaskSearch(inp?inp.value:'');
+}
+function runTaskSearch(q){
+  var container=byId('task-search-results');if(!container)return;
+  var query=q.trim().toLowerCase();
+  /* filter tasks */
+  var tasks=S.tasks.filter(function(t){
+    /* skip repeat instances, show only templates */
+    if(t.parentId) return false;
+    /* status filter */
+    if(_searchFilter!=='all'&&t.status!==_searchFilter) return false;
+    if(!query) return true;
+    /* search by title */
+    if(t.title&&t.title.toLowerCase().indexOf(query)>=0) return true;
+    /* search by tag */
+    if(t.tag&&t.tag.toLowerCase().indexOf(query)>=0) return true;
+    /* search by date (e.g. "04/27" or "2026-04-27") */
+    if(t.ds&&(t.ds.indexOf(query)>=0||t.ds.replace(/-/g,'/').indexOf(query)>=0)) return true;
+    return false;
+  });
+  if(!tasks.length){
+    container.innerHTML='<div class="task-search-empty">'+(query?'没有找到「'+esc(q)+'」相关任务':'暂无任务')+'</div>';
+    return;
+  }
+  var statusLabel={'todo':'未开始','inprogress':'进行中','done':'已完成','cancelled':'已取消'};
+  var h='';
+  tasks.slice(0,40).forEach(function(t){
+    var isRepeatTemplate=t.repeat&&t.repeat!=='none';
+    var priDot=t.pri==='urgent'?'🔴 ':t.pri==='important'?'🟡 ':'';
+    h+='<div class="task-search-result" onclick="jumpToTask('+t.id+')">';
+    h+='<div class="tsr-title">'+priDot+esc(t.title)+(isRepeatTemplate?' <span style="font-size:10.5px;color:var(--text3)">(重复)</span>':'')+'</div>';
+    h+='<div class="tsr-meta">';
+    if(t.tag)h+='<span style="font-size:10.5px;background:var(--surface3);padding:1px 6px;border-radius:8px;color:var(--text2)">'+esc(t.tag)+'</span>';
+    if(t.ds)h+='<span>'+t.ds.replace(/^\d{4}-/,'')+'</span>';
+    h+='<span class="tsr-status '+t.status+'">'+(statusLabel[t.status]||t.status)+'</span>';
+    h+='</div></div>';
+  });
+  if(tasks.length>40)h+='<div class="task-search-empty">还有 '+(tasks.length-40)+' 条…</div>';
+  container.innerHTML=h;
+}
+function jumpToTask(id){
+  var t=S.tasks.find(function(x){return x.id===id});if(!t)return;
+  /* close search */
+  var panel=byId('task-search-panel');if(panel)panel.classList.remove('open');
+  /* navigate to task's date and open modal */
+  if(t.ds){
+    var parts=t.ds.split('-');
+    S.cur=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
+  }
+  S.page='todo';S.view='day';
+  render();
+  setTimeout(function(){openModal(id,null);},150);
+}
+
 /* ── ROLLOVER: uncompleted tasks from past → today ── */
 function rolloverTasks(){
   var today=todayDs();
@@ -3089,12 +3186,15 @@ function checkRepeatTasks(){
       if(t.repeat==='weekly'&&t.repeatWeekdays&&t.repeatWeekdays.length){
         var parts=checkDate.split('-');
         var d=new Date(parseInt(parts[0]),parseInt(parts[1])-1,parseInt(parts[2]));
-        var dow=d.getDay();
-        var weekday=dow===0?7:dow;
+        var dow=d.getDay(); /* 0=Sun,1=Mon..6=Sat */
+        /* buttons store Mon=0..Sun=6, convert dow to match */
+        var weekday=(dow+6)%7; /* Mon=0,Tue=1,...Sun=6 */
         shouldGenerate=t.repeatWeekdays.indexOf(weekday)>=0;
       } else if(t.repeat==='monthly'&&t.repeatMonthday){
         var dm=parseInt(checkDate.split('-')[2],10);
         shouldGenerate=dm===t.repeatMonthday;
+      } else if(t.repeat==='daily'){
+        shouldGenerate=true;
       }
       if(!shouldGenerate) return;
       var exists=S.tasks.some(function(x){
@@ -3120,7 +3220,7 @@ var _lpTaskId=null,_lpPressTimer=null,_lpStartX=0,_lpStartY=0;
 function lpMouseDown(e,id){
   if(e.button!==0)return;
   _lpStartX=e.clientX;_lpStartY=e.clientY;
-  _lpPressTimer=setTimeout(function(){startLpZones(id);},300);
+  _lpPressTimer=setTimeout(function(){startLpZones(id);},500);
 }
 function lpTouchStart(e,id){
   var t=e.touches[0];_lpStartX=t.clientX;_lpStartY=t.clientY;
@@ -3131,6 +3231,12 @@ function lpTouchMove(e){
   if(Math.abs(t.clientX-_lpStartX)>10||Math.abs(t.clientY-_lpStartY)>10){clearTimeout(_lpPressTimer);_lpPressTimer=null;}
 }
 function lpMouseUp(){clearTimeout(_lpPressTimer);_lpPressTimer=null;}
+function lpMouseMove(e){
+  if(!_lpPressTimer)return;
+  if(Math.abs(e.clientX-_lpStartX)>5||Math.abs(e.clientY-_lpStartY)>5){
+    clearTimeout(_lpPressTimer);_lpPressTimer=null;
+  }
+}
 
 function attachLongPress(el,taskId){
   var pressTimer=null;
@@ -3379,6 +3485,24 @@ function addBookAnno(bookId,noteIdx){
 }
 
 </script>
+  <!-- Task search panel -->
+  <div class="task-search-panel" id="task-search-panel">
+    <div class="task-search-input-wrap">
+      <input class="task-search-main" id="task-search-input" placeholder="搜索任务标题、标签、日期(如04/27)…" oninput="runTaskSearch(this.value)" autofocus>
+      <button class="btn btn-ghost" style="height:32px;padding:0 12px;font-size:12px" onclick="toggleTaskSearch()">关闭</button>
+    </div>
+    <div class="task-search-filters" id="task-search-filters">
+      <span style="font-size:11.5px;color:var(--text3);align-self:center">状态：</span>
+      <button class="tsf-btn active" data-filter="all" onclick="setSearchFilter('all',this)">全部</button>
+      <button class="tsf-btn" data-filter="todo" onclick="setSearchFilter('todo',this)">未开始</button>
+      <button class="tsf-btn" data-filter="inprogress" onclick="setSearchFilter('inprogress',this)">进行中</button>
+      <button class="tsf-btn" data-filter="done" onclick="setSearchFilter('done',this)">已完成</button>
+    </div>
+    <div class="task-search-results" id="task-search-results">
+      <div class="task-search-empty">输入关键词搜索任务</div>
+    </div>
+  </div>
+
   <!-- Long-press drop zones -->
   <div class="lp-overlay" id="lp-overlay" onclick="closeLpZones()"></div>
   <div class="lp-zones" id="lp-zones">
