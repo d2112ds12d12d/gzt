@@ -478,5 +478,39 @@
     "loc": "date",
     "order": 0,
     "parentId": 17
+  },
+  {
+    "id": 43,
+    "title": "近期培训数据更新到公表",
+    "desc": "",
+    "status": "todo",
+    "tag": "每周待办",
+    "tagType": "purple",
+    "pri": "q4",
+    "repeat": "none",
+    "hours": 0,
+    "ds": "2026-04-27",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 0,
+    "parentId": 12
+  },
+  {
+    "id": 44,
+    "title": "T-7 名单公布&差异赋能",
+    "desc": "",
+    "status": "todo",
+    "tag": "每天待办",
+    "tagType": "green",
+    "pri": "q4",
+    "repeat": "none",
+    "hours": 0,
+    "ds": "2026-05-02",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 0,
+    "parentId": 35
   }
 ]
