@@ -14,7 +14,11 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 0
+    "order": 0,
+    "repeatWeekdays": [
+      0
+    ],
+    "repeatMonthday": null
   },
   {
     "id": 13,
@@ -105,7 +109,9 @@
     ],
     "imgs": [],
     "loc": "date",
-    "order": 1
+    "order": 1,
+    "repeatWeekdays": [],
+    "repeatMonthday": 1
   },
   {
     "id": 19,
@@ -419,5 +425,58 @@
     "loc": "date",
     "order": 0,
     "parentId": 35
+  },
+  {
+    "id": 40,
+    "title": "T-7 名单公布&差异赋能",
+    "desc": "",
+    "status": "todo",
+    "tag": "每天待办",
+    "tagType": "green",
+    "pri": "q4",
+    "repeat": "none",
+    "hours": 0,
+    "ds": "2026-04-30",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 0,
+    "parentId": 35
+  },
+  {
+    "id": 41,
+    "title": "T-7 名单公布&差异赋能",
+    "desc": "",
+    "status": "todo",
+    "tag": "每天待办",
+    "tagType": "green",
+    "pri": "q4",
+    "repeat": "none",
+    "hours": 0,
+    "ds": "2026-05-01",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 0,
+    "parentId": 35
+  },
+  {
+    "id": 42,
+    "title": "实操质检10台",
+    "desc": "",
+    "status": "todo",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "repeat": "none",
+    "hours": 0,
+    "ds": "2026-05-01",
+    "links": [
+      "https://doc.weixin.qq.com/doc/w3_AVMAlwa8AKsCN1d70EnvOT0Sxyyto?scode=AJ4AfQfgAAw0xhRd3qAVMAlwa8AKs&isEnterEdit=1"
+    ],
+    "imgs": [],
+    "loc": "date",
+    "order": 0,
+    "parentId": 17
   }
 ]
