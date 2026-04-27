@@ -111,11 +111,11 @@
     "id": 19,
     "title": "新人方案继续了解，尽快推送网课",
     "desc": "",
-    "status": "inprogress",
+    "status": "done",
     "tag": "日常待办",
     "tagType": "green",
     "pri": "q4",
-    "prog": 0,
+    "prog": 100,
     "repeat": "none",
     "hours": 0,
     "ds": "2026-04-27",
@@ -299,5 +299,22 @@
     "imgs": [],
     "loc": "date",
     "order": 3
+  },
+  {
+    "id": 30,
+    "title": "新人上岗考核规则确认与考核安排",
+    "desc": "",
+    "status": "inprogress",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "none",
+    "hours": 0,
+    "ds": "2026-04-27",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 2
   }
 ]
