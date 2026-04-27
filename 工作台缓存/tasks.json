@@ -661,10 +661,10 @@
     "pri": "q4",
     "repeat": "none",
     "hours": 0,
-    "ds": "2026-05-01",
+    "ds": "",
     "links": [],
     "imgs": [],
-    "loc": "date",
+    "loc": "inbox",
     "order": 0,
     "parentId": 14
   },
