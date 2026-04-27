@@ -141,7 +141,7 @@
     ],
     "imgs": [],
     "loc": "date",
-    "order": 4
+    "order": 3
   },
   {
     "id": 21,
@@ -160,13 +160,13 @@
     ],
     "imgs": [],
     "loc": "date",
-    "order": 7
+    "order": 5
   },
   {
     "id": 22,
     "title": "固定任务盘点",
     "desc": "",
-    "status": "inprogress",
+    "status": "todo",
     "tag": "工作提效",
     "tagType": "green",
     "pri": "q4",
@@ -177,7 +177,7 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 3
+    "order": 4
   },
   {
     "id": 23,
@@ -194,7 +194,7 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 7
+    "order": 6
   },
   {
     "id": 24,
@@ -281,6 +281,6 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 10
+    "order": 9
   }
 ]
