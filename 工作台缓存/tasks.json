@@ -650,5 +650,39 @@
     "loc": "date",
     "order": 0,
     "parentId": 14
+  },
+  {
+    "id": 53,
+    "title": "近期质量数据更新",
+    "desc": "",
+    "status": "todo",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "repeat": "none",
+    "hours": 0,
+    "ds": "2026-05-01",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 0,
+    "parentId": 14
+  },
+  {
+    "id": 54,
+    "title": "近期质量数据更新",
+    "desc": "",
+    "status": "todo",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "repeat": "none",
+    "hours": 0,
+    "ds": "2026-05-02",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 0,
+    "parentId": 14
   }
 ]
