@@ -73,7 +73,7 @@
     "id": 16,
     "title": "月度标准变更评审会回放查看+备课",
     "desc": "GYZM",
-    "status": "todo",
+    "status": "inprogress",
     "tag": "",
     "tagType": "green",
     "pri": "q4",
@@ -86,7 +86,7 @@
     ],
     "imgs": [],
     "loc": "date",
-    "order": 2
+    "order": 5
   },
   {
     "id": 17,
