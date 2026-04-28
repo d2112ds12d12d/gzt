@@ -814,5 +814,24 @@
     "loc": "date",
     "order": 0,
     "parentId": 41
+  },
+  {
+    "id": 61,
+    "title": "手机月度标准变更培训",
+    "desc": "",
+    "status": "inprogress",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "none",
+    "repeatWeekdays": [],
+    "repeatMonthday": null,
+    "hours": 0,
+    "ds": "2026-04-28",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 5
   }
 ]
