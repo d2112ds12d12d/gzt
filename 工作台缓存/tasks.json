@@ -359,24 +359,6 @@
     "order": 6
   },
   {
-    "id": 37,
-    "title": "T-7 名单公布&差异赋能",
-    "desc": "",
-    "status": "done",
-    "tag": "每天待办",
-    "tagType": "green",
-    "pri": "q4",
-    "repeat": "none",
-    "hours": 0,
-    "ds": "2026-04-28",
-    "links": [],
-    "imgs": [],
-    "loc": "date",
-    "order": 0,
-    "parentId": 35,
-    "prog": 100
-  },
-  {
     "id": 39,
     "title": "群内培训通知",
     "desc": "",
