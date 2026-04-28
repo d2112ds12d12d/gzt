@@ -418,23 +418,6 @@
     "order": 5
   },
   {
-    "id": 42,
-    "title": "争议问题评审会",
-    "desc": "",
-    "status": "todo",
-    "tag": "日常待办",
-    "tagType": "green",
-    "pri": "q4",
-    "repeat": "none",
-    "hours": 0,
-    "ds": "2026-04-28",
-    "links": [],
-    "imgs": [],
-    "loc": "date",
-    "order": 1,
-    "parentId": 41
-  },
-  {
     "id": 43,
     "title": "T-7 名单公布&差异赋能",
     "desc": "",
