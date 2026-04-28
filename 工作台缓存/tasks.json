@@ -396,7 +396,7 @@
     "id": 37,
     "title": "T-7 名单公布&差异赋能",
     "desc": "",
-    "status": "todo",
+    "status": "done",
     "tag": "每天待办",
     "tagType": "green",
     "pri": "q4",
@@ -407,7 +407,8 @@
     "imgs": [],
     "loc": "date",
     "order": 0,
-    "parentId": 35
+    "parentId": 35,
+    "prog": 100
   },
   {
     "id": 38,
