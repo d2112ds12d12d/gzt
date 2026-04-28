@@ -220,23 +220,6 @@
     "order": 7
   },
   {
-    "id": 26,
-    "title": "月度标准变更培训",
-    "desc": "",
-    "status": "todo",
-    "tag": "日常待办",
-    "tagType": "green",
-    "pri": "q4",
-    "prog": 0,
-    "repeat": "none",
-    "hours": 0,
-    "ds": "2026-04-29",
-    "links": [],
-    "imgs": [],
-    "loc": "date",
-    "order": 1
-  },
-  {
     "id": 29,
     "title": "主板审核问题核减",
     "desc": "",
