@@ -341,7 +341,7 @@
     "id": 34,
     "title": "T-7 触发人袁伟差异培训 11:30 印度洋",
     "desc": "",
-    "status": "todo",
+    "status": "inprogress",
     "tag": "日常待办",
     "tagType": "green",
     "pri": "q4",
@@ -354,7 +354,7 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 10
+    "order": 3
   },
   {
     "id": 35,
