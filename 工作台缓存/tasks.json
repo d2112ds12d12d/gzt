@@ -810,5 +810,24 @@
     "loc": "date",
     "order": 0,
     "parentId": 68
+  },
+  {
+    "id": 71,
+    "title": "组织深圳大仓的QA、复测岗参加韩昊老师的线上培训",
+    "desc": "",
+    "status": "inprogress",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "none",
+    "repeatWeekdays": [],
+    "repeatMonthday": null,
+    "hours": 0,
+    "ds": "2026-04-29",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 2
   }
 ]
