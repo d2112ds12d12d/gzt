@@ -73,7 +73,8 @@
     "loc": "date",
     "order": 3,
     "repeatWeekdays": [],
-    "repeatMonthday": null
+    "repeatMonthday": null,
+    "timerMs": 1831
   },
   {
     "id": 16,
