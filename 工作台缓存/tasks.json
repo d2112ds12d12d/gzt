@@ -10,10 +10,10 @@
     "prog": 0,
     "repeat": "weekly",
     "hours": 0,
-    "ds": "2026-04-27",
+    "ds": "",
     "links": [],
     "imgs": [],
-    "loc": "date",
+    "loc": "inbox",
     "order": 1
   },
   {
