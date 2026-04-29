@@ -1140,5 +1140,43 @@
     "imgs": [],
     "loc": "date",
     "order": 4
+  },
+  {
+    "id": 92,
+    "title": "制作培训师质量看板",
+    "desc": "",
+    "status": "todo",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "none",
+    "repeatWeekdays": [],
+    "repeatMonthday": null,
+    "hours": 0,
+    "ds": "2026-04-29",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 39
+  },
+  {
+    "id": 93,
+    "title": "111",
+    "desc": "",
+    "status": "todo",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "none",
+    "repeatWeekdays": [],
+    "repeatMonthday": null,
+    "hours": 0,
+    "ds": "2026-04-29",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 40
   }
 ]
