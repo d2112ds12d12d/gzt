@@ -60,7 +60,7 @@
     "id": 15,
     "title": "拆修专项开始时间确认",
     "desc": "月考后的刷题任务啥时候开始，怎样的规则",
-    "status": "inprogress",
+    "status": "todo",
     "tag": "日常待办",
     "tagType": "green",
     "pri": "q4",
@@ -71,7 +71,7 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 3,
+    "order": 2,
     "repeatWeekdays": [],
     "repeatMonthday": null,
     "timerMs": 1831
@@ -171,7 +171,7 @@
     ],
     "imgs": [],
     "loc": "date",
-    "order": 5
+    "order": 6
   },
   {
     "id": 22,
@@ -310,7 +310,7 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 9
+    "order": 7
   },
   {
     "id": 35,
@@ -383,7 +383,7 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 0,
+    "order": 1,
     "parentId": 35
   },
   {
@@ -737,6 +737,6 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 4
+    "order": 5
   }
 ]
