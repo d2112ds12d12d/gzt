@@ -762,7 +762,7 @@
     "id": 68,
     "title": "质量看板数据更新",
     "desc": "",
-    "status": "todo",
+    "status": "done",
     "tag": "日常待办",
     "tagType": "green",
     "pri": "q4",
@@ -775,6 +775,40 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 23
+    "order": 1
+  },
+  {
+    "id": 69,
+    "title": "质量看板数据更新",
+    "desc": "",
+    "status": "todo",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "repeat": "none",
+    "hours": 0,
+    "ds": "2026-04-29",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 0,
+    "parentId": 68
+  },
+  {
+    "id": 70,
+    "title": "质量看板数据更新",
+    "desc": "",
+    "status": "todo",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "repeat": "none",
+    "hours": 0,
+    "ds": "2026-04-30",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 0,
+    "parentId": 68
   }
 ]
