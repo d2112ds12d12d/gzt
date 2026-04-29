@@ -1137,5 +1137,43 @@
     "imgs": [],
     "loc": "date",
     "order": 3
+  },
+  {
+    "id": 90,
+    "title": "复测培训 17:00 开始",
+    "desc": "",
+    "status": "inprogress",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "none",
+    "repeatWeekdays": [],
+    "repeatMonthday": null,
+    "hours": 0,
+    "ds": "2026-04-29",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 4
+  },
+  {
+    "id": 91,
+    "title": "复测差异找志阳沟通，误判是否可以通过流程规范而减少问题",
+    "desc": "",
+    "status": "inprogress",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "none",
+    "repeatWeekdays": [],
+    "repeatMonthday": null,
+    "hours": 0,
+    "ds": "2026-04-29",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 5
   }
 ]
