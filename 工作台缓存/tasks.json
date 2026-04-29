@@ -3,7 +3,7 @@
     "id": 12,
     "title": "近期培训数据更新到公表",
     "desc": "",
-    "status": "inprogress",
+    "status": "todo",
     "tag": "每周待办",
     "tagType": "purple",
     "pri": "q4",
@@ -71,7 +71,7 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 2,
+    "order": 3,
     "repeatWeekdays": [],
     "repeatMonthday": null,
     "timerMs": 1831
@@ -171,7 +171,7 @@
     ],
     "imgs": [],
     "loc": "date",
-    "order": 6
+    "order": 7
   },
   {
     "id": 22,
@@ -188,7 +188,7 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 4,
+    "order": 5,
     "repeatWeekdays": [],
     "repeatMonthday": null
   },
@@ -310,7 +310,7 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 7
+    "order": 8
   },
   {
     "id": 35,
@@ -367,7 +367,7 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 3
+    "order": 4
   },
   {
     "id": 43,
@@ -383,7 +383,7 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 1,
+    "order": 2,
     "parentId": 35
   },
   {
@@ -724,7 +724,7 @@
     "id": 64,
     "title": "写周报",
     "desc": "",
-    "status": "todo",
+    "status": "inprogress",
     "tag": "日常待办",
     "tagType": "green",
     "pri": "q4",
@@ -737,6 +737,6 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 5
+    "order": 1
   }
 ]
