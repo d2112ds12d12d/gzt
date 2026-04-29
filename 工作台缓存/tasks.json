@@ -22,7 +22,7 @@
     "id": 13,
     "title": "推送下周x-ray考试",
     "desc": "",
-    "status": "todo",
+    "status": "inprogress",
     "tag": "每周待办",
     "tagType": "purple",
     "pri": "q4",
@@ -35,7 +35,7 @@
     ],
     "imgs": [],
     "loc": "date",
-    "order": 0,
+    "order": 1,
     "repeatWeekdays": [],
     "repeatMonthday": null
   },
