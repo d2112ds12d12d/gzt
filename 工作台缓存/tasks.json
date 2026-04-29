@@ -738,5 +738,24 @@
     "imgs": [],
     "loc": "date",
     "order": 1
+  },
+  {
+    "id": 67,
+    "title": "参加培训师周会",
+    "desc": "",
+    "status": "inprogress",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "none",
+    "repeatWeekdays": [],
+    "repeatMonthday": null,
+    "hours": 0,
+    "ds": "2026-04-29",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 1
   }
 ]
