@@ -245,6 +245,13 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
 .log-tag-sum{background:rgba(217,119,6,0.1);color:#d97706;}
 .log-empty{text-align:center;padding:32px;color:#94a3b8;font-size:13px;}
 .empty-state{text-align:center;padding:30px 20px;color:#94a3b8;}
+.inspector-cell{cursor:default;}
+.inspector-cell.editable{cursor:pointer;border-radius:4px;padding:1px 4px;transition:background .15s;}
+.inspector-cell.editable:hover{background:rgba(37,99,235,0.08);}
+.inspector-cell.overridden{color:#2563eb;}
+.inspector-cell .edit-mark{font-size:9px;color:#2563eb;margin-left:3px;vertical-align:super;}
+.inspector-input{font-size:11.5px;padding:2px 6px;border:1.5px solid #2563eb;border-radius:4px;
+  outline:none;width:80px;font-family:inherit;background:#fff;color:#1e293b;}
 /* 列头筛选浮窗 */
 #colPopup{display:none;position:fixed;z-index:9999;background:rgba(255,255,255,0.98);
   border:1px solid rgba(200,210,230,0.8);border-radius:12px;
@@ -519,7 +526,7 @@ const DATA = { qa:[], diff5:[], sum:[], diff4:[] };
 // GitHub 配置（Token拆分存储，防整段扫描）
 // ============================================================
 const GH_USER='d2112ds12d12d', GH_REPO='Qgkb', GH_FOLDER='QGZLdata';
-const GH_FILES={ qa:'qa_diff_rate.json', diff5:'phone_diff_detail.json', sum:'daily_summary.json', diff4:'five_cat_detail.json', auth:'auth_users.json' };
+const GH_FILES={ qa:'qa_diff_rate.json', diff5:'phone_diff_detail.json', sum:'daily_summary.json', diff4:'five_cat_detail.json', auth:'auth_users.json', inspector:'inspector_override.json' };
 // Token拆分混淆，运行时拼接
 const _t=['github_pa','t_11BMTOZ','Fl0q99rhi','X4b5Vp_2g','Ad2EXYrkT','mDwSPRcJQ','fFyJ4uBAW','236XiwAm4','SJYs0A7O6','TGAMetUWk','7YN'];
 function _tk(){ return _t.join(''); }
@@ -698,6 +705,7 @@ async function autoLoadCloudData(){
   }
   if(loaded>0){
     showToast(`✓ 云端数据已加载（${loaded}/4个文件）`);
+    await loadInspectorOverride();
     document.getElementById('lastUpdateTime').textContent='云端 · '+new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
     buildSiteOptions(); autoAdjustDateRange(); applyFilter();
   } else {
@@ -735,6 +743,88 @@ async function pushToGitHub(tableType){
 }
 
 // 同步授权名单到GitHub（仅creator）
+// ============================================================
+// 质检人员人工修正
+// ============================================================
+let inspectorOverride = JSON.parse(localStorage.getItem('zb_inspector_override')||'{}');
+
+async function loadInspectorOverride(){
+  try{
+    const r = await fetch(ghRaw('inspector_override.json'));
+    if(!r.ok) return;
+    const j = await r.json();
+    if(j && j.data){
+      inspectorOverride = {...j.data, ...inspectorOverride}; // 本地优先
+      localStorage.setItem('zb_inspector_override', JSON.stringify(inspectorOverride));
+    }
+  }catch(e){ console.warn('加载质检人员修正失败', e); }
+}
+
+async function saveInspectorOverride(){
+  localStorage.setItem('zb_inspector_override', JSON.stringify(inspectorOverride));
+  // 管理/创建模式推送到GitHub
+  if(currentRole==='uploader'||currentRole==='creator'){
+    const token = getEffectiveToken();
+    const fname = 'inspector_override.json';
+    const body_data = {data: inspectorOverride, updated: new Date().toISOString()};
+    const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(body_data, null, 0))));
+    let sha = '';
+    try{
+      const r = await fetch(ghUrl(fname),{headers:{Authorization:'token '+token}});
+      if(r.ok){ const j=await r.json(); sha=j.sha||''; }
+    }catch(e){}
+    const body = {message:'Update inspector_override.json', content:b64};
+    if(sha) body.sha = sha;
+    await fetch(ghUrl(fname),{method:'PUT',
+      headers:{Authorization:'token '+token,'Content-Type':'application/json'},
+      body:JSON.stringify(body)});
+  }
+}
+
+function getInspector(row){
+  if(row.siteType !== '质检中心') return row.inspector || '—';
+  const key = row.code;
+  if(inspectorOverride[key]) return inspectorOverride[key];
+  return '/';
+}
+
+function renderInspectorCell(row){
+  const val = getInspector(row);
+  const key = row.code;
+  const isEditable = row.siteType === '质检中心';
+  const isOverridden = !!inspectorOverride[key];
+  if(!isEditable) return `<span>${row.inspector||'—'}</span>`;
+  return `<span class="inspector-cell editable ${isOverridden?'overridden':''}"
+    onclick="startEditInspector(this,'${key.replace(/'/g,"\'")}','${val.replace(/'/g,"\'")}')">
+    ${val}${isOverridden?'<span class="edit-mark">✏</span>':''}
+  </span>`;
+}
+
+function startEditInspector(span, key, curVal){
+  if(span.querySelector('input')) return;
+  const input = document.createElement('input');
+  input.className = 'inspector-input';
+  input.value = curVal === '/' ? '' : curVal;
+  input.placeholder = '输入姓名';
+  span.innerHTML = '';
+  span.appendChild(input);
+  input.focus();
+  input.select();
+  const save = async ()=>{
+    const newVal = input.value.trim();
+    if(newVal && newVal !== '/'){
+      inspectorOverride[key] = newVal;
+    } else {
+      delete inspectorOverride[key]; // 清空=恢复/
+    }
+    await saveInspectorOverride();
+    renderDetailTable(); // 刷新表格
+  };
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter') save(); if(e.key==='Escape'){renderDetailTable();} });
+  input.addEventListener('blur', save);
+  input.addEventListener('click', e=>e.stopPropagation());
+}
+
 async function syncAuthList(){
   if(currentRole!=='creator'){showToast('无权限');return;}
   const content={uploaders:authUploaders,updated:new Date().toISOString()};
@@ -1398,18 +1488,66 @@ function renderDetailTable(){
   if(detailPage>tp)detailPage=tp;
   const start=(detailPage-1)*detailPerPage;
   const pageRows=detailPerPage>=999999?filteredDetailRows:filteredDetailRows.slice(start,start+detailPerPage);
+
   const subjBadge=v=>v?v.includes('客观')?`<span class="badge badge-obj">${v}</span>`:v.includes('主观')?`<span class="badge badge-subj">${v}</span>`:v:'—';
   const judgedBadge=v=>v?v==='执行问题'?`<span class="badge badge-exec">${v}</span>`:`<span class="badge badge-other">${v}</span>`:'—';
-  const tbody=document.getElementById('detailBody');
-  tbody.innerHTML=!pageRows.length
-    ?`<tr><td colspan="${COL_DEFS.length}" style="text-align:center;padding:24px;color:#94a3b8;">${DATA.diff5.length||DATA.diff4.length?'无匹配数据':'请上传差异明细文件'}</td></tr>`
-    :pageRows.map(r=>`<tr>
-      <td>${r.date}</td><td>${r.site}</td><td>${r.cat}</td>
-      <td style="font-family:monospace;font-size:10px;">${r.code||'—'}</td>
-      <td>${r.level1||'—'}</td><td>${r.level2||'—'}</td><td>${r.level3_orig||'—'}</td><td>${r.level3_new||'—'}</td>
-      <td>${subjBadge(r.subjobj)}</td><td>${r.issueType||'—'}</td><td>${judgedBadge(r.judgedType)}</td>
-      <td>${r.inspector||'—'}</td><td>${r.qaInspector||'—'}</td>
-    </tr>`).join('');
+
+  // 按质检码分组，同码多行用色块
+  const GROUP_COLORS = [
+    'rgba(37,99,235,0.04)','rgba(124,58,237,0.04)','rgba(5,150,105,0.04)',
+    'rgba(217,119,6,0.04)','rgba(236,72,153,0.04)','rgba(100,116,139,0.04)'
+  ];
+  const GROUP_BORDERS = [
+    'rgba(37,99,235,0.15)','rgba(124,58,237,0.15)','rgba(5,150,105,0.15)',
+    'rgba(217,119,6,0.15)','rgba(236,72,153,0.15)','rgba(100,116,139,0.15)'
+  ];
+
+  // 按顺序给质检码分配颜色组
+  const codeColorMap = {};
+  let colorIdx = 0;
+  pageRows.forEach(r=>{
+    const k = r.date+'|'+r.code;
+    if(!(k in codeColorMap)){ codeColorMap[k] = colorIdx % GROUP_COLORS.length; colorIdx++; }
+  });
+
+  const tbody = document.getElementById('detailBody');
+  if(!pageRows.length){
+    tbody.innerHTML=`<tr><td colspan="13" style="text-align:center;padding:24px;color:#94a3b8;">${DATA.diff5.length||DATA.diff4.length?'无匹配数据':'请上传差异明细文件'}</td></tr>`;
+  } else {
+    // 标记每个质检码组的第一行
+    const seenKeys = new Set();
+    tbody.innerHTML = pageRows.map(r=>{
+      const k = r.date+'|'+r.code;
+      const isFirst = !seenKeys.has(k);
+      seenKeys.add(k);
+      const ci = codeColorMap[k];
+      const bg = GROUP_COLORS[ci];
+      const border = GROUP_BORDERS[ci];
+
+      // 重复字段：非第一行置灰显示
+      const dim = (v)=> isFirst ? v : `<span style="color:#cbd5e1;font-size:10px;">${v||'—'}</span>`;
+      const rowStyle = isFirst
+        ? `background:${bg};border-top:1.5px solid ${border};`
+        : `background:${bg};`;
+
+      return `<tr style="${rowStyle}">
+        <td>${dim(r.date)}</td>
+        <td>${dim(r.site)}</td>
+        <td>${dim(r.cat)}</td>
+        <td style="font-family:monospace;font-size:10px;">${dim(r.code||'—')}</td>
+        <td>${r.level1||'—'}</td>
+        <td>${r.level2||'—'}</td>
+        <td>${r.level3_orig||'—'}</td>
+        <td>${r.level3_new||'—'}</td>
+        <td>${subjBadge(r.subjobj)}</td>
+        <td>${r.issueType||'—'}</td>
+        <td>${judgedBadge(r.judgedType)}</td>
+        <td>${renderInspectorCell(r)}</td>
+        <td>${r.qaInspector||'—'}</td>
+      </tr>`;
+    }).join('');
+  }
+
   document.getElementById('detailPageInfo').textContent=`共 ${total} 条，第 ${detailPage}/${tp} 页`;
   renderPageBtns('detailPageBtns',detailPage,tp,goDetailPage,detailPerPage);
 }
