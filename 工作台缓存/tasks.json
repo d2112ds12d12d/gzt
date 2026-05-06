@@ -1237,23 +1237,6 @@
     "order": 40
   },
   {
-    "id": 98,
-    "title": "质量看板数据更新",
-    "desc": "",
-    "status": "todo",
-    "tag": "日常待办",
-    "tagType": "green",
-    "pri": "q4",
-    "repeat": "none",
-    "hours": 0,
-    "ds": "2026-05-06",
-    "links": [],
-    "imgs": [],
-    "loc": "date",
-    "order": 0,
-    "parentId": 68
-  },
-  {
     "id": 99,
     "title": "质量看板数据更新",
     "desc": "",
