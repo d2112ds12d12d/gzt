@@ -251,6 +251,29 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
 .log-tag-sum{background:rgba(217,119,6,0.1);color:#d97706;}
 .log-empty{text-align:center;padding:32px;color:#94a3b8;font-size:13px;}
 .empty-state{text-align:center;padding:30px 20px;color:#94a3b8;}
+.top-table{width:100%;border-collapse:collapse;font-size:12px;}
+.top-table th{background:rgba(241,245,249,0.9);color:#475569;font-weight:600;padding:8px 12px;
+  border-bottom:1px solid rgba(200,210,230,0.5);text-align:center;white-space:nowrap;}
+.top-table th:first-child,.top-table th:nth-child(2){text-align:left;}
+.top-table td{padding:7px 12px;border-bottom:1px solid rgba(200,210,230,0.25);
+  text-align:center;color:#334155;font-size:12px;}
+.top-table td:first-child,.top-table td:nth-child(2){text-align:left;}
+.top-table tr:last-child td{border-bottom:none;}
+.top-table tr:hover td{background:rgba(37,99,235,0.03);}
+.top-section-hd{font-size:12px;font-weight:700;color:#fff;padding:6px 14px;border-radius:8px;
+  margin-bottom:10px;display:inline-block;}
+.top-section-hd.dw{background:#2563eb;}
+.top-section-hd.hy{background:#7c3aed;}
+.change-up{color:#dc2626;font-weight:600;}
+.change-down{color:#059669;font-weight:600;}
+.change-flat{color:#94a3b8;}
+.top-reason-cell{cursor:pointer;padding:2px 6px;border-radius:4px;transition:background .15s;
+  text-align:left!important;min-width:120px;}
+.top-reason-cell:hover{background:rgba(37,99,235,0.08);}
+.top-reason-cell.set{color:#2563eb;}
+.top-reason-input{font-size:11px;padding:3px 8px;border:1.5px solid #2563eb;border-radius:4px;
+  outline:none;width:180px;font-family:inherit;}
+.per-page-row{display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b;margin-bottom:8px;}
 .filter-chip-multi{font-size:12px;padding:3px 12px;border-radius:20px;cursor:pointer;
   border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.6);
   color:#64748b;transition:all .15s;white-space:nowrap;user-select:none;}
@@ -318,7 +341,7 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
   <div class="sidebar-footer">
     <div id="userBadge" class="user-badge" onclick="openLogModal('user')" title="点击管理账号">
       <div class="user-avatar" id="userAvatar">?</div>
-      <div><div class="user-name" id="userName">未绑定</div><div class="user-id-lbl" id="userIdLabel">点击绑定工号</div></div>
+      <div><div class="user-name" id="userName" style="display:none;"></div><div class="user-id-lbl" id="userIdLabel">点击绑定工号</div></div>
     </div>
     <div id="uploadStatus" class="upload-status">
       <span class="ds-chip" id="chip-qa">📊 QA差异率</span>
@@ -414,19 +437,13 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
       </div>
       <div class="card" style="margin-bottom:14px;padding:16px;">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap;">
-            <select class="site-sel" id="compareSiteSel" onchange="renderCompare()" style="font-size:11px;"></select>
+            <select class="site-sel" id="compareSiteSel" onchange="renderCompare();renderTopTables()" style="font-size:11px;"></select>
         </div>
         <div class="chart-wrap" style="height:200px;"><canvas id="chartCompare"></canvas></div>
         <div id="compareTable"></div>
       </div>
 
-      <!-- 明细联动图表 -->
-      <div class="section-hd"><div class="section-hd-left">明细数据</div><span style="font-size:11px;color:#94a3b8;font-weight:400;">图表随筛选联动</span></div>
-      <div class="detail-charts-row">
-        <div class="card"><div class="chart-title">各站点差异数量</div><div class="chart-wrap"><canvas id="chartSite"></canvas></div></div>
-        <div class="card"><div class="chart-title">每日差异趋势</div><div class="chart-wrap"><canvas id="chartDate"></canvas></div></div>
-      </div>
-
+      
       <!-- 明细表格 - 列头内置筛选 -->
       <div class="table-wrap">
         <div class="table-toolbar" style="flex-wrap:wrap;gap:6px;">
@@ -512,7 +529,7 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
       </div>
       <div id="idmapPane" style="display:none;padding:20px 22px;">
         <div style="font-size:13px;color:#475569;margin-bottom:4px;">上传工号↔姓名对照表</div>
-        <div style="font-size:11px;color:#94a3b8;margin-bottom:14px;">格式：A列=工号，B列=姓名，C列=备注（可选）</div>
+        <div style="font-size:11px;color:#94a3b8;margin-bottom:14px;">格式：A列=工号，B列=姓名，C列=备注，D列=所属仓（多个仓用逗号分隔）</div>
         <label style="display:inline-flex;align-items:center;gap:8px;padding:8px 16px;border-radius:10px;border:1.5px dashed rgba(37,99,235,0.4);background:rgba(37,99,235,0.04);color:#2563eb;font-size:12px;cursor:pointer;font-weight:600;" for="idMapFile">📤 选择工号名册文件</label>
         <input type="file" id="idMapFile" accept=".xlsx,.xls" onchange="loadIdMap(this)">
         <div id="idMapStatus" style="margin-top:12px;font-size:12px;color:#059669;"></div>
@@ -569,7 +586,23 @@ let uploadLog = JSON.parse(localStorage.getItem('zb_upload_log') || '[]');
 // 授权上传者工号列表（从GitHub拉取，本地缓存）
 let authUploaders = JSON.parse(localStorage.getItem('zb_auth_uploaders') || '["009706"]');
 
-function resolveUserName(id){ return idMap[String(id)] || ('用户'+id); }
+function resolveUserName(id){
+  const v=idMap[String(id)];
+  if(!v) return '用户'+id;
+  return typeof v==='object' ? v.name : v;
+}
+function getUserSites(id){
+  const v=idMap[String(id)];
+  if(!v) return [];
+  return typeof v==='object' ? (v.sites||[]) : [];
+}
+// 判断当前用户是否有权限操作某站点的数据
+function canEditSite(site){
+  if(currentRole==='creator'||currentRole==='uploader') return true;
+  const sites=getUserSites(currentUserId);
+  if(sites.length===0) return false; // 浏览者无所属仓=无权限
+  return sites.includes(site);
+}
 
 async function initUserSystem(){
   // 先自动拉取云端数据
@@ -683,12 +716,19 @@ async function loadIdMap(input){
   const wb=XLSX.read(buf,{type:'array'});
   const rows=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]],{header:1});
   let count=0;
-  rows.forEach(r=>{const id=String(r[0]||'').trim(),name=String(r[1]||'').trim();if(id&&name&&id!=='工号'&&id!=='ID'){idMap[id]=name;count++;}});
+  rows.forEach(r=>{
+    const id=String(r[0]||'').trim(), name=String(r[1]||'').trim();
+    if(!id||!name||id==='工号'||id==='ID') return;
+    const sitesRaw=String(r[3]||'').trim();
+    const sites=sitesRaw?sitesRaw.split(/[,，]+/).map(s=>s.trim()).filter(Boolean):[];
+    idMap[id]={name, sites};
+    count++;
+  });
   localStorage.setItem('zb_id_map',JSON.stringify(idMap));
   document.getElementById('idMapStatus').textContent='✓ 已加载 '+count+' 条';
   if(currentUserId) updateUserBadge();
-  const prev=Object.entries(idMap).slice(0,8);
-  document.getElementById('idMapPreview').innerHTML=prev.map(([id,n])=>`<span style="display:inline-block;margin:2px 3px;padding:2px 8px;border-radius:5px;background:rgba(37,99,235,0.07);font-size:11px;">${id}→${n}</span>`).join('');
+  const prev=Object.entries(idMap).slice(0,6);
+  document.getElementById('idMapPreview').innerHTML=prev.map(([id,v])=>`<span style="display:inline-block;margin:2px 3px;padding:2px 8px;border-radius:5px;background:rgba(37,99,235,0.07);font-size:11px;">${id}→${typeof v==='object'?v.name:v}</span>`).join('');
   input.value='';
 }
 
@@ -771,46 +811,60 @@ async function pushToGitHub(tableType){
 // ============================================================
 // 质检人员人工修正
 // ============================================================
-let inspectorOverride = JSON.parse(localStorage.getItem('zb_inspector_override')||'{}');
+const _rawIO = JSON.parse(localStorage.getItem('zb_inspector_override')||'{}');
+let inspectorOverride = {
+  inspectors: _rawIO.inspectors || (_rawIO.inspectors===undefined&&Object.keys(_rawIO).length>0?_rawIO:{}),
+  reasons: _rawIO.reasons || {}
+};
 
 async function loadInspectorOverride(){
   try{
-    const r = await fetch(ghRaw('inspector_override.json'));
+    const r=await fetch(ghRaw('inspector_override.json'));
     if(!r.ok) return;
-    const j = await r.json();
-    if(j && j.data){
-      inspectorOverride = {...j.data, ...inspectorOverride}; // 本地优先
-      localStorage.setItem('zb_inspector_override', JSON.stringify(inspectorOverride));
-    }
-  }catch(e){ console.warn('加载质检人员修正失败', e); }
+    const j=await r.json();
+    if(j.inspectors) inspectorOverride.inspectors={...j.inspectors,...(inspectorOverride.inspectors||{})};
+    if(j.reasons) inspectorOverride.reasons={...j.reasons,...(inspectorOverride.reasons||{})};
+    localStorage.setItem('zb_inspector_override',JSON.stringify(inspectorOverride));
+  }catch(e){ console.warn('加载修正数据失败',e); }
 }
 
 async function saveInspectorOverride(){
   localStorage.setItem('zb_inspector_override', JSON.stringify(inspectorOverride));
-  // 管理/创建模式推送到GitHub
-  if(currentRole==='uploader'||currentRole==='creator'){
-    const token = getEffectiveToken();
-    const fname = 'inspector_override.json';
-    const body_data = {data: inspectorOverride, updated: new Date().toISOString()};
-    const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(body_data, null, 0))));
-    let sha = '';
-    try{
-      const r = await fetch(ghUrl(fname),{headers:{Authorization:'token '+token}});
-      if(r.ok){ const j=await r.json(); sha=j.sha||''; }
-    }catch(e){}
-    const body = {message:'Update inspector_override.json', content:b64};
-    if(sha) body.sha = sha;
-    await fetch(ghUrl(fname),{method:'PUT',
-      headers:{Authorization:'token '+token,'Content-Type':'application/json'},
-      body:JSON.stringify(body)});
-  }
+  // 所有角色都能推送（Token内置）
+  const token = getEffectiveToken();
+  const fname = 'inspector_override.json';
+  // 先拉取云端最新，合并后推送
+  let cloudData = {inspectors:{}, reasons:{}};
+  try{
+    const r=await fetch(ghRaw(fname));
+    if(r.ok){ const j=await r.json(); cloudData=j; }
+  }catch(e){}
+  // 合并：本地覆盖云端（本地更新）
+  const merged = {
+    inspectors: {...(cloudData.inspectors||{}), ...(inspectorOverride.inspectors||{})},
+    reasons: {...(cloudData.reasons||{}), ...(inspectorOverride.reasons||{})},
+    updated: new Date().toISOString()
+  };
+  const b64=btoa(unescape(encodeURIComponent(JSON.stringify(merged,null,0))));
+  let sha='';
+  try{ const r=await fetch(ghUrl(fname),{headers:{Authorization:'token '+token}}); if(r.ok){const j=await r.json();sha=j.sha||'';} }catch(e){}
+  const body={message:'Update inspector_override.json',content:b64};
+  if(sha) body.sha=sha;
+  try{
+    await fetch(ghUrl(fname),{method:'PUT',headers:{Authorization:'token '+token,'Content-Type':'application/json'},body:JSON.stringify(body)});
+  }catch(e){ console.warn('推送失败',e); }
 }
 
 function getInspector(row){
   if(row.siteType !== '质检中心') return row.inspector || '—';
   const key = row.code;
-  if(inspectorOverride[key]) return inspectorOverride[key];
+  if(inspectorOverride.inspectors&&inspectorOverride.inspectors[key]) return inspectorOverride.inspectors[key];
   return '/';
+}
+function getReasonKey(row){ return (row.code||'')+'|'+(row.level3_orig||''); }
+function getReason(row){
+  const key=getReasonKey(row);
+  return (inspectorOverride.reasons&&inspectorOverride.reasons[key])||'/';
 }
 
 function renderInspectorCell(row){
@@ -823,6 +877,40 @@ function renderInspectorCell(row){
     onclick="startEditInspector(this,'${key.replace(/'/g,"\'")}','${val.replace(/'/g,"\'")}')">
     ${val}${isOverridden?'<span class="edit-mark">✏</span>':''}
   </span>`;
+}
+
+function renderReasonCell(row){
+  const val = getReason(row);
+  const key = getReasonKey(row);
+  const canEdit = canEditSite(row.site);
+  if(!canEdit) return `<span style="color:#94a3b8;font-size:11px;">${val}</span>`;
+  const isSet = val !== '/';
+  return `<span class="inspector-cell editable ${isSet?'overridden':''}"
+    onclick="startEditReason(this,'${key.replace(/'/g,"\'").replace(/\|/g,"\|")}','${val.replace(/'/g,"\'")}')">
+    ${val}${isSet?'<span class="edit-mark">✏</span>':''}
+  </span>`;
+}
+
+function startEditReason(span, key, curVal){
+  if(span.querySelector('input')) return;
+  const input = document.createElement('input');
+  input.className = 'inspector-input';
+  input.style.width = '160px';
+  input.value = curVal === '/' ? '' : curVal;
+  input.placeholder = '填写失误原因';
+  span.innerHTML = ''; span.appendChild(input);
+  input.focus(); input.select();
+  const save = async()=>{
+    const newVal = input.value.trim();
+    if(!inspectorOverride.reasons) inspectorOverride.reasons={};
+    if(newVal && newVal !== '/') inspectorOverride.reasons[key] = newVal;
+    else delete inspectorOverride.reasons[key];
+    await saveInspectorOverride();
+    renderDetailTable();
+  };
+  input.addEventListener('keydown',e=>{ if(e.key==='Enter')save(); if(e.key==='Escape')renderDetailTable(); });
+  input.addEventListener('blur',save);
+  input.addEventListener('click',e=>e.stopPropagation());
 }
 
 function startEditInspector(span, key, curVal){
@@ -838,9 +926,9 @@ function startEditInspector(span, key, curVal){
   const save = async ()=>{
     const newVal = input.value.trim();
     if(newVal && newVal !== '/'){
-      inspectorOverride[key] = newVal;
+      if(!inspectorOverride.inspectors)inspectorOverride.inspectors={}; inspectorOverride.inspectors[key] = newVal;
     } else {
-      delete inspectorOverride[key]; // 清空=恢复/
+      if(inspectorOverride.inspectors)delete inspectorOverride.inspectors[key];
     }
     await saveInspectorOverride();
     renderDetailTable(); // 刷新表格
@@ -933,7 +1021,8 @@ const COL_DEFS = [
   {key:'code',label:'质检码'},{key:'level1',label:'一级项'},{key:'level2',label:'二级项'},
   {key:'level3_orig',label:'原三级项'},{key:'level3_new',label:'新三级项'},
   {key:'subjobj',label:'主客观分类'},{key:'issueType',label:'问题类型'},
-  {key:'judgedType',label:'抽检判定类型'},{key:'inspector',label:'质检人员'},{key:'qaInspector',label:'抽检人员'}
+  {key:'judgedType',label:'抽检判定类型'},{key:'inspector',label:'质检人员'},{key:'qaInspector',label:'抽检人员'},
+  {key:'reason',label:'失误原因',noFilter:true}
 ];
 
 // ============================================================
@@ -1125,12 +1214,226 @@ function renderNationalTrend(){
   nationalTrendChart=new Chart(canvas,{type:'line',data:{labels:allDates.map(d=>d.slice(5)),datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:12,font:{size:11}}}},scales:{x:{grid:{display:false},ticks:{font:{size:10},maxTicksLimit:15}},y:{grid:{color:'rgba(200,210,230,0.4)'},ticks:{callback:v=>v+'%',font:{size:10}},beginAtZero:true}}}});
 }
 
+// ============================================================
+// TOP人/TOP项周度分析
+// ============================================================
+function getRecentTwoWeeks(){
+  const today=new Date(), day=today.getDay()||7;
+  const thisMonday=new Date(today); thisMonday.setDate(today.getDate()-day+1);
+  const lastMonday=new Date(thisMonday); lastMonday.setDate(thisMonday.getDate()-7);
+  const fmt=d=>d.toISOString().slice(0,10);
+  return {
+    thisWeek:{from:fmt(thisMonday), to:fmt(today)},
+    lastWeek:{from:fmt(lastMonday), to:fmt(new Date(thisMonday.getTime()-86400000))}
+  };
+}
+
+function getTopDiffRows(dateFrom, dateTo, siteFilter){
+  const inRange=r=>r.date>=dateFrom&&r.date<=dateTo;
+  const d5=dedup(DATA.diff5.filter(r=>inRange(r)&&r.strategy==='大盘评估/站点'&&r.subjobj==='客观问题'&&r.judgedType==='执行问题'&&siteFilter(r)),r=>r.date+'|'+r.code);
+  const d4=dedup(DATA.diff4.filter(r=>inRange(r)&&r.subjobj==='客观问题'&&r.judgedType==='执行问题'&&siteFilter(r)),r=>r.date+'|'+r.code);
+  return [...d5,...d4];
+}
+
+function buildTopPerson(rows){
+  const map={};
+  rows.forEach(r=>{
+    const name=getInspector(r);
+    if(!name||name==='/'||name==='—') return;
+    if(!map[name]) map[name]=0;
+    map[name]++;
+  });
+  return Object.entries(map).sort((a,b)=>b[1]-a[1]);
+}
+
+function buildTopItem(rows){
+  const map={};
+  rows.forEach(r=>{
+    const l1=r.level1||'', l2=r.level2||'';
+    const key=l1&&l2?l1+'-'+l2:l1||l2||'未知';
+    if(!map[key]) map[key]=0;
+    map[key]++;
+  });
+  return Object.entries(map).sort((a,b)=>b[1]-a[1]);
+}
+
+function assignRanks(sorted){
+  // 分配名次，并列时同名次，并列且超过前几名则显示/
+  const result=[];
+  let rank=1, prev=-1, prevCount=0;
+  sorted.forEach(([name,count],i)=>{
+    if(count!==prev){ rank=i+1; prev=count; }
+    result.push({name,count,rank});
+  });
+  return result;
+}
+
+function changeHtml(cur,prev){
+  if(prev===-1) return '<span class="change-flat">—</span>';
+  const d=cur-prev;
+  if(d>0) return `<span class="change-up">+${d}</span>`;
+  if(d<0) return `<span class="change-down">${d}</span>`;
+  return '<span class="change-flat">0</span>';
+}
+
+function renderTopTable(thisRanked, lastRanked, type, siteLabel, maxRows){
+  const isType = type==='person';
+  const keyFn = isType ? (r=>r.name) : (r=>r.name);
+  const lastMap={}; lastRanked.forEach(r=>lastMap[r.name]=r.count);
+  const rows=thisRanked.slice(0,maxRows);
+  // 上周数据（取前3）
+  const lastRows=lastRanked.slice(0,3);
+
+  let html=`<table class="top-table">
+    <thead><tr>
+      <th>名次</th>
+      <th>${isType?'质检师':'质检项'}</th>
+      <th>上周差异数</th><th>本周差异数</th><th>变化</th>
+      <th>失误原因</th>
+    </tr></thead><tbody>`;
+
+  // 本周数据
+  if(rows.length===0){
+    html+=`<tr><td colspan="6" style="text-align:center;color:#94a3b8;padding:12px;">本周暂无数据</td></tr>`;
+  } else {
+    rows.forEach(r=>{
+      const rankStr=r.rank<=rows.length?'本周Top'+r.rank:'/';
+      const prevCount=lastMap[r.name]??-1;
+      const reasonKey=isType?('top_person|'+siteLabel+'|'+r.name):('top_item|'+siteLabel+'|'+r.name);
+      const reason=(inspectorOverride.reasons&&inspectorOverride.reasons[reasonKey])||'/';
+      const canEdit=canEditSite(siteLabel)||currentRole==='creator'||currentRole==='uploader';
+      const reasonHtml=canEdit
+        ?`<span class="top-reason-cell ${reason!=='/'?'set':''}" onclick="editTopReason(this,'${reasonKey.replace(/'/g,"\'")}','${reason.replace(/'/g,"\'")}'">${reason}${reason!=='/'?'<span class="edit-mark">✏</span>':''}</span>`
+        :`<span style="color:#94a3b8;">${reason}</span>`;
+      html+=`<tr><td>${rankStr}</td><td>${r.name}</td><td>${prevCount>=0?prevCount:'—'}</td><td>${r.count}</td><td>${changeHtml(r.count,prevCount)}</td><td>${reasonHtml}</td></tr>`;
+    });
+  }
+
+  // 上周数据（灰色区分）
+  if(lastRows.length>0){
+    lastRows.forEach(r=>{
+      const reasonKey=isType?('top_person_last|'+siteLabel+'|'+r.name):('top_item_last|'+siteLabel+'|'+r.name);
+      const reason=(inspectorOverride.reasons&&inspectorOverride.reasons[reasonKey])||'/';
+      const canEdit=canEditSite(siteLabel)||currentRole==='creator'||currentRole==='uploader';
+      const reasonHtml=canEdit
+        ?`<span class="top-reason-cell ${reason!=='/'?'set':''}" onclick="editTopReason(this,'${reasonKey.replace(/'/g,"\'")}','${reason.replace(/'/g,"\'")}'">${reason}${reason!=='/'?'<span class="edit-mark">✏</span>':''}</span>`
+        :`<span style="color:#94a3b8;">${reason}</span>`;
+      html+=`<tr style="background:rgba(241,245,249,0.6);"><td style="color:#94a3b8;">上周Top${r.rank}</td><td style="color:#64748b;">${r.name}</td><td>${r.count}</td><td>—</td><td>—</td><td>${reasonHtml}</td></tr>`;
+    });
+  }
+  html+='</tbody></table>';
+  return html;
+}
+
+function editTopReason(span, key, curVal){
+  if(span.querySelector('input')) return;
+  const input=document.createElement('input');
+  input.className='top-reason-input';
+  input.value=curVal==='/'?'':curVal;
+  input.placeholder='填写失误原因';
+  span.innerHTML=''; span.appendChild(input);
+  input.focus();
+  const save=async()=>{
+    const newVal=input.value.trim();
+    if(!inspectorOverride.reasons) inspectorOverride.reasons={};
+    if(newVal&&newVal!=='/') inspectorOverride.reasons[key]=newVal;
+    else delete inspectorOverride.reasons[key];
+    await saveInspectorOverride();
+    renderTopTables();
+  };
+  input.addEventListener('keydown',e=>{if(e.key==='Enter')save();if(e.key==='Escape')renderTopTables();});
+  input.addEventListener('blur',save);
+  input.addEventListener('click',e=>e.stopPropagation());
+}
+
+function renderTopTables(){
+  const wrap=document.getElementById('topTablesWrap');
+  const section=document.getElementById('topAnalysisSection');
+  if(!wrap) return;
+
+  // 只在仓级数据分析页显示
+  const isWh=document.getElementById('sub-page-warehouse')?.classList.contains('active');
+  if(!section) return;
+  section.style.display=isWh?'':'none';
+  if(!isWh) return;
+
+  const maxRows=parseInt(document.getElementById('topRowsSel')?.value||'5');
+  const {thisWeek,lastWeek}=getRecentTwoWeeks();
+  const sf=document.getElementById('compareSiteSel')?.value||'__ALL__';
+
+  // 判断展示哪些板块
+  const isDw=sf==='__ALL__'||(sf.includes('智能验机中心')||sf.includes('后验中心仓'));
+  const isCenter=sf==='__ALL__'||(!sf.includes('智能验机中心')&&!sf.includes('后验中心仓'));
+
+  const siteFilter=(matchFn)=>r=>(sf==='__ALL__'||r.site===sf)&&(FILTER.sites.length===0||FILTER.sites.includes(r.site))&&matchFn(r.site);
+  const dwFilter=(matchFn)=>r=>matchFn(r.site)&&(sf==='__ALL__'||r.site===sf);
+
+  let html='';
+
+  // 智能验机中心（线体）
+  if(sf==='__ALL__'||sf.includes('智能验机中心')){
+    const fn=s=>s.includes('智能验机中心');
+    const thisRows=getTopDiffRows(thisWeek.from,thisWeek.to,dwFilter(fn));
+    const lastRows=getTopDiffRows(lastWeek.from,lastWeek.to,dwFilter(fn));
+    const thisP=assignRanks(buildTopPerson(thisRows)), lastP=assignRanks(buildTopPerson(lastRows));
+    const thisI=assignRanks(buildTopItem(thisRows)), lastI=assignRanks(buildTopItem(lastRows));
+    html+=`<div class="card" style="padding:14px;">
+      <div class="top-section-hd dw">线体手机分析</div>
+      <div style="font-size:11px;font-weight:600;color:#475569;margin:8px 0 5px;">TOP质检师</div>
+      ${renderTopTable(thisP,lastP,'person','智能验机中心',maxRows)}
+      <div style="font-size:11px;font-weight:600;color:#475569;margin:12px 0 5px;">TOP质检项</div>
+      ${renderTopTable(thisI,lastI,'item','智能验机中心',maxRows)}
+    </div>`;
+  }
+
+  // 后验中心仓
+  if(sf==='__ALL__'||sf.includes('后验中心仓')){
+    const fn=s=>s.includes('后验中心仓');
+    const thisRows=getTopDiffRows(thisWeek.from,thisWeek.to,dwFilter(fn));
+    const lastRows=getTopDiffRows(lastWeek.from,lastWeek.to,dwFilter(fn));
+    const thisP=assignRanks(buildTopPerson(thisRows)), lastP=assignRanks(buildTopPerson(lastRows));
+    const thisI=assignRanks(buildTopItem(thisRows)), lastI=assignRanks(buildTopItem(lastRows));
+    html+=`<div class="card" style="padding:14px;">
+      <div class="top-section-hd hy">后验手机分析</div>
+      <div style="font-size:11px;font-weight:600;color:#475569;margin:8px 0 5px;">TOP质检师</div>
+      ${renderTopTable(thisP,lastP,'person','后验中心仓',maxRows)}
+      <div style="font-size:11px;font-weight:600;color:#475569;margin:12px 0 5px;">TOP质检项</div>
+      ${renderTopTable(thisI,lastI,'item','后验中心仓',maxRows)}
+    </div>`;
+  }
+
+  // 中心仓（非大仓）
+  if(sf!=='__ALL__'&&!sf.includes('智能验机中心')&&!sf.includes('后验中心仓')){
+    const fn=s=>!s.includes('智能验机中心')&&!s.includes('后验中心仓');
+    const thisRows=getTopDiffRows(thisWeek.from,thisWeek.to,r=>r.site===sf);
+    const lastRows=getTopDiffRows(lastWeek.from,lastWeek.to,r=>r.site===sf);
+    const thisP=assignRanks(buildTopPerson(thisRows)), lastP=assignRanks(buildTopPerson(lastRows));
+    const thisI=assignRanks(buildTopItem(thisRows)), lastI=assignRanks(buildTopItem(lastRows));
+    html+=`<div class="card" style="padding:14px;grid-column:1/-1;">
+      <div class="top-section-hd" style="background:#059669;">${sf} 分析</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div>
+          <div style="font-size:11px;font-weight:600;color:#475569;margin:8px 0 5px;">TOP质检师</div>
+          ${renderTopTable(thisP,lastP,'person',sf,maxRows)}
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:#475569;margin:8px 0 5px;">TOP质检项</div>
+          ${renderTopTable(thisI,lastI,'item',sf,maxRows)}
+        </div>
+      </div>
+    </div>`;
+  }
+
+  wrap.innerHTML=html||'<div style="color:#94a3b8;font-size:13px;padding:20px;">请在趋势分析里选择站点查看分析</div>';
+}
+
 function renderAll(){
   renderOverview();
   renderRank();
   renderNationalTrend();
   buildCompareSiteOptions();
   renderCompare();
+  renderTopTables();
   rebuildDetailAndCharts();
 }
 
@@ -1368,7 +1671,7 @@ function renderCompare(){
 // 明细数据（列头筛选 + 联动图表）
 // ============================================================
 let allDetailRows=[], filteredDetailRows=[], detailPage=1, detailPerPage=20;
-let siteChart=null, dateChart=null;
+
 
 
 function getMergedDetail(){
@@ -1394,7 +1697,6 @@ function rebuildDetailAndCharts(){
   buildDetailThead();
   rebuildDetailSelects();
   filteredDetailRows = [...allDetailRows];
-  renderDetailCharts();
   renderDetailTable();
 }
 
@@ -1561,7 +1863,6 @@ function applyDetailSelects(){
   const resetBtn = document.getElementById('detailResetBtn');
   if(summary) summary.textContent = activeCount>0?`已筛选 ${activeCount} 列 · 共 ${filteredDetailRows.length} 条`:'点击列头 ▼ 筛选';
   if(resetBtn) resetBtn.style.display = activeCount>0?'':'none';
-  renderDetailCharts();
   renderDetailTable();
 }
 
@@ -1577,7 +1878,6 @@ function resetDetailSelects(){
   if(summary) summary.textContent='点击列头 ▼ 筛选';
   if(resetBtn) resetBtn.style.display='none';
   buildDetailThead();
-  renderDetailCharts();
   renderDetailTable();
 }
 
@@ -1605,32 +1905,13 @@ function updateFilterSummary(){
   el.style.color='#1e293b';
 }
 
-function renderDetailCharts(){
-  // 站点柱状图
-  const siteMap={};
-  filteredDetailRows.forEach(r=>{ siteMap[r.site]=(siteMap[r.site]||0)+1; });
-  const siteEntries=Object.entries(siteMap).sort((a,b)=>b[1]-a[1]).slice(0,12);
-  if(siteChart){siteChart.destroy();siteChart=null;}
-  const sCanvas=document.getElementById('chartSite');
-  if(siteEntries.length){
-    siteChart=new Chart(sCanvas,{type:'bar',data:{labels:siteEntries.map(e=>e[0]),datasets:[{data:siteEntries.map(e=>e[1]),backgroundColor:siteEntries.map((_,i)=>i===0?'rgba(220,38,38,0.7)':i<3?'rgba(217,119,6,0.65)':'rgba(37,99,235,0.55)'),borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10},maxRotation:30}},y:{grid:{color:'rgba(200,210,230,0.4)'},ticks:{font:{size:10}}}}}});
-  }
-  // 日期趋势折线
-  const dateMap={};
-  filteredDetailRows.forEach(r=>{ dateMap[r.date]=(dateMap[r.date]||0)+1; });
-  const dateEntries=Object.entries(dateMap).sort((a,b)=>a[0].localeCompare(b[0]));
-  if(dateChart){dateChart.destroy();dateChart=null;}
-  const dCanvas=document.getElementById('chartDate');
-  if(dateEntries.length){
-    dateChart=new Chart(dCanvas,{type:'line',data:{labels:dateEntries.map(e=>e[0].slice(5)),datasets:[{data:dateEntries.map(e=>e[1]),borderColor:'#2563eb',backgroundColor:'rgba(37,99,235,0.08)',tension:.4,pointRadius:3,borderWidth:2,fill:true}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{x:{grid:{display:false},ticks:{font:{size:10},maxTicksLimit:10}},y:{grid:{color:'rgba(200,210,230,0.4)'},ticks:{font:{size:10}}}}}});
-  }
-}
+function renderDetailCharts(){}
 
 function buildDetailThead(){
   document.getElementById('detailThead').innerHTML=
     '<tr>'+COL_DEFS.map(c=>{
-      const selId='df_'+c.key;
-      const sel=document.getElementById(selId);
+      if(c.noFilter) return `<th style="white-space:nowrap;">${c.label}</th>`;
+      const sel=document.getElementById('df_'+c.key);
       const hasFilter=sel&&(sel.value||(sel.dataset&&sel.dataset.multi));
       return `<th data-col="${c.key}" style="white-space:nowrap;cursor:pointer;user-select:none;" onclick="openColSel(event,'${c.key}')">
         ${c.label}<span style="font-size:9px;margin-left:3px;color:${hasFilter?'#2563eb':'#94a3b8'};">▼</span>
@@ -1699,6 +1980,7 @@ function renderDetailTable(){
         <td>${judgedBadge(r.judgedType)}</td>
         <td>${renderInspectorCell(r)}</td>
         <td>${r.qaInspector||'—'}</td>
+        <td>${renderReasonCell(r)}</td>
       </tr>`;
     }).join('');
   }
