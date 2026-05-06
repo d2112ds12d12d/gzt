@@ -1290,7 +1290,7 @@
   {
     "id": 101,
     "title": "更新质量数据",
-    "desc": "",
+    "desc": "耗时1h（6-7 日度 qa数据）",
     "status": "todo",
     "tag": "日常待办",
     "tagType": "green",
