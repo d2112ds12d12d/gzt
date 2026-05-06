@@ -1381,5 +1381,24 @@
     "imgs": [],
     "loc": "date",
     "order": 47
+  },
+  {
+    "id": 110,
+    "title": "新人实操认证",
+    "desc": "",
+    "status": "todo",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "none",
+    "repeatWeekdays": [],
+    "repeatMonthday": null,
+    "hours": 0,
+    "ds": "2026-05-06",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 48
   }
 ]
