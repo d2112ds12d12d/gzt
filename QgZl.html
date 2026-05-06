@@ -262,18 +262,6 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
     <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
     北极星指标
   </div>
-  <div class="nav-item disabled">
-    <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
-    主板审核差异 <span style="font-size:9px;margin-left:auto;color:#94a3b8;">即将上线</span>
-  </div>
-  <div class="nav-item disabled">
-    <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
-    质检红黑榜 <span style="font-size:9px;margin-left:auto;color:#94a3b8;">即将上线</span>
-  </div>
-  <div class="nav-item disabled">
-    <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
-    培训答疑数据 <span style="font-size:9px;margin-left:auto;color:#94a3b8;">即将上线</span>
-  </div>
   <div class="sidebar-footer">
     <div id="userBadge" class="user-badge" onclick="openLogModal('user')" title="点击管理账号">
       <div class="user-avatar" id="userAvatar">?</div>
@@ -367,15 +355,15 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
         <div class="empty-state" style="grid-column:1/-1;padding:20px;"><div class="empty-icon">📂</div><div class="empty-text">请上传四个Excel文件查看数据</div></div>
       </div>
 
-      <!-- 站点排行榜 -->
+      <!-- 站点排行榜 全宽 -->
       <div class="section-hd"><div class="section-hd-left">站点客观执行差异率排行</div></div>
-      <div class="rank-card">
+      <div class="rank-card" style="margin-bottom:14px;">
         <div class="chart-title">站点排行榜（客观执行 · 差异率从高到低）</div>
         <div id="rankList"><div class="empty-state"><div class="empty-text">暂无数据</div></div></div>
       </div>
 
-      <!-- 对比分析 / 周报 -->
-      <div class="section-hd"><div class="section-hd-left">对比分析 · 周报视图</div></div>
+      <!-- 周度趋势分析 -->
+      <div class="section-hd"><div class="section-hd-left">周度趋势分析</div></div>
       <div class="card" style="margin-bottom:14px;padding:16px;">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap;">
           <div class="view-tabs">
@@ -605,7 +593,7 @@ function updateUserBadge(){
   const isCr = currentRole==='creator';
   const isUp = currentRole==='uploader';
   const display = isCr ? '管理员' : currentUserName || currentUserId || '未登录';
-  const sub = isCr ? '完整权限' : isUp ? '上传权限' : '浏览模式';
+  const sub = isCr ? '创建模式' : isUp ? '管理模式' : '浏览模式';
   const color = isCr ? '#7c3aed' : isUp ? '#2563eb' : '#64748b';
   const av = document.getElementById('userAvatar');
   const nm = document.getElementById('userName');
@@ -650,9 +638,9 @@ function renderCurrentUser(){
   const el=document.getElementById('currentUserInfo'); if(!el)return;
   const isCr=currentRole==='creator', isUp=currentRole==='uploader';
   const n=isCr?'管理员':resolveUserName(currentUserId);
-  const roleTag=isCr?'<span style="font-size:10px;color:#7c3aed;background:rgba(124,58,237,0.1);padding:1px 6px;border-radius:4px;">创造者</span>':
-    isUp?'<span style="font-size:10px;color:#2563eb;background:rgba(37,99,235,0.1);padding:1px 6px;border-radius:4px;">上传者</span>':
-    '<span style="font-size:10px;color:#64748b;background:rgba(100,116,139,0.1);padding:1px 6px;border-radius:4px;">浏览者</span>';
+  const roleTag=isCr?'<span style="font-size:10px;color:#7c3aed;background:rgba(124,58,237,0.1);padding:1px 6px;border-radius:4px;">创建模式</span>':
+    isUp?'<span style="font-size:10px;color:#2563eb;background:rgba(37,99,235,0.1);padding:1px 6px;border-radius:4px;">管理模式</span>':
+    '<span style="font-size:10px;color:#64748b;background:rgba(100,116,139,0.1);padding:1px 6px;border-radius:4px;">浏览模式</span>';
   el.innerHTML=`<div style="display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;background:rgba(37,99,235,0.06);border:1px solid rgba(37,99,235,0.15);">
     <div style="width:32px;height:32px;border-radius:50%;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;">${n.slice(-2)}</div>
     <div><div style="font-size:14px;font-weight:700;">${n} ${roleTag}</div><div style="font-size:11px;color:#94a3b8;margin-top:2px;">ID：${isCr?'***':currentUserId}</div></div></div>`;
@@ -925,6 +913,9 @@ function renderOverview(){
   const sumF=filterRows(DATA.sum);
   const diff4F=dedup(filterRows(DATA.diff4).filter(r=>r.subjobj==='客观问题'&&r.judgedType==='执行问题'),r=>r.date+'|'+r.code);
 
+  // 品类筛选：全部时显示所有品类卡片，选了具体品类只高亮对应卡片
+  const cats = FILTER.cat==='全部' ? OV_CATS : OV_CATS.filter(c=>c.key===FILTER.cat);
+
   document.getElementById('overviewCards').innerHTML=OV_CATS.map(cat=>{
     let checks=0,diff=0;
     if(cat.key==='手机'){ checks=sum(qaF.filter(r=>r.cat==='手机'),'checks'); diff=diff5F.filter(r=>r.cat==='手机').length; }
@@ -932,14 +923,16 @@ function renderOverview(){
     const rate=checks>0?(diff/checks*100):null;
     const rStr=rate!==null?rate.toFixed(2)+'%':'—';
     const rCls=rate===null?'':rate>5?'rate-bad':rate>2?'rate-warn':'rate-ok';
-    return `<div class="ov-card ${cat.cls}">
+    const dimmed = FILTER.cat!=='全部'&&FILTER.cat!==cat.key ? 'opacity:.3;pointer-events:none;' : '';
+    // 大数字=差异量，左下=抽检量，右下=差异率
+    return `<div class="ov-card ${cat.cls}" style="${dimmed}">
       <div class="ov-cat"><span class="ov-icon">${cat.icon}</span>${cat.key}</div>
-      <div class="ov-big">${checks>0?checks.toLocaleString():'—'}</div>
+      <div class="ov-big">${diff>0?diff.toLocaleString():'—'}</div>
       <div class="ov-row">
-        <div><div class="ov-label">差异量</div><div style="font-size:13px;font-weight:700;margin-top:2px;">${diff>0?diff:'—'}</div></div>
+        <div><div class="ov-label">抽检量</div><div style="font-size:13px;font-weight:700;margin-top:2px;">${checks>0?checks.toLocaleString():'—'}</div></div>
         <div style="text-align:right"><div class="ov-label">差异率</div><div class="ov-rate ${rCls}" style="margin-top:2px;">${rStr}</div></div>
       </div>
-      <div class="ov-sub">抽检量</div>
+      <div class="ov-sub">客观执行差异量</div>
     </div>`;
   }).join('');
 }
@@ -960,20 +953,23 @@ function renderRank(){
   const ranked=Object.values(siteMap).filter(s=>s.checks>0).map(s=>({...s,rate:s.diff/s.checks*100})).sort((a,b)=>b.rate-a.rate).slice(0,15);
   if(!ranked.length){el.innerHTML='<div class="empty-state"><div class="empty-text">暂无数据</div></div>';return;}
   const maxR=ranked[0].rate||1;
+  // 全宽两列布局
+  el.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;';
   el.innerHTML=ranked.map((r,i)=>{
     const pct=(r.rate/maxR*100).toFixed(0);
     const color=r.rate>5?'#dc2626':r.rate>2?'#f59e0b':'#22c55e';
-    // 警示图标：越高越危险
     let badge,badgeCls;
     if(i===0){badge='⚠';badgeCls='rank-danger';}
-    else if(i===1){badge='▲';badgeCls='rank-warn';}
-    else if(i===2){badge='▲';badgeCls='rank-warn';}
+    else if(i===1||i===2){badge='▲';badgeCls='rank-warn';}
     else{badge=String(i+1);badgeCls='rank-normal';}
-    return `<div class="rank-item" style="animation-delay:${i*.03}s">
+    return `<div class="rank-item" style="animation-delay:${i*.03}s;margin-bottom:0;">
       <div class="rank-badge ${badgeCls}">${badge}</div>
-      <div class="rank-name" title="${r.site}">${r.site}</div>
-      <div class="rank-bar-wrap"><div class="rank-bar" style="width:${pct}%;background:${color}"></div></div>
-      <div class="rank-val" style="color:${color}">${r.rate.toFixed(2)}%</div>
+      <div class="rank-name" title="${r.site}" style="width:90px;">${r.site}</div>
+      <div class="rank-bar-wrap" style="flex:1;"><div class="rank-bar" style="width:${pct}%;background:${color}"></div></div>
+      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+        <span style="font-size:10px;color:#94a3b8;">${r.diff}/${r.checks.toLocaleString()}</span>
+        <div class="rank-val" style="color:${color};min-width:40px;">${r.rate.toFixed(2)}%</div>
+      </div>
     </div>`;
   }).join('');
 }
@@ -1073,6 +1069,8 @@ function getMergedDetail(){
 function rebuildDetailAndCharts(){
   // 先用全局筛选过滤
   allDetailRows=filterRows(getMergedDetail());
+  // 重建列头（确保筛选图标状态正确）
+  buildDetailThead();
   // 再叠加列头筛选
   applyColFiltersToDetail();
 }
@@ -1161,9 +1159,11 @@ function openColDrop(e,colKey){
   const drop=document.getElementById('colDropdown');
   const th=e.currentTarget.closest('th');
   const rect=th.getBoundingClientRect();
-  // 定位
-  drop.style.left=rect.left+'px';
-  drop.style.top=(rect.bottom+window.scrollY)+'px';
+  // 用fixed定位，跟随视口位置，不受滚动影响
+  drop.style.position='fixed';
+  drop.style.left=Math.min(rect.left, window.innerWidth-200)+'px';
+  drop.style.top=rect.bottom+'px';
+  drop.style.zIndex='9999';
   activeColKey=colKey;
   // 收集该列所有唯一值（从全局筛选后的数据）
   const vals=[...new Set(allDetailRows.map(r=>String(r[colKey]||'')).filter(v=>v!==''))].sort();
