@@ -428,7 +428,7 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
     <div class="modal-hd"><div class="modal-hd-title">👋 首次使用 · 绑定工号</div></div>
     <div class="modal-body">
       <div style="font-size:13px;color:#475569;margin-bottom:14px;line-height:1.7;">请输入您的工号，绑定后将自动记录每次上传操作。<br><span style="color:#94a3b8;font-size:11px;">工号保存在本地，刷新不会丢失。</span></div>
-      <input class="id-input" id="idInput" type="text" placeholder="请输入工号（如：10086）" maxlength="20" onkeydown="if(event.key==='Enter')confirmId()">
+      <input class="id-input" id="idInput" type="text" placeholder="请输入工号（如：10086）" maxlength="200" onkeydown="if(event.key==='Enter')confirmId()">
       <div id="idHint" style="font-size:11px;color:#ef4444;margin-top:6px;min-height:16px;"></div>
     </div>
     <div class="modal-ft"><button class="mbtn mbtn-primary" onclick="confirmId()">确认绑定</button></div>
@@ -455,7 +455,7 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
         <div id="currentUserInfo" style="margin-bottom:18px;"></div>
         <div style="font-size:13px;color:#475569;margin-bottom:8px;">切换工号</div>
         <div style="display:flex;gap:8px;">
-          <input class="id-input" id="switchIdInput" type="text" placeholder="输入新工号" maxlength="20" style="flex:1;font-size:13px;padding:8px 12px;">
+          <input class="id-input" id="switchIdInput" type="text" placeholder="输入工号或密钥" maxlength="200" style="flex:1;font-size:13px;padding:8px 12px;">
           <button class="mbtn mbtn-primary" onclick="switchUser()">切换</button>
         </div>
       </div>
