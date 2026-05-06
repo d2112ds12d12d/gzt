@@ -1060,11 +1060,7 @@ function toggleCat(el, cat){
   }
   applyFilter();
 }
-function checkDwSubVisibility(){
-  const show = FILTER.siteType==='质检中心' && FILTER.cat==='手机';
-  document.getElementById('dwSubChips').classList.toggle('visible',show);
-  if(!show) FILTER.dwSub='全部';
-}
+
 function autoAdjustDateRange(){
   const dates=[...DATA.qa,...DATA.diff5,...DATA.sum,...DATA.diff4].map(r=>r.date).filter(Boolean).sort();
   if(!dates.length)return;
@@ -1219,8 +1215,6 @@ function renderOverview(){
   const sumF=filterRows(DATA.sum);
   const diff4F=dedup(filterRows(DATA.diff4).filter(r=>r.subjobj==='客观问题'&&r.judgedType==='执行问题'),r=>r.date+'|'+r.code);
 
-  // 品类筛选：全部时显示所有品类卡片，选了具体品类只高亮对应卡片
-  const cats = FILTER.cat==='全部' ? OV_CATS : OV_CATS.filter(c=>c.key===FILTER.cat);
 
   document.getElementById('overviewCards').innerHTML=OV_CATS.map(cat=>{
     let checks=0,diff=0;
@@ -1229,7 +1223,7 @@ function renderOverview(){
     const rate=checks>0?(diff/checks*100):null;
     const rStr=rate!==null?rate.toFixed(2)+'%':'—';
     const rCls=rate===null?'':rate>5?'rate-bad':rate>2?'rate-warn':'rate-ok';
-    const dimmed = FILTER.cat!=='全部'&&FILTER.cat!==cat.key ? 'opacity:.25;filter:grayscale(100%);pointer-events:none;' : '';
+    const dimmed = FILTER.cats.size>0&&!FILTER.cats.has(cat.key) ? 'opacity:.2;filter:grayscale(80%);transition:all .3s;pointer-events:none;' : 'transition:all .3s;';
     // 大数字=差异量，左下=抽检量，右下=差异率
     return `<div class="ov-card ${cat.cls}" style="${dimmed}">
       <div class="ov-cat"><span class="ov-icon">${cat.icon}</span>${cat.key}</div>
@@ -1254,10 +1248,10 @@ function renderRank(){
   const diff4F=dedup(filterRows(DATA.diff4).filter(r=>r.subjobj==='客观问题'&&r.judgedType==='执行问题'),r=>r.date+'|'+r.code);
   const siteMap={};
   const addSite=(site,checks,diff)=>{if(!siteMap[site])siteMap[site]={site,checks:0,diff:0};siteMap[site].checks+=checks;siteMap[site].diff+=diff;};
-  qaF.forEach(r=>{if(FILTER.cat==='全部'||r.cat===FILTER.cat)addSite(r.site,r.checks,0);});
-  diff5F.forEach(r=>{if(FILTER.cat==='全部'||r.cat===FILTER.cat)addSite(r.site,0,1);});
-  sumF.forEach(r=>{if(FILTER.cat==='全部'||r.cat===FILTER.cat)addSite(r.site,r.checks,0);});
-  diff4F.forEach(r=>{if(FILTER.cat==='全部'||r.cat===FILTER.cat)addSite(r.site,0,1);});
+  qaF.forEach(r=>{if(FILTER.cats.size===0||FILTER.cats.has(r.cat))addSite(r.site,r.checks,0);});
+  diff5F.forEach(r=>{if(FILTER.cats.size===0||FILTER.cats.has(r.cat))addSite(r.site,0,1);});
+  sumF.forEach(r=>{if(FILTER.cats.size===0||FILTER.cats.has(r.cat))addSite(r.site,r.checks,0);});
+  diff4F.forEach(r=>{if(FILTER.cats.size===0||FILTER.cats.has(r.cat))addSite(r.site,0,1);});
   const all=Object.values(siteMap).filter(s=>s.checks>0).map(s=>({...s,rate:s.diff/s.checks*100})).sort((a,b)=>b.rate-a.rate);
   if(!all.length){el.innerHTML='<div class="empty-state"><div class="empty-text">暂无数据</div></div>';el.style.cssText='';return;}
   const mkItem=(r,i,maxR)=>{
