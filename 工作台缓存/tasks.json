@@ -1312,7 +1312,7 @@
     "id": 103,
     "title": "推送拆修刷题任务",
     "desc": "",
-    "status": "todo",
+    "status": "inprogress",
     "tag": "日常待办",
     "tagType": "green",
     "pri": "q4",
@@ -1325,7 +1325,7 @@
     "links": [],
     "imgs": [],
     "loc": "date",
-    "order": 46
+    "order": 2
   },
   {
     "id": 105,
