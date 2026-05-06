@@ -1286,5 +1286,24 @@
     "loc": "date",
     "order": 0,
     "parentId": 68
+  },
+  {
+    "id": 101,
+    "title": "更新质量数据",
+    "desc": "",
+    "status": "todo",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "none",
+    "repeatWeekdays": [],
+    "repeatMonthday": null,
+    "hours": 0,
+    "ds": "2026-05-06",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 44
   }
 ]
