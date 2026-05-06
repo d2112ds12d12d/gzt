@@ -36,13 +36,6 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .ds-chip.loaded{background:rgba(5,150,105,0.08);border-color:rgba(5,150,105,0.3);color:#059669;}
 .ver-row{display:flex;align-items:center;justify-content:space-between;}
 .ver{font-size:10px;color:#94a3b8;}
-.nav-parent{justify-content:flex-start;}
-.nav-sub-group{overflow:hidden;max-height:0;transition:max-height .25s ease;}
-.nav-sub-group.open{max-height:120px;}
-.nav-sub{padding:7px 16px 7px 32px;font-size:12px;}
-.nav-sub-icon{font-size:12px;margin-right:4px;}
-.nav-sub.active{background:rgba(37,99,235,0.10);color:#2563eb;border-left-color:#2563eb;font-weight:600;}
-.nav-sub:hover:not(.active){background:rgba(37,99,235,0.05);color:#1e40af;}
 
 /* MAIN */
 #main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
@@ -212,8 +205,12 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
 
 /* ANIM */
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-.subpage{display:none;animation:fadeUp .2s ease both;}
-.subpage.active{display:block;}
+.subpage{display:none;}.subpage.active{display:block;}
+.nav-sub-group{overflow:hidden;max-height:0;transition:max-height .25s;}
+.nav-sub-group.open{max-height:120px;}
+.nav-sub{padding:7px 16px 7px 30px;font-size:12px;}
+.nav-sub.active{background:rgba(37,99,235,0.10);color:#2563eb;border-left-color:#2563eb;font-weight:600;}
+.nav-sub:hover:not(.active){background:rgba(37,99,235,0.05);color:#1e40af;}
 .page{display:none;}.page.active{display:block;animation:fadeUp .22s ease both;}
 
 /* TOAST */
@@ -254,6 +251,16 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
 .log-tag-sum{background:rgba(217,119,6,0.1);color:#d97706;}
 .log-empty{text-align:center;padding:32px;color:#94a3b8;font-size:13px;}
 .empty-state{text-align:center;padding:30px 20px;color:#94a3b8;}
+.filter-chip-multi{font-size:12px;padding:3px 12px;border-radius:20px;cursor:pointer;
+  border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.6);
+  color:#64748b;transition:all .15s;white-space:nowrap;user-select:none;}
+.filter-chip-multi.active{background:#2563eb;color:#fff;border-color:#2563eb;}
+.filter-chip-multi:hover:not(.active){background:rgba(37,99,235,0.08);color:#2563eb;border-color:#2563eb;}
+.period-tab{font-size:12px;padding:3px 12px;border-radius:20px;cursor:pointer;
+  border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.6);
+  color:#64748b;transition:all .15s;user-select:none;}
+.period-tab.active{background:#2563eb;color:#fff;border-color:#2563eb;}
+.period-tab:hover:not(.active){background:rgba(37,99,235,0.08);color:#2563eb;border-color:#2563eb;}
 .inspector-cell{cursor:default;}
 .inspector-cell.editable{cursor:pointer;border-radius:4px;padding:1px 4px;transition:background .15s;}
 .inspector-cell.editable:hover{background:rgba(37,99,235,0.08);}
@@ -302,15 +309,11 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
   <div class="nav-item nav-parent" onclick="toggleNavGroup('polestar')">
     <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
     北极星指标
-    <span class="nav-arrow" id="arrow-polestar" style="margin-left:auto;font-size:10px;transition:transform .2s;">▾</span>
+    <span id="arrow-polestar" style="margin-left:auto;font-size:10px;">▾</span>
   </div>
-  <div class="nav-sub-group" id="group-polestar">
-    <div class="nav-item nav-sub active" id="sub-overview" onclick="switchSubPage('overview',this)">
-      <span class="nav-sub-icon">🌍</span> 全国质量总览
-    </div>
-    <div class="nav-item nav-sub" id="sub-warehouse" onclick="switchSubPage('warehouse',this)">
-      <span class="nav-sub-icon">🔍</span> 仓级数据分析
-    </div>
+  <div class="nav-sub-group open" id="group-polestar">
+    <div class="nav-item nav-sub active" id="sub-overview" onclick="switchSubPage('overview',this)">🌍 全国质量总览</div>
+    <div class="nav-item nav-sub" id="sub-warehouse" onclick="switchSubPage('warehouse',this)">🔍 仓级数据分析</div>
   </div>
   <div class="sidebar-footer">
     <div id="userBadge" class="user-badge" onclick="openLogModal('user')" title="点击管理账号">
@@ -349,46 +352,35 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
   <div class="content">
     <div class="page active" id="page-quality">
 
-      <!-- 筛选栏（全局共用） -->
       <!-- 筛选栏 -->
-      <div class="filter-bar glass" style="margin-bottom:14px;">
+<div class="filter-bar glass" style="margin-bottom:14px;">
         <span class="filter-label">日期</span>
         <input type="date" id="dateFrom" class="filter-input" onchange="applyFilter()">
         <span style="font-size:11px;color:#94a3b8;">至</span>
         <input type="date" id="dateTo" class="filter-input" onchange="applyFilter()">
-        <div class="filter-div"></div>
-        <span class="filter-label">站点类型</span>
-        <span class="filter-chip active" data-stype="全部" onclick="setSiteType(this,'全部')">全部</span>
-        <span class="filter-chip" data-stype="中心仓" onclick="setSiteType(this,'中心仓')">中心仓</span>
-        <span class="filter-chip" data-stype="质检中心" onclick="setSiteType(this,'质检中心')">质检中心</span>
-        
 
-      <!-- 子页面：全国质量总览 -->
-      <div class="subpage active" id="sub-page-overview">
-        <span class="filter-label">大仓类型</span>
+        <!-- 大仓子类型，仅质检中心+手机时显示 -->
+        <div id="dwSubChips">
+          <div class="filter-div"></div>
+          <span class="filter-label">大仓类型</span>
           <span class="filter-chip active" data-dwsub="全部" onclick="setDwSub(this,'全部')">全部</span>
           <span class="filter-chip" data-dwsub="后验中心仓" onclick="setDwSub(this,'后验中心仓')">后验中心仓</span>
           <span class="filter-chip" data-dwsub="智能验机中心" onclick="setDwSub(this,'智能验机中心')">智能验机中心</span>
         </div>
         <div class="filter-div"></div>
-        <span class="filter-label">站点</span>
-        <!-- 站点原生select -->
-        <select id="siteSel" onchange="onSiteSelChange(this.value)"
-          style="font-size:12px;padding:3px 8px;border-radius:7px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.7);color:#1e293b;outline:none;max-width:130px;font-family:inherit;cursor:pointer;">
-          <option value="__ALL__">全部站点</option>
-        </select>
-        <div class="filter-div"></div>
         <span class="filter-label">品类</span>
-        <span class="filter-chip active" data-cat="全部" onclick="setCat(this,'全部')">全部</span>
-        <span class="filter-chip" data-cat="手机" onclick="setCat(this,'手机')">手机</span>
-        <span class="filter-chip" data-cat="笔记本" onclick="setCat(this,'笔记本')">笔记本</span>
-        <span class="filter-chip" data-cat="平板" onclick="setCat(this,'平板')">平板</span>
-        <span class="filter-chip" data-cat="耳机" onclick="setCat(this,'耳机')">耳机</span>
-        <span class="filter-chip" data-cat="手表" onclick="setCat(this,'手表')">手表</span>
-        <span class="filter-chip" data-cat="相机" onclick="setCat(this,'相机')">相机</span>
+        <span class="filter-chip-multi active" data-cat="全部" onclick="toggleCat(this,'全部')">全部</span>
+        <span class="filter-chip-multi active" data-cat="手机" onclick="toggleCat(this,'手机')">手机</span>
+        <span class="filter-chip-multi active" data-cat="笔记本" onclick="toggleCat(this,'笔记本')">笔记本</span>
+        <span class="filter-chip-multi active" data-cat="平板" onclick="toggleCat(this,'平板')">平板</span>
+        <span class="filter-chip-multi active" data-cat="耳机" onclick="toggleCat(this,'耳机')">耳机</span>
+        <span class="filter-chip-multi active" data-cat="手表" onclick="toggleCat(this,'手表')">手表</span>
+        <span class="filter-chip-multi active" data-cat="相机" onclick="toggleCat(this,'相机')">相机</span>
       </div>
 
-      <!-- 质量数据总览 -->
+      <!-- 子页面：全国质量总览 -->
+      <div class="subpage active" id="sub-page-overview">
+<!-- 质量数据总览 -->
       <div class="section-hd"><div class="section-hd-left">质量数据总览</div></div>
       <div class="overview-grid" id="overviewCards">
         <div class="empty-state" style="grid-column:1/-1;padding:20px;"><div class="empty-icon">📂</div><div class="empty-text">请上传四个Excel文件查看数据</div></div>
@@ -401,39 +393,28 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
         <div id="rankList"><div class="empty-state"><div class="empty-text">暂无数据</div></div></div>
       </div>
 
+      <!-- 全国差异率趋势 -->
+      <div class="section-hd"><div class="section-hd-left">全国差异率趋势（日维度）</div></div>
+      <div class="card" style="margin-bottom:14px;padding:16px;">
+        <div class="chart-wrap" style="height:220px;"><canvas id="chartNationalTrend"></canvas></div>
+      </div>
+
       <!-- 周度趋势分析 -->
       </div>
 
       <!-- 子页面：仓级数据分析 -->
       <div class="subpage" id="sub-page-warehouse">
-        <!-- 大仓/中心仓视角切换 -->
-        <div class="card" style="margin-bottom:14px;padding:14px 16px;">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:0px;flex-wrap:wrap;">
-            <div class="view-tabs">
-              <span class="view-tab active" onclick="setCompareView(this,'phone_dw')">大仓手机</span>
-              <span class="view-tab" onclick="setCompareView(this,'five_dw')">大仓五品类</span>
-              <span class="view-tab" onclick="setCompareView(this,'center')">中心仓</span>
-            </div>
-            <select class="site-sel" id="compareSiteSel" onchange="renderCompare()" style="font-size:11px;"></select>
-            <!-- 大仓子类型（仅大仓手机时显示） -->
-            <div id="dwSubChipsWh" style="display:none;align-items:center;gap:6px;">
-              <div class="filter-div"></div>
-              <span class="filter-label">大仓类型</span>
-              <span class="filter-chip active" data-dwsub="全部" onclick="setDwSub(this,'全部')">全部</span>
-              <span class="filter-chip" data-dwsub="后验中心仓" onclick="setDwSub(this,'后验中心仓')">后验中心仓</span>
-              <span class="filter-chip" data-dwsub="智能验机中心" onclick="setDwSub(this,'智能验机中心')">智能验机中心</span>
-            </div>
-          </div>
+<div class="section-hd">
+        <div class="section-hd-left">趋势分析</div>
+        <div style="display:flex;gap:4px;">
+          <span class="period-tab active" onclick="setPeriod(this,'week')">周度</span>
+          <span class="period-tab" onclick="setPeriod(this,'day')">日度</span>
+          <span class="period-tab" onclick="setPeriod(this,'month')">月度</span>
         </div>
-        <div class="section-hd"><div class="section-hd-left">周度趋势分析</div></div>
+      </div>
       <div class="card" style="margin-bottom:14px;padding:16px;">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap;">
-          <div class="view-tabs">
-            <span class="view-tab active" onclick="setCompareView(this,'phone_dw')">大仓手机</span>
-            <span class="view-tab" onclick="setCompareView(this,'five_dw')">大仓五品类</span>
-            <span class="view-tab" onclick="setCompareView(this,'center')">中心仓</span>
-          </div>
-          <select class="site-sel" id="compareSiteSel" onchange="renderCompare()" style="font-size:11px;"></select>
+            <select class="site-sel" id="compareSiteSel" onchange="renderCompare()" style="font-size:11px;"></select>
         </div>
         <div class="chart-wrap" style="height:200px;"><canvas id="chartCompare"></canvas></div>
         <div id="compareTable"></div>
@@ -489,7 +470,8 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
       </div>
 
     </div>
-
+  </div>
+</div>
 
 <!-- ID绑定弹窗 -->
 <div class="modal-overlay id-modal" id="idModal">
@@ -941,7 +923,9 @@ function showCreatorTabs(){
 // ============================================================
 // 筛选状态
 // ============================================================
-const FILTER = { dateFrom:'', dateTo:'', siteType:'全部', sites:[], cat:'全部', dwSub:'全部' };
+const FILTER = { dateFrom:'', dateTo:'', sites:[], cats:new Set(), dwSub:'全部' };
+// cats为空Set=全选，有值=只看选中品类
+let currentPeriod = 'week'; // day | week | month
 // 列头筛选
  // colKey -> Set of selected values (empty=all)
 const COL_DEFS = [
@@ -1040,9 +1024,41 @@ function setDwSub(el,sub){
   document.querySelectorAll('[data-dwsub]').forEach(c=>c.classList.remove('active'));
   el.classList.add('active'); FILTER.dwSub=sub; applyFilter();
 }
-function setCat(el,cat){
-  document.querySelectorAll('[data-cat]').forEach(c=>c.classList.remove('active'));
-  el.classList.add('active'); FILTER.cat=cat; checkDwSubVisibility(); applyFilter();
+function toggleCat(el, cat){
+  if(cat==='全部'){
+    // 点全部：全选或全不选
+    const allChips = document.querySelectorAll('[data-cat]:not([data-cat="全部"])');
+    const allBtn = document.querySelector('[data-cat="全部"]');
+    const isAllActive = allBtn.classList.contains('active');
+    if(isAllActive){
+      // 全选→全不选（但至少保留全部本身选中）
+      allChips.forEach(c=>c.classList.remove('active'));
+      allBtn.classList.add('active');
+      FILTER.cats = new Set(['__NONE__']); // 特殊标记：全不选
+    } else {
+      // 非全选→全选
+      document.querySelectorAll('[data-cat]').forEach(c=>c.classList.add('active'));
+      FILTER.cats = new Set();
+    }
+  } else {
+    const allBtn = document.querySelector('[data-cat="全部"]');
+    el.classList.toggle('active');
+    const activeCats = [...document.querySelectorAll('[data-cat]:not([data-cat="全部"]).active')].map(c=>c.dataset.cat);
+    const allCats = ['手机','笔记本','平板','耳机','手表','相机'];
+    if(activeCats.length === 0){
+      // 全不选→恢复全选
+      document.querySelectorAll('[data-cat]').forEach(c=>c.classList.add('active'));
+      FILTER.cats = new Set();
+    } else if(activeCats.length === allCats.length){
+      // 全选中→等同全选
+      allBtn.classList.add('active');
+      FILTER.cats = new Set();
+    } else {
+      allBtn.classList.remove('active');
+      FILTER.cats = new Set(activeCats);
+    }
+  }
+  applyFilter();
 }
 function checkDwSubVisibility(){
   const show = FILTER.siteType==='质检中心' && FILTER.cat==='手机';
@@ -1069,24 +1085,82 @@ function filterRows(rows,dateField='date'){
   return rows.filter(r=>{
     const d=r[dateField]||'';
     const dateOk=(!FILTER.dateFrom||d>=FILTER.dateFrom)&&(!FILTER.dateTo||d<=FILTER.dateTo);
-    const siteTypeOk=FILTER.siteType==='全部'||r.siteType===FILTER.siteType;
     const siteOk=FILTER.sites.length===0||FILTER.sites.includes(r.site);
-    const catOk=FILTER.cat==='全部'||r.cat===FILTER.cat;
-    // 大仓子类型
-    let dwOk=true;
-    if(FILTER.siteType==='质检中心'&&FILTER.cat==='手机'&&FILTER.dwSub!=='全部'){
-      dwOk=getDwSub(r.site)===FILTER.dwSub;
-    }
-    return dateOk&&siteTypeOk&&siteOk&&catOk&&dwOk;
+    const catOk=FILTER.cats.size===0||FILTER.cats.has(r.cat);
+    return dateOk&&siteOk&&catOk;
   });
 }
 
 // ============================================================
 // 渲染总控
 // ============================================================
+let nationalTrendChart = null;
+
+function renderNationalTrend(){
+  const canvas = document.getElementById('chartNationalTrend');
+  if(!canvas) return;
+  if(nationalTrendChart){ nationalTrendChart.destroy(); nationalTrendChart=null; }
+
+  const CAT_COLORS = {
+    '手机':'#2563eb','笔记本':'#7c3aed','平板':'#059669',
+    '耳机':'#d97706','手表':'#ec4899','相机':'#64748b'
+  };
+  const cats = FILTER.cats.size>0 ? [...FILTER.cats] : ['手机','笔记本','平板','耳机','手表','相机'];
+
+  // 收集所有日期
+  const allDates = [...new Set([
+    ...DATA.qa.map(r=>r.date), ...DATA.diff5.map(r=>r.date),
+    ...DATA.sum.map(r=>r.date), ...DATA.diff4.map(r=>r.date)
+  ].filter(Boolean))].sort();
+  if(!allDates.length){ canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height); return; }
+
+  // 按日期+品类聚合差异率
+  const datasets = cats.map(cat=>{
+    const data = allDates.map(date=>{
+      let checks=0, diff=0;
+      if(cat==='手机'){
+        const qaF = DATA.qa.filter(r=>r.date===date&&r.cat==='手机'&&(FILTER.siteType==='全部'||r.siteType===FILTER.siteType));
+        const d5F = dedup(DATA.diff5.filter(r=>r.date===date&&r.cat==='手机'&&r.strategy==='大盘评估/站点'&&r.subjobj==='客观问题'&&r.judgedType==='执行问题'&&(FILTER.siteType==='全部'||r.siteType===FILTER.siteType)),r=>r.date+'|'+r.code);
+        checks=sum(qaF,'checks'); diff=d5F.length;
+      } else {
+        const smF = DATA.sum.filter(r=>r.date===date&&r.cat===cat&&(FILTER.siteType==='全部'||r.siteType===FILTER.siteType));
+        const d4F = dedup(DATA.diff4.filter(r=>r.date===date&&r.cat===cat&&r.subjobj==='客观问题'&&r.judgedType==='执行问题'&&(FILTER.siteType==='全部'||r.siteType===FILTER.siteType)),r=>r.date+'|'+r.code);
+        checks=sum(smF,'checks'); diff=d4F.length;
+      }
+      return checks>0 ? +(diff/checks*100).toFixed(2) : null;
+    });
+    return {
+      label: cat,
+      data,
+      borderColor: CAT_COLORS[cat]||'#94a3b8',
+      backgroundColor: 'transparent',
+      tension: 0.4,
+      pointRadius: 2,
+      borderWidth: 2,
+      spanGaps: true,
+    };
+  });
+
+  nationalTrendChart = new Chart(canvas, {
+    type: 'line',
+    data: { labels: allDates.map(d=>d.slice(5)), datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: {
+        legend: { position:'bottom', labels:{ boxWidth:10, padding:12, font:{size:11} } }
+      },
+      scales: {
+        x: { grid:{display:false}, ticks:{font:{size:10}, maxTicksLimit:15} },
+        y: { grid:{color:'rgba(200,210,230,0.4)'}, ticks:{callback:v=>v+'%', font:{size:10}}, beginAtZero:true }
+      }
+    }
+  });
+}
+
 function renderAll(){
   renderOverview();
   renderRank();
+  renderNationalTrend();
   buildCompareSiteOptions();
   renderCompare();
   rebuildDetailAndCharts();
@@ -1100,6 +1174,45 @@ const OV_CATS=[
   {key:'平板',icon:'📟',cls:'ov-pad'},{key:'耳机',icon:'🎧',cls:'ov-earphone'},
   {key:'手表',icon:'⌚',cls:'ov-watch'},{key:'相机',icon:'📷',cls:'ov-camera'},
 ];
+// 按站点名判断数据来源类型
+function getSrcType(site){
+  if(!site) return 'center';
+  return (site.includes('智能验机中心')||site.includes('后验中心仓')) ? 'dw' : 'center';
+}
+
+// 获取差异量（自动选表）
+function getDiffRows(dateFilter){
+  // 大仓站点用表5，中心仓站点用表4
+  const d5 = dedup(DATA.diff5.filter(r=>
+    r.strategy==='大盘评估/站点'&&r.subjobj==='客观问题'&&r.judgedType==='执行问题'&&
+    (dateFilter?dateFilter(r):true)&&
+    (FILTER.sites.length===0||FILTER.sites.includes(r.site))&&
+    (FILTER.cats.size===0||FILTER.cats.has(r.cat))
+  ),r=>r.date+'|'+r.code);
+  const d4 = dedup(DATA.diff4.filter(r=>
+    r.subjobj==='客观问题'&&r.judgedType==='执行问题'&&
+    (dateFilter?dateFilter(r):true)&&
+    (FILTER.sites.length===0||FILTER.sites.includes(r.site))&&
+    (FILTER.cats.size===0||FILTER.cats.has(r.cat))
+  ),r=>r.date+'|'+r.code);
+  return [...d5,...d4];
+}
+
+// 获取抽检量（自动选表）
+function getChecksRows(dateFilter){
+  const qa = DATA.qa.filter(r=>
+    (dateFilter?dateFilter(r):true)&&
+    (FILTER.sites.length===0||FILTER.sites.includes(r.site))&&
+    (FILTER.cats.size===0||FILTER.cats.has(r.cat))
+  );
+  const sm = DATA.sum.filter(r=>
+    (dateFilter?dateFilter(r):true)&&
+    (FILTER.sites.length===0||FILTER.sites.includes(r.site))&&
+    (FILTER.cats.size===0||FILTER.cats.has(r.cat))
+  );
+  return [...qa,...sm];
+}
+
 function renderOverview(){
   const qaF=filterRows(DATA.qa);
   const diff5F=dedup(filterRows(DATA.diff5).filter(r=>r.strategy==='大盘评估/站点'&&r.subjobj==='客观问题'&&r.judgedType==='执行问题'),r=>r.date+'|'+r.code);
@@ -1116,7 +1229,7 @@ function renderOverview(){
     const rate=checks>0?(diff/checks*100):null;
     const rStr=rate!==null?rate.toFixed(2)+'%':'—';
     const rCls=rate===null?'':rate>5?'rate-bad':rate>2?'rate-warn':'rate-ok';
-    const dimmed = FILTER.cat!=='全部'&&FILTER.cat!==cat.key ? 'opacity:.3;pointer-events:none;' : '';
+    const dimmed = FILTER.cat!=='全部'&&FILTER.cat!==cat.key ? 'opacity:.25;filter:grayscale(100%);pointer-events:none;' : '';
     // 大数字=差异量，左下=抽检量，右下=差异率
     return `<div class="ov-card ${cat.cls}" style="${dimmed}">
       <div class="ov-cat"><span class="ov-icon">${cat.icon}</span>${cat.key}</div>
@@ -1189,6 +1302,13 @@ function renderRank(){
 // 对比分析 / 周报
 // ============================================================
 let compareView='phone_dw', compareChart=null;
+function setPeriod(el, period){
+  document.querySelectorAll('.period-tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  currentPeriod = period;
+  renderCompare();
+}
+
 function setCompareView(el,v){ document.querySelectorAll('.view-tab').forEach(t=>t.classList.remove('active')); el.classList.add('active'); compareView=v; buildCompareSiteOptions(); renderCompare(); }
 function buildCompareSiteOptions(){
   const sel=document.getElementById('compareSiteSel');
@@ -1202,54 +1322,47 @@ function buildCompareSiteOptions(){
 function renderCompare(){
   const canvas=document.getElementById('chartCompare'),tableEl=document.getElementById('compareTable');
   if(compareChart){compareChart.destroy();compareChart=null;}
-  const weeks=getRecentWeeks(4);
-  const wLabels=weeks.map(w=>{const e=new Date(w);e.setDate(e.getDate()+6);return `${w.slice(5).replace('-','/')}~${e.toISOString().slice(5,10).replace('-','/')}`;});
-  const sf=document.getElementById('compareSiteSel').value;
-  let datasets=[],tableRows=[];
-  const buildRates=(qaD,diff5D,sumD,diff4D,isPhone)=>weeks.map(w=>{
-    let checks,diff;
-    if(isPhone){ checks=sum(qaD.filter(r=>getWeekLabel(r.date)===w),'checks'); diff=diff5D.filter(r=>getWeekLabel(r.date)===w).length; }
-    else{ checks=sum(sumD.filter(r=>getWeekLabel(r.date)===w),'checks'); diff=diff4D.filter(r=>getWeekLabel(r.date)===w).length; }
-    return checks>0?+(diff/checks*100).toFixed(2):null;
+
+  // 按currentPeriod生成X轴标签和聚合key
+  const {labels, getKey} = getPeriodConfig();
+  const sf=document.getElementById('compareSiteSel')?.value||'__ALL__';
+
+  // 获取激活的品类
+  const activeCats = FILTER.cats.size>0 ? [...FILTER.cats] : ['手机','笔记本','平板','耳机','手表','相机'];
+  const CAT_COLORS2={'手机':'#2563eb','笔记本':'#7c3aed','平板':'#059669','耳机':'#d97706','手表':'#ec4899','相机':'#64748b'};
+
+  const datasets=[], tableRows=[];
+  activeCats.forEach(cat=>{
+    const rates = labels.map(lbl=>{
+      const df = r=>getKey(r.date)===lbl;
+      let checks=0,diff=0;
+      if(cat==='手机'){
+        const qaF=DATA.qa.filter(r=>df(r)&&r.cat==='手机'&&(sf==='__ALL__'||r.site===sf)&&(FILTER.sites.length===0||FILTER.sites.includes(r.site)));
+        const d5F=dedup(DATA.diff5.filter(r=>df(r)&&r.cat==='手机'&&r.strategy==='大盘评估/站点'&&r.subjobj==='客观问题'&&r.judgedType==='执行问题'&&(sf==='__ALL__'||r.site===sf)&&(FILTER.sites.length===0||FILTER.sites.includes(r.site))),r=>r.date+'|'+r.code);
+        checks=sum(qaF,'checks');diff=d5F.length;
+      } else {
+        const smF=DATA.sum.filter(r=>df(r)&&r.cat===cat&&(sf==='__ALL__'||r.site===sf)&&(FILTER.sites.length===0||FILTER.sites.includes(r.site)));
+        const d4F=dedup(DATA.diff4.filter(r=>df(r)&&r.cat===cat&&r.subjobj==='客观问题'&&r.judgedType==='执行问题'&&(sf==='__ALL__'||r.site===sf)&&(FILTER.sites.length===0||FILTER.sites.includes(r.site))),r=>r.date+'|'+r.code);
+        checks=sum(smF,'checks');diff=d4F.length;
+      }
+      return checks>0?+(diff/checks*100).toFixed(2):null;
+    });
+    datasets.push({label:cat,data:rates,borderColor:CAT_COLORS2[cat]||'#94a3b8',backgroundColor:'transparent',tension:.4,pointRadius:3,borderWidth:2,spanGaps:true});
+    tableRows.push({label:cat,rates});
   });
-  if(compareView==='phone_dw'){
-    const types=[{label:'大仓后验',match:s=>s.includes('后验中心仓')},{label:'大仓线体',match:s=>s.includes('智能验机中心')}];
-    const colors=['#2563eb','#f59e0b'];
-    types.forEach((t,ti)=>{
-      const qaD=DATA.qa.filter(r=>t.match(r.site)&&(sf==='__ALL__'||r.site===sf));
-      const diff5D=dedup(DATA.diff5.filter(r=>t.match(r.site)&&r.strategy==='大盘评估/站点'&&r.subjobj==='客观问题'&&r.judgedType==='执行问题'&&(sf==='__ALL__'||r.site===sf)),r=>r.date+'|'+r.code);
-      const rates=buildRates(qaD,diff5D,[],[],true);
-      datasets.push({label:t.label,data:rates,borderColor:colors[ti],backgroundColor:'transparent',tension:.4,pointRadius:4,borderWidth:2,spanGaps:true});
-      tableRows.push({label:t.label,rates});
-    });
-  } else if(compareView==='five_dw'){
-    const cats=['笔记本','平板','手表','耳机','相机'];
-    const colors=['#2563eb','#f59e0b','#ec4899','#10b981','#6366f1'];
-    cats.forEach((cat,ci)=>{
-      const sumD=DATA.sum.filter(r=>r.siteType==='质检中心'&&r.cat===cat&&(sf==='__ALL__'||r.site===sf));
-      const diff4D=dedup(DATA.diff4.filter(r=>r.siteType==='质检中心'&&r.cat===cat&&r.subjobj==='客观问题'&&r.judgedType==='执行问题'&&(sf==='__ALL__'||r.site===sf)),r=>r.date+'|'+r.code);
-      const rates=buildRates([],[],sumD,diff4D,false);
-      datasets.push({label:cat,data:rates,borderColor:colors[ci],backgroundColor:'transparent',tension:.4,pointRadius:4,borderWidth:2,spanGaps:true});
-      tableRows.push({label:cat,rates});
-    });
-  } else {
-    const items=[{cat:'手机',isPhone:true},{cat:'笔记本',isPhone:false}];
-    const colors=['#2563eb','#f59e0b'];
-    items.forEach((item,ci)=>{
-      let rates;
-      if(item.isPhone){ const qaD=DATA.qa.filter(r=>r.siteType==='中心仓'&&r.cat==='手机'&&(sf==='__ALL__'||r.site===sf)); const diff5D=dedup(DATA.diff5.filter(r=>r.siteType==='中心仓'&&r.cat==='手机'&&r.strategy==='大盘评估/站点'&&r.subjobj==='客观问题'&&r.judgedType==='执行问题'&&(sf==='__ALL__'||r.site===sf)),r=>r.date+'|'+r.code); rates=buildRates(qaD,diff5D,[],[],true); }
-      else{ const sumD=DATA.sum.filter(r=>r.siteType==='中心仓'&&r.cat===item.cat&&(sf==='__ALL__'||r.site===sf)); const diff4D=dedup(DATA.diff4.filter(r=>r.siteType==='中心仓'&&r.cat===item.cat&&r.subjobj==='客观问题'&&r.judgedType==='执行问题'&&(sf==='__ALL__'||r.site===sf)),r=>r.date+'|'+r.code); rates=buildRates([],[],sumD,diff4D,false); }
-      datasets.push({label:item.cat,data:rates,borderColor:colors[ci],backgroundColor:'transparent',tension:.4,pointRadius:4,borderWidth:2,spanGaps:true});
-      tableRows.push({label:item.cat,rates});
-    });
+
+  compareChart=new Chart(canvas,{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:10,font:{size:11}}}},scales:{y:{grid:{color:'rgba(200,210,230,0.4)'},ticks:{callback:v=>v+'%',font:{size:10}},beginAtZero:true},x:{grid:{display:false},ticks:{font:{size:10}}}}}});
+
+  // 数据表
+  if(tableRows.length){
+    const lastTwo=(rates)=>{const f=rates.filter(r=>r!==null);return f.slice(-2);};
+    tableEl.innerHTML=`<table class="trend-table"><thead><tr><th>品类</th>${labels.map(l=>`<th>${l}</th>`).join('')}<th>环比</th></tr></thead><tbody>${tableRows.map(row=>{
+      const lt=lastTwo(row.rates);
+      let ratio='—',rCls='ratio-flat';
+      if(lt.length===2&&lt[0]!==0){const rv=((lt[1]-lt[0])/lt[0]*100).toFixed(2);ratio=(rv>0?'+':'')+rv+'%';rCls=rv>0?'ratio-up':rv<0?'ratio-down':'ratio-flat';}
+      return `<tr><td>${row.label}</td>${row.rates.map(v=>`<td>${v!==null?v+'%':'—'}</td>`).join('')}<td class="${rCls}">${ratio}</td></tr>`;
+    }).join('')}</tbody></table>`;
   }
-  compareChart=new Chart(canvas,{type:'line',data:{labels:wLabels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:10,font:{size:11}}}},scales:{y:{grid:{color:'rgba(200,210,230,0.4)'},ticks:{callback:v=>v+'%',font:{size:10}},beginAtZero:true},x:{grid:{display:false},ticks:{font:{size:10}}}}}});
-  tableEl.innerHTML=tableRows.length?`<table class="trend-table"><thead><tr><th>品类/类型</th>${wLabels.map(w=>`<th>${w}</th>`).join('')}<th>环比</th></tr></thead><tbody>${tableRows.map(row=>{
-    const lt=row.rates.filter(r=>r!==null);
-    let ratio='—',rCls='ratio-flat';
-    if(lt.length>=2&&lt[lt.length-2]!==0){const rv=((lt[lt.length-1]-lt[lt.length-2])/lt[lt.length-2]*100).toFixed(2);ratio=(rv>0?'+':'')+rv+'%';rCls=rv>0?'ratio-up':rv<0?'ratio-down':'ratio-flat';}
-    return `<tr><td>${row.label}</td>${row.rates.map(v=>`<td>${v!==null?v+'%':'—'}</td>`).join('')}<td class="${rCls}">${ratio}</td></tr>`;
-  }).join('')}</tbody></table>`:'';
 }
 
 // ============================================================
@@ -1687,6 +1800,29 @@ function extractCN(str){ if(!str)return ''; const m=str.match(/[\u4e00-\u9fa5]+/
 // ============================================================
 function dedup(arr,keyFn){ const seen=new Set(); return arr.filter(r=>{const k=keyFn(r);if(seen.has(k))return false;seen.add(k);return true;}); }
 function sum(arr,f){ return arr.reduce((s,r)=>s+(parseFloat(r[f])||0),0); }
+function getPeriodConfig(){
+  // 根据currentPeriod生成labels和getKey函数
+  const allDates = [...new Set([...DATA.qa,...DATA.diff5,...DATA.sum,...DATA.diff4].map(r=>r.date).filter(Boolean))].sort();
+  if(!allDates.length) return {labels:[], getKey:d=>d};
+
+  if(currentPeriod==='day'){
+    const labels = [...new Set(allDates)];
+    return {labels: labels.map(d=>d.slice(5)), getKey: d=>d.slice(5)};
+  }
+  if(currentPeriod==='week'){
+    const weeks = [...new Set(allDates.map(getWeekLabel))].sort();
+    const labels = weeks.map(w=>{const e=new Date(w);e.setDate(e.getDate()+6);return `${w.slice(5).replace('-','/')}~${e.toISOString().slice(5,10).replace('-','/')}`;});
+    const weekArr = weeks;
+    return {labels, getKey: d=>{const w=getWeekLabel(d);const i=weekArr.indexOf(w);return i>=0?labels[i]:null;}};
+  }
+  if(currentPeriod==='month'){
+    const months = [...new Set(allDates.map(d=>d.slice(0,7)))].sort();
+    const labels = months.map(m=>m.replace('-','/'));
+    return {labels, getKey: d=>{const m=d.slice(0,7).replace('-','/');return labels.includes(m)?m:null;}};
+  }
+  return {labels:[], getKey:d=>d};
+}
+
 function getWeekLabel(date){ const d=new Date(date),day=d.getDay()||7; d.setDate(d.getDate()-day+1); return d.toISOString().slice(0,10); }
 function getRecentWeeks(n){ const today=new Date(),day=today.getDay()||7; const mon=new Date(today); mon.setDate(today.getDate()-day+1); const wks=[]; for(let i=n-1;i>=0;i--){const d=new Date(mon);d.setDate(mon.getDate()-i*7);wks.push(d.toISOString().slice(0,10));} return wks; }
 function renderPageBtns(cid,cur,total,fn,pp){ const btns=document.getElementById(cid); if(pp>=999999){btns.innerHTML='';return;} let html=`<button class="page-btn" onclick="${fn.name}(${cur-1})" ${cur<=1?'disabled':''}>‹</button>`; const range=[]; for(let i=1;i<=total;i++){if(i===1||i===total||Math.abs(i-cur)<=1)range.push(i);} let prev=null; range.forEach(i=>{if(prev&&i-prev>1)html+=`<span style="font-size:11px;color:#94a3b8;padding:0 2px;">…</span>`; html+=`<button class="page-btn${i===cur?' active':''}" onclick="${fn.name}(${i})">${i}</button>`; prev=i;}); html+=`<button class="page-btn" onclick="${fn.name}(${cur+1})" ${cur>=total?'disabled':''}>›</button>`; btns.innerHTML=html; }
@@ -1695,32 +1831,18 @@ function renderPageBtns(cid,cur,total,fn,pp){ const btns=document.getElementById
 // 页面切换 / Toast
 // ============================================================
 function toggleNavGroup(id){
-  const group = document.getElementById('group-'+id);
-  const arrow = document.getElementById('arrow-'+id);
-  if(!group) return;
-  group.classList.toggle('open');
-  if(arrow) arrow.style.transform = group.classList.contains('open') ? 'rotate(0deg)' : 'rotate(-90deg)';
+  const g=document.getElementById('group-'+id);
+  if(g)g.classList.toggle('open');
 }
-
-function switchSubPage(name, el){
-  // 切换子页面
+function switchSubPage(name,el){
   document.querySelectorAll('.subpage').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-sub').forEach(n=>n.classList.remove('active'));
-  const sp = document.getElementById('sub-page-'+name);
-  if(sp) sp.classList.add('active');
-  if(el) el.classList.add('active');
-  // 大仓子类型chip只在仓级分析显示
-  checkDwSubVisibilityWh();
-  if(name==='warehouse'){ buildCompareSiteOptions(); renderCompare(); }
+  const sp=document.getElementById('sub-page-'+name);
+  if(sp)sp.classList.add('active');
+  if(el)el.classList.add('active');
+  if(name==='warehouse'){buildCompareSiteOptions();renderCompare();}
   renderAll();
 }
-
-function checkDwSubVisibilityWh(){
-  const isWh = document.getElementById('sub-page-warehouse')?.classList.contains('active');
-  const el = document.getElementById('dwSubChipsWh');
-  if(el) el.style.display = (isWh && compareView==='phone_dw') ? 'flex' : 'none';
-}
-
 function switchPage(page,el){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); const pg=document.getElementById('page-'+page); if(pg)pg.classList.add('active'); if(el&&!el.classList.contains('disabled'))el.classList.add('active'); }
 function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(()=>t.style.display='none',3000); }
 
@@ -1730,12 +1852,6 @@ Chart.defaults.font.family="-apple-system,'PingFang SC','Microsoft YaHei',sans-s
 
 // 初始化
 (function init(){
-  // 默认展开北极星分组
-  const g = document.getElementById('group-polestar');
-  if(g) g.classList.add('open');
-  const a = document.getElementById('arrow-polestar');
-  if(a) a.style.transform = 'rotate(0deg)';
-
   const today=new Date().toISOString().slice(0,10);
   document.getElementById('dateFrom').value=today.slice(0,8)+'01';
   document.getElementById('dateTo').value=today;
