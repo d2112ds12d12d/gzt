@@ -36,6 +36,13 @@ body{font-family:-apple-system,'PingFang SC','Microsoft YaHei',sans-serif;backgr
 .ds-chip.loaded{background:rgba(5,150,105,0.08);border-color:rgba(5,150,105,0.3);color:#059669;}
 .ver-row{display:flex;align-items:center;justify-content:space-between;}
 .ver{font-size:10px;color:#94a3b8;}
+.nav-parent{justify-content:flex-start;}
+.nav-sub-group{overflow:hidden;max-height:0;transition:max-height .25s ease;}
+.nav-sub-group.open{max-height:120px;}
+.nav-sub{padding:7px 16px 7px 32px;font-size:12px;}
+.nav-sub-icon{font-size:12px;margin-right:4px;}
+.nav-sub.active{background:rgba(37,99,235,0.10);color:#2563eb;border-left-color:#2563eb;font-weight:600;}
+.nav-sub:hover:not(.active){background:rgba(37,99,235,0.05);color:#1e40af;}
 
 /* MAIN */
 #main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
@@ -205,6 +212,8 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
 
 /* ANIM */
 @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.subpage{display:none;animation:fadeUp .2s ease both;}
+.subpage.active{display:block;}
 .page{display:none;}.page.active{display:block;animation:fadeUp .22s ease both;}
 
 /* TOAST */
@@ -290,9 +299,18 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
     <div class="sub">ZHUAN · 培训内部数据平台</div>
   </div>
   <div class="nav-section">数据模块</div>
-  <div class="nav-item active" onclick="switchPage('quality',this)">
+  <div class="nav-item nav-parent" onclick="toggleNavGroup('polestar')">
     <svg class="nav-icon" fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
     北极星指标
+    <span class="nav-arrow" id="arrow-polestar" style="margin-left:auto;font-size:10px;transition:transform .2s;">▾</span>
+  </div>
+  <div class="nav-sub-group" id="group-polestar">
+    <div class="nav-item nav-sub active" id="sub-overview" onclick="switchSubPage('overview',this)">
+      <span class="nav-sub-icon">🌍</span> 全国质量总览
+    </div>
+    <div class="nav-item nav-sub" id="sub-warehouse" onclick="switchSubPage('warehouse',this)">
+      <span class="nav-sub-icon">🔍</span> 仓级数据分析
+    </div>
   </div>
   <div class="sidebar-footer">
     <div id="userBadge" class="user-badge" onclick="openLogModal('user')" title="点击管理账号">
@@ -331,6 +349,7 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
   <div class="content">
     <div class="page active" id="page-quality">
 
+      <!-- 筛选栏（全局共用） -->
       <!-- 筛选栏 -->
       <div class="filter-bar glass" style="margin-bottom:14px;">
         <span class="filter-label">日期</span>
@@ -342,10 +361,11 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
         <span class="filter-chip active" data-stype="全部" onclick="setSiteType(this,'全部')">全部</span>
         <span class="filter-chip" data-stype="中心仓" onclick="setSiteType(this,'中心仓')">中心仓</span>
         <span class="filter-chip" data-stype="质检中心" onclick="setSiteType(this,'质检中心')">质检中心</span>
-        <!-- 大仓子类型，仅质检中心+手机时显示 -->
-        <div id="dwSubChips">
-          <div class="filter-div"></div>
-          <span class="filter-label">大仓类型</span>
+        
+
+      <!-- 子页面：全国质量总览 -->
+      <div class="subpage active" id="sub-page-overview">
+        <span class="filter-label">大仓类型</span>
           <span class="filter-chip active" data-dwsub="全部" onclick="setDwSub(this,'全部')">全部</span>
           <span class="filter-chip" data-dwsub="后验中心仓" onclick="setDwSub(this,'后验中心仓')">后验中心仓</span>
           <span class="filter-chip" data-dwsub="智能验机中心" onclick="setDwSub(this,'智能验机中心')">智能验机中心</span>
@@ -382,7 +402,30 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
       </div>
 
       <!-- 周度趋势分析 -->
-      <div class="section-hd"><div class="section-hd-left">周度趋势分析</div></div>
+      </div>
+
+      <!-- 子页面：仓级数据分析 -->
+      <div class="subpage" id="sub-page-warehouse">
+        <!-- 大仓/中心仓视角切换 -->
+        <div class="card" style="margin-bottom:14px;padding:14px 16px;">
+          <div style="display:flex;align-items:center;gap:12px;margin-bottom:0px;flex-wrap:wrap;">
+            <div class="view-tabs">
+              <span class="view-tab active" onclick="setCompareView(this,'phone_dw')">大仓手机</span>
+              <span class="view-tab" onclick="setCompareView(this,'five_dw')">大仓五品类</span>
+              <span class="view-tab" onclick="setCompareView(this,'center')">中心仓</span>
+            </div>
+            <select class="site-sel" id="compareSiteSel" onchange="renderCompare()" style="font-size:11px;"></select>
+            <!-- 大仓子类型（仅大仓手机时显示） -->
+            <div id="dwSubChipsWh" style="display:none;align-items:center;gap:6px;">
+              <div class="filter-div"></div>
+              <span class="filter-label">大仓类型</span>
+              <span class="filter-chip active" data-dwsub="全部" onclick="setDwSub(this,'全部')">全部</span>
+              <span class="filter-chip" data-dwsub="后验中心仓" onclick="setDwSub(this,'后验中心仓')">后验中心仓</span>
+              <span class="filter-chip" data-dwsub="智能验机中心" onclick="setDwSub(this,'智能验机中心')">智能验机中心</span>
+            </div>
+          </div>
+        </div>
+        <div class="section-hd"><div class="section-hd-left">周度趋势分析</div></div>
       <div class="card" style="margin-bottom:14px;padding:16px;">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap;">
           <div class="view-tabs">
@@ -443,10 +486,10 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
           <div class="page-btns" id="detailPageBtns"></div>
         </div>
       </div>
+      </div>
 
     </div>
-  </div>
-</div>
+
 
 <!-- ID绑定弹窗 -->
 <div class="modal-overlay id-modal" id="idModal">
@@ -1651,6 +1694,33 @@ function renderPageBtns(cid,cur,total,fn,pp){ const btns=document.getElementById
 // ============================================================
 // 页面切换 / Toast
 // ============================================================
+function toggleNavGroup(id){
+  const group = document.getElementById('group-'+id);
+  const arrow = document.getElementById('arrow-'+id);
+  if(!group) return;
+  group.classList.toggle('open');
+  if(arrow) arrow.style.transform = group.classList.contains('open') ? 'rotate(0deg)' : 'rotate(-90deg)';
+}
+
+function switchSubPage(name, el){
+  // 切换子页面
+  document.querySelectorAll('.subpage').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-sub').forEach(n=>n.classList.remove('active'));
+  const sp = document.getElementById('sub-page-'+name);
+  if(sp) sp.classList.add('active');
+  if(el) el.classList.add('active');
+  // 大仓子类型chip只在仓级分析显示
+  checkDwSubVisibilityWh();
+  if(name==='warehouse'){ buildCompareSiteOptions(); renderCompare(); }
+  renderAll();
+}
+
+function checkDwSubVisibilityWh(){
+  const isWh = document.getElementById('sub-page-warehouse')?.classList.contains('active');
+  const el = document.getElementById('dwSubChipsWh');
+  if(el) el.style.display = (isWh && compareView==='phone_dw') ? 'flex' : 'none';
+}
+
 function switchPage(page,el){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); const pg=document.getElementById('page-'+page); if(pg)pg.classList.add('active'); if(el&&!el.classList.contains('disabled'))el.classList.add('active'); }
 function showToast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.style.display='block'; clearTimeout(t._t); t._t=setTimeout(()=>t.style.display='none',3000); }
 
@@ -1660,6 +1730,12 @@ Chart.defaults.font.family="-apple-system,'PingFang SC','Microsoft YaHei',sans-s
 
 // 初始化
 (function init(){
+  // 默认展开北极星分组
+  const g = document.getElementById('group-polestar');
+  if(g) g.classList.add('open');
+  const a = document.getElementById('arrow-polestar');
+  if(a) a.style.transform = 'rotate(0deg)';
+
   const today=new Date().toISOString().slice(0,10);
   document.getElementById('dateFrom').value=today.slice(0,8)+'01';
   document.getElementById('dateTo').value=today;
