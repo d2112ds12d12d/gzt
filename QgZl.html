@@ -79,7 +79,7 @@ input[type=file]{display:none;}
 .site-multisel-btn{font-size:12px;padding:3px 10px;border-radius:7px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.7);color:#1e293b;cursor:pointer;display:flex;align-items:center;gap:5px;min-width:90px;justify-content:space-between;transition:border-color .15s;}
 .site-multisel-btn:hover{border-color:#2563eb;}
 .site-multisel-btn.has-sel{border-color:#2563eb;background:rgba(37,99,235,0.06);color:#2563eb;}
-.site-dropdown{position:absolute;top:calc(100% + 4px);left:0;min-width:180px;background:rgba(255,255,255,0.97);backdrop-filter:blur(16px);border:1px solid rgba(200,210,230,0.8);border-radius:10px;box-shadow:0 8px 24px rgba(100,120,180,0.15);z-index:100;display:none;max-height:280px;overflow:hidden;flex-direction:column;}
+.site-dropdown{position:fixed;top:0;left:0;min-width:180px;background:rgba(255,255,255,0.97);backdrop-filter:blur(16px);border:1px solid rgba(200,210,230,0.8);border-radius:10px;box-shadow:0 8px 24px rgba(100,120,180,0.15);z-index:100;display:none;max-height:280px;overflow:hidden;flex-direction:column;}
 .site-dropdown.open{display:flex;animation:fadeUp .15s ease both;}
 .site-search-box{padding:8px 10px;border-bottom:1px solid rgba(200,210,230,0.4);}
 .site-search-input{width:100%;font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid rgba(200,210,230,0.8);background:rgba(241,245,249,0.8);outline:none;font-family:inherit;}
@@ -176,18 +176,18 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
 .per-page-sel{font-size:11px;padding:3px 7px;border-radius:6px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.7);color:#475569;outline:none;}
 
 /* 列头筛选下拉 */
-.col-dropdown{position:fixed;top:0;left:0;min-width:180px;background:rgba(255,255,255,0.98);backdrop-filter:blur(16px);border:1px solid rgba(200,210,230,0.8);border-radius:10px;box-shadow:0 8px 24px rgba(100,120,180,0.18);z-index:200;display:none;flex-direction:column;max-height:260px;}
-.col-dropdown.open{display:flex;animation:fadeUp .14s ease both;}
-.col-search{padding:8px 10px;border-bottom:1px solid rgba(200,210,230,0.35);}
+
+
+
 .col-search input{width:100%;font-size:12px;padding:5px 9px;border-radius:7px;border:1px solid rgba(200,210,230,0.8);background:rgba(241,245,249,0.8);outline:none;font-family:inherit;}
 .col-search input:focus{border-color:#2563eb;}
-.col-opts{overflow-y:auto;flex:1;}
-.col-opt{display:flex;align-items:center;gap:8px;padding:6px 12px;font-size:12px;color:#334155;cursor:pointer;transition:background .1s;}
-.col-opt:hover{background:rgba(37,99,235,0.06);}
-.col-opt input[type=checkbox]{accent-color:#2563eb;cursor:pointer;}
-.col-opt.opt-all{border-bottom:1px solid rgba(200,210,230,0.4);font-weight:600;color:#2563eb;}
-.col-ft{padding:6px 10px;border-top:1px solid rgba(200,210,230,0.35);display:flex;gap:6px;}
-.col-ft button{flex:1;font-size:11px;padding:4px;border-radius:6px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.7);color:#475569;cursor:pointer;}
+
+
+
+
+
+
+
 .col-ft button:hover{background:#2563eb;color:#fff;border-color:#2563eb;}
 
 /* COMPARE SECTION */
@@ -245,6 +245,31 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
 .log-tag-sum{background:rgba(217,119,6,0.1);color:#d97706;}
 .log-empty{text-align:center;padding:32px;color:#94a3b8;font-size:13px;}
 .empty-state{text-align:center;padding:30px 20px;color:#94a3b8;}
+/* 列头筛选浮窗 */
+#colPopup{display:none;position:fixed;z-index:9999;background:rgba(255,255,255,0.98);
+  border:1px solid rgba(200,210,230,0.8);border-radius:12px;
+  box-shadow:0 8px 32px rgba(100,120,180,0.18);width:220px;overflow:hidden;
+  flex-direction:column;}
+#colPopup.open{display:flex;}
+#colPopupSearch{width:100%;border:none;border-bottom:1px solid rgba(200,210,230,0.5);
+  padding:9px 12px;font-size:12px;outline:none;font-family:inherit;background:#f8fafc;}
+#colPopupSearch::placeholder{color:#94a3b8;}
+#colPopupList{overflow-y:auto;max-height:220px;padding:4px 0;}
+.cp-item{display:flex;align-items:center;gap:8px;padding:7px 14px;font-size:12px;
+  color:#334155;cursor:pointer;transition:background .1s;}
+.cp-item:hover{background:rgba(37,99,235,0.06);}
+.cp-item.selected{background:rgba(37,99,235,0.08);color:#2563eb;font-weight:500;}
+.cp-item-check{width:14px;height:14px;border:1.5px solid #cbd5e1;border-radius:3px;
+  flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:9px;}
+.cp-item.selected .cp-item-check{background:#2563eb;border-color:#2563eb;color:#fff;}
+.cp-item.cp-all{border-bottom:1px solid rgba(200,210,230,0.4);font-weight:600;color:#2563eb;}
+.cp-item.cp-all .cp-item-check{border-color:#2563eb;}
+
+.cp-btn{flex:1;font-size:11px;padding:5px;border-radius:7px;border:1px solid rgba(200,210,230,0.8);
+  background:rgba(255,255,255,0.7);color:#475569;cursor:pointer;transition:all .15s;font-family:inherit;}
+
+
+
 .empty-icon{font-size:32px;margin-bottom:8px;opacity:.5;}
 .empty-text{font-size:13px;}
 </style>
@@ -320,24 +345,11 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
         </div>
         <div class="filter-div"></div>
         <span class="filter-label">站点</span>
-        <!-- 站点多选下拉 -->
-        <div class="site-multisel-wrap" id="siteMultiWrap">
-          <div class="site-multisel-btn" id="siteMultiBtn" onclick="toggleSiteDrop(event)">
-            <span id="siteMultiLabel">全部站点</span>
-            <span style="font-size:10px;color:#94a3b8;">▼</span>
-          </div>
-          <div class="site-dropdown" id="siteDrop">
-            <div class="site-search-box">
-              <input class="site-search-input" id="siteSearchInput" placeholder="搜索站点…" oninput="filterSiteOpts()" onclick="event.stopPropagation()">
-            </div>
-            <div class="site-options" id="siteOptList"></div>
-            <div class="site-footer">
-              <button class="site-footer-btn" onclick="selectAllSites()">全选</button>
-              <button class="site-footer-btn" onclick="clearSites()">清空</button>
-              <button class="site-footer-btn" onclick="closeSiteDrop();applyFilter()">确定</button>
-            </div>
-          </div>
-        </div>
+        <!-- 站点原生select -->
+        <select id="siteSel" onchange="onSiteSelChange(this.value)"
+          style="font-size:12px;padding:3px 8px;border-radius:7px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.7);color:#1e293b;outline:none;max-width:130px;font-family:inherit;cursor:pointer;">
+          <option value="__ALL__">全部站点</option>
+        </select>
         <div class="filter-div"></div>
         <span class="filter-label">品类</span>
         <span class="filter-chip active" data-cat="全部" onclick="setCat(this,'全部')">全部</span>
@@ -386,9 +398,28 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
 
       <!-- 明细表格 - 列头内置筛选 -->
       <div class="table-wrap">
-        <div class="table-toolbar">
-          <div style="font-size:12px;color:#64748b;" id="detailFilterSummary">点击列头 ▼ 可筛选</div>
-          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b;">
+        <div class="table-toolbar" style="flex-wrap:wrap;gap:6px;">
+          <div id="detailFilterRow" style="display:flex;gap:5px;flex-wrap:wrap;align-items:center;">
+            <span id="detailFilterSummary" style="font-size:11px;color:#64748b;">点击列头 ▼ 筛选</span>
+            <button onclick="resetDetailSelects()" id="detailResetBtn" style="display:none;font-size:11px;padding:2px 10px;border-radius:6px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.7);color:#64748b;cursor:pointer;">重置全部</button>
+          </div>
+          <!-- 隐藏的辅助select，用于收集筛选值 -->
+          <div style="display:none;">
+            <select id="df_date"><option value="">全部日期</option></select>
+            <select id="df_site"><option value="">全部站点</option></select>
+            <select id="df_cat"><option value="">全部品类</option></select>
+            <select id="df_code"><option value="">全部质检码</option></select>
+            <select id="df_level1"><option value="">全部一级项</option></select>
+            <select id="df_level2"><option value="">全部二级项</option></select>
+            <select id="df_level3_orig"><option value="">全部原三级项</option></select>
+            <select id="df_level3_new"><option value="">全部新三级项</option></select>
+            <select id="df_subjobj"><option value="">主客观</option></select>
+            <select id="df_issueType"><option value="">问题类型</option></select>
+            <select id="df_judgedType"><option value="">抽检判定</option></select>
+            <select id="df_inspector"><option value="">质检人员</option></select>
+            <select id="df_qaInspector"><option value="">抽检人员</option></select>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:11px;color:#64748b;margin-left:auto;">
             每页 <select class="per-page-sel" id="perPageSel" onchange="setPerPage()">
               <option value="20" selected>20行</option><option value="50">50行</option><option value="100">100行</option><option value="999999">全部</option>
             </select>
@@ -470,17 +501,12 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
   </div>
 </div>
 
-<!-- 列头筛选下拉（全局单个，动态移动） -->
-<div class="col-dropdown" id="colDropdown">
-  <div class="col-search"><input id="colSearchInput" placeholder="搜索…" oninput="filterColOpts()" onclick="event.stopPropagation()"></div>
-  <div class="col-opts" id="colOptList"></div>
-  <div class="col-ft">
-    <button onclick="selectAllColOpts()">全选</button>
-    <button onclick="clearColOpts()">清空</button>
-    <button onclick="applyColFilter()">确定</button>
-  </div>
-</div>
 
+<!-- 列头筛选浮窗 -->
+<div id="colPopup">
+  <input id="colPopupSearch" placeholder="搜索…" oninput="cpFilter()" autocomplete="off">
+  <div id="colPopupList"></div>
+</div>
 <div id="toast"></div>
 
 <script>
@@ -673,7 +699,7 @@ async function autoLoadCloudData(){
   if(loaded>0){
     showToast(`✓ 云端数据已加载（${loaded}/4个文件）`);
     document.getElementById('lastUpdateTime').textContent='云端 · '+new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
-    buildSiteOptions(); applyFilter();
+    buildSiteOptions(); autoAdjustDateRange(); applyFilter();
   } else {
     showToast('云端暂无数据，请上传文件');
   }
@@ -784,7 +810,7 @@ function showCreatorTabs(){
 // ============================================================
 const FILTER = { dateFrom:'', dateTo:'', siteType:'全部', sites:[], cat:'全部', dwSub:'全部' };
 // 列头筛选
-const COL_FILTERS = {}; // colKey -> Set of selected values (empty=all)
+ // colKey -> Set of selected values (empty=all)
 const COL_DEFS = [
   {key:'date',label:'日期'},{key:'site',label:'站点名称'},{key:'cat',label:'品类'},
   {key:'code',label:'质检码'},{key:'level1',label:'一级项'},{key:'level2',label:'二级项'},
@@ -805,11 +831,22 @@ function getDwSub(s){ if(!s)return ''; const t=s.trim(); if(t.includes('后验�
 // ============================================================
 let allSites=[], selectedSites=new Set();
 
+function sortSites(sites){
+  const cp=(n)=>n.includes('深圳')?0:n.includes('青岛')?1:n.includes('成都')?2:3;
+  const tp=(n)=>n.includes('智能验机中心')?0:n.includes('后验中心仓')?1:(n.includes('中心仓')||n.includes('中心'))?2:3;
+  return [...sites].sort((a,b)=>{const ta=tp(a),tb=tp(b);if(ta!==tb)return ta-tb;const ca=cp(a),cb=cp(b);if(ca!==cb)return ca-cb;return a.localeCompare(b,'zh-CN');});
+}
 function buildSiteOptions(){
-  allSites=[...new Set([...DATA.qa.map(r=>r.site),...DATA.sum.map(r=>r.site),...DATA.diff5.map(r=>r.site),...DATA.diff4.map(r=>r.site)].filter(Boolean))].sort();
-  selectedSites=new Set(); // 默认全选（空=全选）
-  renderSiteOpts(allSites);
-  updateSiteBtn();
+  const raw=[...new Set([...DATA.qa.map(r=>r.site),...DATA.sum.map(r=>r.site),...DATA.diff5.map(r=>r.site),...DATA.diff4.map(r=>r.site)].filter(Boolean))];
+  allSites=sortSites(raw);
+  selectedSites=new Set();
+  const sel=document.getElementById('siteSel');
+  if(sel) sel.innerHTML='<option value="__ALL__">全部站点</option>'+allSites.map(s=>'<option value="'+s+'">'+s+'</option>').join('');
+}
+function onSiteSelChange(val){
+  if(!val||val==='__ALL__') selectedSites=new Set();
+  else selectedSites=new Set([val]);
+  applyFilter();
 }
 function getSiteOptsFiltered(){
   const q=document.getElementById('siteSearchInput').value.trim().toLowerCase();
@@ -838,7 +875,22 @@ function updateSiteBtn(){
   else if(n===1){lbl.textContent=[...selectedSites][0];btn.classList.add('has-sel');}
   else{lbl.textContent=n+'个站点';btn.classList.add('has-sel');}
 }
-function toggleSiteDrop(e){ e.stopPropagation(); document.getElementById('siteSearchInput').value=''; renderSiteOpts(allSites); document.getElementById('siteDrop').classList.toggle('open'); }
+function toggleSiteDrop(e){ 
+  e.stopPropagation();
+  const drop=document.getElementById('siteDrop');
+  if(drop.classList.contains('open')){closeSiteDrop();return;}
+  const btn=document.getElementById('siteMultiBtn');
+  const rect=btn.getBoundingClientRect();
+  drop.style.position='fixed';
+  drop.style.left=rect.left+'px';
+  drop.style.top=(rect.bottom+2)+'px';
+  drop.style.width='200px';
+  drop.style.maxHeight='260px';
+  drop.style.zIndex='9999';
+  document.getElementById('siteSearchInput').value=''; 
+  renderSiteOpts(allSites); 
+  drop.classList.add('open'); 
+}
 function closeSiteDrop(){ document.getElementById('siteDrop').classList.remove('open'); }
 document.addEventListener('click',()=>{ closeSiteDrop(); closeColDrop(); });
 
@@ -863,6 +915,14 @@ function checkDwSubVisibility(){
   const show = FILTER.siteType==='质检中心' && FILTER.cat==='手机';
   document.getElementById('dwSubChips').classList.toggle('visible',show);
   if(!show) FILTER.dwSub='全部';
+}
+function autoAdjustDateRange(){
+  const dates=[...DATA.qa,...DATA.diff5,...DATA.sum,...DATA.diff4].map(r=>r.date).filter(Boolean).sort();
+  if(!dates.length)return;
+  const mn=dates[0],mx=dates[dates.length-1];
+  document.getElementById('dateFrom').value=mn;
+  document.getElementById('dateTo').value=mx;
+  FILTER.dateFrom=mn;FILTER.dateTo=mx;
 }
 function applyFilter(){
   FILTER.dateFrom=document.getElementById('dateFrom').value;
@@ -942,36 +1002,54 @@ function renderOverview(){
 // ============================================================
 function renderRank(){
   const el=document.getElementById('rankList');
+  const qaF=filterRows(DATA.qa);
+  const diff5F=dedup(filterRows(DATA.diff5).filter(r=>r.strategy==='大盘评估/站点'&&r.subjobj==='客观问题'&&r.judgedType==='执行问题'),r=>r.date+'|'+r.code);
+  const sumF=filterRows(DATA.sum);
+  const diff4F=dedup(filterRows(DATA.diff4).filter(r=>r.subjobj==='客观问题'&&r.judgedType==='执行问题'),r=>r.date+'|'+r.code);
   const siteMap={};
-  const qaF=filterRows(DATA.qa); const diff5F=dedup(filterRows(DATA.diff5).filter(r=>r.strategy==='大盘评估/站点'&&r.subjobj==='客观问题'&&r.judgedType==='执行问题'),r=>r.date+'|'+r.code);
-  const sumF=filterRows(DATA.sum); const diff4F=dedup(filterRows(DATA.diff4).filter(r=>r.subjobj==='客观问题'&&r.judgedType==='执行问题'),r=>r.date+'|'+r.code);
   const addSite=(site,checks,diff)=>{if(!siteMap[site])siteMap[site]={site,checks:0,diff:0};siteMap[site].checks+=checks;siteMap[site].diff+=diff;};
-  qaF.forEach(r=>{ if(FILTER.cat==='全部'||r.cat===FILTER.cat)addSite(r.site,r.checks,0); });
-  diff5F.forEach(r=>{ if(FILTER.cat==='全部'||r.cat===FILTER.cat)addSite(r.site,0,1); });
-  sumF.forEach(r=>{ if(FILTER.cat==='全部'||r.cat===FILTER.cat)addSite(r.site,r.checks,0); });
-  diff4F.forEach(r=>{ if(FILTER.cat==='全部'||r.cat===FILTER.cat)addSite(r.site,0,1); });
-  const ranked=Object.values(siteMap).filter(s=>s.checks>0).map(s=>({...s,rate:s.diff/s.checks*100})).sort((a,b)=>b.rate-a.rate).slice(0,15);
-  if(!ranked.length){el.innerHTML='<div class="empty-state"><div class="empty-text">暂无数据</div></div>';return;}
-  const maxR=ranked[0].rate||1;
-  // 全宽两列布局
-  el.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;';
-  el.innerHTML=ranked.map((r,i)=>{
+  qaF.forEach(r=>{if(FILTER.cat==='全部'||r.cat===FILTER.cat)addSite(r.site,r.checks,0);});
+  diff5F.forEach(r=>{if(FILTER.cat==='全部'||r.cat===FILTER.cat)addSite(r.site,0,1);});
+  sumF.forEach(r=>{if(FILTER.cat==='全部'||r.cat===FILTER.cat)addSite(r.site,r.checks,0);});
+  diff4F.forEach(r=>{if(FILTER.cat==='全部'||r.cat===FILTER.cat)addSite(r.site,0,1);});
+  const all=Object.values(siteMap).filter(s=>s.checks>0).map(s=>({...s,rate:s.diff/s.checks*100})).sort((a,b)=>b.rate-a.rate);
+  if(!all.length){el.innerHTML='<div class="empty-state"><div class="empty-text">暂无数据</div></div>';el.style.cssText='';return;}
+  const mkItem=(r,i,maxR)=>{
     const pct=(r.rate/maxR*100).toFixed(0);
     const color=r.rate>5?'#dc2626':r.rate>2?'#f59e0b':'#22c55e';
     let badge,badgeCls;
     if(i===0){badge='⚠';badgeCls='rank-danger';}
     else if(i===1||i===2){badge='▲';badgeCls='rank-warn';}
     else{badge=String(i+1);badgeCls='rank-normal';}
-    return `<div class="rank-item" style="animation-delay:${i*.03}s;margin-bottom:0;">
+    return `<div class="rank-item" style="margin-bottom:4px;">
       <div class="rank-badge ${badgeCls}">${badge}</div>
-      <div class="rank-name" title="${r.site}" style="width:90px;">${r.site}</div>
+      <div class="rank-name" title="${r.site}" style="width:100px;">${r.site}</div>
       <div class="rank-bar-wrap" style="flex:1;"><div class="rank-bar" style="width:${pct}%;background:${color}"></div></div>
-      <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
         <span style="font-size:10px;color:#94a3b8;">${r.diff}/${r.checks.toLocaleString()}</span>
-        <div class="rank-val" style="color:${color};min-width:40px;">${r.rate.toFixed(2)}%</div>
+        <div class="rank-val" style="color:${color};min-width:42px;">${r.rate.toFixed(2)}%</div>
       </div>
     </div>`;
-  }).join('');
+  };
+  if(FILTER.siteType==='质检中心'){
+    const zn=all.filter(r=>r.site.includes('智能验机中心'));
+    const hy=all.filter(r=>r.site.includes('后验中心仓'));
+    el.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:12px;';
+    el.innerHTML=`
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#2563eb;margin-bottom:8px;padding-bottom:5px;border-bottom:2px solid rgba(37,99,235,0.2);">智能验机中心 <span style="font-weight:400;color:#94a3b8;">(${zn.length}个)</span></div>
+        ${zn.length?zn.map((r,i)=>mkItem(r,i,zn[0]?.rate||1)).join(''):'<div style="font-size:12px;color:#94a3b8;padding:8px 0;">暂无数据</div>'}
+      </div>
+      <div>
+        <div style="font-size:11px;font-weight:700;color:#7c3aed;margin-bottom:8px;padding-bottom:5px;border-bottom:2px solid rgba(124,58,237,0.2);">后验中心仓 <span style="font-weight:400;color:#94a3b8;">(${hy.length}个)</span></div>
+        ${hy.length?hy.map((r,i)=>mkItem(r,i,hy[0]?.rate||1)).join(''):'<div style="font-size:12px;color:#94a3b8;padding:8px 0;">暂无数据</div>'}
+      </div>`;
+  } else {
+    const ranked=all.slice(0,16);
+    const maxR=ranked[0]?.rate||1;
+    el.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:6px 24px;';
+    el.innerHTML=ranked.map((r,i)=>mkItem(r,i,maxR)).join('');
+  }
 }
 
 // ============================================================
@@ -985,7 +1063,7 @@ function buildCompareSiteOptions(){
   if(compareView==='phone_dw') sites=[...new Set(DATA.qa.filter(r=>r.siteType==='质检中心').map(r=>r.site))];
   else if(compareView==='five_dw') sites=[...new Set(DATA.sum.filter(r=>r.siteType==='质检中心').map(r=>r.site))];
   else sites=[...new Set([...DATA.qa.filter(r=>r.siteType==='中心仓').map(r=>r.site),...DATA.sum.filter(r=>r.siteType==='中心仓').map(r=>r.site)])];
-  sites.sort(); const cur=sel.value;
+  sites=sortSites(sites); const cur=sel.value;
   sel.innerHTML='<option value="__ALL__">全部站点</option>'+sites.map(s=>`<option ${s===cur?'selected':''}>${s}</option>`).join('');
 }
 function renderCompare(){
@@ -1046,7 +1124,7 @@ function renderCompare(){
 // ============================================================
 let allDetailRows=[], filteredDetailRows=[], detailPage=1, detailPerPage=20;
 let siteChart=null, dateChart=null;
-let activeColKey=null;
+
 
 function getMergedDetail(){
   // 表5：手机，筛选策略类别=大盘评估/站点，展示全部主客观
@@ -1067,27 +1145,211 @@ function getMergedDetail(){
 }
 
 function rebuildDetailAndCharts(){
-  // 先用全局筛选过滤
-  allDetailRows=filterRows(getMergedDetail());
-  // 重建列头（确保筛选图标状态正确）
+  allDetailRows = filterRows(getMergedDetail());
   buildDetailThead();
-  // 再叠加列头筛选
-  applyColFiltersToDetail();
-}
-
-function applyColFiltersToDetail(){
-  filteredDetailRows=allDetailRows.filter(r=>{
-    return COL_DEFS.every(col=>{
-      const fs=COL_FILTERS[col.key];
-      if(!fs||fs.size===0)return true;
-      return fs.has(String(r[col.key]||''));
-    });
-  });
-  detailPage=1;
-  updateFilterSummary();
+  rebuildDetailSelects();
+  filteredDetailRows = [...allDetailRows];
   renderDetailCharts();
   renderDetailTable();
+}
+
+// ============================================================
+// 明细表格筛选（原生select驱动）
+// ============================================================
+// ============================================================
+// 列头点击弹出浮动select
+// ============================================================
+// 列头筛选浮窗逻辑
+let _cpColKey = null;
+let _cpSelected = new Set(); // null=全选
+
+function openColSel(e, colKey){
+  e.stopPropagation();
+  const th = e.currentTarget;
+  const rect = th.getBoundingClientRect();
+  _cpColKey = colKey;
+  // 初始化选中状态
+  const selId = 'df_' + colKey;
+  const cur = document.getElementById(selId)?.value;
+  _cpSelected = cur ? new Set([cur]) : null; // null=全选
+  // 定位浮窗
+  const pop = document.getElementById('colPopup');
+  pop.style.left = Math.min(rect.left, window.innerWidth-230) + 'px';
+  pop.style.top = (rect.bottom+2) + 'px';
+  document.getElementById('colPopupSearch').value = '';
+  cpRenderList('');
+  pop.classList.add('open');
+  document.getElementById('colPopupSearch').focus();
+}
+
+function closeColSel(){
+  document.getElementById('colPopup')?.classList.remove('open');
+}
+
+function cpGetVals(){
+  const selId = 'df_' + _cpColKey;
+  const hiddenSel = document.getElementById(selId);
+  if(!hiddenSel) return [];
+  return Array.from(hiddenSel.options).filter(o=>o.value).map(o=>o.value);
+}
+
+function cpRenderList(q){
+  const allVals = cpGetVals();
+  const shown = q ? allVals.filter(v=>v.toLowerCase().includes(q.toLowerCase())) : allVals;
+  const curVal = document.getElementById('df_'+_cpColKey)?.value || '';
+  let html = `<div class="cp-item ${!curVal?'selected':''}" onclick="cpSelect('')">
+    <div class="cp-item-check">${!curVal?'✓':''}</div>全部
+  </div>`;
+  shown.forEach(v=>{
+    const sel = curVal === v;
+    html += `<div class="cp-item ${sel?'selected':''}" onclick="cpSelect('${v.replace(/'/g,"\'")}')">
+      <div class="cp-item-check">${sel?'✓':''}</div>${v}
+    </div>`;
+  });
+  document.getElementById('colPopupList').innerHTML = html;
+}
+
+function cpFilter(){
+  cpRenderList(document.getElementById('colPopupSearch').value);
+}
+
+function cpSelect(val){
+  const selId = 'df_' + _cpColKey;
+  const hiddenSel = document.getElementById(selId);
+  if(hiddenSel){ hiddenSel.value = val; delete hiddenSel.dataset.multi; }
+  closeColSel();
+  applyDetailSelects();
   buildDetailThead();
+}
+
+function cpToggleAll(){ cpSelect(''); }
+function cpToggle(val){ cpSelect(val); }
+function cpReset(){ cpSelect(''); }
+function cpConfirm(){ closeColSel(); }
+
+function cpFilter(){
+  cpRenderList(document.getElementById('colPopupSearch').value);
+}
+
+function cpToggleAll(){
+  _cpSelected = null; // 全选
+  cpRenderList(document.getElementById('colPopupSearch').value);
+}
+
+function cpToggle(val){
+  const allVals = cpGetVals();
+  if(_cpSelected === null){
+    // 全选→只选这一项
+    _cpSelected = new Set([val]);
+  } else {
+    if(_cpSelected.has(val)) _cpSelected.delete(val);
+    else _cpSelected.add(val);
+    if(_cpSelected.size === 0 || _cpSelected.size >= allVals.length) _cpSelected = null;
+  }
+  cpRenderList(document.getElementById('colPopupSearch').value);
+}
+
+function cpReset(){
+  _cpSelected = null;
+  cpConfirm();
+}
+
+function cpConfirm(){
+  const selId = 'df_' + _cpColKey;
+  const hiddenSel = document.getElementById(selId);
+  if(hiddenSel){
+    // 全选=空值，单选=对应值，多选暂用第一个（后续可扩展）
+    hiddenSel.value = _cpSelected && _cpSelected.size === 1 ? [..._cpSelected][0] : '';
+    // 多选：存到自定义属性
+    if(_cpSelected && _cpSelected.size > 1){
+      hiddenSel.dataset.multi = JSON.stringify([..._cpSelected]);
+    } else {
+      delete hiddenSel.dataset.multi;
+    }
+  }
+  closeColSel();
+  applyDetailSelects();
+  buildDetailThead();
+}
+
+document.addEventListener('click', (e)=>{
+  if(!document.getElementById('colPopup')?.contains(e.target)) closeColSel();
+});
+
+const DETAIL_SEL_MAP = {
+  df_date:'date', df_site:'site', df_cat:'cat', df_code:'code',
+  df_level1:'level1', df_level2:'level2', df_level3_orig:'level3_orig', df_level3_new:'level3_new',
+  df_subjobj:'subjobj', df_issueType:'issueType', df_judgedType:'judgedType',
+  df_inspector:'inspector', df_qaInspector:'qaInspector'
+};
+
+function rebuildDetailSelects(){
+  Object.entries(DETAIL_SEL_MAP).forEach(([selId, colKey])=>{
+    const sel = document.getElementById(selId);
+    if(!sel) return;
+    const cur = sel.value;
+    const raw = [...new Set(allDetailRows.map(r=>String(r[colKey]||'')).filter(v=>v))];
+    const vals = colKey==='site' ? sortSites(raw) : raw.sort();
+    sel.innerHTML = `<option value="">${sel.options[0].text}</option>`
+      + vals.map(v=>`<option value="${v}">${v}</option>`).join('');
+    if(cur) sel.value = cur;
+  });
+}
+
+function applyDetailSelects(){
+  const filters = {};
+  Object.entries(DETAIL_SEL_MAP).forEach(([selId, colKey])=>{
+    const sel = document.getElementById(selId);
+    if(!sel) return;
+    if(sel.dataset.multi){
+      try{ filters[colKey] = new Set(JSON.parse(sel.dataset.multi)); }catch(e){}
+    } else if(sel.value){
+      filters[colKey] = new Set([sel.value]);
+    }
+  });
+  filteredDetailRows = allDetailRows.filter(r=>
+    Object.entries(filters).every(([k,v])=>v.has(String(r[k]||'')))
+  );
+  detailPage = 1;
+  const activeCount = Object.keys(filters).length;
+  const summary = document.getElementById('detailFilterSummary');
+  const resetBtn = document.getElementById('detailResetBtn');
+  if(summary) summary.textContent = activeCount>0?`已筛选 ${activeCount} 列 · 共 ${filteredDetailRows.length} 条`:'点击列头 ▼ 筛选';
+  if(resetBtn) resetBtn.style.display = activeCount>0?'':'none';
+  renderDetailCharts();
+  renderDetailTable();
+}
+
+function resetDetailSelects(){
+  Object.keys(DETAIL_SEL_MAP).forEach(id=>{
+    const s=document.getElementById(id);
+    if(s){ s.value=''; delete s.dataset.multi; }
+  });
+  filteredDetailRows=[...allDetailRows];
+  detailPage=1;
+  const summary=document.getElementById('detailFilterSummary');
+  const resetBtn=document.getElementById('detailResetBtn');
+  if(summary) summary.textContent='点击列头 ▼ 筛选';
+  if(resetBtn) resetBtn.style.display='none';
+  buildDetailThead();
+  renderDetailCharts();
+  renderDetailTable();
+}
+
+function updateTheadFilterIcons(){ }
+
+function applyColFiltersToDetail(){ applyDetailSelects(); }
+
+// 只更新列头筛选图标，不重建整个thead
+function updateTheadFilterIcons(){
+  COL_DEFS.forEach(col=>{
+    const th=document.querySelector(`th[data-col="${col.key}"]`);
+    if(!th)return;
+    const icon=th.querySelector('.th-filter-icon');
+    if(!icon)return;
+    const hasFilter=COL_FILTERS[col.key]&&COL_FILTERS[col.key].size>0;
+    icon.classList.toggle('active',hasFilter);
+  });
 }
 
 function updateFilterSummary(){
@@ -1120,11 +1382,15 @@ function renderDetailCharts(){
 }
 
 function buildDetailThead(){
-  const thead=document.getElementById('detailThead');
-  thead.innerHTML=`<tr>${COL_DEFS.map(col=>{
-    const hasFilter=COL_FILTERS[col.key]&&COL_FILTERS[col.key].size>0;
-    return `<th><div class="th-inner" onclick="openColDrop(event,'${col.key}')"><span>${col.label}</span><span class="th-filter-icon ${hasFilter?'active':''}">▼</span></div></th>`;
-  }).join('')}</tr>`;
+  document.getElementById('detailThead').innerHTML=
+    '<tr>'+COL_DEFS.map(c=>{
+      const selId='df_'+c.key;
+      const sel=document.getElementById(selId);
+      const hasFilter=sel&&(sel.value||(sel.dataset&&sel.dataset.multi));
+      return `<th data-col="${c.key}" style="white-space:nowrap;cursor:pointer;user-select:none;" onclick="openColSel(event,'${c.key}')">
+        ${c.label}<span style="font-size:9px;margin-left:3px;color:${hasFilter?'#2563eb':'#94a3b8'};">▼</span>
+      </th>`;
+    }).join('')+'</tr>';
 }
 
 function renderDetailTable(){
@@ -1154,50 +1420,23 @@ function goDetailPage(p){ const tp=Math.max(1,Math.ceil(filteredDetailRows.lengt
 // ============================================================
 // 列头筛选下拉
 // ============================================================
-function openColDrop(e,colKey){
-  e.stopPropagation();
-  const drop=document.getElementById('colDropdown');
-  const th=e.currentTarget.closest('th');
-  const rect=th.getBoundingClientRect();
-  // 用fixed定位，跟随视口位置，不受滚动影响
-  drop.style.position='fixed';
-  drop.style.left=Math.min(rect.left, window.innerWidth-200)+'px';
-  drop.style.top=rect.bottom+'px';
-  drop.style.zIndex='9999';
-  activeColKey=colKey;
-  // 收集该列所有唯一值（从全局筛选后的数据）
-  const vals=[...new Set(allDetailRows.map(r=>String(r[colKey]||'')).filter(v=>v!==''))].sort();
-  const sel=COL_FILTERS[colKey]||new Set();
-  document.getElementById('colSearchInput').value='';
-  renderColOpts(vals,sel);
-  drop.classList.add('open');
-}
-function closeColDrop(){ document.getElementById('colDropdown').classList.remove('open'); activeColKey=null; }
-function filterColOpts(){
-  const q=document.getElementById('colSearchInput').value.trim().toLowerCase();
-  const vals=[...new Set(allDetailRows.map(r=>String(r[activeColKey]||'')).filter(v=>v!==''))].sort().filter(v=>!q||v.toLowerCase().includes(q));
-  renderColOpts(vals,COL_FILTERS[activeColKey]||new Set());
-}
-function renderColOpts(vals,sel){
-  const allChecked=sel.size===0;
-  document.getElementById('colOptList').innerHTML=
-    `<div class="col-opt opt-all" onclick="toggleAllColOpts()"><input type="checkbox" ${allChecked?'checked':''} id="colAllCb"> 全部</div>`
-    +vals.map(v=>`<div class="col-opt"><input type="checkbox" data-val="${v}" ${allChecked||sel.has(v)?'checked':''} onchange="toggleColOpt(this,'${v}')"> ${v||'(空)'}</div>`).join('');
-}
-function toggleAllColOpts(){ if(COL_FILTERS[activeColKey])COL_FILTERS[activeColKey]=new Set(); renderColOpts([...new Set(allDetailRows.map(r=>String(r[activeColKey]||'')).filter(v=>v!==''))].sort(),new Set()); }
-function selectAllColOpts(){ COL_FILTERS[activeColKey]=new Set(); const vals=[...new Set(allDetailRows.map(r=>String(r[activeColKey]||'')).filter(v=>v!==''))].sort(); renderColOpts(vals,new Set()); }
-function clearColOpts(){ const vals=[...new Set(allDetailRows.map(r=>String(r[activeColKey]||'')).filter(v=>v!==''))].sort(); const s=new Set(vals); COL_FILTERS[activeColKey]=s; renderColOpts(vals,s); }
-function toggleColOpt(cb,val){
-  if(!COL_FILTERS[activeColKey])COL_FILTERS[activeColKey]=new Set();
-  const s=COL_FILTERS[activeColKey];
-  if(s.size===0){ const vals=[...new Set(allDetailRows.map(r=>String(r[activeColKey]||'')).filter(v=>v!==''))]; vals.forEach(v=>s.add(v)); }
-  if(cb.checked)s.add(val); else s.delete(val);
-  if(s.size===[...new Set(allDetailRows.map(r=>String(r[activeColKey]||'')).filter(v=>v!==''))].length)COL_FILTERS[activeColKey]=new Set();
-  const q=document.getElementById('colSearchInput').value.trim().toLowerCase();
-  const allVals=[...new Set(allDetailRows.map(r=>String(r[activeColKey]||'')).filter(v=>v!==''))].sort().filter(v=>!q||v.toLowerCase().includes(q));
-  renderColOpts(allVals,COL_FILTERS[activeColKey]||new Set());
-}
-function applyColFilter(){ closeColDrop(); applyColFiltersToDetail(); }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 // ============================================================
 // 文件上传 & 解析（智能按日期合并）
