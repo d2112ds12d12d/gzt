@@ -1096,61 +1096,33 @@ function renderNationalTrend(){
   const canvas = document.getElementById('chartNationalTrend');
   if(!canvas) return;
   if(nationalTrendChart){ nationalTrendChart.destroy(); nationalTrendChart=null; }
-
-  const CAT_COLORS = {
-    '手机':'#2563eb','笔记本':'#7c3aed','平板':'#059669',
-    '耳机':'#d97706','手表':'#ec4899','相机':'#64748b'
-  };
+  const CAT_COLORS = {'手机':'#2563eb','笔记本':'#7c3aed','平板':'#059669','耳机':'#d97706','手表':'#ec4899','相机':'#64748b'};
   const cats = FILTER.cats.size>0 ? [...FILTER.cats] : ['手机','笔记本','平板','耳机','手表','相机'];
-
-  // 收集所有日期
   const allDates = [...new Set([
-    ...DATA.qa.map(r=>r.date), ...DATA.diff5.map(r=>r.date),
-    ...DATA.sum.map(r=>r.date), ...DATA.diff4.map(r=>r.date)
-  ].filter(Boolean))].sort();
+    ...DATA.qa.map(r=>r.date),...DATA.diff5.map(r=>r.date),
+    ...DATA.sum.map(r=>r.date),...DATA.diff4.map(r=>r.date)
+  ].filter(Boolean))].sort().filter(d=>
+    (!FILTER.dateFrom||d>=FILTER.dateFrom)&&(!FILTER.dateTo||d<=FILTER.dateTo)
+  );
   if(!allDates.length){ canvas.getContext('2d').clearRect(0,0,canvas.width,canvas.height); return; }
-
-  // 按日期+品类聚合差异率
+  const siteOk = r => FILTER.sites.length===0||FILTER.sites.includes(r.site);
   const datasets = cats.map(cat=>{
     const data = allDates.map(date=>{
-      let checks=0, diff=0;
+      let checks=0,diff=0;
       if(cat==='手机'){
-        const qaF = DATA.qa.filter(r=>r.date===date&&r.cat==='手机'&&(FILTER.siteType==='全部'||r.siteType===FILTER.siteType));
-        const d5F = dedup(DATA.diff5.filter(r=>r.date===date&&r.cat==='手机'&&r.strategy==='大盘评估/站点'&&r.subjobj==='客观问题'&&r.judgedType==='执行问题'&&(FILTER.siteType==='全部'||r.siteType===FILTER.siteType)),r=>r.date+'|'+r.code);
-        checks=sum(qaF,'checks'); diff=d5F.length;
+        const qaF=DATA.qa.filter(r=>r.date===date&&r.cat==='手机'&&siteOk(r));
+        const d5F=dedup(DATA.diff5.filter(r=>r.date===date&&r.cat==='手机'&&r.strategy==='大盘评估/站点'&&r.subjobj==='客观问题'&&r.judgedType==='执行问题'&&siteOk(r)),r=>r.date+'|'+r.code);
+        checks=sum(qaF,'checks');diff=d5F.length;
       } else {
-        const smF = DATA.sum.filter(r=>r.date===date&&r.cat===cat&&(FILTER.siteType==='全部'||r.siteType===FILTER.siteType));
-        const d4F = dedup(DATA.diff4.filter(r=>r.date===date&&r.cat===cat&&r.subjobj==='客观问题'&&r.judgedType==='执行问题'&&(FILTER.siteType==='全部'||r.siteType===FILTER.siteType)),r=>r.date+'|'+r.code);
-        checks=sum(smF,'checks'); diff=d4F.length;
+        const smF=DATA.sum.filter(r=>r.date===date&&r.cat===cat&&siteOk(r));
+        const d4F=dedup(DATA.diff4.filter(r=>r.date===date&&r.cat===cat&&r.subjobj==='客观问题'&&r.judgedType==='执行问题'&&siteOk(r)),r=>r.date+'|'+r.code);
+        checks=sum(smF,'checks');diff=d4F.length;
       }
-      return checks>0 ? +(diff/checks*100).toFixed(2) : null;
+      return checks>0?+(diff/checks*100).toFixed(2):null;
     });
-    return {
-      label: cat,
-      data,
-      borderColor: CAT_COLORS[cat]||'#94a3b8',
-      backgroundColor: 'transparent',
-      tension: 0.4,
-      pointRadius: 2,
-      borderWidth: 2,
-      spanGaps: true,
-    };
+    return {label:cat,data,borderColor:CAT_COLORS[cat]||'#94a3b8',backgroundColor:'transparent',tension:.4,pointRadius:3,borderWidth:2,spanGaps:true};
   });
-
-  nationalTrendChart = new Chart(canvas, {
-    type: 'line',
-    data: { labels: allDates.map(d=>d.slice(5)), datasets },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: {
-        legend: { position:'bottom', labels:{ boxWidth:10, padding:12, font:{size:11} } }
-      },
-      scales: {
-        x: { grid:{display:false}, ticks:{font:{size:10}, maxTicksLimit:15} },
-        y: { grid:{color:'rgba(200,210,230,0.4)'}, ticks:{callback:v=>v+'%', font:{size:10}}, beginAtZero:true }
-      }
-    }
-  });
+  nationalTrendChart=new Chart(canvas,{type:'line',data:{labels:allDates.map(d=>d.slice(5)),datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:12,font:{size:11}}}},scales:{x:{grid:{display:false},ticks:{font:{size:10},maxTicksLimit:15}},y:{grid:{color:'rgba(200,210,230,0.4)'},ticks:{callback:v=>v+'%',font:{size:10}},beginAtZero:true}}}});
 }
 
 function renderAll(){
@@ -1227,12 +1199,12 @@ function renderOverview(){
     // 大数字=差异量，左下=抽检量，右下=差异率
     return `<div class="ov-card ${cat.cls}" style="${dimmed}">
       <div class="ov-cat"><span class="ov-icon">${cat.icon}</span>${cat.key}</div>
-      <div class="ov-big">${diff>0?diff.toLocaleString():'—'}</div>
+      <div class="ov-big">${checks>0?checks.toLocaleString():'—'}</div>
       <div class="ov-row">
-        <div><div class="ov-label">抽检量</div><div style="font-size:13px;font-weight:700;margin-top:2px;">${checks>0?checks.toLocaleString():'—'}</div></div>
+        <div><div class="ov-label">客观执行差异量</div><div style="font-size:13px;font-weight:700;margin-top:2px;">${diff>0?diff.toLocaleString():'—'}</div></div>
         <div style="text-align:right"><div class="ov-label">差异率</div><div class="ov-rate ${rCls}" style="margin-top:2px;">${rStr}</div></div>
       </div>
-      <div class="ov-sub">客观执行差异量</div>
+      <div class="ov-sub">抽检量</div>
     </div>`;
   }).join('');
 }
@@ -1316,47 +1288,80 @@ function buildCompareSiteOptions(){
 function renderCompare(){
   const canvas=document.getElementById('chartCompare'),tableEl=document.getElementById('compareTable');
   if(compareChart){compareChart.destroy();compareChart=null;}
-
-  // 按currentPeriod生成X轴标签和聚合key
-  const {labels, getKey} = getPeriodConfig();
+  const {labels,getKey}=getPeriodConfig();
   const sf=document.getElementById('compareSiteSel')?.value||'__ALL__';
-
-  // 获取激活的品类
-  const activeCats = FILTER.cats.size>0 ? [...FILTER.cats] : ['手机','笔记本','平板','耳机','手表','相机'];
+  const siteFilter=r=>(sf==='__ALL__'||r.site===sf)&&(FILTER.sites.length===0||FILTER.sites.includes(r.site));
+  const activeCats=FILTER.cats.size>0?[...FILTER.cats]:['手机','笔记本','平板','耳机','手表','相机'];
   const CAT_COLORS2={'手机':'#2563eb','笔记本':'#7c3aed','平板':'#059669','耳机':'#d97706','手表':'#ec4899','相机':'#64748b'};
 
-  const datasets=[], tableRows=[];
-  activeCats.forEach(cat=>{
-    const rates = labels.map(lbl=>{
-      const df = r=>getKey(r.date)===lbl;
-      let checks=0,diff=0;
-      if(cat==='手机'){
-        const qaF=DATA.qa.filter(r=>df(r)&&r.cat==='手机'&&(sf==='__ALL__'||r.site===sf)&&(FILTER.sites.length===0||FILTER.sites.includes(r.site)));
-        const d5F=dedup(DATA.diff5.filter(r=>df(r)&&r.cat==='手机'&&r.strategy==='大盘评估/站点'&&r.subjobj==='客观问题'&&r.judgedType==='执行问题'&&(sf==='__ALL__'||r.site===sf)&&(FILTER.sites.length===0||FILTER.sites.includes(r.site))),r=>r.date+'|'+r.code);
-        checks=sum(qaF,'checks');diff=d5F.length;
-      } else {
-        const smF=DATA.sum.filter(r=>df(r)&&r.cat===cat&&(sf==='__ALL__'||r.site===sf)&&(FILTER.sites.length===0||FILTER.sites.includes(r.site)));
-        const d4F=dedup(DATA.diff4.filter(r=>df(r)&&r.cat===cat&&r.subjobj==='客观问题'&&r.judgedType==='执行问题'&&(sf==='__ALL__'||r.site===sf)&&(FILTER.sites.length===0||FILTER.sites.includes(r.site))),r=>r.date+'|'+r.code);
-        checks=sum(smF,'checks');diff=d4F.length;
-      }
-      return checks>0?+(diff/checks*100).toFixed(2):null;
+  // 判断是否大仓+手机模式（自动拆后验/线体）
+  const isDwPhone = (()=>{
+    if(!activeCats.includes('手机')||activeCats.length>1) return false;
+    // 只要选中的站点是大仓站点就触发
+    if(sf!=='__ALL__') return sf.includes('智能验机中心')||sf.includes('后验中心仓');
+    // 全部站点时不触发（走普通逻辑）
+    return false;
+  })();
+
+  // 从大仓站点名提取城市关键词
+  function getCityFromSite(site){
+    const m = site.match(/深圳|青岛|成都/);
+    return m ? m[0] : null;
+  }
+
+  const datasets=[],tableRows=[];
+
+  if(isDwPhone){
+    // 大仓手机模式：按选中站点的城市，展示同城后验+线体两条线
+    const city = getCityFromSite(sf);
+    const dwTypes=[
+      {label:'大仓后验',color:'#2563eb',match:s=>s.includes('后验中心仓')&&(!city||s.includes(city))},
+      {label:'大仓线体',color:'#f59e0b',match:s=>s.includes('智能验机中心')&&(!city||s.includes(city))},
+    ];
+    dwTypes.forEach(t=>{
+      const rates=labels.map(lbl=>{
+        const df=r=>getKey(r.date)===lbl;
+        const qaF=DATA.qa.filter(r=>df(r)&&r.cat==='手机'&&t.match(r.site));
+        const d5F=dedup(DATA.diff5.filter(r=>df(r)&&r.cat==='手机'&&r.strategy==='大盘评估/站点'&&r.subjobj==='客观问题'&&r.judgedType==='执行问题'&&t.match(r.site)),r=>r.date+'|'+r.code);
+        const checks=sum(qaF,'checks'),diff=d5F.length;
+        return checks>0?+(diff/checks*100).toFixed(2):null;
+      });
+      datasets.push({label:t.label,data:rates,borderColor:t.color,backgroundColor:'transparent',tension:.4,pointRadius:3,borderWidth:2,spanGaps:true});
+      tableRows.push({label:t.label,rates});
     });
-    datasets.push({label:cat,data:rates,borderColor:CAT_COLORS2[cat]||'#94a3b8',backgroundColor:'transparent',tension:.4,pointRadius:3,borderWidth:2,spanGaps:true});
-    tableRows.push({label:cat,rates});
-  });
+  } else {
+    // 普通模式：按品类分线
+    activeCats.forEach(cat=>{
+      const rates=labels.map(lbl=>{
+        const df=r=>getKey(r.date)===lbl;
+        let checks=0,diff=0;
+        if(cat==='手机'){
+          const qaF=DATA.qa.filter(r=>df(r)&&r.cat==='手机'&&siteFilter(r));
+          const d5F=dedup(DATA.diff5.filter(r=>df(r)&&r.cat==='手机'&&r.strategy==='大盘评估/站点'&&r.subjobj==='客观问题'&&r.judgedType==='执行问题'&&siteFilter(r)),r=>r.date+'|'+r.code);
+          checks=sum(qaF,'checks');diff=d5F.length;
+        } else {
+          const smF=DATA.sum.filter(r=>df(r)&&r.cat===cat&&siteFilter(r));
+          const d4F=dedup(DATA.diff4.filter(r=>df(r)&&r.cat===cat&&r.subjobj==='客观问题'&&r.judgedType==='执行问题'&&siteFilter(r)),r=>r.date+'|'+r.code);
+          checks=sum(smF,'checks');diff=d4F.length;
+        }
+        return checks>0?+(diff/checks*100).toFixed(2):null;
+      });
+      datasets.push({label:cat,data:rates,borderColor:CAT_COLORS2[cat]||'#94a3b8',backgroundColor:'transparent',tension:.4,pointRadius:3,borderWidth:2,spanGaps:true});
+      tableRows.push({label:cat,rates});
+    });
+  }
 
   compareChart=new Chart(canvas,{type:'line',data:{labels,datasets},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:10,padding:10,font:{size:11}}}},scales:{y:{grid:{color:'rgba(200,210,230,0.4)'},ticks:{callback:v=>v+'%',font:{size:10}},beginAtZero:true},x:{grid:{display:false},ticks:{font:{size:10}}}}}});
 
-  // 数据表
   if(tableRows.length){
-    const lastTwo=(rates)=>{const f=rates.filter(r=>r!==null);return f.slice(-2);};
-    tableEl.innerHTML=`<table class="trend-table"><thead><tr><th>品类</th>${labels.map(l=>`<th>${l}</th>`).join('')}<th>环比</th></tr></thead><tbody>${tableRows.map(row=>{
+    const lastTwo=rates=>{const f=rates.filter(r=>r!==null);return f.slice(-2);};
+    tableEl.innerHTML=`<table class="trend-table"><thead><tr><th>品类/类型</th>${labels.map(l=>`<th>${l}</th>`).join('')}<th>环比</th></tr></thead><tbody>${tableRows.map(row=>{
       const lt=lastTwo(row.rates);
       let ratio='—',rCls='ratio-flat';
       if(lt.length===2&&lt[0]!==0){const rv=((lt[1]-lt[0])/lt[0]*100).toFixed(2);ratio=(rv>0?'+':'')+rv+'%';rCls=rv>0?'ratio-up':rv<0?'ratio-down':'ratio-flat';}
       return `<tr><td>${row.label}</td>${row.rates.map(v=>`<td>${v!==null?v+'%':'—'}</td>`).join('')}<td class="${rCls}">${ratio}</td></tr>`;
     }).join('')}</tbody></table>`;
-  }
+  } else { tableEl.innerHTML=''; }
 }
 
 // ============================================================
