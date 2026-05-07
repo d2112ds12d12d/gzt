@@ -1,6 +1,14 @@
 {
   "tasks": [
     {
+      "id": "movm1nz97mh",
+      "title": "新人实操认证（复测、拆修）",
+      "tag": null,
+      "date": "05/07",
+      "done": false,
+      "created": 1778165866917
+    },
+    {
       "id": "movm1fxs7gg",
       "title": "推送拆修刷题任务",
       "tag": null,
