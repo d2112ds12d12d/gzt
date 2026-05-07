@@ -88,7 +88,8 @@
       "done": "11",
       "blocked": "11",
       "tomorrow": "11",
-      "mood": "11"
+      "mood": "11",
+      "_editing": true
     }
   ],
   "notes": [
