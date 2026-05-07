@@ -1582,25 +1582,6 @@
     "order": 10
   },
   {
-    "id": 121,
-    "title": "上午11 点培训准备",
-    "desc": "",
-    "status": "inprogress",
-    "tag": "日常待办",
-    "tagType": "green",
-    "pri": "q4",
-    "prog": 0,
-    "repeat": "none",
-    "repeatWeekdays": [],
-    "repeatMonthday": null,
-    "hours": 0,
-    "ds": "2026-05-07",
-    "links": [],
-    "imgs": [],
-    "loc": "date",
-    "order": 11
-  },
-  {
     "id": 123,
     "title": "T-7 名单公布&差异赋能",
     "desc": "",
