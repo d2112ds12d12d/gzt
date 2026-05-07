@@ -1561,5 +1561,29 @@
     "imgs": [],
     "loc": "date",
     "order": 9
+  },
+  {
+    "id": 120,
+    "title": "攻坚目标拉齐业务",
+    "desc": "",
+    "status": "inprogress",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "none",
+    "repeatWeekdays": [],
+    "repeatMonthday": null,
+    "hours": 0,
+    "ds": "2026-05-06",
+    "links": [],
+    "imgs": [
+      {
+        "name": "企业微信截图_47379c93-194a-4494-95e2-2a4417473833.png",
+        "src": "https://raw.githubusercontent.com/d2112ds12d12d/gzt/main/工作台缓存/images/1778152483509________47379c93-194a-4494-95e2-2a4417473833.png"
+      }
+    ],
+    "loc": "date",
+    "order": 10
   }
 ]
