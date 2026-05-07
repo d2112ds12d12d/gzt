@@ -489,7 +489,7 @@ function saveLocal(){try{localStorage.setItem('ws_v3',JSON.stringify({tasks:S.ta
 function loadLocal(){try{var d=JSON.parse(localStorage.getItem('ws_v3')||'{}');S.tasks=d.tasks||[];S.books=d.books||[];S.reviews=d.reviews||[];S.notes=d.notes||[];}catch(e){}}
 
 /* GITHUB API */
-var GH_FILE='data.json';
+var GH_FILE='workspace-data.json';
 var _syncTimer=null;
 var _ghSha=null;
 
@@ -505,10 +505,10 @@ function setSyncStatus(state,msg){
 }
 
 async function ghPull(){
-  if(!isConfigured())return;
+  if(!isConfigured())return null;
   try{
     var r=await fetch(ghUrl(),{headers:ghHeaders()});
-    if(r.status===404){_ghSha=null;return;}
+    if(r.status===404){_ghSha=null;return 'notfound';}
     if(!r.ok)throw new Error('HTTP '+r.status);
     var json=await r.json();
     _ghSha=json.sha;
@@ -532,9 +532,11 @@ async function ghPush(){
     var json=await r.json();
     _ghSha=json.content.sha;
     setSyncStatus('ok','已同步 · '+new Date().toLocaleTimeString('zh-CN',{hour:'2-digit',minute:'2-digit'}));
+    return true;
   }catch(e){
     setSyncStatus('err','同步失败：'+e.message);
     console.warn('ghPush error',e);
+    return false;
   }
 }
 
@@ -542,16 +544,23 @@ function save(){
   saveLocal();
   if(isConfigured()){
     clearTimeout(_syncTimer);
-    _syncTimer=setTimeout(ghPush,1500); // debounce 1.5s，避免频繁写入
+    _syncTimer=setTimeout(ghPush,1500);
   }
 }
 
 function load(){
   loadLocal();
   if(isConfigured()){
-    ghPull().then(function(ok){
-      if(ok){renderAll();setSyncStatus('ok','已从云端加载');}
-      else setSyncStatus('err','云端读取失败，使用本地数据');
+    ghPull().then(function(result){
+      if(result===true){renderAll();setSyncStatus('ok','已从云端加载');}
+      else if(result==='notfound'){
+        // 文件不存在，初始化推送
+        ghPush().then(function(ok){
+          if(ok)setSyncStatus('ok','云端数据文件已初始化');
+        });
+      } else {
+        setSyncStatus('err','云端读取失败，使用本地数据');
+      }
     });
   }
 }
@@ -574,12 +583,13 @@ function saveConfig(){
 async function testSync(){
   if(!isConfigured()){toast('请先填写并保存配置');return;}
   setSyncStatus('syncing','测试连接中…');
-  var ok=await ghPull();
-  if(ok===false){
-    // 404 means file doesn't exist yet, that's fine - try pushing
+  var result=await ghPull();
+  if(result==='notfound'){
     setSyncStatus('syncing','仓库已连接，正在初始化数据文件…');
-    await ghPush();
-  } else if(ok){
+    var pushed=await ghPush();
+    if(pushed){setSyncStatus('ok','连接成功，数据文件已创建 ✓');toast('连接成功 ✓');}
+    else{setSyncStatus('err','连接成功但写入失败，请检查 Token 权限');toast('写入失败，请检查 Token 是否有 Contents Write 权限');}
+  } else if(result===true){
     renderAll();
     setSyncStatus('ok','连接成功，数据已同步');
     toast('连接成功 ✓');
@@ -592,8 +602,9 @@ async function testSync(){
 async function forcePull(){
   if(!isConfigured()){toast('请先配置 GitHub 同步');return;}
   setSyncStatus('syncing','从云端拉取中…');
-  var ok=await ghPull();
-  if(ok){renderAll();setSyncStatus('ok','已从云端拉取最新数据');toast('拉取成功 ✓');}
+  var result=await ghPull();
+  if(result===true){renderAll();setSyncStatus('ok','已从云端拉取最新数据');toast('拉取成功 ✓');}
+  else if(result==='notfound'){setSyncStatus('err','云端还没有数据文件');toast('云端暂无数据');}
   else{setSyncStatus('err','拉取失败');toast('拉取失败，请检查配置');}
 }
 
