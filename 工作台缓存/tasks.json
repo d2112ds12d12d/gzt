@@ -1563,25 +1563,6 @@
     "order": 9
   },
   {
-    "id": 120,
-    "title": "攻坚目标拉齐业务\n\n其它零部件维修特征-8",
-    "desc": "",
-    "status": "inprogress",
-    "tag": "日常待办",
-    "tagType": "green",
-    "pri": "q4",
-    "prog": 0,
-    "repeat": "none",
-    "repeatWeekdays": [],
-    "repeatMonthday": null,
-    "hours": 0,
-    "ds": "2026-05-07",
-    "links": [],
-    "imgs": [],
-    "loc": "date",
-    "order": 10
-  },
-  {
     "id": 123,
     "title": "T-7 名单公布&差异赋能",
     "desc": "",
