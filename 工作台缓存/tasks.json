@@ -1542,5 +1542,24 @@
     "imgs": [],
     "loc": "date",
     "order": 8
+  },
+  {
+    "id": 119,
+    "title": "手机有效质检4月变更评审会",
+    "desc": "",
+    "status": "inprogress",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "none",
+    "repeatWeekdays": [],
+    "repeatMonthday": null,
+    "hours": 0,
+    "ds": "2026-05-06",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 9
   }
 ]
