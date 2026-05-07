@@ -391,6 +391,13 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
           <span class="filter-chip" data-dwsub="智能验机中心" onclick="setDwSub(this,'智能验机中心')">智能验机中心</span>
         </div>
         <div class="filter-div"></div>
+        <div class="filter-div"></div>
+        <span class="filter-label" id="siteSelLabel" style="display:none;">站点</span>
+        <select id="compareSiteSel" onchange="renderCompare();renderTopTables()"
+          style="display:none;font-size:12px;padding:3px 8px;border-radius:7px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.7);color:#1e293b;outline:none;max-width:160px;font-family:inherit;cursor:pointer;">
+          <option value="__ALL__">全部站点</option>
+        </select>
+        <div class="filter-div" id="siteSelDiv" style="display:none;"></div>
         <span class="filter-label">品类</span>
         <span class="filter-chip-multi active" data-cat="全部" onclick="toggleCat(this,'全部')">全部</span>
         <span class="filter-chip-multi active" data-cat="手机" onclick="toggleCat(this,'手机')">手机</span>
@@ -436,14 +443,27 @@ tbody tr:hover td{background:rgba(37,99,235,0.04);}
         </div>
       </div>
       <div class="card" style="margin-bottom:14px;padding:16px;">
-        <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px;flex-wrap:wrap;">
-            <select class="site-sel" id="compareSiteSel" onchange="renderCompare();renderTopTables()" style="font-size:11px;"></select>
-        </div>
         <div class="chart-wrap" style="height:200px;"><canvas id="chartCompare"></canvas></div>
         <div id="compareTable"></div>
       </div>
 
       
+      <!-- TOP人/TOP项分析 -->
+      <div id="topAnalysisSection" style="margin-bottom:14px;">
+        <div class="section-hd">
+          <div class="section-hd-left">质检师 · 质检项周度分析</div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span style="font-size:11px;color:#94a3b8;">展示行数</span>
+            <select id="topRowsSel" onchange="renderTopTables()" class="per-page-sel">
+              <option value="5" selected>5行</option>
+              <option value="10">10行</option>
+              <option value="999">全部</option>
+            </select>
+          </div>
+        </div>
+        <div id="topTablesWrap" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;"></div>
+      </div>
+
       <!-- 明细表格 - 列头内置筛选 -->
       <div class="table-wrap">
         <div class="table-toolbar" style="flex-wrap:wrap;gap:6px;">
@@ -568,7 +588,7 @@ const DATA = { qa:[], diff5:[], sum:[], diff4:[] };
 // GitHub 配置（Token拆分存储，防整段扫描）
 // ============================================================
 const GH_USER='d2112ds12d12d', GH_REPO='Qgkb', GH_FOLDER='QGZLdata';
-const GH_FILES={ qa:'qa_diff_rate.json', diff5:'phone_diff_detail.json', sum:'daily_summary.json', diff4:'five_cat_detail.json', auth:'auth_users.json', inspector:'inspector_override.json' };
+const GH_FILES={ qa:'qa_diff_rate.json', diff5:'phone_diff_detail.json', sum:'daily_summary.json', diff4:'five_cat_detail.json', auth:'auth_users.json', inspector:'inspector_override.json', log:'upload_log.json' };
 // Token拆分混淆，运行时拼接
 const _t=['github_pa','t_11BMTOZ','Fl0q99rhi','X4b5Vp_2g','Ad2EXYrkT','mDwSPRcJQ','fFyJ4uBAW','236XiwAm4','SJYs0A7O6','TGAMetUWk','7YN'];
 function _tk(){ return _t.join(''); }
@@ -697,11 +717,11 @@ function updateUserBadge(){
 
 // 控制上传按钮显示（浏览者隐藏）
 function updateUploadBtnVisibility(){
+  // 管理/创建模式：显示上传按钮
+  // 浏览模式：隐藏上传按钮（只能看数据，编辑质检师/失误原因用内置Token推送）
   const canUpload = currentRole==='uploader'||currentRole==='creator';
   const btn = document.querySelector('label.upload-btn');
-  const inp = document.getElementById('multiFileInput');
   if(btn) btn.style.display = canUpload?'':'none';
-  if(inp) inp.style.display = canUpload?'none':'none'; // input永远隐藏
 }
 
 // 获取当前可用Token（creator用自己的，uploader用内置的）
@@ -770,6 +790,7 @@ async function autoLoadCloudData(){
   }
   if(loaded>0){
     showToast(`✓ 云端数据已加载（${loaded}/4个文件）`);
+    await loadUploadLog();
     await loadInspectorOverride();
     document.getElementById('lastUpdateTime').textContent='云端 · '+new Date().toLocaleString('zh-CN',{month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit'});
     buildSiteOptions(); autoAdjustDateRange(); applyFilter();
@@ -830,29 +851,28 @@ async function loadInspectorOverride(){
 
 async function saveInspectorOverride(){
   localStorage.setItem('zb_inspector_override', JSON.stringify(inspectorOverride));
-  // 所有角色都能推送（Token内置）
-  const token = getEffectiveToken();
+  // 所有角色都能推送inspector_override（含质检师修正+失误原因）
+  // 使用内置Token（浏览者也能推送这个文件）
+  const token = _tk();
   const fname = 'inspector_override.json';
-  // 先拉取云端最新，合并后推送
-  let cloudData = {inspectors:{}, reasons:{}};
   try{
+    // 先拉取云端合并
+    let cloudData = {inspectors:{}, reasons:{}};
     const r=await fetch(ghRaw(fname));
     if(r.ok){ const j=await r.json(); cloudData=j; }
-  }catch(e){}
-  // 合并：本地覆盖云端（本地更新）
-  const merged = {
-    inspectors: {...(cloudData.inspectors||{}), ...(inspectorOverride.inspectors||{})},
-    reasons: {...(cloudData.reasons||{}), ...(inspectorOverride.reasons||{})},
-    updated: new Date().toISOString()
-  };
-  const b64=btoa(unescape(encodeURIComponent(JSON.stringify(merged,null,0))));
-  let sha='';
-  try{ const r=await fetch(ghUrl(fname),{headers:{Authorization:'token '+token}}); if(r.ok){const j=await r.json();sha=j.sha||'';} }catch(e){}
-  const body={message:'Update inspector_override.json',content:b64};
-  if(sha) body.sha=sha;
-  try{
+    const merged = {
+      inspectors: {...(cloudData.inspectors||{}), ...(inspectorOverride.inspectors||{})},
+      reasons: {...(cloudData.reasons||{}), ...(inspectorOverride.reasons||{})},
+      updated: new Date().toISOString()
+    };
+    const b64=btoa(unescape(encodeURIComponent(JSON.stringify(merged,null,0))));
+    let sha='';
+    try{ const r2=await fetch(ghUrl(fname),{headers:{Authorization:'token '+token}}); if(r2.ok){const j=await r2.json();sha=j.sha||'';} }catch(e){}
+    const body={message:'Update inspector_override.json',content:b64};
+    if(sha) body.sha=sha;
     await fetch(ghUrl(fname),{method:'PUT',headers:{Authorization:'token '+token,'Content-Type':'application/json'},body:JSON.stringify(body)});
-  }catch(e){ console.warn('推送失败',e); }
+    showToast('✓ 已保存到云端');
+  }catch(e){ showToast('保存到云端失败，已存本地'); console.warn(e); }
 }
 
 function getInspector(row){
@@ -952,15 +972,59 @@ async function syncAuthList(){
 // ============================================================
 // 日志
 // ============================================================
-function addLog(e){ uploadLog.unshift({...e,time:new Date().toISOString()}); if(uploadLog.length>200)uploadLog=uploadLog.slice(0,200); localStorage.setItem('zb_upload_log',JSON.stringify(uploadLog)); }
+function addLog(e){
+  uploadLog.unshift({...e,time:new Date().toISOString()});
+  if(uploadLog.length>200) uploadLog=uploadLog.slice(0,200);
+  localStorage.setItem('zb_upload_log',JSON.stringify(uploadLog));
+  // 异步推送到GitHub
+  pushUploadLog().catch(()=>{});
+}
+
+async function pushUploadLog(){
+  if(currentRole!=='uploader'&&currentRole!=='creator') return;
+  const token=getEffectiveToken();
+  const fname='upload_log.json';
+  const b64=btoa(unescape(encodeURIComponent(JSON.stringify({logs:uploadLog,updated:new Date().toISOString()},null,0))));
+  let sha='';
+  try{ const r=await fetch(ghUrl(fname),{headers:{Authorization:'token '+token}}); if(r.ok){const j=await r.json();sha=j.sha||'';} }catch(e){}
+  const body={message:'Update upload_log.json',content:b64};
+  if(sha) body.sha=sha;
+  await fetch(ghUrl(fname),{method:'PUT',headers:{Authorization:'token '+token,'Content-Type':'application/json'},body:JSON.stringify(body)});
+}
+
+async function loadUploadLog(){
+  try{
+    const r=await fetch(ghRaw('upload_log.json'));
+    if(!r.ok) return;
+    const j=await r.json();
+    if(j.logs&&j.logs.length>uploadLog.length){
+      uploadLog=j.logs;
+      localStorage.setItem('zb_upload_log',JSON.stringify(uploadLog));
+    }
+  }catch(e){}
+}
 function renderLog(){
   const el=document.getElementById('logContent');
   if(!uploadLog.length){el.innerHTML='<div class="log-empty">暂无上传记录</div>';return;}
   const tc={qa:'log-tag-qa',diff5:'log-tag-phone',sum:'log-tag-sum',diff4:'log-tag-five'};
-  el.innerHTML=`<table class="log-table"><thead><tr><th>上传时间</th><th>操作人</th><th>数据表</th><th>数据日期范围</th><th>行数</th></tr></thead><tbody>${uploadLog.map(l=>{
-    const t=new Date(l.time),ts=`${t.getFullYear()}/${pad(t.getMonth()+1)}/${pad(t.getDate())} ${pad(t.getHours())}:${pad(t.getMinutes())}`;
-    return `<tr><td style="white-space:nowrap">${ts}</td><td><strong>${l.userName||l.userId||'—'}</strong><br><span style="font-size:10px;color:#94a3b8;">${l.userId||''}</span></td><td><span class="log-tag ${tc[l.tableType]||''}">${l.tableName}</span></td><td style="font-size:11px">${l.dateMin} ~ ${l.dateMax}</td><td style="text-align:center">${l.rows}</td></tr>`;
-  }).join('')}</tbody></table>`;
+  el.innerHTML=`<table class="log-table">
+    <thead><tr>
+      <th>上传时间</th><th>操作人</th><th>数据表</th>
+      <th>数据日期范围</th><th>行数</th><th>状态</th>
+    </tr></thead>
+    <tbody>${uploadLog.map(l=>{
+      const t=new Date(l.time),ts=`${t.getFullYear()}/${pad(t.getMonth()+1)}/${pad(t.getDate())} ${pad(t.getHours())}:${pad(t.getMinutes())}`;
+      const status=l.pushed?'<span style="color:#059669;font-size:11px;">✓ 已同步云端</span>':'<span style="color:#94a3b8;font-size:11px;">仅本地</span>';
+      return `<tr>
+        <td style="white-space:nowrap">${ts}</td>
+        <td><strong>${(l.userName||'—').slice(0,5)}</strong><br><span style="font-size:10px;color:#94a3b8;">${(l.userId||'').slice(0,8)}</span></td>
+        <td><span class="log-tag ${tc[l.tableType]||''}">${l.tableName}</span></td>
+        <td style="font-size:11px">${l.dateMin} ~ ${l.dateMax}</td>
+        <td style="text-align:center">${l.rows}</td>
+        <td>${status}</td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table>`;
 }
 function pad(n){return String(n).padStart(2,'0');}
 
@@ -1354,7 +1418,7 @@ function renderTopTables(){
   // 只在仓级数据分析页显示
   const isWh=document.getElementById('sub-page-warehouse')?.classList.contains('active');
   if(!section) return;
-  section.style.display=isWh?'':'none';
+  section.style.display=isWh?'block':'none';
   if(!isWh) return;
 
   const maxRows=parseInt(document.getElementById('topRowsSel')?.value||'5');
@@ -2062,7 +2126,12 @@ async function handleMultiUpload(input){
       const pushKeys=['qa','diff5','sum','diff4'].filter(k=>DATA[k].length>0);
       let ok=0;
       for(const key of pushKeys){ const s=await pushToGitHub(key); if(s)ok++; }
-      showToast(ok>0?`✓ 已同步 ${ok} 个文件到云端`:'⚠️ 同步失败，请检查网络');
+      if(ok>0){
+      showToast(`✓ 已同步 ${ok} 个文件到云端`);
+      // 标记最近几条日志为已推送
+      uploadLog.slice(0,4).forEach(l=>l.pushed=true);
+      localStorage.setItem('zb_upload_log',JSON.stringify(uploadLog));
+    } else { showToast('⚠️ 同步失败，请检查网络'); }
     }catch(e){ showToast('✗ 同步出错: '+e.message); console.error(e); }
   }
 }
@@ -2121,7 +2190,13 @@ function switchSubPage(name,el){
   const sp=document.getElementById('sub-page-'+name);
   if(sp)sp.classList.add('active');
   if(el)el.classList.add('active');
-  if(name==='warehouse'){buildCompareSiteOptions();renderCompare();}
+  // 仓级分析时显示站点下拉，全国总览时隐藏
+  const isWh=name==='warehouse';
+  ['compareSiteSel','siteSelLabel','siteSelDiv'].forEach(id=>{
+    const el2=document.getElementById(id);
+    if(el2) el2.style.display=isWh?(id==='siteSelDiv'?'inline-block':'inline-flex'):'none';
+  });
+  if(isWh){buildCompareSiteOptions();renderCompare();setTimeout(renderTopTables,100);}
   renderAll();
 }
 function switchPage(page,el){ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active')); const pg=document.getElementById('page-'+page); if(pg)pg.classList.add('active'); if(el&&!el.classList.contains('disabled'))el.classList.add('active'); }
