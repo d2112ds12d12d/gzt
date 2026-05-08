@@ -2,7 +2,7 @@
   "tasks": [
     {
       "id": "mowdjmjk8v7",
-      "title": "拉齐规则做汇总",
+      "title": "拉齐规则做汇总（激光雷达明确距离）",
       "tag": null,
       "date": "05/08",
       "done": false,
@@ -110,7 +110,7 @@
     {
       "id": "mowdiqaf1t3",
       "title": "bug 记录",
-      "body": "1、需要连接 VPN 才能连接服务器；\n2、",
+      "body": "1、需要连接 VPN 才能连接服务器；\n2、待办新增两个规则，一个是置顶待办的功能、一个是",
       "cat": "experience",
       "date": "05/08 11:46",
       "created": 1778212012696
