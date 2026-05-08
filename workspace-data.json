@@ -5,7 +5,7 @@
       "title": "新人延期沟通&待办记录",
       "tag": null,
       "date": "05/08",
-      "done": false,
+      "done": true,
       "created": 1778230616326
     },
     {
@@ -119,6 +119,14 @@
   ],
   "books": [],
   "notes": [
+    {
+      "id": "mowquzf7jka",
+      "title": "跟进：新人延期沟通&待办记录 · 05/08",
+      "body": "",
+      "cat": "followup",
+      "date": "05/08 18:00",
+      "created": 1778234419412
+    },
     {
       "id": "mowdiqaf1t3",
       "title": "需求",
