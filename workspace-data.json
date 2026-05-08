@@ -71,7 +71,8 @@
       "tag": null,
       "date": "05/08",
       "done": false,
-      "created": 1778165856496
+      "created": 1778165856496,
+      "pinned": true
     },
     {
       "id": "movm15vaf9t",
