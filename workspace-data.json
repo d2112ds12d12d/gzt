@@ -55,7 +55,8 @@
       "tag": null,
       "date": "05/08",
       "done": false,
-      "created": 1778165878923
+      "created": 1778165878923,
+      "pinned": true
     },
     {
       "id": "movm1nz97mh",
@@ -64,7 +65,7 @@
       "date": "05/08",
       "done": false,
       "created": 1778165866917,
-      "pinned": true
+      "pinned": false
     },
     {
       "id": "movm1fxs7gg",
@@ -73,7 +74,7 @@
       "date": "05/08",
       "done": false,
       "created": 1778165856496,
-      "pinned": false
+      "pinned": true
     },
     {
       "id": "movm15vaf9t",
