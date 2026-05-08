@@ -108,6 +108,17 @@ body{font-family:'Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:
 .task-act-btn.pin-btn.active{color:#f59e0b;background:rgba(245,158,11,.1)}
 .task-act-btn.pin-btn:hover{background:rgba(245,158,11,.12);color:#d97706}
 .pin-indicator{font-size:12px;margin-right:4px;vertical-align:middle}
+.task-note-preview{font-size:12px;color:var(--text3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.task-chain-badge{font-size:11px;color:var(--text3);margin-left:2px}
+.chain-block{display:flex;flex-direction:column;gap:6px}
+.chain-item{font-size:12.5px;padding:7px 10px;border-radius:var(--rxs);cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;transition:background .12s}
+.chain-parent{background:var(--accent-light);color:var(--accent)}
+.chain-parent:hover{background:rgba(42,92,245,.14)}
+.chain-child{background:var(--surface2);color:var(--text2)}
+.chain-child:hover{background:var(--surface3)}
+.chain-done{opacity:.55}
+.chain-done .chain-title{text-decoration:line-through}
+.chain-date{font-size:11px;color:var(--text3);flex-shrink:0}
 .task-item.pinned{border-color:rgba(245,158,11,.25);background:#fffdf7}
 .tasks-group-label-pin{color:#d97706}
 .tasks-group-label-pin::after{background:rgba(245,158,11,.2)}
@@ -403,7 +414,7 @@ body{font-family:'Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:
 <div class="sidebar">
   <div style="margin-bottom:16px;display:flex;flex-direction:column;align-items:center;gap:2px">
     <div style="font-family:'DM Serif Display',serif;font-size:16px;color:var(--text1)">w<em style="font-style:italic;color:var(--accent)">s</em></div>
-    <div style="font-size:9px;color:var(--text3);font-weight:400">v1.5</div>
+    <div style="font-size:9px;color:var(--text3);font-weight:400">v1.6</div>
   </div>
   <div class="sidebar-nav">
     <button class="sidebar-btn active" id="sidebar-today" onclick="switchTab('today')">
@@ -432,7 +443,7 @@ body{font-family:'Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:
 <!-- HEADER (mobile only) -->
 <div class="header">
   <div class="header-row">
-    <div class="wordmark">work<em>space</em><span class="wordmark-ver">v1.5</span></div>
+    <div class="wordmark">work<em>space</em><span class="wordmark-ver">v1.6</span></div>
     <div class="search-trigger" onclick="openSearch()">
       <span style="font-size:13px;color:var(--text3)">🔍</span>
       <span class="search-trigger-text">搜索任务、笔记、读书…</span>
@@ -746,16 +757,19 @@ function taskHtml(t){
   var overdue=!t.done&&t.date&&t.date<todayStr();
   var dateLabel=t.date===todayStr()?'今天':t.date;
   var pinned=!!t.pinned;
+  var hasChain=t.parentId||( t.childIds&&t.childIds.length);
   return'<div class="task-item'+(t.done?' done':'')+(pinned?' pinned':'')+'" id="ti-'+t.id+'">'+
     '<div class="task-check" onclick="toggleTask(\''+t.id+'\')"><svg width="12" height="9" viewBox="0 0 12 9" fill="none"><path d="M1 4L4.5 7.5L11 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>'+
     '<div class="task-body" onclick="openEditTask(\''+t.id+'\')">'+
       '<div class="task-title">'+(pinned&&!t.done?'<span class="pin-indicator">📌</span>':'')+esc(t.title)+'</div>'+
+      (t.note?'<div class="task-note-preview">'+esc(t.note)+'</div>':'')+
       '<div class="task-meta">'+(t.tag?'<span class="task-tag">'+esc(t.tag)+'</span>':'')+
-      '<span class="task-date'+(overdue?' overdue':'')+'">'+dateLabel+(overdue?' · 逾期':'')+'</span></div>'+
+      '<span class="task-date'+(overdue?' overdue':'')+'">'+dateLabel+(overdue?' · 逾期':'')+'</span>'+
+      (hasChain?'<span class="task-chain-badge">🔗</span>':'')+
+      '</div>'+
     '</div>'+
     '<div class="task-actions">'+
-      (!t.done?'<button class="task-act-btn pin-btn'+(pinned?' active':'')+'" onclick="togglePin(\''+t.id+'\',event)" title="'+(pinned?'取消置顶':'置顶')+'">'+(pinned?'📌':'⬆')+
-      '</button>':'')+
+      (!t.done?'<button class="task-act-btn pin-btn'+(pinned?' active':'')+'" onclick="togglePin(\''+t.id+'\',event)" title="'+(pinned?'取消置顶':'置顶')+'">'+(pinned?'📌':'⬆')+'</button>':'')+
       '<button class="task-act-btn del" onclick="deleteTask(\''+t.id+'\',event)" title="删除">×</button>'+
     '</div>'+
   '</div>';
@@ -834,11 +848,14 @@ function showFollowUpBar(task){
   var bar=document.createElement('div');
   bar.id='followup-bar';bar.className='followup-bar';
   bar.innerHTML=
-    '<div class="followup-bar-text">✓ 完成「'+esc(task.title)+'」<br><span>需要记录跟进事项吗？</span></div>'+
-    '<button class="followup-btn followup-btn-yes" onclick="startFollowUp(\''+task.id+'\',\''+esc(task.title)+'\',\''+task.date+'\')">记录跟进</button>'+
-    '<button class="followup-btn followup-btn-no" onclick="dismissFollowUp()">忽略</button>';
+    '<div class="followup-bar-text">✓ 完成「'+esc(task.title)+'」</div>'+
+    '<div style="display:flex;gap:6px;flex-shrink:0">'+
+      '<button class="followup-btn followup-btn-yes" onclick="startFollowUp(\''+task.id+'\',\''+esc(task.title)+'\',\''+task.date+'\')">记录跟进</button>'+
+      '<button class="followup-btn followup-btn-yes" style="background:#16a34a" onclick="createNextTask(\''+task.id+'\')">创建下一步</button>'+
+      '<button class="followup-btn followup-btn-no" onclick="dismissFollowUp()">忽略</button>'+
+    '</div>';
   document.body.appendChild(bar);
-  _fuTimer=setTimeout(dismissFollowUp,6000);
+  _fuTimer=setTimeout(dismissFollowUp,8000);
 }
 function dismissFollowUp(){var b=eid('followup-bar');if(b){b.style.opacity='0';b.style.transform='translateX(-50%) translateY(10px)';setTimeout(function(){if(b.parentNode)b.remove();},200);}}
 function startFollowUp(taskId,taskTitle,taskDate){
@@ -849,6 +866,29 @@ function startFollowUp(taskId,taskTitle,taskDate){
   S.notes.unshift(note);save();
   switchTab('notes');
   setTimeout(function(){openNoteDetail(note.id);},150);
+}
+function createNextTask(parentId){
+  dismissFollowUp();
+  var parent=S.tasks.find(function(x){return x.id===parentId;});
+  // 打开编辑面板预填新任务，parentId 已绑定
+  S._modalAction='addNextTask';
+  S._nextTaskParentId=parentId;
+  eid('modal-title').textContent='创建下一步任务';
+  var tagOpts=['<button class="modal-tag-opt none-opt selected" onclick="modalSelectTag(null,this)">无标签</button>'].concat(
+    TAGS.map(function(tg){return'<button class="modal-tag-opt" onclick="modalSelectTag(\''+tg+'\',this)">'+tg+'</button>';})
+  ).join('');
+  eid('modal-body').innerHTML=
+    (parent?'<div style="font-size:12px;color:var(--text3);margin-bottom:12px;padding:8px 12px;background:var(--surface2);border-radius:var(--rxs)">上一步：'+esc(parent.title)+'</div>':'')+
+    '<div class="modal-field"><label class="modal-label">任务名称</label><input class="modal-input" id="edit-task-title" placeholder="下一步要做什么？" /></div>'+
+    '<div class="modal-field"><label class="modal-label">日期</label><input class="modal-input" id="edit-task-date" value="'+todayStr()+'" placeholder="MM/DD" /></div>'+
+    '<div class="modal-field"><label class="modal-label">标签</label><div class="modal-tag-row">'+tagOpts+'</div></div>';
+  S._editTaskTag=parent?parent.tag:null;
+  // 同步选中父任务标签
+  if(parent&&parent.tag){
+    S._editTaskTag=parent.tag;
+  }
+  eid('modal-overlay').style.display='flex';
+  setTimeout(function(){eid('edit-task-title').focus();},100);
 }
 
 function deleteTask(id,e){if(e)e.stopPropagation();S.tasks=S.tasks.filter(function(x){return x.id!==id;});save();renderTodayTasks();renderAllTasks();renderGreeting();updateBadge();toast('已删除');}
@@ -866,31 +906,88 @@ function openEditTask(id){
   var t=S.tasks.find(function(x){return x.id===id;});if(!t)return;
   S._editingTaskId=id;
   S._modalAction='editTask';
+  S._editTaskTag=t.tag||null;
   eid('modal-title').textContent='编辑任务';
+
   var tagOpts=['<button class="modal-tag-opt none-opt'+(t.tag?'':' selected')+'" onclick="modalSelectTag(null,this)">无标签</button>'].concat(
     TAGS.map(function(tg){return'<button class="modal-tag-opt'+(t.tag===tg?' selected':'')+'" onclick="modalSelectTag(\''+tg+'\',this)">'+tg+'</button>';})
   ).join('');
+
+  // 任务链：上游
+  var parentHtml='';
+  if(t.parentId){
+    var p=S.tasks.find(function(x){return x.id===t.parentId;});
+    if(p) parentHtml='<div class="chain-item chain-parent" onclick="closeModal();setTimeout(function(){openEditTask(\''+p.id+'\')},100)">↑ 上游：'+esc(p.title)+'<span class="chain-date">'+p.date+'</span></div>';
+  }
+  // 任务链：下游
+  var childrenHtml='';
+  if(t.childIds&&t.childIds.length){
+    childrenHtml=t.childIds.map(function(cid){
+      var c=S.tasks.find(function(x){return x.id===cid;});
+      if(!c)return'';
+      return'<div class="chain-item chain-child'+(c.done?' chain-done':'')+'" onclick="closeModal();setTimeout(function(){openEditTask(\''+c.id+'\')},100)">'+(c.done?'✓ ':'↓ ')+esc(c.title)+'<span class="chain-date">'+c.date+'</span></div>';
+    }).join('');
+  }
+  var chainHtml=(parentHtml||childrenHtml)?
+    '<div class="modal-field"><label class="modal-label">任务链</label><div class="chain-block">'+parentHtml+childrenHtml+'</div></div>':'';
+
+  // 手动关联：选已有任务作为上游（若还没有上游）
+  var linkHtml='';
+  if(!t.parentId){
+    var candidates=S.tasks.filter(function(x){return x.id!==id&&!x.parentId||x.id!==id;}).filter(function(x){return x.id!==id;}).slice(0,20);
+    if(candidates.length){
+      var opts='<option value="">— 不关联 —</option>'+candidates.map(function(x){return'<option value="'+x.id+'">'+(x.done?'✓ ':'')+x.title+' ('+x.date+')</option>';}).join('');
+      linkHtml='<div class="modal-field"><label class="modal-label">关联上游任务 <span style="font-size:11px;color:var(--text3);font-weight:400">（选填）</span></label><select class="modal-select" id="edit-task-parent">'+opts+'</select></div>';
+    }
+  }
+
   eid('modal-body').innerHTML=
     '<div class="modal-field"><label class="modal-label">任务名称</label><input class="modal-input" id="edit-task-title" value="'+esc(t.title)+'" /></div>'+
+    '<div class="modal-field"><label class="modal-label">备注</label><textarea class="modal-input" id="edit-task-note" style="height:72px;resize:none;padding-top:8px;line-height:1.5" placeholder="补充说明、背景信息…">'+esc(t.note||'')+'</textarea></div>'+
     '<div class="modal-field"><label class="modal-label">日期</label><input class="modal-input" id="edit-task-date" value="'+esc(t.date||'')+'" placeholder="MM/DD，如 05/08" /></div>'+
-    '<div class="modal-field"><label class="modal-label">标签</label><div class="modal-tag-row" id="modal-tag-row">'+tagOpts+'</div></div>';
-  S._editTaskTag=t.tag||null;
+    '<div class="modal-field"><label class="modal-label">标签</label><div class="modal-tag-row">'+tagOpts+'</div></div>'+
+    linkHtml+
+    chainHtml;
+
   eid('modal-overlay').style.display='flex';
   setTimeout(function(){eid('edit-task-title').focus();},100);
 }
+
 function modalSelectTag(tag,btn){
   S._editTaskTag=tag;
   document.querySelectorAll('.modal-tag-opt').forEach(function(b){b.classList.remove('selected');});
   btn.classList.add('selected');
 }
+
 function confirmModal(){
   if(S._modalAction==='editTask'){
     var t=S.tasks.find(function(x){return x.id===S._editingTaskId;});if(!t)return;
     var title=(eid('edit-task-title').value||'').trim();
     var date=(eid('edit-task-date').value||'').trim();
+    var note=(eid('edit-task-note').value||'').trim();
     if(!title){toast('任务名称不能为空');return;}
-    t.title=title;t.date=date||t.date;t.tag=S._editTaskTag;
+    t.title=title;t.date=date||t.date;t.tag=S._editTaskTag;t.note=note||'';
+    // 手动关联上游
+    var parentSel=eid('edit-task-parent');
+    if(parentSel&&parentSel.value){
+      var pid=parentSel.value;
+      t.parentId=pid;
+      var parent=S.tasks.find(function(x){return x.id===pid;});
+      if(parent){if(!parent.childIds)parent.childIds=[];if(parent.childIds.indexOf(t.id)===-1)parent.childIds.push(t.id);}
+    }
     save();renderTodayTasks();renderAllTasks();closeModal();toast('已更新 ✓');
+  }
+  if(S._modalAction==='addNextTask'){
+    var title=(eid('edit-task-title').value||'').trim();
+    var date=(eid('edit-task-date').value||'').trim()||todayStr();
+    if(!title){toast('请输入任务名称');return;}
+    var newTask={id:uid(),title:title,tag:S._editTaskTag,date:date,done:false,created:Date.now(),parentId:S._nextTaskParentId};
+    // 把新任务 id 挂到父任务的 childIds
+    var parent=S.tasks.find(function(x){return x.id===S._nextTaskParentId;});
+    if(parent){if(!parent.childIds)parent.childIds=[];parent.childIds.push(newTask.id);}
+    S.tasks.unshift(newTask);
+    save();renderTodayTasks();renderAllTasks();updateBadge();
+    closeModal();toast('下一步任务已创建 ✓');
   }
   if(S._modalAction==='addBook'){
     var title=((eid('new-book-title')||{}).value||'').trim();if(!title){toast('请输入书名');return;}
@@ -898,7 +995,7 @@ function confirmModal(){
     save();renderBooks();toast('书已添加 ✓');closeModal();
   }
 }
-function closeModal(){eid('modal-overlay').style.display='none';S._modalAction=null;S._editingTaskId=null;}
+function closeModal(){eid('modal-overlay').style.display='none';S._modalAction=null;S._editingTaskId=null;S._nextTaskParentId=null;}
 function handleOverlayClick(e){if(e.target===eid('modal-overlay'))closeModal();}
 
 /* ── NOTES ── */
