@@ -104,7 +104,13 @@ body{font-family:'Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:
 .task-item:hover .task-actions,.task-item:focus-within .task-actions{opacity:1}
 .task-act-btn{width:28px;height:28px;border-radius:var(--rxs);border:none;background:var(--surface2);color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:13px;transition:background .12s,color .12s}
 .task-act-btn:hover{background:var(--surface3)}
-.task-act-btn.del:hover{background:rgba(220,38,38,.1);color:var(--del)}
+.task-act-btn.pin-btn{color:var(--text3);font-size:14px}
+.task-act-btn.pin-btn.active{color:#f59e0b;background:rgba(245,158,11,.1)}
+.task-act-btn.pin-btn:hover{background:rgba(245,158,11,.12);color:#d97706}
+.pin-indicator{font-size:12px;margin-right:4px;vertical-align:middle}
+.task-item.pinned{border-color:rgba(245,158,11,.25);background:#fffdf7}
+.tasks-group-label-pin{color:#d97706}
+.tasks-group-label-pin::after{background:rgba(245,158,11,.2)}
 .tasks-group{margin-bottom:24px}
 .tasks-group-label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--text3);margin-bottom:10px;display:flex;align-items:center;gap:8px}
 .tasks-group-label::after{content:'';flex:1;height:1px;background:var(--border)}
@@ -284,7 +290,7 @@ body{font-family:'Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:
 <!-- HEADER -->
 <div class="header">
   <div class="header-row">
-    <div class="wordmark">work<em>space</em><span class="wordmark-ver">v1.3</span></div>
+    <div class="wordmark">work<em>space</em><span class="wordmark-ver">v1.4</span></div>
     <div class="search-trigger" onclick="openSearch()">
       <span style="font-size:13px;color:var(--text3)">🔍</span>
       <span class="search-trigger-text">搜索任务、笔记、读书…</span>
@@ -598,32 +604,76 @@ function submitCapture(){
 function taskHtml(t){
   var overdue=!t.done&&t.date&&t.date<todayStr();
   var dateLabel=t.date===todayStr()?'今天':t.date;
-  return'<div class="task-item'+(t.done?' done':'')+'" id="ti-'+t.id+'">'+
+  var pinned=!!t.pinned;
+  return'<div class="task-item'+(t.done?' done':'')+(pinned?' pinned':'')+'" id="ti-'+t.id+'">'+
     '<div class="task-check" onclick="toggleTask(\''+t.id+'\')"><svg width="12" height="9" viewBox="0 0 12 9" fill="none"><path d="M1 4L4.5 7.5L11 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>'+
     '<div class="task-body" onclick="openEditTask(\''+t.id+'\')">'+
-      '<div class="task-title">'+esc(t.title)+'</div>'+
+      '<div class="task-title">'+(pinned&&!t.done?'<span class="pin-indicator">📌</span>':'')+esc(t.title)+'</div>'+
       '<div class="task-meta">'+(t.tag?'<span class="task-tag">'+esc(t.tag)+'</span>':'')+
       '<span class="task-date'+(overdue?' overdue':'')+'">'+dateLabel+(overdue?' · 逾期':'')+'</span></div>'+
     '</div>'+
-    '<div class="task-actions"><button class="task-act-btn del" onclick="deleteTask(\''+t.id+'\',event)" title="删除">×</button></div>'+
+    '<div class="task-actions">'+
+      (!t.done?'<button class="task-act-btn pin-btn'+(pinned?' active':'')+'" onclick="togglePin(\''+t.id+'\',event)" title="'+(pinned?'取消置顶':'置顶')+'">'+(pinned?'📌':'⬆')+
+      '</button>':'')+
+      '<button class="task-act-btn del" onclick="deleteTask(\''+t.id+'\',event)" title="删除">×</button>'+
+    '</div>'+
   '</div>';
 }
 
+function sortTasks(tasks){
+  return tasks.slice().sort(function(a,b){
+    // 1. 置顶未完成 > 普通未完成 > 已完成
+    var aPinned=!!a.pinned&&!a.done;
+    var bPinned=!!b.pinned&&!b.done;
+    var aDone=!!a.done;
+    var bDone=!!b.done;
+    if(aPinned!==bPinned) return aPinned?-1:1;
+    if(aDone!==bDone) return aDone?1:-1;
+    // 2. 同优先级按创建时间倒序
+    return b.created-a.created;
+  });
+}
+
 function renderTodayTasks(){
-  var el=eid('today-tasks-list'),today=S.tasks.filter(function(t){return t.date===todayStr();});
+  var el=eid('today-tasks-list');
+  var today=sortTasks(S.tasks.filter(function(t){return t.date===todayStr();}));
   el.innerHTML=today.length?today.map(taskHtml).join(''):'<div class="empty-state"><div class="empty-icon">🌿</div><p>今天还没有待办<br>用上面的输入框快速添加</p></div>';
 }
+
 function renderAllTasks(){
   var el=eid('all-tasks-list');
   var tasks=S.tasks.slice();
   if(S.taskFilter==='todo')tasks=tasks.filter(function(t){return !t.done;});
   if(S.taskFilter==='done')tasks=tasks.filter(function(t){return t.done;});
   if(!tasks.length){el.innerHTML='<div class="empty-state"><div class="empty-icon">✨</div><p>暂无任务</p></div>';return;}
-  var groups={};tasks.forEach(function(t){var d=t.date||'未分类';if(!groups[d])groups[d]=[];groups[d].push(t);});
+
+  // 置顶任务（未完成）单独提到最顶部分组
+  var pinned=tasks.filter(function(t){return t.pinned&&!t.done;});
+  var rest=tasks.filter(function(t){return !(t.pinned&&!t.done);});
+
+  var html='';
+
+  if(pinned.length){
+    html+='<div class="tasks-group"><div class="tasks-group-label tasks-group-label-pin">📌 置顶</div>'+pinned.map(taskHtml).join('')+'</div>';
+  }
+
+  var groups={};
+  rest.forEach(function(t){var d=t.date||'未分类';if(!groups[d])groups[d]=[];groups[d].push(t);});
   var dates=Object.keys(groups).sort(function(a,b){return b.localeCompare(a);});
-  el.innerHTML=dates.map(function(d){
-    return'<div class="tasks-group"><div class="tasks-group-label">'+(d===todayStr()?'今天 · '+d:d)+'</div>'+groups[d].map(taskHtml).join('')+'</div>';
+  html+=dates.map(function(d){
+    var sorted=sortTasks(groups[d]);
+    return'<div class="tasks-group"><div class="tasks-group-label">'+(d===todayStr()?'今天 · '+d:d)+'</div>'+sorted.map(taskHtml).join('')+'</div>';
   }).join('');
+
+  el.innerHTML=html;
+}
+
+function togglePin(id,e){
+  if(e)e.stopPropagation();
+  var t=S.tasks.find(function(x){return x.id===id;});if(!t)return;
+  t.pinned=!t.pinned;
+  save();renderTodayTasks();renderAllTasks();
+  toast(t.pinned?'已置顶 📌':'已取消置顶');
 }
 
 function toggleTask(id){
