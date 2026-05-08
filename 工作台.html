@@ -283,14 +283,156 @@ body{font-family:'Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
 @media(min-width:600px){.wrap{padding-top:28px;padding-bottom:80px}}
+
+/* ── DESKTOP SIDEBAR LAYOUT ── */
+@media(min-width:768px){
+  body{flex-direction:row}
+
+  /* 隐藏移动端元素 */
+  .tabbar{display:none}
+  .header{display:none}
+
+  /* 侧边栏 */
+  .sidebar{
+    width:68px;
+    flex-shrink:0;
+    height:100dvh;
+    background:rgba(240,237,232,.97);
+    border-right:1px solid var(--border);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:20px 0 16px;
+    gap:4px;
+    z-index:50;
+  }
+  .sidebar-logo{
+    font-family:'DM Serif Display',serif;
+    font-size:15px;
+    color:var(--text1);
+    margin-bottom:20px;
+    letter-spacing:-.01em;
+    writing-mode:vertical-lr;
+    transform:rotate(180deg);
+    display:flex;
+    align-items:center;
+  }
+  .sidebar-logo em{font-style:italic;color:var(--accent)}
+  .sidebar-logo-ver{font-family:'Noto Sans SC',sans-serif;font-size:9px;color:var(--text3);font-weight:400;writing-mode:horizontal-tb;transform:none;margin-top:6px}
+  .sidebar-nav{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;width:100%}
+  .sidebar-btn{
+    width:52px;height:52px;
+    border:none;background:transparent;
+    cursor:pointer;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    gap:3px;border-radius:var(--rs);
+    transition:background .15s,color .15s;
+    color:var(--text3);font-family:inherit;
+    position:relative;
+  }
+  .sidebar-btn:hover{background:var(--surface3)}
+  .sidebar-btn.active{background:var(--surface);color:var(--accent);box-shadow:var(--shadow-sm)}
+  .sidebar-btn-icon{font-size:20px;line-height:1;transition:transform .2s var(--spring)}
+  .sidebar-btn.active .sidebar-btn-icon{transform:scale(1.08)}
+  .sidebar-btn-label{font-size:9.5px;font-weight:500;letter-spacing:.02em}
+  .sidebar-badge{
+    position:absolute;top:6px;right:6px;
+    background:var(--accent);color:#fff;
+    font-size:8px;font-weight:700;
+    min-width:15px;height:15px;border-radius:8px;
+    display:flex;align-items:center;justify-content:center;padding:0 3px;
+    opacity:0;transform:scale(0);transition:opacity .2s,transform .2s var(--spring);
+  }
+  .sidebar-badge.visible{opacity:1;transform:scale(1)}
+  .sidebar-bottom{display:flex;flex-direction:column;align-items:center;gap:4px;padding-bottom:4px}
+  .sidebar-icon-btn{
+    width:36px;height:36px;border-radius:50%;border:none;background:transparent;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;
+    font-size:15px;color:var(--text3);transition:background .12s,color .12s;
+  }
+  .sidebar-icon-btn:hover{background:var(--surface3);color:var(--text2)}
+
+  /* 主体区域 */
+  .app-body{
+    flex:1;
+    display:flex;
+    flex-direction:column;
+    height:100dvh;
+    overflow:hidden;
+    min-width:0;
+  }
+
+  /* 顶部工具栏（桌面端） */
+  .desktop-topbar{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 24px;
+    background:rgba(245,244,240,.92);
+    backdrop-filter:blur(20px);
+    -webkit-backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--border);
+    flex-shrink:0;
+    z-index:40;
+  }
+  .desktop-page-title{
+    font-family:'DM Serif Display',serif;
+    font-size:18px;
+    font-weight:400;
+    color:var(--text1);
+    flex-shrink:0;
+  }
+
+  /* 内容区 */
+  .main{flex:1;overflow:hidden}
+  .wrap{padding:24px 32px 80px;max-width:none}
+  .toast{left:calc(68px + 50%)}
+}
+
+/* 侧边栏在移动端隐藏 */
+@media(max-width:767px){
+  .sidebar{display:none}
+  .desktop-topbar{display:none}
+  .app-body{display:contents}
+}
 </style>
 </head>
 <body>
 
-<!-- HEADER -->
+<!-- SIDEBAR (desktop only) -->
+<div class="sidebar">
+  <div style="margin-bottom:16px;display:flex;flex-direction:column;align-items:center;gap:2px">
+    <div style="font-family:'DM Serif Display',serif;font-size:16px;color:var(--text1)">w<em style="font-style:italic;color:var(--accent)">s</em></div>
+    <div style="font-size:9px;color:var(--text3);font-weight:400">v1.5</div>
+  </div>
+  <div class="sidebar-nav">
+    <button class="sidebar-btn active" id="sidebar-today" onclick="switchTab('today')">
+      <span class="sidebar-btn-icon">☀️</span><span class="sidebar-btn-label">今日</span>
+    </button>
+    <button class="sidebar-btn" id="sidebar-tasks" onclick="switchTab('tasks')">
+      <span class="sidebar-btn-icon">✅</span><span class="sidebar-btn-label">任务</span>
+      <span class="sidebar-badge" id="sidebar-badge-tasks"></span>
+    </button>
+    <button class="sidebar-btn" id="sidebar-notes" onclick="switchTab('notes')">
+      <span class="sidebar-btn-icon">🗒️</span><span class="sidebar-btn-label">笔记</span>
+    </button>
+    <button class="sidebar-btn" id="sidebar-books" onclick="switchTab('books')">
+      <span class="sidebar-btn-icon">📖</span><span class="sidebar-btn-label">读书</span>
+    </button>
+  </div>
+  <div class="sidebar-bottom">
+    <button class="sidebar-icon-btn" onclick="openSearch()" title="搜索">🔍</button>
+    <button class="sidebar-icon-btn" onclick="openSettings()" title="设置">⚙️</button>
+  </div>
+</div>
+
+<!-- APP BODY -->
+<div class="app-body">
+
+<!-- HEADER (mobile only) -->
 <div class="header">
   <div class="header-row">
-    <div class="wordmark">work<em>space</em><span class="wordmark-ver">v1.4</span></div>
+    <div class="wordmark">work<em>space</em><span class="wordmark-ver">v1.5</span></div>
     <div class="search-trigger" onclick="openSearch()">
       <span style="font-size:13px;color:var(--text3)">🔍</span>
       <span class="search-trigger-text">搜索任务、笔记、读书…</span>
@@ -298,6 +440,17 @@ body{font-family:'Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:
     <div class="header-date" id="header-date"></div>
     <button class="icon-btn" onclick="openSettings()" title="设置">⚙️</button>
   </div>
+</div>
+
+<!-- DESKTOP TOPBAR -->
+<div class="desktop-topbar">
+  <span class="desktop-page-title" id="desktop-page-title">今日</span>
+  <div style="flex:1"></div>
+  <div class="search-trigger" style="max-width:280px" onclick="openSearch()">
+    <span style="font-size:13px;color:var(--text3)">🔍</span>
+    <span class="search-trigger-text">搜索任务、笔记、读书…</span>
+  </div>
+  <div id="desktop-header-date" style="font-size:12px;color:var(--text3);flex-shrink:0"></div>
 </div>
 
 <!-- MAIN -->
@@ -338,7 +491,7 @@ body{font-family:'Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:
     </div>
   </div>
 
-  <!-- NOTES (includes review templates) -->
+  <!-- NOTES -->
   <div class="page" id="page-notes">
     <div class="wrap">
       <div class="page-header">
@@ -366,24 +519,9 @@ body{font-family:'Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:
     <div id="book-detail-panel" style="display:none;position:absolute;inset:0"></div>
   </div>
 
-</div>
+</div><!-- /main -->
 
-<!-- TABBAR (4 tabs) -->
-<div class="tabbar">
-  <button class="tab-btn active" id="tab-today" onclick="switchTab('today')">
-    <span class="tab-icon">☀️</span><span class="tab-label">今日</span>
-  </button>
-  <button class="tab-btn" id="tab-tasks" onclick="switchTab('tasks')">
-    <span class="tab-icon">✅</span><span class="tab-label">任务</span>
-    <span class="tab-badge" id="badge-tasks"></span>
-  </button>
-  <button class="tab-btn" id="tab-notes" onclick="switchTab('notes')">
-    <span class="tab-icon">🗒️</span><span class="tab-label">笔记</span>
-  </button>
-  <button class="tab-btn" id="tab-books" onclick="switchTab('books')">
-    <span class="tab-icon">📖</span><span class="tab-label">读书</span>
-  </button>
-</div>
+</div><!-- /app-body -->
 
 <!-- TASK EDIT MODAL -->
 <div class="modal-overlay" id="modal-overlay" style="display:none" onclick="handleOverlayClick(event)">
@@ -572,7 +710,10 @@ function onCaptureInput(el){
 /* ── INIT ── */
 function init(){
   load();
-  eid('header-date').textContent=new Date().toLocaleDateString('zh-CN',{month:'short',day:'numeric',weekday:'short'});
+  var dateStr=new Date().toLocaleDateString('zh-CN',{month:'short',day:'numeric',weekday:'short'});
+  eid('header-date').textContent=dateStr;
+  var dd=eid('desktop-header-date');if(dd)dd.textContent=new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+  var dt=eid('desktop-page-title');if(dt)dt.textContent='今日';
   renderAll();
   eid('capture-input').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submitCapture();}});
 }
@@ -712,7 +853,13 @@ function startFollowUp(taskId,taskTitle,taskDate){
 
 function deleteTask(id,e){if(e)e.stopPropagation();S.tasks=S.tasks.filter(function(x){return x.id!==id;});save();renderTodayTasks();renderAllTasks();renderGreeting();updateBadge();toast('已删除');}
 function setFilter(f,btn){S.taskFilter=f;document.querySelectorAll('.filter-pill').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');renderAllTasks();}
-function updateBadge(){var n=S.tasks.filter(function(t){return !t.done&&t.date===todayStr();}).length;var b=eid('badge-tasks');if(n>0){b.textContent=n>9?'9+':n;b.classList.add('visible');}else b.classList.remove('visible');}
+function updateBadge(){
+  var n=S.tasks.filter(function(t){return !t.done&&t.date===todayStr();}).length;
+  var b=eid('badge-tasks');
+  if(b){if(n>0){b.textContent=n>9?'9+':n;b.classList.add('visible');}else b.classList.remove('visible');}
+  var sb=eid('sidebar-badge-tasks');
+  if(sb){if(n>0){sb.textContent=n>9?'9+':n;sb.classList.add('visible');}else sb.classList.remove('visible');}
+}
 
 /* ── TASK EDIT MODAL ── */
 function openEditTask(id){
@@ -931,10 +1078,16 @@ function clearLocalData(){
 }
 
 /* ── TABS ── */
+var PAGE_TITLES={'today':'今日','tasks':'全部任务','notes':'笔记','books':'读书笔记'};
 function switchTab(tab){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
   document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
-  eid('page-'+tab).classList.add('active');eid('tab-'+tab).classList.add('active');S.currentTab=tab;
+  document.querySelectorAll('.sidebar-btn').forEach(function(b){b.classList.remove('active');});
+  eid('page-'+tab).classList.add('active');
+  var tb=eid('tab-'+tab);if(tb)tb.classList.add('active');
+  var sb=eid('sidebar-'+tab);if(sb)sb.classList.add('active');
+  var dt=eid('desktop-page-title');if(dt)dt.textContent=PAGE_TITLES[tab]||'';
+  S.currentTab=tab;
   if(tab==='today'){renderTodayTasks();renderGreeting();}
   if(tab==='tasks')renderAllTasks();
   if(tab==='notes')renderNotes();
