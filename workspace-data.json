@@ -1,6 +1,15 @@
 {
   "tasks": [
     {
+      "id": "mox0yfqbcmz",
+      "title": "创建刷题任务推送给拆修岗、复测岗",
+      "tag": null,
+      "date": "05/09",
+      "done": false,
+      "created": 1778251376675,
+      "parentId": "movm1fxs7gg"
+    },
+    {
       "id": "mowolgxy6rl",
       "title": "新人延期沟通&待办记录",
       "tag": null,
@@ -84,7 +93,10 @@
       "done": true,
       "created": 1778165856496,
       "pinned": true,
-      "note": ""
+      "note": "",
+      "childIds": [
+        "mox0yfqbcmz"
+      ]
     },
     {
       "id": "movm15vaf9t",
