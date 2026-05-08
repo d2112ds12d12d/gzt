@@ -499,7 +499,7 @@ async function ghPull(){
     if(!r.ok)throw new Error('HTTP '+r.status);
     var json=await r.json();
     _ghSha=json.sha;
-    var data=JSON.parse(atob(json.content.replace(/\n/g,'')));
+    var data=JSON.parse(decodeURIComponent(escape(atob(json.content.replace(/\n/g,'')))));
     S.tasks=data.tasks||S.tasks;S.books=data.books||S.books;S.notes=data.notes||S.notes;
     saveLocal();return true;
   }catch(e){console.warn('ghPull',e);return false;}
