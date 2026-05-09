@@ -6,7 +6,8 @@
       "tag": null,
       "date": "05/09",
       "done": false,
-      "created": 1778307366890
+      "created": 1778307366890,
+      "pinned": true
     },
     {
       "id": "moxs57ekamw",
@@ -103,7 +104,7 @@
       "title": "T-7 名单公布&差异赋能",
       "tag": null,
       "date": "05/09",
-      "done": false,
+      "done": true,
       "created": 1778165908965,
       "note": "",
       "pinned": true
