@@ -109,10 +109,11 @@ body{font-family:'Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:
 .task-act-btn.pin-btn:hover{background:rgba(245,158,11,.12);color:#d97706}
 .pin-indicator{font-size:12px;margin-right:4px;vertical-align:middle}
 .task-note-preview{font-size:12px;color:var(--text3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
-.task-img-stack{display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:center;flex-shrink:0;padding:0 4px;cursor:pointer}
-.task-img-icon{width:36px;height:36px;object-fit:cover;border-radius:4px;border:1px solid var(--border);transition:opacity .12s}
+.task-img-row{display:flex;flex-direction:row;gap:3px;align-items:center;flex-shrink:0;padding:0 2px;cursor:pointer}
+.task-img-icon{width:32px;height:32px;object-fit:cover;border-radius:4px;border:1px solid var(--border);transition:opacity .12s;flex-shrink:0}
 .task-img-icon:hover{opacity:.8}
-.task-img-more{font-size:10px;color:var(--text3);font-weight:600;text-align:center}
+.task-img-more{font-size:10px;color:var(--text3);font-weight:600}
+.task-img-badge{font-size:11px;color:var(--text3);margin-left:2px}
 .task-chain-badge{font-size:11px;color:var(--text3);margin-left:2px}
 .task-links{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 2px}
 .task-link-chip{display:inline-flex;align-items:center;font-size:11.5px;color:var(--accent);background:var(--accent-light);border:1px solid var(--accent-border);border-radius:10px;padding:2px 9px;text-decoration:none;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;transition:background .12s}
@@ -434,7 +435,7 @@ body{font-family:'Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:
 <div class="sidebar">
   <div style="margin-bottom:16px;display:flex;flex-direction:column;align-items:center;gap:2px">
     <div style="font-family:'DM Serif Display',serif;font-size:16px;color:var(--text1)">w<em style="font-style:italic;color:var(--accent)">s</em></div>
-    <div style="font-size:9px;color:var(--text3);font-weight:400">v2.0</div>
+    <div style="font-size:9px;color:var(--text3);font-weight:400">v2.2</div>
   </div>
   <div class="sidebar-nav">
     <button class="sidebar-btn active" id="sidebar-today" onclick="switchTab('today')">
@@ -463,7 +464,7 @@ body{font-family:'Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:
 <!-- HEADER (mobile only) -->
 <div class="header">
   <div class="header-row">
-    <div class="wordmark">work<em>space</em><span class="wordmark-ver">v2.0</span></div>
+    <div class="wordmark">work<em>space</em><span class="wordmark-ver">v2.2</span></div>
     <div class="search-trigger" onclick="openSearch()">
       <span style="font-size:13px;color:var(--text3)">🔍</span>
       <span class="search-trigger-text">搜索任务、笔记、读书…</span>
@@ -642,7 +643,7 @@ body{font-family:'Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:
 
 <script>
 /* ── STATE ── */
-var S={tasks:[],books:[],notes:[],selectedTag:null,taskFilter:'all',currentTab:'today',_modalAction:null,_editingTaskId:null,_noteFilter:'all'};
+var S={tasks:[],books:[],notes:[],deletedIds:[],selectedTag:null,taskFilter:'all',currentTab:'today',_modalAction:null,_editingTaskId:null,_noteFilter:'all'};
 var TAGS=['工作','学习','生活','其他'];
 var NOTE_CATS=[
   {id:'experience',label:'经验'},{id:'method',label:'方法'},
@@ -655,8 +656,38 @@ var SPINE_COLORS=['#eff6ff','#fef9c3','#f0fdf4','#fdf4ff','#fff7ed','#f0f9ff'];
 function getCfg(){try{return JSON.parse(localStorage.getItem('ws_cfg')||'{}');}catch(e){return {};}}
 function saveCfg(c){localStorage.setItem('ws_cfg',JSON.stringify(c));}
 function isConfigured(){var c=getCfg();return !!(c.owner&&c.repo&&c.token);}
-function saveLocal(){try{localStorage.setItem('ws_v3',JSON.stringify({tasks:S.tasks,books:S.books,notes:S.notes}));}catch(e){}}
-function loadLocal(){try{var d=JSON.parse(localStorage.getItem('ws_v3')||'{}');S.tasks=d.tasks||[];S.books=d.books||[];S.notes=d.notes||[];}catch(e){}}
+function saveLocal(){try{localStorage.setItem('ws_v3',JSON.stringify({tasks:S.tasks,books:S.books,notes:S.notes,deletedIds:S.deletedIds}));}catch(e){}}
+function loadLocal(){try{var d=JSON.parse(localStorage.getItem('ws_v3')||'{}');S.tasks=d.tasks||[];S.books=d.books||[];S.notes=d.notes||[];S.deletedIds=d.deletedIds||[];}catch(e){}}
+
+/* ── MERGE LOGIC ── */
+function mergeData(remote){
+  // 合并 deletedIds（两端取并集）
+  var allDeleted=S.deletedIds.slice();
+  (remote.deletedIds||[]).forEach(function(id){if(allDeleted.indexOf(id)===-1)allDeleted.push(id);});
+  S.deletedIds=allDeleted;
+
+  // 合并 tasks：按 id 去重，以 created 时间戳较新的为准，删除墓碑中的
+  var taskMap={};
+  S.tasks.forEach(function(t){taskMap[t.id]=t;});
+  (remote.tasks||[]).forEach(function(rt){
+    if(allDeleted.indexOf(rt.id)!==-1)return; // 墓碑跳过
+    if(!taskMap[rt.id]||rt.created>taskMap[rt.id].created)taskMap[rt.id]=rt;
+  });
+  S.tasks=Object.values(taskMap).filter(function(t){return allDeleted.indexOf(t.id)===-1;});
+
+  // 合并 notes
+  var noteMap={};
+  S.notes.forEach(function(n){noteMap[n.id]=n;});
+  (remote.notes||[]).forEach(function(rn){
+    if(allDeleted.indexOf(rn.id)!==-1)return;
+    if(!noteMap[rn.id]||rn.created>noteMap[rn.id].created)noteMap[rn.id]=rn;
+  });
+  S.notes=Object.values(noteMap).filter(function(n){return allDeleted.indexOf(n.id)===-1;});
+
+  // books 直接用远端（books 不常变）
+  if(remote.books&&remote.books.length)S.books=remote.books;
+  saveLocal();
+}
 
 /* ── GITHUB API ── */
 var GH_FILE='workspace-data.json';
@@ -678,16 +709,16 @@ async function ghPull(){
     if(!r.ok)throw new Error('HTTP '+r.status);
     var json=await r.json();
     _ghSha=json.sha;
-    var data=JSON.parse(decodeURIComponent(escape(atob(json.content.replace(/\n/g,'')))));
-    S.tasks=data.tasks||S.tasks;S.books=data.books||S.books;S.notes=data.notes||S.notes;
-    saveLocal();return true;
+    var remote=JSON.parse(decodeURIComponent(escape(atob(json.content.replace(/\n/g,'')))));
+    mergeData(remote); // 合并而不是覆盖
+    return true;
   }catch(e){console.warn('ghPull',e);return false;}
 }
 async function ghPush(){
   if(!isConfigured())return;
   setSyncStatus('syncing','同步中…');
   try{
-    var content=btoa(unescape(encodeURIComponent(JSON.stringify({tasks:S.tasks,books:S.books,notes:S.notes},null,2))));
+    var content=btoa(unescape(encodeURIComponent(JSON.stringify({tasks:S.tasks,books:S.books,notes:S.notes,deletedIds:S.deletedIds},null,2))));
     var body={message:'sync '+new Date().toISOString(),content:content};
     if(_ghSha)body.sha=_ghSha;
     var r=await fetch(ghUrl(),{method:'PUT',headers:ghHeaders(),body:JSON.stringify(body)});
@@ -703,17 +734,11 @@ function save(){
 }
 function load(){
   loadLocal();
-  var hasLocal=S.tasks.length||S.notes.length||S.books.length;
   if(isConfigured()){
     ghPull().then(function(r){
-      if(r===true){
-        renderAll(); // 云端拉取成功后重新渲染
-        setSyncStatus('ok','已从云端加载');
-      } else if(r==='notfound'){
-        ghPush().then(function(ok){if(ok)setSyncStatus('ok','云端数据文件已初始化');});
-      } else {
-        setSyncStatus('err','云端读取失败，使用本地数据');
-      }
+      if(r===true){renderAll();setSyncStatus('ok','已从云端加载');}
+      else if(r==='notfound'){ghPush().then(function(ok){if(ok)setSyncStatus('ok','云端数据文件已初始化');});}
+      else{setSyncStatus('err','云端读取失败，使用本地数据');}
     });
   }
 }
@@ -808,7 +833,7 @@ function taskHtml(t){
   if(t.images&&t.images.length){
     var shown=t.images.slice(0,3);
     var extra=t.images.length-3;
-    imgsHtml='<div class="task-img-stack" onclick="openTaskImagePreview(\''+t.id+'\',0,event)">'+
+    imgsHtml='<div class="task-img-row" onclick="openTaskImagePreview(\''+t.id+'\',0,event)">'+
       shown.map(function(src){return'<img class="task-img-icon" src="'+src+'" />';}).join('')+
       (extra>0?'<span class="task-img-more">+'+extra+'</span>':'')+
     '</div>';
@@ -822,6 +847,7 @@ function taskHtml(t){
       '<div class="task-meta">'+(t.tag?'<span class="task-tag">'+esc(t.tag)+'</span>':'')+
       '<span class="task-date'+(overdue?' overdue':'')+'">'+dateLabel+(overdue?' · 逾期':'')+'</span>'+
       (hasChain?'<span class="task-chain-badge">🔗</span>':'')+
+      (t.images&&t.images.length?'<span class="task-img-badge">🖼 '+t.images.length+'</span>':'')+
       '</div>'+
     '</div>'+
     (imgsHtml?imgsHtml:'')+
@@ -991,7 +1017,12 @@ function createNextTask(parentId){
   setTimeout(function(){eid('edit-task-title').focus();},100);
 }
 
-function deleteTask(id,e){if(e)e.stopPropagation();S.tasks=S.tasks.filter(function(x){return x.id!==id;});save();renderTodayTasks();renderAllTasks();renderGreeting();updateBadge();toast('已删除');}
+function deleteTask(id,e){
+  if(e)e.stopPropagation();
+  S.tasks=S.tasks.filter(function(x){return x.id!==id;});
+  if(S.deletedIds.indexOf(id)===-1)S.deletedIds.push(id);
+  save();renderTodayTasks();renderAllTasks();renderGreeting();updateBadge();toast('已删除');
+}
 function setFilter(f,btn){S.taskFilter=f;document.querySelectorAll('.filter-pill').forEach(function(b){b.classList.remove('active');});btn.classList.add('active');renderAllTasks();}
 function updateBadge(){
   var n=S.tasks.filter(function(t){return !t.done&&t.date===todayStr();}).length;
@@ -1194,19 +1225,36 @@ function closeModal(){eid('modal-overlay').style.display='none';S._modalAction=n
 function handleOverlayClick(e){if(e.target===eid('modal-overlay'))closeModal();}
 
 /* ── NOTES ── */
+/* ── NOTE CUSTOM CATS ── */
+function getNoteCustomCats(){
+  try{return JSON.parse(localStorage.getItem('ws_note_cats')||'null')||NOTE_CATS.map(function(c){return c.id;});}catch(e){return NOTE_CATS.map(function(c){return c.id;});}
+}
+function saveNoteCustomCats(ids){localStorage.setItem('ws_note_cats',JSON.stringify(ids));}
+
 function renderNotes(){
-  var cats=[{id:'all',label:'全部'}].concat(NOTE_CATS);
-  eid('notes-toolbar').innerHTML=cats.map(function(c){return'<button class="notes-filter-btn'+(S._noteFilter===c.id?' active':'')+'" onclick="setNoteFilter(\''+c.id+'\')">'+c.label+'</button>';}).join('');
+  var activeCatIds=getNoteCustomCats();
+  // 工具栏：全部 + 激活的分类 + 管理按钮
+  var allCats=[{id:'all',label:'全部'}].concat(NOTE_CATS.filter(function(c){return activeCatIds.indexOf(c.id)!==-1;}));
+  var toolbarHtml=allCats.map(function(c){
+    return'<button class="notes-filter-btn'+(S._noteFilter===c.id?' active':'')+'" onclick="setNoteFilter(\''+c.id+'\')">'+c.label+'</button>';
+  }).join('')+
+  '<button class="notes-filter-btn" style="color:var(--text3);border-style:dashed" onclick="openCatManager()" title="管理标签">⚙ 标签</button>';
+  eid('notes-toolbar').innerHTML=toolbarHtml;
+
   var el=eid('notes-list');
   var notes=S.notes.slice().sort(function(a,b){return b.created-a.created;});
-  if(S._noteFilter!=='all')notes=notes.filter(function(n){return n.cat===S._noteFilter;});
+  // 筛选：all 显示所有激活分类；指定分类只显示该类
+  if(S._noteFilter!=='all'){
+    notes=notes.filter(function(n){return n.cat===S._noteFilter;});
+  } else {
+    notes=notes.filter(function(n){return activeCatIds.indexOf(n.cat)!==-1;});
+  }
   if(!notes.length){
     el.innerHTML='<div class="empty-state"><div class="empty-icon">🗒️</div><p>还没有笔记<br>点「新建」记录经验和想法<br>点「🌙 复盘」开始今日复盘</p></div>';return;
   }
   el.innerHTML=notes.map(function(n){
     var cat=NOTE_CATS.find(function(c){return c.id===n.cat;})||NOTE_CATS[5];
     var isReview=n.cat==='review';
-    // 复盘不显示正文预览，避免霸屏
     var bodyHtml=(!isReview&&n.body)?'<div class="note-card-body">'+esc(n.body)+'</div>':'';
     return'<div class="note-card-free cat-'+n.cat+'" onclick="openNoteDetail(\''+n.id+'\')">'+
       (n.title?'<div class="note-card-title">'+esc(n.title)+'</div>':'')+
@@ -1218,11 +1266,51 @@ function renderNotes(){
 }
 function setNoteFilter(f){S._noteFilter=f;renderNotes();}
 
+function openCatManager(){
+  var active=getNoteCustomCats();
+  S._modalAction='catManager';
+  eid('modal-title').textContent='管理笔记标签';
+  var rows=NOTE_CATS.map(function(c){
+    var on=active.indexOf(c.id)!==-1;
+    return'<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">'+
+      '<span style="font-size:14px;color:var(--text1)">'+c.label+'</span>'+
+      '<button onclick="toggleCat(\''+c.id+'\')" id="catbtn-'+c.id+'" style="height:26px;padding:0 14px;border-radius:13px;border:1.5px solid '+(on?'var(--accent)':'var(--border2)')+';background:'+(on?'var(--accent-light)':'transparent')+';color:'+(on?'var(--accent)':'var(--text3)')+';font-size:12px;font-family:inherit;cursor:pointer;font-weight:500">'+(on?'已显示':'已隐藏')+'</button>'+
+    '</div>';
+  }).join('');
+  // 自定义新增标签
+  var customHtml='<div style="margin-top:14px"><div class="modal-label" style="margin-bottom:8px">自定义标签（暂不支持新增，可通过隐藏控制显示）</div></div>';
+  eid('modal-body').innerHTML=rows+customHtml;
+  eid('modal-overlay').style.display='flex';
+}
+
+function toggleCat(id){
+  var active=getNoteCustomCats();
+  var idx=active.indexOf(id);
+  if(idx!==-1){
+    if(active.length<=1){toast('至少保留一个标签');return;}
+    active.splice(idx,1);
+  } else {
+    active.push(id);
+  }
+  saveNoteCustomCats(active);
+  if(S._noteFilter!=='all'&&active.indexOf(S._noteFilter)===-1)S._noteFilter='all';
+  // 刷新按钮样式
+  var btn=eid('catbtn-'+id);
+  var on=active.indexOf(id)!==-1;
+  if(btn){
+    btn.style.borderColor=on?'var(--accent)':'var(--border2)';
+    btn.style.background=on?'var(--accent-light)':'transparent';
+    btn.style.color=on?'var(--accent)':'var(--text3)';
+    btn.textContent=on?'已显示':'已隐藏';
+  }
+}
+
 function openNewNote(cat){
   var isReview=cat==='review';
   var today=todayStr();
   var title=isReview?'复盘 · '+today:'';
-  var body=isReview?'🔍 今天最大的收获或突破是什么？\n\n\n⚠️ 出现了什么失误或卡点，怎么避免下次再犯？\n\n\n💡 有什么新的想法或待验证的判断？\n\n\n💭 今日心情（选填）\n\n':'';
+  // 复盘用新格式：四个空段用分隔符隔开
+  var body=isReview?['','','',''].join('\n\n---REVIEW_SEP---\n\n'):'';
   var note={id:uid(),title:title,body:body,cat:cat||'experience',date:nowStr(),created:Date.now()};
   S.notes.unshift(note);save();
   openNoteDetail(note.id);
@@ -1394,7 +1482,12 @@ function openImagePreview(noteId,idx){
 }
 function updateNoteField(id,field,val){var n=S.notes.find(function(x){return x.id===id;});if(n){n[field]=val;save();}}
 function closeNoteDetail(){eid('note-detail-panel').style.display='none';renderNotes();}
-function deleteNote(id,e,goBack){if(e)e.stopPropagation();S.notes=S.notes.filter(function(n){return n.id!==id;});save();toast('已删除');if(goBack)closeNoteDetail();else renderNotes();}
+function deleteNote(id,e,goBack){
+  if(e)e.stopPropagation();
+  S.notes=S.notes.filter(function(n){return n.id!==id;});
+  if(S.deletedIds.indexOf(id)===-1)S.deletedIds.push(id);
+  save();toast('已删除');if(goBack)closeNoteDetail();else renderNotes();
+}
 
 /* ── BOOKS ── */
 function renderBooks(){
