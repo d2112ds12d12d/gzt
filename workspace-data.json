@@ -37,7 +37,8 @@
       "date": "05/09",
       "done": false,
       "created": 1778251376675,
-      "parentId": "movm1fxs7gg"
+      "parentId": "movm1fxs7gg",
+      "pinned": true
     },
     {
       "id": "mowolgxy6rl",
