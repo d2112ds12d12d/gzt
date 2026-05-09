@@ -1,6 +1,16 @@
 {
   "tasks": [
     {
+      "id": "moybjgjwii4",
+      "title": "拆修、复测新人肖体贵、曹剑材、吴日荣交付通知（另外需更新公表）",
+      "tag": null,
+      "date": "05/09",
+      "done": false,
+      "created": 1778329619852,
+      "parentId": "mowo5sfly81",
+      "pinned": true
+    },
+    {
       "id": "moybc6heh19",
       "title": "0512 拆修刷题任务推送",
       "tag": null,
@@ -135,7 +145,10 @@
       "created": 1778229884721,
       "note": "曹剑材 100 分；\n肖体贵未参考。",
       "pinned": true,
-      "links": []
+      "links": [],
+      "childIds": [
+        "moybjgjwii4"
+      ]
     },
     {
       "id": "mowdjmjk8v7",
