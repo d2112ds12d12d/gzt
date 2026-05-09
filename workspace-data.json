@@ -1,12 +1,21 @@
 {
   "tasks": [
     {
+      "id": "moydfb9b3s5",
+      "title": "财资管理工具优化",
+      "tag": null,
+      "date": "05/09",
+      "done": false,
+      "created": 1778332785599
+    },
+    {
       "id": "moydewyrc5a",
       "title": "新人交付看板优化",
       "tag": null,
       "date": "05/09",
       "done": false,
-      "created": 1778332767075
+      "created": 1778332767075,
+      "pinned": true
     },
     {
       "id": "moybjgjwii4",
