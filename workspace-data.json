@@ -8,7 +8,9 @@
       "done": false,
       "created": 1778329619852,
       "parentId": "mowo5sfly81",
-      "pinned": true
+      "pinned": true,
+      "note": "曹剑材 100 分；\n肖体贵90 分；\n吴日荣需和业务确认情况看是否延期",
+      "links": []
     },
     {
       "id": "moybc6heh19",
@@ -100,7 +102,7 @@
       "title": "T-7 名单公布&差异赋能",
       "tag": null,
       "date": "05/09",
-      "done": false,
+      "done": true,
       "created": 1778294456651,
       "fromTemplate": "moxqlsga0sr"
     },
