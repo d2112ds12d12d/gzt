@@ -109,14 +109,19 @@ body{font-family:'Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:
 .task-act-btn.pin-btn:hover{background:rgba(245,158,11,.12);color:#d97706}
 .pin-indicator{font-size:12px;margin-right:4px;vertical-align:middle}
 .task-note-preview{font-size:12px;color:var(--text3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.task-img-stack{display:flex;flex-direction:column;gap:3px;align-items:center;justify-content:center;flex-shrink:0;padding:0 4px;cursor:pointer}
+.task-img-icon{width:36px;height:36px;object-fit:cover;border-radius:4px;border:1px solid var(--border);transition:opacity .12s}
+.task-img-icon:hover{opacity:.8}
+.task-img-more{font-size:10px;color:var(--text3);font-weight:600;text-align:center}
 .task-chain-badge{font-size:11px;color:var(--text3);margin-left:2px}
 .task-links{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 2px}
 .task-link-chip{display:inline-flex;align-items:center;font-size:11.5px;color:var(--accent);background:var(--accent-light);border:1px solid var(--accent-border);border-radius:10px;padding:2px 9px;text-decoration:none;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;transition:background .12s}
 .task-link-chip:hover{background:rgba(42,92,245,.14)}
-.task-thumbs{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 2px}
-.task-thumb{width:56px;height:42px;object-fit:cover;border-radius:5px;border:1px solid var(--border);cursor:zoom-in;transition:opacity .12s}
-.task-thumb:hover{opacity:.8}
 .edit-link-row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.review-q-block{margin-bottom:20px}
+.review-q-label{font-size:12px;font-weight:600;color:var(--text3);margin-bottom:8px;display:flex;align-items:center;gap:6px;letter-spacing:.02em}
+.review-q-input{width:100%;border:none;outline:none;background:var(--surface2);border-radius:var(--rs);font-family:inherit;font-size:14px;color:var(--text1);padding:12px 14px;resize:none;line-height:1.65;min-height:80px;transition:background .15s,box-shadow .15s}
+.review-q-input:focus{background:var(--surface);box-shadow:0 0 0 2px var(--accent-border)}
 .chain-block{display:flex;flex-direction:column;gap:6px}
 .chain-item{font-size:12.5px;padding:7px 10px;border-radius:var(--rxs);cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;transition:background .12s}
 .chain-parent{background:var(--accent-light);color:var(--accent)}
@@ -429,7 +434,7 @@ body{font-family:'Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:
 <div class="sidebar">
   <div style="margin-bottom:16px;display:flex;flex-direction:column;align-items:center;gap:2px">
     <div style="font-family:'DM Serif Display',serif;font-size:16px;color:var(--text1)">w<em style="font-style:italic;color:var(--accent)">s</em></div>
-    <div style="font-size:9px;color:var(--text3);font-weight:400">v1.9</div>
+    <div style="font-size:9px;color:var(--text3);font-weight:400">v2.0</div>
   </div>
   <div class="sidebar-nav">
     <button class="sidebar-btn active" id="sidebar-today" onclick="switchTab('today')">
@@ -458,7 +463,7 @@ body{font-family:'Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:
 <!-- HEADER (mobile only) -->
 <div class="header">
   <div class="header-row">
-    <div class="wordmark">work<em>space</em><span class="wordmark-ver">v1.9</span></div>
+    <div class="wordmark">work<em>space</em><span class="wordmark-ver">v2.0</span></div>
     <div class="search-trigger" onclick="openSearch()">
       <span style="font-size:13px;color:var(--text3)">🔍</span>
       <span class="search-trigger-text">搜索任务、笔记、读书…</span>
@@ -698,11 +703,17 @@ function save(){
 }
 function load(){
   loadLocal();
+  var hasLocal=S.tasks.length||S.notes.length||S.books.length;
   if(isConfigured()){
     ghPull().then(function(r){
-      if(r===true){renderAll();setSyncStatus('ok','已从云端加载');}
-      else if(r==='notfound'){ghPush().then(function(ok){if(ok)setSyncStatus('ok','云端数据文件已初始化');});}
-      else setSyncStatus('err','云端读取失败，使用本地数据');
+      if(r===true){
+        renderAll(); // 云端拉取成功后重新渲染
+        setSyncStatus('ok','已从云端加载');
+      } else if(r==='notfound'){
+        ghPush().then(function(ok){if(ok)setSyncStatus('ok','云端数据文件已初始化');});
+      } else {
+        setSyncStatus('err','云端读取失败，使用本地数据');
+      }
     });
   }
 }
@@ -795,21 +806,25 @@ function taskHtml(t){
   }
   var imgsHtml='';
   if(t.images&&t.images.length){
-    imgsHtml='<div class="task-thumbs">'+t.images.map(function(src,i){
-      return'<img class="task-thumb" src="'+src+'" onclick="openTaskImagePreview(\''+t.id+'\','+i+',event)" />';
-    }).join('')+'</div>';
+    var shown=t.images.slice(0,3);
+    var extra=t.images.length-3;
+    imgsHtml='<div class="task-img-stack" onclick="openTaskImagePreview(\''+t.id+'\',0,event)">'+
+      shown.map(function(src){return'<img class="task-img-icon" src="'+src+'" />';}).join('')+
+      (extra>0?'<span class="task-img-more">+'+extra+'</span>':'')+
+    '</div>';
   }
   return'<div class="task-item'+(t.done?' done':'')+(pinned?' pinned':'')+'" id="ti-'+t.id+'">'+
     '<div class="task-check" onclick="toggleTask(\''+t.id+'\')"><svg width="12" height="9" viewBox="0 0 12 9" fill="none"><path d="M1 4L4.5 7.5L11 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>'+
     '<div class="task-body" onclick="openEditTask(\''+t.id+'\')">'+
       '<div class="task-title">'+(pinned&&!t.done?'<span class="pin-indicator">📌</span>':'')+esc(t.title)+'</div>'+
       (t.note?'<div class="task-note-preview">'+esc(t.note)+'</div>':'')+
-      linksHtml+imgsHtml+
+      linksHtml+
       '<div class="task-meta">'+(t.tag?'<span class="task-tag">'+esc(t.tag)+'</span>':'')+
       '<span class="task-date'+(overdue?' overdue':'')+'">'+dateLabel+(overdue?' · 逾期':'')+'</span>'+
       (hasChain?'<span class="task-chain-badge">🔗</span>':'')+
       '</div>'+
     '</div>'+
+    (imgsHtml?imgsHtml:'')+
     '<div class="task-actions">'+
       (!t.done?'<button class="task-act-btn pin-btn'+(pinned?' active':'')+'" onclick="togglePin(\''+t.id+'\',event)" title="'+(pinned?'取消置顶':'置顶')+'">'+(pinned?'📌':'⬆')+'</button>':'')+
       '<button class="task-act-btn del" onclick="deleteTask(\''+t.id+'\',event)" title="删除">×</button>'+
@@ -1190,9 +1205,12 @@ function renderNotes(){
   }
   el.innerHTML=notes.map(function(n){
     var cat=NOTE_CATS.find(function(c){return c.id===n.cat;})||NOTE_CATS[5];
+    var isReview=n.cat==='review';
+    // 复盘不显示正文预览，避免霸屏
+    var bodyHtml=(!isReview&&n.body)?'<div class="note-card-body">'+esc(n.body)+'</div>':'';
     return'<div class="note-card-free cat-'+n.cat+'" onclick="openNoteDetail(\''+n.id+'\')">'+
       (n.title?'<div class="note-card-title">'+esc(n.title)+'</div>':'')+
-      (n.body?'<div class="note-card-body">'+esc(n.body)+'</div>':'')+
+      bodyHtml+
       '<div class="note-card-foot"><span class="note-card-cat">'+cat.label+'</span>'+
       '<span style="display:flex;align-items:center;gap:8px"><span class="note-card-date">'+n.date+'</span>'+
       '<button class="note-del-btn" onclick="deleteNote(\''+n.id+'\',event)">删除</button></span></div></div>';
@@ -1214,33 +1232,83 @@ function openNoteDetail(id){
   var note=S.notes.find(function(n){return n.id===id;});if(!note)return;
   var panel=eid('note-detail-panel');panel.style.display='block';
   var catOpts=NOTE_CATS.map(function(c){return'<option value="'+c.id+'"'+(note.cat===c.id?' selected':'')+'>'+c.label+'</option>';}).join('');
+  var isReview=note.cat==='review';
+
+  var bodyContent='';
+  if(isReview){
+    // 复盘结构化编辑：按题目分块
+    var REVIEW_QS=[
+      {key:'q1',icon:'🔍',label:'今天最大的收获或突破是什么？'},
+      {key:'q2',icon:'⚠️',label:'出现了什么失误或卡点，怎么避免下次再犯？'},
+      {key:'q3',icon:'💡',label:'有什么新的想法或待验证的判断？'},
+      {key:'q4',icon:'💭',label:'今日心情（选填）'},
+    ];
+    // 解析已有内容（按题目分段存储在 body 里，用分隔符区分）
+    var parsed=parseReviewBody(note.body||'');
+    bodyContent=REVIEW_QS.map(function(q,i){
+      return'<div class="review-q-block">'+
+        '<div class="review-q-label"><span>'+q.icon+'</span> '+q.label+'</div>'+
+        '<textarea class="review-q-input" id="rq-'+id+'-'+i+'" placeholder="写下你的想法…" oninput="updateReviewField(\''+id+'\','+i+',this.value)">'+esc(parsed[i]||'')+'</textarea>'+
+      '</div>';
+    }).join('');
+  } else {
+    bodyContent='<div class="note-body-wrap" id="nd-bodywrap-'+id+'">'+
+      '<textarea class="note-detail-body-input" id="nd-body-'+id+'" placeholder="写下你的经验、方法、想法…\n\n支持粘贴图片（Ctrl+V / Cmd+V）" oninput="updateNoteField(\''+id+'\',\'body\',this.value)">'+esc(note.body||'')+'</textarea>'+
+      renderNoteImages(note,id)+
+    '</div>'+
+    '<div class="note-img-hint">📎 可直接粘贴截图到此处</div>';
+  }
+
   panel.innerHTML='<div class="sub-panel">'+
     '<div class="sub-panel-header">'+
       '<button class="back-btn" onclick="closeNoteDetail()">‹</button>'+
-      '<select class="note-cat-select" onchange="updateNoteField(\''+id+'\',\'cat\',this.value)">'+catOpts+'</select>'+
-      '<span style="font-size:11px;color:var(--text3);margin-left:4px">'+note.date+'</span>'+
+      (isReview?'<span style="font-size:13px;font-weight:500;color:var(--text2)">每日复盘</span>':
+        '<select class="note-cat-select" onchange="updateNoteField(\''+id+'\',\'cat\',this.value)">'+catOpts+'</select>')+
+      '<span style="font-size:11px;color:var(--text3);margin-left:6px">'+note.date+'</span>'+
       '<button style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:12px;color:var(--del);padding:4px 8px;border-radius:var(--rxs)" onclick="deleteNote(\''+id+'\',event,true)">删除</button>'+
     '</div>'+
     '<div class="sub-panel-body" id="note-editor-'+id+'">'+
-      '<input class="note-detail-title-input" id="nd-title-'+id+'" placeholder="标题（选填）" value="'+esc(note.title||'')+'" oninput="updateNoteField(\''+id+'\',\'title\',this.value)" />'+
-      '<div class="note-body-wrap" id="nd-bodywrap-'+id+'">'+
-        '<textarea class="note-detail-body-input" id="nd-body-'+id+'" placeholder="写下你的经验、方法、想法…\n\n支持粘贴图片（Ctrl+V / Cmd+V）" oninput="updateNoteField(\''+id+'\',\'body\',this.value)">'+esc(note.body||'')+'</textarea>'+
-        renderNoteImages(note,id)+
-      '</div>'+
-      '<div class="note-img-hint">📎 可直接粘贴截图到此处</div>'+
+      '<input class="note-detail-title-input" id="nd-title-'+id+'" placeholder="'+(isReview?'复盘标题':'标题（选填）')+'" value="'+esc(note.title||'')+'" oninput="updateNoteField(\''+id+'\',\'title\',this.value)" />'+
+      bodyContent+
     '</div>'+
   '</div>';
 
-  // 绑定粘贴事件
   setTimeout(function(){
-    var panel_el=document.getElementById('note-editor-'+id);
-    if(panel_el){
-      panel_el.addEventListener('paste',function(e){handleImagePaste(e,id);});
+    if(!isReview){
+      var mb=eid('note-editor-'+id);
+      if(mb)mb.addEventListener('paste',function(e){handleImagePaste(e,id);});
+      var ta=eid('nd-body-'+id);
+      if(!note.title&&!note.body)eid('nd-title-'+id).focus();
+      else if(ta){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);}
+    } else {
+      // 光标放到第一个空题目
+      var parsed=parseReviewBody(note.body||'');
+      var firstEmpty=parsed.findIndex(function(v){return !v.trim();});
+      var focusIdx=firstEmpty>=0?firstEmpty:0;
+      var el=eid('rq-'+id+'-'+focusIdx);
+      if(el)el.focus();
     }
-    var ta=eid('nd-body-'+id);
-    if(!note.title&&!note.body)eid('nd-title-'+id).focus();
-    else if(ta){ta.focus();ta.setSelectionRange(ta.value.length,ta.value.length);}
   },100);
+}
+
+var REVIEW_SEP='\n\n---REVIEW_SEP---\n\n';
+function parseReviewBody(body){
+  if(!body)return['','','',''];
+  // 新格式：用分隔符分段
+  if(body.indexOf('---REVIEW_SEP---')!==-1){
+    var parts=body.split(REVIEW_SEP);
+    while(parts.length<4)parts.push('');
+    return parts.slice(0,4);
+  }
+  // 兼容旧格式（纯文本）：整体放在第一段
+  return[body,'','',''];
+}
+function updateReviewField(noteId,idx,val){
+  var note=S.notes.find(function(n){return n.id===noteId;});if(!note)return;
+  var parts=parseReviewBody(note.body||'');
+  parts[idx]=val;
+  note.body=parts.join(REVIEW_SEP);
+  save();
 }
 
 function renderNoteImages(note,id){
