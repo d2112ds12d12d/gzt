@@ -8,19 +8,19 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#f2f2f7;--surface:#ffffff;--surface2:#f2f2f7;--surface3:#e5e5ea;--surface4:#d1d1d6;
-  --border:rgba(60,60,67,.12);--border2:rgba(60,60,67,.18);
+  --bg:#f0f0f5;--surface:#ffffff;--surface2:#f0f0f5;--surface3:#e4e4ea;--surface4:#c7c7cc;
+  --border:rgba(60,60,67,.1);--border2:rgba(60,60,67,.16);
   --text1:#1c1c1e;--text2:#48484a;--text3:#8e8e93;--text4:#aeaeb2;
-  --accent:#007aff;--accent-light:rgba(0,122,255,.08);--accent-border:rgba(0,122,255,.25);
-  --done:#34c759;--done-light:rgba(52,199,89,.1);--del:#ff3b30;--warn:#ff9500;
+  --accent:#007aff;--accent-light:rgba(0,122,255,.1);--accent-border:rgba(0,122,255,.3);
+  --done:#34c759;--done-light:rgba(52,199,89,.12);--del:#ff3b30;--warn:#ff9500;
   --tag-bg:rgba(0,122,255,.08);
-  --shadow-xs:0 1px 2px rgba(0,0,0,.04);
-  --shadow-sm:0 1px 4px rgba(0,0,0,.06),0 2px 8px rgba(0,0,0,.04);
-  --shadow:0 2px 12px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.05);
-  --shadow-lg:0 8px 30px rgba(0,0,0,.12),0 2px 8px rgba(0,0,0,.06);
+  --shadow-xs:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
+  --shadow-sm:0 2px 8px rgba(0,0,0,.09),0 1px 3px rgba(0,0,0,.05);
+  --shadow:0 4px 16px rgba(0,0,0,.1),0 2px 6px rgba(0,0,0,.06);
+  --shadow-lg:0 12px 36px rgba(0,0,0,.14),0 4px 12px rgba(0,0,0,.07);
   --r:12px;--rs:10px;--rxs:8px;--tab-h:60px;
   --ease:cubic-bezier(.25,.46,.45,.94);--spring:cubic-bezier(.34,1.56,.64,1);
-  --sidebar-w:68px;
+  --sidebar-w:72px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:'Noto Sans SC',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;background:var(--bg);color:var(--text1);height:100dvh;display:flex;flex-direction:column;overflow:hidden;font-size:14px;-webkit-font-smoothing:antialiased;letter-spacing:-.01em}
@@ -81,8 +81,8 @@ body{font-family:'Noto Sans SC',-apple-system,BlinkMacSystemFont,system-ui,sans-
 .tasks-group-label::after{content:'';flex:1;height:1px;background:var(--border)}
 .tasks-group-label-pin{color:var(--warn)}
 .tasks-group-label-pin::after{background:rgba(255,149,0,.2)}
-.task-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;display:flex;align-items:flex-start;gap:12px;transition:background .1s;animation:fadeUp .18s var(--ease) both;margin-bottom:6px}
-.task-item:hover{background:#fafafa}
+.task-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;display:flex;align-items:flex-start;gap:12px;transition:background .1s,box-shadow .15s,transform .15s;animation:fadeUp .18s var(--ease) both;margin-bottom:6px;box-shadow:var(--shadow-xs)}
+.task-item:hover{background:#fafafa;box-shadow:var(--shadow-sm);transform:translateY(-1px)}
 .task-item.done{opacity:.5}
 .task-item.pinned{background:#fffbf0;border-color:rgba(255,149,0,.2)}
 .task-check{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--surface4);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .18s;background:transparent;cursor:pointer}
@@ -120,8 +120,8 @@ body{font-family:'Noto Sans SC',-apple-system,BlinkMacSystemFont,system-ui,sans-
 .notes-toolbar{display:flex;gap:5px;margin-bottom:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
 .notes-filter-btn{height:26px;padding:0 12px;border-radius:13px;border:1px solid var(--border2);background:transparent;font-size:12px;color:var(--text2);cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;transition:background .12s,color .12s}
 .notes-filter-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500}
-.note-card-free{background:var(--surface);border-radius:var(--r);padding:14px 16px;margin-bottom:8px;cursor:pointer;transition:opacity .12s;box-shadow:var(--shadow-xs);border:1px solid var(--border);animation:fadeUp .16s var(--ease) both}
-.note-card-free:hover{opacity:.82}
+.note-card-free{background:var(--surface);border-radius:var(--r);padding:14px 16px;margin-bottom:8px;cursor:pointer;transition:opacity .12s,transform .15s,box-shadow .15s;box-shadow:var(--shadow-sm);border:1px solid var(--border);animation:fadeUp .16s var(--ease) both}
+.note-card-free:hover{opacity:.92;transform:translateY(-1px);box-shadow:var(--shadow)}
 .note-card-free.cat-experience{border-left:3px solid #5856d6}
 .note-card-free.cat-method{border-left:3px solid #32ade6}
 .note-card-free.cat-idea{border-left:3px solid var(--warn)}
@@ -280,24 +280,24 @@ body{font-family:'Noto Sans SC',-apple-system,BlinkMacSystemFont,system-ui,sans-
   body{flex-direction:row}
   .tabbar{display:none}
   .header{display:none}
-  .sidebar{width:var(--sidebar-w);flex-shrink:0;height:100dvh;background:rgba(235,235,240,.95);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border-right:1px solid var(--border);display:flex;flex-direction:column;align-items:center;padding:18px 0 14px;gap:2px;z-index:50}
-  .sidebar-logo{font-size:15px;font-weight:700;color:var(--text1);margin-bottom:18px;letter-spacing:-.02em;display:flex;flex-direction:column;align-items:center;gap:2px}
-  .sidebar-logo em{font-style:normal;color:var(--accent)}
-  .sidebar-logo-ver{font-size:9px;color:var(--text4);font-weight:400}
+  .sidebar{width:var(--sidebar-w);flex-shrink:0;height:100dvh;background:linear-gradient(180deg,#1c1c2e 0%,#16213e 60%,#0f3460 100%);border-right:none;display:flex;flex-direction:column;align-items:center;padding:18px 0 14px;gap:2px;z-index:50;box-shadow:2px 0 20px rgba(0,0,0,.18)}
+  .sidebar-logo{font-size:15px;font-weight:700;color:rgba(255,255,255,.9);margin-bottom:18px;letter-spacing:-.02em;display:flex;flex-direction:column;align-items:center;gap:2px}
+  .sidebar-logo em{font-style:normal;color:#5ac8fa}
+  .sidebar-logo-ver{font-size:9px;color:rgba(255,255,255,.3);font-weight:400}
   .sidebar-nav{display:flex;flex-direction:column;align-items:center;gap:1px;flex:1;width:100%;padding:0 8px}
-  .sidebar-btn{width:52px;height:50px;border:none;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:var(--r);color:var(--text3);font-family:inherit;position:relative;transition:background .15s,color .15s}
-  .sidebar-btn:hover{background:rgba(118,118,128,.1)}
-  .sidebar-btn.active{background:rgba(0,122,255,.1);color:var(--accent)}
+  .sidebar-btn{width:52px;height:50px;border:none;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:var(--r);color:rgba(255,255,255,.45);font-family:inherit;position:relative;transition:background .15s,color .15s}
+  .sidebar-btn:hover{background:rgba(255,255,255,.08)}
+  .sidebar-btn.active{background:rgba(0,122,255,.25);color:#fff}
   .sidebar-btn-icon{font-size:20px;line-height:1;transition:transform .18s var(--spring)}
   .sidebar-btn.active .sidebar-btn-icon{transform:scale(1.06)}
   .sidebar-btn-label{font-size:9.5px;font-weight:500;letter-spacing:.01em}
   .sidebar-badge{position:absolute;top:5px;right:5px;background:var(--del);color:#fff;font-size:8.5px;font-weight:700;min-width:15px;height:15px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px;opacity:0;transform:scale(0);transition:opacity .18s,transform .18s var(--spring)}
   .sidebar-badge.visible{opacity:1;transform:scale(1)}
   .sidebar-bottom{display:flex;flex-direction:column;align-items:center;gap:3px;padding-bottom:4px}
-  .sidebar-icon-btn{width:36px;height:36px;border-radius:50%;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--text3);transition:background .12s,color .12s}
-  .sidebar-icon-btn:hover{background:rgba(118,118,128,.1);color:var(--text2)}
+  .sidebar-icon-btn{width:36px;height:36px;border-radius:50%;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;color:rgba(255,255,255,.45);transition:background .12s,color .12s}
+  .sidebar-icon-btn:hover{background:rgba(255,255,255,.1);color:rgba(255,255,255,.85)}
   .app-body{flex:1;display:flex;flex-direction:column;height:100dvh;overflow:hidden;min-width:0}
-  .desktop-topbar{display:flex;align-items:center;gap:10px;padding:9px 24px;background:rgba(242,242,247,.88);backdrop-filter:blur(24px) saturate(160%);-webkit-backdrop-filter:blur(24px) saturate(160%);border-bottom:1px solid var(--border);flex-shrink:0;z-index:40}
+  .desktop-topbar{display:flex;align-items:center;gap:10px;padding:9px 24px;background:rgba(240,240,245,.92);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border-bottom:1px solid var(--border);flex-shrink:0;z-index:40;box-shadow:0 1px 0 rgba(60,60,67,.08)}
   .desktop-page-title{font-size:16px;font-weight:600;color:var(--text1);flex-shrink:0;letter-spacing:-.02em}
   .main{flex:1;overflow:hidden}
   .wrap{padding:20px 28px 80px;max-width:none}
@@ -315,7 +315,7 @@ body{font-family:'Noto Sans SC',-apple-system,BlinkMacSystemFont,system-ui,sans-
 <div class="sidebar">
   <div style="margin-bottom:16px;display:flex;flex-direction:column;align-items:center;gap:2px">
     <div style="font-family:'DM Serif Display',serif;font-size:16px;color:var(--text1)">w<em style="font-style:italic;color:var(--accent)">s</em></div>
-    <div style="font-size:9px;color:var(--text3);font-weight:400">v2.3</div>
+    <div style="font-size:9px;color:rgba(255,255,255,.3);font-weight:400">v2.4</div>
   </div>
   <div class="sidebar-nav">
     <button class="sidebar-btn active" id="sidebar-today" onclick="switchTab('today')">
@@ -344,7 +344,7 @@ body{font-family:'Noto Sans SC',-apple-system,BlinkMacSystemFont,system-ui,sans-
 <!-- HEADER (mobile only) -->
 <div class="header">
   <div class="header-row">
-    <div class="wordmark">work<em>space</em><span class="wordmark-ver">v2.3</span></div>
+    <div class="wordmark">work<em>space</em><span class="wordmark-ver">v2.4</span></div>
     <div class="search-trigger" onclick="openSearch()">
       <span style="font-size:13px;color:var(--text3)">🔍</span>
       <span class="search-trigger-text">搜索任务、笔记、读书…</span>
