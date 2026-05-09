@@ -1,6 +1,15 @@
 {
   "tasks": [
     {
+      "id": "moxqlsgbof6",
+      "title": "T-7 名单公布&差异赋能",
+      "tag": null,
+      "date": "05/09",
+      "done": true,
+      "created": 1778294456651,
+      "fromTemplate": "moxqlsga0sr"
+    },
+    {
       "id": "mox1n3by7af",
       "title": "休息人员专项提醒",
       "tag": null,
@@ -51,7 +60,7 @@
       "title": "星级访谈规则确认&执行",
       "tag": null,
       "date": "05/09",
-      "done": false,
+      "done": true,
       "created": 1778211985797,
       "pinned": true
     },
@@ -140,6 +149,18 @@
       "date": "05/08",
       "done": true,
       "created": 1778165730239
+    },
+    {
+      "id": "moxqlsga0sr",
+      "title": "T-7 名单公布&差异赋能",
+      "tag": null,
+      "date": "",
+      "done": false,
+      "created": 1778294456650,
+      "isTemplate": true,
+      "repeat": {
+        "type": "daily"
+      }
     }
   ],
   "books": [],
