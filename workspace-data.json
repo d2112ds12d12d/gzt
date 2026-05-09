@@ -1,6 +1,15 @@
 {
   "tasks": [
     {
+      "id": "moxs57ekamw",
+      "title": "上传星级链接和图片",
+      "tag": null,
+      "date": "05/09",
+      "done": false,
+      "created": 1778297042108,
+      "parentId": "mowdi5j95lq"
+    },
+    {
       "id": "moxqlsgbof6",
       "title": "T-7 名单公布&差异赋能",
       "tag": null,
@@ -62,7 +71,10 @@
       "date": "05/09",
       "done": true,
       "created": 1778211985797,
-      "pinned": true
+      "pinned": true,
+      "childIds": [
+        "moxs57ekamw"
+      ]
     },
     {
       "id": "mowaq4qpszo",
