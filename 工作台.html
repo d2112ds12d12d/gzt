@@ -110,6 +110,13 @@ body{font-family:'Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:
 .pin-indicator{font-size:12px;margin-right:4px;vertical-align:middle}
 .task-note-preview{font-size:12px;color:var(--text3);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
 .task-chain-badge{font-size:11px;color:var(--text3);margin-left:2px}
+.task-links{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 2px}
+.task-link-chip{display:inline-flex;align-items:center;font-size:11.5px;color:var(--accent);background:var(--accent-light);border:1px solid var(--accent-border);border-radius:10px;padding:2px 9px;text-decoration:none;white-space:nowrap;max-width:200px;overflow:hidden;text-overflow:ellipsis;transition:background .12s}
+.task-link-chip:hover{background:rgba(42,92,245,.14)}
+.task-thumbs{display:flex;flex-wrap:wrap;gap:5px;margin:4px 0 2px}
+.task-thumb{width:56px;height:42px;object-fit:cover;border-radius:5px;border:1px solid var(--border);cursor:zoom-in;transition:opacity .12s}
+.task-thumb:hover{opacity:.8}
+.edit-link-row{display:flex;gap:6px;align-items:center;margin-bottom:6px}
 .chain-block{display:flex;flex-direction:column;gap:6px}
 .chain-item{font-size:12.5px;padding:7px 10px;border-radius:var(--rxs);cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:8px;transition:background .12s}
 .chain-parent{background:var(--accent-light);color:var(--accent)}
@@ -422,7 +429,7 @@ body{font-family:'Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:
 <div class="sidebar">
   <div style="margin-bottom:16px;display:flex;flex-direction:column;align-items:center;gap:2px">
     <div style="font-family:'DM Serif Display',serif;font-size:16px;color:var(--text1)">w<em style="font-style:italic;color:var(--accent)">s</em></div>
-    <div style="font-size:9px;color:var(--text3);font-weight:400">v1.8</div>
+    <div style="font-size:9px;color:var(--text3);font-weight:400">v1.9</div>
   </div>
   <div class="sidebar-nav">
     <button class="sidebar-btn active" id="sidebar-today" onclick="switchTab('today')">
@@ -451,7 +458,7 @@ body{font-family:'Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:
 <!-- HEADER (mobile only) -->
 <div class="header">
   <div class="header-row">
-    <div class="wordmark">work<em>space</em><span class="wordmark-ver">v1.8</span></div>
+    <div class="wordmark">work<em>space</em><span class="wordmark-ver">v1.9</span></div>
     <div class="search-trigger" onclick="openSearch()">
       <span style="font-size:13px;color:var(--text3)">🔍</span>
       <span class="search-trigger-text">搜索任务、笔记、读书…</span>
@@ -758,13 +765,20 @@ function renderCaptureTags(){
 function selectTag(t){S.selectedTag=S.selectedTag===t?null:t;renderCaptureTags();}
 
 /* ── CAPTURE ── */
+var URL_RE=/https?:\/\/[^\s]+/g;
 function submitCapture(){
   var inp=eid('capture-input'),raw=inp.value.trim();if(!raw)return;
   var date=_parsedDate||todayStr(),title=_parsedDate?stripDateKW(raw)||raw:raw;
-  S.tasks.unshift({id:uid(),title:title,tag:S.selectedTag,date:date,done:false,created:Date.now()});
+  var urls=title.match(URL_RE)||[];
+  var cleanTitle=urls.length?title.replace(URL_RE,'').trim():title;
+  var links=urls.map(function(u){return{url:u,text:u};});
+  var task={id:uid(),title:cleanTitle||title,tag:S.selectedTag,date:date,done:false,created:Date.now()};
+  if(links.length)task.links=links;
+  S.tasks.unshift(task);
   save();inp.value='';inp.style.height='auto';eid('date-preview').innerHTML='';_parsedDate=null;S.selectedTag=null;
   renderCaptureTags();renderTodayTasks();renderAllTasks();renderGreeting();updateBadge();
-  toast(date===todayStr()?'已添加到今日 ✓':'已添加到 '+date+' ✓');
+  if(links.length)toast('已添加，检测到链接，可进编辑页修改显示文字');
+  else toast(date===todayStr()?'已添加到今日 ✓':'已添加到 '+date+' ✓');
 }
 
 /* ── TASK RENDER ── */
@@ -772,12 +786,25 @@ function taskHtml(t){
   var overdue=!t.done&&t.date&&t.date<todayStr();
   var dateLabel=t.date===todayStr()?'今天':t.date;
   var pinned=!!t.pinned;
-  var hasChain=t.parentId||( t.childIds&&t.childIds.length);
+  var hasChain=t.parentId||(t.childIds&&t.childIds.length);
+  var linksHtml='';
+  if(t.links&&t.links.length){
+    linksHtml='<div class="task-links">'+t.links.map(function(lk){
+      return'<a class="task-link-chip" href="'+esc(lk.url)+'" target="_blank" rel="noopener" onclick="event.stopPropagation()">🔗 '+esc(lk.text||lk.url)+'</a>';
+    }).join('')+'</div>';
+  }
+  var imgsHtml='';
+  if(t.images&&t.images.length){
+    imgsHtml='<div class="task-thumbs">'+t.images.map(function(src,i){
+      return'<img class="task-thumb" src="'+src+'" onclick="openTaskImagePreview(\''+t.id+'\','+i+',event)" />';
+    }).join('')+'</div>';
+  }
   return'<div class="task-item'+(t.done?' done':'')+(pinned?' pinned':'')+'" id="ti-'+t.id+'">'+
     '<div class="task-check" onclick="toggleTask(\''+t.id+'\')"><svg width="12" height="9" viewBox="0 0 12 9" fill="none"><path d="M1 4L4.5 7.5L11 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></div>'+
     '<div class="task-body" onclick="openEditTask(\''+t.id+'\')">'+
       '<div class="task-title">'+(pinned&&!t.done?'<span class="pin-indicator">📌</span>':'')+esc(t.title)+'</div>'+
       (t.note?'<div class="task-note-preview">'+esc(t.note)+'</div>':'')+
+      linksHtml+imgsHtml+
       '<div class="task-meta">'+(t.tag?'<span class="task-tag">'+esc(t.tag)+'</span>':'')+
       '<span class="task-date'+(overdue?' overdue':'')+'">'+dateLabel+(overdue?' · 逾期':'')+'</span>'+
       (hasChain?'<span class="task-chain-badge">🔗</span>':'')+
@@ -788,6 +815,19 @@ function taskHtml(t){
       '<button class="task-act-btn del" onclick="deleteTask(\''+t.id+'\',event)" title="删除">×</button>'+
     '</div>'+
   '</div>';
+}
+
+function openTaskImagePreview(taskId,idx,e){
+  if(e)e.stopPropagation();
+  var t=S.tasks.find(function(x){return x.id===taskId;});
+  if(!t||!t.images||!t.images[idx])return;
+  var ov=document.createElement('div');
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:500;display:flex;align-items:center;justify-content:center;cursor:zoom-out';
+  ov.onclick=function(){ov.remove();};
+  var img=document.createElement('img');
+  img.src=t.images[idx];
+  img.style.cssText='max-width:92vw;max-height:92vh;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.4)';
+  ov.appendChild(img);document.body.appendChild(ov);
 }
 
 function sortTasks(tasks){
@@ -952,6 +992,7 @@ function openEditTask(id){
   S._editingTaskId=id;
   S._modalAction='editTask';
   S._editTaskTag=t.tag||null;
+  initEditLinks(t);
   eid('modal-title').textContent='编辑任务';
 
   var tagOpts=['<button class="modal-tag-opt none-opt'+(t.tag?'':' selected')+'" onclick="modalSelectTag(null,this)">无标签</button>'].concat(
@@ -989,13 +1030,107 @@ function openEditTask(id){
   eid('modal-body').innerHTML=
     '<div class="modal-field"><label class="modal-label">任务名称</label><input class="modal-input" id="edit-task-title" value="'+esc(t.title)+'" /></div>'+
     '<div class="modal-field"><label class="modal-label">备注</label><textarea class="modal-input" id="edit-task-note" style="height:72px;resize:none;padding-top:8px;line-height:1.5" placeholder="补充说明、背景信息…">'+esc(t.note||'')+'</textarea></div>'+
+    '<div class="modal-field"><label class="modal-label">链接 <span style="font-size:11px;color:var(--text3);font-weight:400">（可添加多个）</span></label>'+
+      '<div id="edit-task-links">'+renderEditLinks(t)+'</div>'+
+      '<button onclick="addEditLink()" style="margin-top:6px;height:28px;padding:0 12px;border:1px dashed var(--border2);border-radius:var(--rxs);background:transparent;font-size:12px;color:var(--text2);cursor:pointer;font-family:inherit">＋ 添加链接</button>'+
+    '</div>'+
+    '<div class="modal-field"><label class="modal-label">图片 <span style="font-size:11px;color:var(--text3);font-weight:400">（粘贴截图 Ctrl+V）</span></label>'+
+      '<div id="edit-task-imgs">'+renderEditImages(t)+'</div>'+
+    '</div>'+
     '<div class="modal-field"><label class="modal-label">日期</label><input class="modal-input" id="edit-task-date" value="'+esc(t.date||'')+'" placeholder="MM/DD，如 05/08" /></div>'+
     '<div class="modal-field"><label class="modal-label">标签</label><div class="modal-tag-row">'+tagOpts+'</div></div>'+
-    linkHtml+
-    chainHtml;
+    linkHtml+chainHtml;
 
   eid('modal-overlay').style.display='flex';
-  setTimeout(function(){eid('edit-task-title').focus();},100);
+  // 绑定粘贴图片
+  setTimeout(function(){
+    eid('edit-task-title').focus();
+    var mb=eid('modal-body');
+    if(mb) mb.addEventListener('paste',function(e){handleTaskImagePaste(e,S._editingTaskId);});
+  },100);
+}
+
+function renderEditLinks(t){
+  if(!t.links||!t.links.length)return'';
+  return t.links.map(function(lk,i){
+    return'<div class="edit-link-row" id="elk-'+i+'">'+
+      '<input class="modal-input" style="flex:1;height:32px;font-size:12px" placeholder="显示文字" value="'+esc(lk.text||'')+'" oninput="updateEditLink('+i+',\'text\',this.value)" />'+
+      '<input class="modal-input" style="flex:2;height:32px;font-size:12px" placeholder="https://..." value="'+esc(lk.url||'')+'" oninput="updateEditLink('+i+',\'url\',this.value)" />'+
+      '<button onclick="removeEditLink('+i+')" style="flex-shrink:0;width:28px;height:28px;border:none;background:none;cursor:pointer;color:var(--del);font-size:16px">×</button>'+
+    '</div>';
+  }).join('');
+}
+
+function renderEditImages(t){
+  if(!t.images||!t.images.length)return'<div style="font-size:12px;color:var(--text3);padding:4px 0">暂无图片，可在此处粘贴截图</div>';
+  return'<div class="note-images-wrap">'+t.images.map(function(src,i){
+    return'<div class="note-img-item"><img class="note-img" src="'+src+'" /><button class="note-img-del" onclick="removeEditTaskImage('+i+')">×</button></div>';
+  }).join('')+'</div>';
+}
+
+// 临时编辑链接状态
+var _editLinks=[];
+function initEditLinks(t){ _editLinks=(t.links||[]).map(function(l){return{url:l.url,text:l.text};});}
+function updateEditLink(i,field,val){if(_editLinks[i])_editLinks[i][field]=val;}
+function addEditLink(){
+  _editLinks.push({url:'',text:''});
+  var el=eid('edit-task-links');if(!el)return;
+  var i=_editLinks.length-1;
+  var row=document.createElement('div');
+  row.className='edit-link-row';row.id='elk-'+i;
+  row.innerHTML='<input class="modal-input" style="flex:1;height:32px;font-size:12px" placeholder="显示文字" oninput="updateEditLink('+i+',\'text\',this.value)" />'+
+    '<input class="modal-input" style="flex:2;height:32px;font-size:12px" placeholder="https://..." oninput="updateEditLink('+i+',\'url\',this.value)" />'+
+    '<button onclick="removeEditLink('+i+')" style="flex-shrink:0;width:28px;height:28px;border:none;background:none;cursor:pointer;color:var(--del);font-size:16px">×</button>';
+  el.appendChild(row);
+  row.querySelector('input').focus();
+}
+function removeEditLink(i){
+  _editLinks.splice(i,1);
+  var t=S.tasks.find(function(x){return x.id===S._editingTaskId;});if(!t)return;
+  t.links=_editLinks.filter(function(l){return l.url.trim();});
+  save();
+  var el=eid('edit-task-links');if(el)el.innerHTML=renderEditLinks(t);
+}
+
+function handleTaskImagePaste(e,taskId){
+  var items=e.clipboardData&&e.clipboardData.items;if(!items)return;
+  for(var i=0;i<items.length;i++){
+    if(items[i].type.indexOf('image')!==-1){
+      e.preventDefault();
+      var file=items[i].getAsFile();
+      compressImage(file,function(dataUrl){
+        var t=S.tasks.find(function(x){return x.id===taskId;});if(!t)return;
+        if(!t.images)t.images=[];
+        t.images.push(dataUrl);save();
+        var el=eid('edit-task-imgs');if(el)el.innerHTML=renderEditImages(t);
+        toast('图片已添加 ✓');
+      });
+      return;
+    }
+  }
+}
+function removeEditTaskImage(idx){
+  var t=S.tasks.find(function(x){return x.id===S._editingTaskId;});if(!t)return;
+  t.images.splice(idx,1);save();
+  var el=eid('edit-task-imgs');if(el)el.innerHTML=renderEditImages(t);
+}
+function compressImage(file,cb){
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var img=new Image();
+    img.onload=function(){
+      var canvas=document.createElement('canvas');
+      var MAX=1200,w=img.width,h=img.height;
+      if(w>MAX){h=Math.round(h*MAX/w);w=MAX;}
+      if(h>MAX){w=Math.round(w*MAX/h);h=MAX;}
+      canvas.width=w;canvas.height=h;
+      canvas.getContext('2d').drawImage(img,0,0,w,h);
+      var dataUrl=canvas.toDataURL('image/jpeg',0.75);
+      var sizeKb=Math.round(dataUrl.length*0.75/1024);
+      if(sizeKb>800){toast('图片太大（'+sizeKb+'KB），请截取更小区域');return;}
+      cb(dataUrl);
+    };img.src=e.target.result;
+  };reader.readAsDataURL(file);
 }
 
 function modalSelectTag(tag,btn){
@@ -1012,11 +1147,10 @@ function confirmModal(){
     var note=(eid('edit-task-note').value||'').trim();
     if(!title){toast('任务名称不能为空');return;}
     t.title=title;t.date=date||t.date;t.tag=S._editTaskTag;t.note=note||'';
-    // 手动关联上游
+    t.links=_editLinks.filter(function(l){return l.url.trim();});
     var parentSel=eid('edit-task-parent');
     if(parentSel&&parentSel.value){
-      var pid=parentSel.value;
-      t.parentId=pid;
+      var pid=parentSel.value;t.parentId=pid;
       var parent=S.tasks.find(function(x){return x.id===pid;});
       if(parent){if(!parent.childIds)parent.childIds=[];if(parent.childIds.indexOf(t.id)===-1)parent.childIds.push(t.id);}
     }
@@ -1026,9 +1160,10 @@ function confirmModal(){
     var title=(eid('edit-task-title').value||'').trim();
     var date=(eid('edit-task-date').value||'').trim()||todayStr();
     if(!title){toast('请输入任务名称');return;}
-    var newTask={id:uid(),title:title,tag:S._editTaskTag,date:date,done:false,created:Date.now(),parentId:S._nextTaskParentId};
-    // 把新任务 id 挂到父任务的 childIds
     var parent=S.tasks.find(function(x){return x.id===S._nextTaskParentId;});
+    var newTask={id:uid(),title:title,tag:S._editTaskTag,date:date,done:false,created:Date.now(),
+      parentId:S._nextTaskParentId,
+      pinned:parent?!!parent.pinned:false}; // 继承置顶属性
     if(parent){if(!parent.childIds)parent.childIds=[];parent.childIds.push(newTask.id);}
     S.tasks.unshift(newTask);
     save();renderTodayTasks();renderAllTasks();updateBadge();
@@ -1040,7 +1175,7 @@ function confirmModal(){
     save();renderBooks();toast('书已添加 ✓');closeModal();
   }
 }
-function closeModal(){eid('modal-overlay').style.display='none';S._modalAction=null;S._editingTaskId=null;S._nextTaskParentId=null;}
+function closeModal(){eid('modal-overlay').style.display='none';S._modalAction=null;S._editingTaskId=null;S._nextTaskParentId=null;_editLinks=[];}
 function handleOverlayClick(e){if(e.target===eid('modal-overlay'))closeModal();}
 
 /* ── NOTES ── */
