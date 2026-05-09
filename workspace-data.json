@@ -1,6 +1,15 @@
 {
   "tasks": [
     {
+      "id": "moy6ef6jtav",
+      "title": "等待业务回复，完成任务推送（取消禁用）",
+      "tag": null,
+      "date": "05/09",
+      "done": false,
+      "created": 1778320986715,
+      "parentId": "mox0yfqbcmz"
+    },
+    {
       "id": "moy4r7blhxt",
       "title": "现有业务的质量复盘是否有效？是否有迭代空间？",
       "tag": null,
@@ -59,7 +68,10 @@
       "done": true,
       "created": 1778251376675,
       "parentId": "movm1fxs7gg",
-      "pinned": true
+      "pinned": true,
+      "childIds": [
+        "moy6ef6jtav"
+      ]
     },
     {
       "id": "mowolgxy6rl",
