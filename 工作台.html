@@ -8,23 +8,29 @@
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600&family=DM+Serif+Display:ital@0;1&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#f0f0f5;--surface:#ffffff;--surface2:#f0f0f5;--surface3:#e4e4ea;--surface4:#c7c7cc;
-  --border:rgba(60,60,67,.1);--border2:rgba(60,60,67,.16);
+  --bg:#eef0f5;--surface:#ffffff;--surface2:#f4f5f8;--surface3:#e4e5ea;--surface4:#c7c7cc;
+  --border:rgba(60,60,67,.09);--border2:rgba(60,60,67,.15);
   --text1:#1c1c1e;--text2:#48484a;--text3:#8e8e93;--text4:#aeaeb2;
   --accent:#007aff;--accent-light:rgba(0,122,255,.1);--accent-border:rgba(0,122,255,.3);
   --done:#34c759;--done-light:rgba(52,199,89,.12);--del:#ff3b30;--warn:#ff9500;
   --tag-bg:rgba(0,122,255,.08);
-  --shadow-xs:0 1px 3px rgba(0,0,0,.07),0 1px 2px rgba(0,0,0,.04);
-  --shadow-sm:0 2px 8px rgba(0,0,0,.09),0 1px 3px rgba(0,0,0,.05);
-  --shadow:0 4px 16px rgba(0,0,0,.1),0 2px 6px rgba(0,0,0,.06);
-  --shadow-lg:0 12px 36px rgba(0,0,0,.14),0 4px 12px rgba(0,0,0,.07);
-  --r:12px;--rs:10px;--rxs:8px;--tab-h:60px;
+  --shadow-xs:0 1px 2px rgba(0,0,0,.05),0 2px 6px rgba(0,0,0,.04);
+  --shadow-sm:0 2px 10px rgba(0,0,0,.08),0 1px 3px rgba(0,0,0,.05);
+  --shadow:0 6px 24px rgba(0,0,0,.1),0 2px 8px rgba(0,0,0,.06);
+  --shadow-lg:0 16px 48px rgba(0,0,0,.14),0 6px 16px rgba(0,0,0,.08);
+  --shadow-card:0 2px 12px rgba(0,0,0,.07),0 1px 4px rgba(0,0,0,.05),inset 0 1px 0 rgba(255,255,255,.8);
+  --r:13px;--rs:11px;--rxs:8px;--tab-h:60px;
   --ease:cubic-bezier(.25,.46,.45,.94);--spring:cubic-bezier(.34,1.56,.64,1);
   --sidebar-w:72px;
 }
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:'Noto Sans SC',-apple-system,BlinkMacSystemFont,system-ui,sans-serif;background:var(--bg);color:var(--text1);height:100dvh;display:flex;flex-direction:column;overflow:hidden;font-size:14px;-webkit-font-smoothing:antialiased;letter-spacing:-.01em}
-@keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+/* background texture */
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellipse at 20% 0%,rgba(0,122,255,.04) 0%,transparent 60%),radial-gradient(ellipse at 80% 100%,rgba(52,199,89,.03) 0%,transparent 60%);pointer-events:none;z-index:0}
+.main,.sidebar,.app-body,.header,.tabbar,.desktop-topbar{position:relative;z-index:1}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes cardIn{from{opacity:0;transform:translateY(16px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes checkRing{0%{box-shadow:0 0 0 0 rgba(52,199,89,.4)}100%{box-shadow:0 0 0 12px rgba(52,199,89,0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes scaleIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
 @keyframes slideInRight{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:translateX(0)}}
@@ -55,7 +61,7 @@ body{font-family:'Noto Sans SC',-apple-system,BlinkMacSystemFont,system-ui,sans-
 .tab-badge.visible{opacity:1;transform:scale(1)}
 .main{flex:1;overflow:hidden;position:relative}
 .page{position:absolute;inset:0;overflow-y:auto;-webkit-overflow-scrolling:touch;opacity:0;pointer-events:none;transition:opacity .15s var(--ease)}
-.page.active{opacity:1;pointer-events:all;animation:tabSwitch .18s var(--ease)}
+.page.active{opacity:1;pointer-events:all;animation:cardIn .24s var(--spring)}
 .wrap{padding:16px 16px 100px;max-width:800px;margin:0 auto}
 .section-label{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;padding:0 4px}
 .empty-state{text-align:center;padding:48px 20px;color:var(--text3);font-size:13px}
@@ -81,12 +87,12 @@ body{font-family:'Noto Sans SC',-apple-system,BlinkMacSystemFont,system-ui,sans-
 .tasks-group-label::after{content:'';flex:1;height:1px;background:var(--border)}
 .tasks-group-label-pin{color:var(--warn)}
 .tasks-group-label-pin::after{background:rgba(255,149,0,.2)}
-.task-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;display:flex;align-items:flex-start;gap:12px;transition:background .1s,box-shadow .15s,transform .15s;animation:fadeUp .18s var(--ease) both;margin-bottom:6px;box-shadow:var(--shadow-xs)}
-.task-item:hover{background:#fafafa;box-shadow:var(--shadow-sm);transform:translateY(-1px)}
+.task-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--rs);padding:12px 14px;display:flex;align-items:flex-start;gap:12px;transition:box-shadow .2s,transform .2s var(--ease);animation:cardIn .22s var(--spring) both;margin-bottom:6px;box-shadow:var(--shadow-card);will-change:transform}
+.task-item:hover{background:#fafcff;box-shadow:0 8px 28px rgba(0,0,0,.1),0 2px 8px rgba(0,0,0,.06),inset 0 1px 0 rgba(255,255,255,.9);transform:translateY(-2px) scale(1.002)}
 .task-item.done{opacity:.5}
 .task-item.pinned{background:#fffbf0;border-color:rgba(255,149,0,.2)}
 .task-check{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--surface4);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;transition:all .18s;background:transparent;cursor:pointer}
-.task-item.done .task-check{background:var(--done);border-color:var(--done);animation:checkPop .28s var(--spring)}
+.task-item.done .task-check{background:var(--done);border-color:var(--done);animation:checkPop .28s var(--spring),checkRing .5s ease-out .1s}
 .task-check svg{display:none}
 .task-item.done .task-check svg{display:block}
 .task-body{flex:1;min-width:0;cursor:pointer}
@@ -120,8 +126,8 @@ body{font-family:'Noto Sans SC',-apple-system,BlinkMacSystemFont,system-ui,sans-
 .notes-toolbar{display:flex;gap:5px;margin-bottom:14px;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:2px}
 .notes-filter-btn{height:26px;padding:0 12px;border-radius:13px;border:1px solid var(--border2);background:transparent;font-size:12px;color:var(--text2);cursor:pointer;font-family:inherit;white-space:nowrap;flex-shrink:0;transition:background .12s,color .12s}
 .notes-filter-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:500}
-.note-card-free{background:var(--surface);border-radius:var(--r);padding:14px 16px;margin-bottom:8px;cursor:pointer;transition:opacity .12s,transform .15s,box-shadow .15s;box-shadow:var(--shadow-sm);border:1px solid var(--border);animation:fadeUp .16s var(--ease) both}
-.note-card-free:hover{opacity:.92;transform:translateY(-1px);box-shadow:var(--shadow)}
+.note-card-free{background:var(--surface);border-radius:var(--r);padding:14px 16px;margin-bottom:8px;cursor:pointer;transition:box-shadow .2s,transform .2s var(--ease);box-shadow:var(--shadow-card);border:1px solid var(--border);animation:cardIn .22s var(--spring) both;will-change:transform}
+.note-card-free:hover{transform:translateY(-2px) scale(1.002);box-shadow:0 10px 32px rgba(0,0,0,.1),0 3px 10px rgba(0,0,0,.06),inset 0 1px 0 rgba(255,255,255,.9)}
 .note-card-free.cat-experience{border-left:3px solid #5856d6}
 .note-card-free.cat-method{border-left:3px solid #32ade6}
 .note-card-free.cat-idea{border-left:3px solid var(--warn)}
@@ -162,8 +168,8 @@ body{font-family:'Noto Sans SC',-apple-system,BlinkMacSystemFont,system-ui,sans-
 .review-q-input{width:100%;border:none;outline:none;background:rgba(118,118,128,.08);border-radius:var(--rs);font-family:inherit;font-size:14.5px;color:var(--text1);padding:11px 13px;resize:none;line-height:1.65;min-height:76px;transition:background .15s,box-shadow .15s}
 .review-q-input:focus{background:var(--surface);box-shadow:0 0 0 2.5px var(--accent-border)}
 .book-list{display:flex;flex-direction:column;gap:8px}
-.book-card{background:var(--surface);border-radius:var(--r);overflow:hidden;cursor:pointer;border:1px solid var(--border);box-shadow:var(--shadow-xs);transition:opacity .12s,transform .15s;animation:fadeUp .18s var(--ease) both}
-.book-card:hover{opacity:.88;transform:translateY(-1px)}
+.book-card{background:var(--surface);border-radius:var(--r);overflow:hidden;cursor:pointer;border:1px solid var(--border);box-shadow:var(--shadow-card);transition:box-shadow .2s,transform .2s var(--ease);animation:cardIn .22s var(--spring) both}
+.book-card:hover{transform:translateY(-3px) scale(1.005);box-shadow:0 12px 36px rgba(0,0,0,.12),0 4px 12px rgba(0,0,0,.07),inset 0 1px 0 rgba(255,255,255,.9)}
 .book-card-head{padding:14px 16px;display:flex;align-items:center;gap:12px}
 .book-spine{width:34px;height:46px;border-radius:5px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:17px}
 .book-info{flex:1;min-width:0}
@@ -280,22 +286,22 @@ body{font-family:'Noto Sans SC',-apple-system,BlinkMacSystemFont,system-ui,sans-
   body{flex-direction:row}
   .tabbar{display:none}
   .header{display:none}
-  .sidebar{width:var(--sidebar-w);flex-shrink:0;height:100dvh;background:linear-gradient(180deg,#1c1c2e 0%,#16213e 60%,#0f3460 100%);border-right:none;display:flex;flex-direction:column;align-items:center;padding:18px 0 14px;gap:2px;z-index:50;box-shadow:2px 0 20px rgba(0,0,0,.18)}
-  .sidebar-logo{font-size:15px;font-weight:700;color:rgba(255,255,255,.9);margin-bottom:18px;letter-spacing:-.02em;display:flex;flex-direction:column;align-items:center;gap:2px}
-  .sidebar-logo em{font-style:normal;color:#5ac8fa}
-  .sidebar-logo-ver{font-size:9px;color:rgba(255,255,255,.3);font-weight:400}
+  .sidebar{width:var(--sidebar-w);flex-shrink:0;height:100dvh;background:rgba(255,255,255,.72);backdrop-filter:blur(32px) saturate(200%);-webkit-backdrop-filter:blur(32px) saturate(200%);border-right:1px solid rgba(60,60,67,.1);display:flex;flex-direction:column;align-items:center;padding:18px 0 14px;gap:2px;z-index:50;box-shadow:2px 0 24px rgba(0,0,0,.06)}
+  .sidebar-logo{font-size:15px;font-weight:700;color:var(--text1);margin-bottom:18px;letter-spacing:-.02em;display:flex;flex-direction:column;align-items:center;gap:2px}
+  .sidebar-logo em{font-style:normal;color:var(--accent)}
+  .sidebar-logo-ver{font-size:9px;color:var(--text4);font-weight:400}
   .sidebar-nav{display:flex;flex-direction:column;align-items:center;gap:1px;flex:1;width:100%;padding:0 8px}
-  .sidebar-btn{width:52px;height:50px;border:none;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:var(--r);color:rgba(255,255,255,.45);font-family:inherit;position:relative;transition:background .15s,color .15s}
-  .sidebar-btn:hover{background:rgba(255,255,255,.08)}
-  .sidebar-btn.active{background:rgba(0,122,255,.25);color:#fff}
+  .sidebar-btn{width:52px;height:50px;border:none;background:transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;border-radius:var(--r);color:var(--text3);font-family:inherit;position:relative;transition:background .2s,color .2s,transform .15s var(--spring),box-shadow .2s}
+  .sidebar-btn:hover{background:rgba(0,122,255,.06);color:var(--accent);transform:scale(1.06)}
+  .sidebar-btn.active{background:rgba(0,122,255,.1);color:var(--accent);box-shadow:0 2px 8px rgba(0,122,255,.15)}
   .sidebar-btn-icon{font-size:20px;line-height:1;transition:transform .18s var(--spring)}
-  .sidebar-btn.active .sidebar-btn-icon{transform:scale(1.06)}
+  .sidebar-btn.active .sidebar-btn-icon{transform:scale(1.08) rotate(-2deg)}
   .sidebar-btn-label{font-size:9.5px;font-weight:500;letter-spacing:.01em}
   .sidebar-badge{position:absolute;top:5px;right:5px;background:var(--del);color:#fff;font-size:8.5px;font-weight:700;min-width:15px;height:15px;border-radius:8px;display:flex;align-items:center;justify-content:center;padding:0 3px;opacity:0;transform:scale(0);transition:opacity .18s,transform .18s var(--spring)}
   .sidebar-badge.visible{opacity:1;transform:scale(1)}
   .sidebar-bottom{display:flex;flex-direction:column;align-items:center;gap:3px;padding-bottom:4px}
-  .sidebar-icon-btn{width:36px;height:36px;border-radius:50%;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;color:rgba(255,255,255,.45);transition:background .12s,color .12s}
-  .sidebar-icon-btn:hover{background:rgba(255,255,255,.1);color:rgba(255,255,255,.85)}
+  .sidebar-icon-btn{width:36px;height:36px;border-radius:50%;border:none;background:transparent;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--text3);transition:background .15s,color .15s,transform .15s var(--spring)}
+  .sidebar-icon-btn:hover{background:rgba(0,122,255,.08);color:var(--accent);transform:scale(1.1)}
   .app-body{flex:1;display:flex;flex-direction:column;height:100dvh;overflow:hidden;min-width:0}
   .desktop-topbar{display:flex;align-items:center;gap:10px;padding:9px 24px;background:rgba(240,240,245,.92);backdrop-filter:blur(24px) saturate(180%);-webkit-backdrop-filter:blur(24px) saturate(180%);border-bottom:1px solid var(--border);flex-shrink:0;z-index:40;box-shadow:0 1px 0 rgba(60,60,67,.08)}
   .desktop-page-title{font-size:16px;font-weight:600;color:var(--text1);flex-shrink:0;letter-spacing:-.02em}
@@ -315,7 +321,7 @@ body{font-family:'Noto Sans SC',-apple-system,BlinkMacSystemFont,system-ui,sans-
 <div class="sidebar">
   <div style="margin-bottom:16px;display:flex;flex-direction:column;align-items:center;gap:2px">
     <div style="font-family:'DM Serif Display',serif;font-size:16px;color:var(--text1)">w<em style="font-style:italic;color:var(--accent)">s</em></div>
-    <div style="font-size:9px;color:rgba(255,255,255,.3);font-weight:400">v2.4</div>
+    <div style="font-size:9px;color:var(--text4);font-weight:400">v2.5</div>
   </div>
   <div class="sidebar-nav">
     <button class="sidebar-btn active" id="sidebar-today" onclick="switchTab('today')">
@@ -327,6 +333,9 @@ body{font-family:'Noto Sans SC',-apple-system,BlinkMacSystemFont,system-ui,sans-
     </button>
     <button class="sidebar-btn" id="sidebar-notes" onclick="switchTab('notes')">
       <span class="sidebar-btn-icon">🗒️</span><span class="sidebar-btn-label">笔记</span>
+    </button>
+    <button class="sidebar-btn" id="sidebar-review" onclick="switchTab('review')">
+      <span class="sidebar-btn-icon">🌙</span><span class="sidebar-btn-label">复盘</span>
     </button>
     <button class="sidebar-btn" id="sidebar-books" onclick="switchTab('books')">
       <span class="sidebar-btn-icon">📖</span><span class="sidebar-btn-label">读书</span>
@@ -344,7 +353,7 @@ body{font-family:'Noto Sans SC',-apple-system,BlinkMacSystemFont,system-ui,sans-
 <!-- HEADER (mobile only) -->
 <div class="header">
   <div class="header-row">
-    <div class="wordmark">work<em>space</em><span class="wordmark-ver">v2.4</span></div>
+    <div class="wordmark">work<em>space</em><span class="wordmark-ver">v2.5</span></div>
     <div class="search-trigger" onclick="openSearch()">
       <span style="font-size:13px;color:var(--text3)">🔍</span>
       <span class="search-trigger-text">搜索任务、笔记、读书…</span>
@@ -428,9 +437,40 @@ body{font-family:'Noto Sans SC',-apple-system,BlinkMacSystemFont,system-ui,sans-
     <div id="book-detail-panel" style="display:none;position:absolute;inset:0"></div>
   </div>
 
+  <!-- REVIEW (独立复盘页) -->
+  <div class="page" id="page-review">
+    <div class="wrap">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:14px">
+        <button class="btn-add" onclick="openNewReview()">＋ 新建复盘</button>
+      </div>
+      <div id="review-list"></div>
+    </div>
+    <div id="review-detail-panel" style="display:none;position:absolute;inset:0"></div>
+  </div>
+
 </div><!-- /main -->
 
 </div><!-- /app-body -->
+
+<!-- TABBAR (mobile only) -->
+<div class="tabbar" id="tabbar-mobile">
+  <button class="tab-btn active" id="tab-today" onclick="switchTab('today')">
+    <span class="tab-icon">☀️</span><span class="tab-label">今日</span>
+    <span class="tab-badge" id="badge-tasks"></span>
+  </button>
+  <button class="tab-btn" id="tab-tasks" onclick="switchTab('tasks')">
+    <span class="tab-icon">✅</span><span class="tab-label">任务</span>
+  </button>
+  <button class="tab-btn" id="tab-notes" onclick="switchTab('notes')">
+    <span class="tab-icon">🗒️</span><span class="tab-label">笔记</span>
+  </button>
+  <button class="tab-btn" id="tab-review" onclick="switchTab('review')">
+    <span class="tab-icon">🌙</span><span class="tab-label">复盘</span>
+  </button>
+  <button class="tab-btn" id="tab-books" onclick="switchTab('books')">
+    <span class="tab-icon">📖</span><span class="tab-label">读书</span>
+  </button>
+</div>
 
 <!-- TASK EDIT MODAL -->
 <div class="modal-overlay" id="modal-overlay" style="display:none" onclick="handleOverlayClick(event)">
@@ -625,7 +665,7 @@ function todayStr(){var n=new Date();return pad(n.getMonth()+1)+'/'+pad(n.getDat
 function nowStr(){var n=new Date();return pad(n.getMonth()+1)+'/'+pad(n.getDate())+' '+pad(n.getHours())+':'+pad(n.getMinutes());}
 function toast(msg,dur){var t=eid('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},dur||1800);}
 function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}
-function renderAll(){renderGreeting();renderCaptureTags();renderTodayTasks();renderAllTasks();renderNotes();renderBooks();updateBadge();}
+function renderAll(){renderGreeting();renderCaptureTags();renderTodayTasks();renderAllTasks();renderNotes();renderReviewPage();renderBooks();updateBadge();}
 
 /* ── TIME PARSING ── */
 function parseNaturalDate(text){
@@ -719,7 +759,7 @@ function taskHtml(t){
       linksHtml+
       '<div class="task-meta">'+(t.tag?'<span class="task-tag">'+esc(t.tag)+'</span>':'')+
       '<span class="task-date'+(overdue?' overdue':'')+'">'+dateLabel+(overdue?' · 逾期':'')+'</span>'+
-      (hasChain?'<span class="task-chain-badge">🔗</span>':'')+
+      (hasChain?'<span class="task-chain-badge" title="查看任务链">⇢</span>':'')+
       (t.images&&t.images.length?'<span class="task-img-badge">🖼 '+t.images.length+'</span>':'')+
       '</div>'+
     '</div>'+
@@ -930,7 +970,7 @@ function openEditTask(id){
     childrenHtml=t.childIds.map(function(cid){
       var c=S.tasks.find(function(x){return x.id===cid;});
       if(!c)return'';
-      return'<div class="chain-item chain-child'+(c.done?' chain-done':'')+'" onclick="closeModal();setTimeout(function(){openEditTask(\''+c.id+'\')},100)">'+(c.done?'✓ ':'↓ ')+esc(c.title)+'<span class="chain-date">'+c.date+'</span></div>';
+      return'<div class="chain-item chain-child'+(c.done?' chain-done':'')+'" onclick="closeModal();setTimeout(function(){openEditTask(\''+c.id+'\')},100)">'+(c.done?'✓ ':'→ ')+esc(c.title)+'<span class="chain-date">'+c.date+'</span></div>';
     }).join('');
   }
   var chainHtml=(parentHtml||childrenHtml)?
@@ -1100,7 +1140,7 @@ function handleOverlayClick(e){if(e.target===eid('modal-overlay'))closeModal();}
 /* ── NOTES ── */
 /* ── NOTE CUSTOM CATS ── */
 function getNoteCustomCats(){
-  try{return JSON.parse(localStorage.getItem('ws_note_cats')||'null')||NOTE_CATS.map(function(c){return c.id;});}catch(e){return NOTE_CATS.map(function(c){return c.id;});}
+  try{return JSON.parse(localStorage.getItem('ws_note_cats')||'null')||NOTE_CATS.filter(function(c){return c.id!=='review';}).map(function(c){return c.id;});}catch(e){return NOTE_CATS.map(function(c){return c.id;});}
 }
 function saveNoteCustomCats(ids){localStorage.setItem('ws_note_cats',JSON.stringify(ids));}
 
@@ -1482,7 +1522,7 @@ function clearLocalData(){
 }
 
 /* ── TABS ── */
-var PAGE_TITLES={'today':'今日','tasks':'全部任务','notes':'笔记','books':'读书笔记'};
+var PAGE_TITLES={'today':'今日','tasks':'全部任务','notes':'笔记','review':'每日复盘','books':'读书笔记'};
 function switchTab(tab){
   document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active');});
   document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
@@ -1495,8 +1535,84 @@ function switchTab(tab){
   if(tab==='today'){renderTodayTasks();renderGreeting();}
   if(tab==='tasks')renderAllTasks();
   if(tab==='notes')renderNotes();
+  if(tab==='review')renderReviewPage();
   if(tab==='books')renderBooks();
 }
+
+/* ── REVIEW PAGE ── */
+function renderReviewPage(){
+  var el=eid('review-list');if(!el)return;
+  var reviews=S.notes.filter(function(n){return n.cat==='review';})
+    .slice().sort(function(a,b){return b.created-a.created;});
+  if(!reviews.length){
+    el.innerHTML='<div class="empty-state"><div class="empty-icon">🌙</div><p>还没有复盘记录<br>点右上角「新建复盘」开始今天的复盘</p></div>';
+    return;
+  }
+  el.innerHTML=reviews.map(function(n){
+    var parts=parseReviewBody(n.body||'');
+    var preview=parts.find(function(p){return p.trim();});
+    return'<div class="note-card-free cat-review" onclick="openReviewDetail(\''+n.id+'\')">'+
+      '<div class="note-card-title">'+esc(n.title||'复盘')+'</div>'+
+      (preview?'<div class="note-card-body" style="-webkit-line-clamp:2">'+esc(preview.slice(0,80))+'</div>':'')+
+      '<div class="note-card-foot"><span class="note-card-cat" style="color:var(--accent)">复盘</span>'+
+      '<span style="display:flex;align-items:center;gap:8px"><span class="note-card-date">'+n.date+'</span>'+
+      '<button class="note-del-btn" onclick="deleteNote(\''+n.id+'\',event)">删除</button></span></div></div>';
+  }).join('');
+}
+
+function openNewReview(){
+  var today=todayStr();
+  var title='复盘 · '+today;
+  var body=['','','',''].join('\n\n---REVIEW_SEP---\n\n');
+  var note={id:uid(),title:title,body:body,cat:'review',date:nowStr(),created:Date.now()};
+  S.notes.unshift(note);save();
+  openReviewDetail(note.id);
+}
+
+function openReviewDetail(id){
+  var note=S.notes.find(function(n){return n.id===id;});if(!note)return;
+  var panel=eid('review-detail-panel');panel.style.display='block';
+  var REVIEW_QS=[
+    {icon:'🔍',label:'今天最大的收获或突破是什么？'},
+    {icon:'⚠️',label:'出现了什么失误或卡点，怎么避免下次再犯？'},
+    {icon:'💡',label:'有什么新的想法或待验证的判断？'},
+    {icon:'💭',label:'今日心情（选填）'},
+  ];
+  var parsed=parseReviewBody(note.body||'');
+  var bodyContent=REVIEW_QS.map(function(q,i){
+    return'<div class="review-q-block">'+
+      '<div class="review-q-label"><span>'+q.icon+'</span> '+q.label+'</div>'+
+      '<textarea class="review-q-input" id="rq-'+id+'-'+i+'" placeholder="写下你的想法…" oninput="updateReviewField(\''+id+'\','+i+',this.value)">'+esc(parsed[i]||'')+'</textarea>'+
+    '</div>';
+  }).join('');
+  panel.innerHTML='<div class="sub-panel">'+
+    '<div class="sub-panel-header">'+
+      '<button class="back-btn" onclick="closeReviewDetail()">‹ 复盘</button>'+
+      '<span style="font-size:11px;color:var(--text3);margin-left:4px">'+note.date+'</span>'+
+      '<button style="margin-left:auto;background:none;border:none;cursor:pointer;font-size:12px;color:var(--del);padding:4px 8px;border-radius:var(--rxs)" onclick="deleteNote(\''+id+'\',event,true);closeReviewDetail()">删除</button>'+
+    '</div>'+
+    '<div class="sub-panel-body">'+
+      '<input class="note-detail-title-input" id="rv-title-'+id+'" value="'+esc(note.title||'')+'" oninput="updateNoteField(\''+id+'\',\'title\',this.value)" />'+
+      bodyContent+
+    '</div></div>';
+  setTimeout(function(){
+    var firstEmpty=parsed.findIndex(function(v){return !v.trim();});
+    var el=eid('rq-'+id+'-'+(firstEmpty>=0?firstEmpty:0));
+    if(el)el.focus();
+  },100);
+}
+
+function closeReviewDetail(){
+  eid('review-detail-panel').style.display='none';
+  renderReviewPage();
+}
+
+/* also close note detail calls deleteNote with goBack - update review page after */
+var _origDeleteNote=deleteNote;
+deleteNote=function(id,e,goBack){
+  _origDeleteNote(id,e,goBack);
+  renderReviewPage();
+};
 
 /* ── BATCH RESCHEDULE ── */
 function openBatchReschedule(){
