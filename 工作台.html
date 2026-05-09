@@ -414,7 +414,7 @@ body{font-family:'Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:
 <div class="sidebar">
   <div style="margin-bottom:16px;display:flex;flex-direction:column;align-items:center;gap:2px">
     <div style="font-family:'DM Serif Display',serif;font-size:16px;color:var(--text1)">w<em style="font-style:italic;color:var(--accent)">s</em></div>
-    <div style="font-size:9px;color:var(--text3);font-weight:400">v1.6</div>
+    <div style="font-size:9px;color:var(--text3);font-weight:400">v1.7</div>
   </div>
   <div class="sidebar-nav">
     <button class="sidebar-btn active" id="sidebar-today" onclick="switchTab('today')">
@@ -443,7 +443,7 @@ body{font-family:'Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:
 <!-- HEADER (mobile only) -->
 <div class="header">
   <div class="header-row">
-    <div class="wordmark">work<em>space</em><span class="wordmark-ver">v1.6</span></div>
+    <div class="wordmark">work<em>space</em><span class="wordmark-ver">v1.7</span></div>
     <div class="search-trigger" onclick="openSearch()">
       <span style="font-size:13px;color:var(--text3)">🔍</span>
       <span class="search-trigger-text">搜索任务、笔记、读书…</span>
@@ -492,10 +492,14 @@ body{font-family:'Noto Sans SC',system-ui,sans-serif;background:var(--bg);color:
     <div class="wrap">
       <div class="page-header">
         <h2 class="page-title">全部任务</h2>
-        <div class="filter-pills">
-          <button class="filter-pill active" onclick="setFilter('all',this)">全部</button>
-          <button class="filter-pill" onclick="setFilter('todo',this)">待办</button>
-          <button class="filter-pill" onclick="setFilter('done',this)">完成</button>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end">
+          <button class="btn-add" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border2)" onclick="openBatchReschedule()">📅 批量转移</button>
+          <button class="btn-add" style="background:var(--surface2);color:var(--text2);border:1px solid var(--border2)" onclick="openRecurringManager()">🔁 重复任务</button>
+          <div class="filter-pills">
+            <button class="filter-pill active" onclick="setFilter('all',this)">全部</button>
+            <button class="filter-pill" onclick="setFilter('todo',this)">待办</button>
+            <button class="filter-pill" onclick="setFilter('done',this)">完成</button>
+          </div>
         </div>
       </div>
       <div id="all-tasks-list"></div>
@@ -725,7 +729,9 @@ function init(){
   eid('header-date').textContent=dateStr;
   var dd=eid('desktop-header-date');if(dd)dd.textContent=new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
   var dt=eid('desktop-page-title');if(dt)dt.textContent='今日';
+  generateRecurringTasks();
   renderAll();
+  scheduleMidnightRefresh();
   eid('capture-input').addEventListener('keydown',function(e){if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();submitCapture();}});
 }
 
@@ -1191,7 +1197,234 @@ function switchTab(tab){
   if(tab==='books')renderBooks();
 }
 
-init();
+/* ── BATCH RESCHEDULE ── */
+function openBatchReschedule(){
+  // 找出所有未完成且日期不是今天或未来的任务（即"过期未完成"）以及今天未完成的
+  var candidates=S.tasks.filter(function(t){return !t.done;});
+  if(!candidates.length){toast('没有未完成的任务');return;}
+  S._modalAction='batchReschedule';
+  S._batchSelected={};
+  eid('modal-title').textContent='批量转移日期';
+  var rows=candidates.map(function(t){
+    var overdue=t.date&&t.date<todayStr();
+    return'<div class="batch-row" id="brow-'+t.id+'" onclick="toggleBatchSelect(\''+t.id+'\')" style="display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--rxs);cursor:pointer;transition:background .12s;margin-bottom:4px;background:var(--surface2)">'+
+      '<div class="batch-check" id="bchk-'+t.id+'" style="width:18px;height:18px;border-radius:50%;border:1.5px solid var(--border2);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;transition:background .15s,border-color .15s"></div>'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="font-size:13.5px;color:var(--text1);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+esc(t.title)+'</div>'+
+        '<div style="font-size:11px;color:'+(overdue?'var(--del)':'var(--text3)')+'">'+t.date+(overdue?' · 逾期':'')+'</div>'+
+      '</div>'+
+    '</div>';
+  }).join('');
+  eid('modal-body').innerHTML=
+    '<div style="display:flex;gap:8px;margin-bottom:12px;align-items:center">'+
+      '<button onclick="batchSelectAll()" style="height:26px;padding:0 10px;border:1px solid var(--border2);border-radius:var(--rxs);background:transparent;font-size:12px;font-family:inherit;cursor:pointer">全选</button>'+
+      '<button onclick="batchSelectNone()" style="height:26px;padding:0 10px;border:1px solid var(--border2);border-radius:var(--rxs);background:transparent;font-size:12px;font-family:inherit;cursor:pointer">取消全选</button>'+
+      '<span style="font-size:12px;color:var(--text3);margin-left:4px" id="batch-count">已选 0 条</span>'+
+    '</div>'+
+    '<div style="max-height:300px;overflow-y:auto">'+rows+'</div>'+
+    '<div class="modal-field" style="margin-top:14px;margin-bottom:0">'+
+      '<label class="modal-label">转移到</label>'+
+      '<input class="modal-input" id="batch-target-date" placeholder="MM/DD，如 05/09" value="'+tomorrowStr()+'" />'+
+    '</div>';
+  eid('modal-overlay').style.display='flex';
+}
+
+function tomorrowStr(){var d=new Date();d.setDate(d.getDate()+1);return pad(d.getMonth()+1)+'/'+pad(d.getDate());}
+
+function toggleBatchSelect(id){
+  S._batchSelected[id]=!S._batchSelected[id];
+  var chk=eid('bchk-'+id);var row=eid('brow-'+id);
+  if(S._batchSelected[id]){
+    chk.innerHTML='✓';chk.style.background='var(--accent)';chk.style.borderColor='var(--accent)';chk.style.color='#fff';
+    row.style.background='var(--accent-light)';row.style.outline='1px solid var(--accent-border)';
+  }else{
+    chk.innerHTML='';chk.style.background='';chk.style.borderColor='var(--border2)';
+    row.style.background='var(--surface2)';row.style.outline='';
+  }
+  var n=Object.values(S._batchSelected).filter(Boolean).length;
+  eid('batch-count').textContent='已选 '+n+' 条';
+}
+function batchSelectAll(){
+  S.tasks.filter(function(t){return !t.done;}).forEach(function(t){S._batchSelected[t.id]=true;toggleBatchSelect(t.id);S._batchSelected[t.id]=true;});
+  // 重新渲染选中状态
+  S.tasks.filter(function(t){return !t.done;}).forEach(function(t){
+    var chk=eid('bchk-'+t.id);var row=eid('brow-'+t.id);
+    if(!chk)return;
+    chk.innerHTML='✓';chk.style.background='var(--accent)';chk.style.borderColor='var(--accent)';chk.style.color='#fff';
+    row.style.background='var(--accent-light)';row.style.outline='1px solid var(--accent-border)';
+  });
+  var n=S.tasks.filter(function(t){return !t.done;}).length;
+  eid('batch-count').textContent='已选 '+n+' 条';
+}
+function batchSelectNone(){
+  Object.keys(S._batchSelected).forEach(function(id){
+    S._batchSelected[id]=false;
+    var chk=eid('bchk-'+id);var row=eid('brow-'+id);
+    if(!chk)return;
+    chk.innerHTML='';chk.style.background='';chk.style.borderColor='var(--border2)';
+    row.style.background='var(--surface2)';row.style.outline='';
+  });
+  eid('batch-count').textContent='已选 0 条';
+}
+
+/* ── RECURRING TASKS ── */
+// repeat: {type:'daily'|'weekly'|'monthly', weekday:0-6(仅weekly), day:1-31(仅monthly)}
+function openRecurringManager(){
+  var recurring=S.tasks.filter(function(t){return t.repeat&&!t._isRecurringTemplate===false;});
+  // 实际存储：repeat 模板任务，用 isTemplate:true 标记
+  var templates=S.tasks.filter(function(t){return t.isTemplate;});
+  S._modalAction='recurringManager';
+  eid('modal-title').textContent='重复任务';
+  var WEEK=['周日','周一','周二','周三','周四','周五','周六'];
+  var repeatLabel=function(t){
+    if(!t.repeat)return'';
+    if(t.repeat.type==='daily')return'每天';
+    if(t.repeat.type==='weekly')return'每'+WEEK[t.repeat.weekday||1];
+    if(t.repeat.type==='monthly')return'每月'+t.repeat.day+'日';
+    return'';
+  };
+  var listHtml=templates.length?templates.map(function(t){
+    return'<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:var(--rxs);margin-bottom:6px">'+
+      '<div style="flex:1;min-width:0">'+
+        '<div style="font-size:13.5px;font-weight:500;color:var(--text1)">'+esc(t.title)+'</div>'+
+        '<div style="font-size:11px;color:var(--accent);margin-top:2px">🔁 '+repeatLabel(t)+'</div>'+
+      '</div>'+
+      '<button onclick="deleteTemplate(\''+t.id+'\');renderRecurringList()" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--del);padding:4px 8px;border-radius:var(--rxs)">删除</button>'+
+    '</div>';
+  }).join(''):'<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">还没有重复任务</div>';
+
+  eid('modal-body').innerHTML=
+    '<div id="recurring-list">'+listHtml+'</div>'+
+    '<div style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px">'+
+      '<div style="font-size:12px;font-weight:500;color:var(--text2);margin-bottom:10px">添加重复任务</div>'+
+      '<div class="modal-field"><label class="modal-label">任务名称</label><input class="modal-input" id="rec-title" placeholder="任务名称" /></div>'+
+      '<div class="modal-field"><label class="modal-label">重复频率</label>'+
+        '<select class="modal-select" id="rec-type" onchange="updateRecurringFields()">'+
+          '<option value="daily">每天</option>'+
+          '<option value="weekly">每周（指定星期）</option>'+
+          '<option value="monthly">每月（指定日期）</option>'+
+        '</select>'+
+      '</div>'+
+      '<div id="rec-extra"></div>'+
+    '</div>';
+  updateRecurringFields();
+  eid('modal-overlay').style.display='flex';
+}
+
+function updateRecurringFields(){
+  var type=(eid('rec-type')||{}).value;
+  var extra=eid('rec-extra');if(!extra)return;
+  var WEEK=['周日','周一','周二','周三','周四','周五','周六'];
+  if(type==='weekly'){
+    extra.innerHTML='<div class="modal-field"><label class="modal-label">星期几</label>'+
+      '<select class="modal-select" id="rec-weekday">'+
+        WEEK.map(function(w,i){return'<option value="'+i+'"'+(i===1?' selected':'')+'>'+w+'</option>';}).join('')+
+      '</select></div>';
+  }else if(type==='monthly'){
+    extra.innerHTML='<div class="modal-field"><label class="modal-label">每月几号</label>'+
+      '<input class="modal-input" id="rec-day" type="number" min="1" max="31" value="1" placeholder="1-31" /></div>';
+  }else{
+    extra.innerHTML='';
+  }
+}
+
+function deleteTemplate(id){
+  S.tasks=S.tasks.filter(function(t){return t.id!==id;});save();
+}
+
+function renderRecurringList(){
+  var WEEK=['周日','周一','周二','周三','周四','周五','周六'];
+  var templates=S.tasks.filter(function(t){return t.isTemplate;});
+  var repeatLabel=function(t){
+    if(!t.repeat)return'';
+    if(t.repeat.type==='daily')return'每天';
+    if(t.repeat.type==='weekly')return'每'+WEEK[t.repeat.weekday||1];
+    if(t.repeat.type==='monthly')return'每月'+t.repeat.day+'日';
+    return'';
+  };
+  var el=eid('recurring-list');if(!el)return;
+  el.innerHTML=templates.length?templates.map(function(t){
+    return'<div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface2);border-radius:var(--rxs);margin-bottom:6px">'+
+      '<div style="flex:1;min-width:0"><div style="font-size:13.5px;font-weight:500;color:var(--text1)">'+esc(t.title)+'</div>'+
+      '<div style="font-size:11px;color:var(--accent);margin-top:2px">🔁 '+repeatLabel(t)+'</div></div>'+
+      '<button onclick="deleteTemplate(\''+t.id+'\');renderRecurringList()" style="background:none;border:none;cursor:pointer;font-size:13px;color:var(--del);padding:4px 8px;border-radius:var(--rxs)">删除</button>'+
+    '</div>';
+  }).join(''):'<div style="text-align:center;padding:20px;color:var(--text3);font-size:13px">还没有重复任务</div>';
+}
+
+function shouldGenerateToday(template,today){
+  var r=template.repeat;if(!r)return false;
+  var now=new Date();
+  if(r.type==='daily')return true;
+  if(r.type==='weekly')return now.getDay()===r.weekday;
+  if(r.type==='monthly')return now.getDate()===r.day;
+  return false;
+}
+
+function generateRecurringTasks(){
+  var today=todayStr();
+  var templates=S.tasks.filter(function(t){return t.isTemplate;});
+  var generated=false;
+  templates.forEach(function(tmpl){
+    if(!shouldGenerateToday(tmpl,today))return;
+    // 检查今天是否已有该模板生成的未完成任务
+    var existing=S.tasks.find(function(t){return t.fromTemplate===tmpl.id&&t.date===today&&!t.done;});
+    if(existing)return;
+    // 生成新任务
+    S.tasks.unshift({id:uid(),title:tmpl.title,tag:tmpl.tag||null,date:today,done:false,created:Date.now(),fromTemplate:tmpl.id});
+    generated=true;
+  });
+  if(generated){save();renderTodayTasks();renderAllTasks();updateBadge();toast('🔁 重复任务已自动生成');}
+}
+
+/* ── MIDNIGHT AUTO-REFRESH ── */
+function scheduleMidnightRefresh(){
+  var now=new Date();
+  var midnight=new Date(now.getFullYear(),now.getMonth(),now.getDate()+1,0,0,5); // 凌晨00:00:05
+  var ms=midnight-now;
+  setTimeout(function(){
+    generateRecurringTasks();
+    renderAll(); // 刷新今日列表、日期显示等
+    var dd=eid('desktop-header-date');
+    if(dd)dd.textContent=new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
+    scheduleMidnightRefresh(); // 递归，下一天继续
+  },ms);
+}
+
+// 更新 confirmModal 增加 batchReschedule 和 recurringManager 处理
+var _origConfirmModal=confirmModal;
+confirmModal=function(){
+  if(S._modalAction==='batchReschedule'){
+    var targetDate=(eid('batch-target-date').value||'').trim();
+    if(!targetDate){toast('请填写目标日期');return;}
+    var ids=Object.keys(S._batchSelected).filter(function(id){return S._batchSelected[id];});
+    if(!ids.length){toast('请至少选择一条任务');return;}
+    ids.forEach(function(id){
+      var t=S.tasks.find(function(x){return x.id===id;});
+      if(t&&!t.done)t.date=targetDate;
+    });
+    save();renderTodayTasks();renderAllTasks();closeModal();
+    toast('已将 '+ids.length+' 条任务转移到 '+targetDate+' ✓');
+    return;
+  }
+  if(S._modalAction==='recurringManager'){
+    var title=(eid('rec-title')||{}).value||'';title=title.trim();
+    if(!title){toast('请填写任务名称');return;}
+    var type=(eid('rec-type')||{}).value||'daily';
+    var repeat={type:type};
+    if(type==='weekly'){var wd=eid('rec-weekday');repeat.weekday=wd?parseInt(wd.value):1;}
+    if(type==='monthly'){var rd=eid('rec-day');repeat.day=rd?parseInt(rd.value):1;}
+    S.tasks.push({id:uid(),title:title,tag:null,date:'',done:false,created:Date.now(),isTemplate:true,repeat:repeat});
+    save();
+    toast('重复任务已添加 ✓');
+    renderRecurringList();
+    // 清空输入
+    eid('rec-title').value='';
+    generateRecurringTasks(); // 立即检查今天是否需要生成
+    return;
+  }
+  _origConfirmModal();
+};
 </script>
 </body>
 </html>
