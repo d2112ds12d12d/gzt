@@ -339,6 +339,14 @@
   "books": [],
   "notes": [
     {
+      "id": "mp0l7ppt8ol",
+      "title": "",
+      "body": "",
+      "cat": "experience",
+      "date": "05/11 10:33",
+      "created": 1778466800369
+    },
+    {
       "id": "moztezrkij7",
       "title": "看板搭建-经验沉淀",
       "body": "1、输出的成品要及时保存到本地，不然通过记录找到之前文件的链接下载的也是最新版资料；\n2、",
