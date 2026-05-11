@@ -1,6 +1,16 @@
 {
   "tasks": [
     {
+      "id": "mp0jkqm0d4m",
+      "title": "新人吴日荣、黄浩瀚交付情况跟进",
+      "tag": null,
+      "date": "05/11",
+      "done": false,
+      "created": 1778464048824,
+      "parentId": "mowo5sfly81",
+      "pinned": true
+    },
+    {
       "id": "mp0jfs8zrwa",
       "title": "13号早上后即可完成扣订阅",
       "tag": null,
@@ -190,7 +200,8 @@
       "pinned": true,
       "links": [],
       "childIds": [
-        "moybjgjwii4"
+        "moybjgjwii4",
+        "mp0jkqm0d4m"
       ]
     },
     {
