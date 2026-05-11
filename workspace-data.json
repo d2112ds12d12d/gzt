@@ -1,12 +1,27 @@
 {
   "tasks": [
     {
+      "id": "mp0yfhqxx6t",
+      "title": "查看评审会的会议回放，制作月度标准变更培训的课件（访问密码：6ZP4）",
+      "tag": null,
+      "date": "05/11",
+      "done": false,
+      "created": 1778488998297,
+      "links": [
+        {
+          "url": "https://meeting.tencent.com/crm/KPW4Oggmfd",
+          "text": "https://meeting.tencent.com/crm/KPW4Oggmfd"
+        }
+      ]
+    },
+    {
       "id": "mp0y3ba5532",
       "title": "有效质检月度标准变更培训群内通知",
       "tag": null,
       "date": "05/11",
       "done": false,
-      "created": 1778488430045
+      "created": 1778488430045,
+      "pinned": true
     },
     {
       "id": "mp0vj3p6q5m",
