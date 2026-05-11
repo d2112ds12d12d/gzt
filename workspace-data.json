@@ -126,16 +126,6 @@
       ]
     },
     {
-      "id": "moxs57ekamw",
-      "title": "上传星级图片",
-      "tag": null,
-      "date": "05/11",
-      "done": false,
-      "created": 1778297042108,
-      "parentId": "mowdi5j95lq",
-      "note": ""
-    },
-    {
       "id": "moxqlsgbof6",
       "title": "T-7 名单公布&差异赋能",
       "tag": null,
@@ -424,6 +414,7 @@
   "deletedIds": [
     "moy714623sv",
     "moy7wbz80be",
-    "moxvtxav2z4"
+    "moxvtxav2z4",
+    "moxs57ekamw"
   ]
 }
