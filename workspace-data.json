@@ -12,7 +12,8 @@
           "url": "https://meeting.tencent.com/crm/KPW4Oggmfd",
           "text": "https://meeting.tencent.com/crm/KPW4Oggmfd"
         }
-      ]
+      ],
+      "pinned": true
     },
     {
       "id": "mp0y3ba5532",
@@ -36,7 +37,8 @@
           "text": "https://zzasc.zhuanspirit.com/#/judgment/aftersale/list"
         }
       ],
-      "note": "结合雅典娜、擎天和标准，给问题定责"
+      "note": "结合雅典娜、擎天和标准，给问题定责",
+      "pinned": true
     },
     {
       "id": "mp0n7kub9ea",
