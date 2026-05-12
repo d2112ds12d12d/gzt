@@ -1,6 +1,14 @@
 {
   "tasks": [
     {
+      "id": "mp2kz32h4vr",
+      "title": "触发机制迭代",
+      "tag": null,
+      "date": "05/12",
+      "done": false,
+      "created": 1778587330121
+    },
+    {
       "id": "mp2i698tzzd",
       "title": "写周报",
       "tag": null,
@@ -291,7 +299,7 @@
       "title": "找工艺拉齐激光雷达特殊案例的判定规则（不同环境有红色、有些环境是黑色）",
       "tag": null,
       "date": "05/12",
-      "done": false,
+      "done": true,
       "created": 1778212054496,
       "note": "",
       "pinned": true,
