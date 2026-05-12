@@ -6,14 +6,15 @@
       "tag": null,
       "date": "05/12",
       "done": false,
-      "created": 1778589521840
+      "created": 1778589521840,
+      "pinned": true
     },
     {
       "id": "mp2m5h5sxce",
       "title": "询问金果什么时候勾选气密不检测？",
       "tag": null,
       "date": "05/12",
-      "done": false,
+      "done": true,
       "created": 1778589307936,
       "pinned": true
     },
