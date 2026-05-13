@@ -357,6 +357,9 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .prog-text{font-size:10px;color:var(--text3)}
 .quad-add-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:4px;background:transparent;border:none;color:var(--text4);font-size:11px;font-family:inherit;cursor:pointer;padding:5px 0 2px;transition:color .12s}
 .quad-add-btn:hover{color:var(--accent)}
+.mtask-del-btn{opacity:0;width:20px;height:20px;border-radius:50%;border:none;background:transparent;color:var(--text4);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:opacity .12s,color .12s,background .12s;line-height:1;padding:0}
+.mtask:hover .mtask-del-btn{opacity:1}
+.mtask-del-btn:hover{color:var(--del);background:rgba(255,59,48,.1)}
 /* capture tag for quadrant */
 .capture-quad-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;padding:0 12px 8px}
 .capture-quad-btn{height:22px;padding:0 10px;border-radius:11px;border:1px solid var(--border2);background:rgba(118,118,128,.06);font-size:11px;color:var(--text2);cursor:pointer;font-family:inherit;transition:all .12s;white-space:nowrap}
@@ -1960,14 +1963,19 @@ function mTaskHtml(t,qid){
   return'<div class="mtask'+(t.done?' done-task':'')+'" id="mti-'+t.id+'" draggable="true" '+
     'data-id="'+t.id+'" data-quad="'+(t.quadrant||'q2')+'">'+
     '<span class="mtask-drag-handle" title="拖拽换象限">⠿</span>'+
-    '<div class="mtask-check" onclick="toggleTaskMatrix(\''+t.id+'\')">'+
-      (t.done?'<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 3.5L3.5 6L9 1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>':'')+
+    '<div class="mtask-check" onclick="toggleTaskMatrix(\''+t.id+'\')">'+(t.done?'<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 3.5L3.5 6L9 1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>':'')+
     '</div>'+
-    '<div style="flex:1;min-width:0" onclick="openEditTask(\''+t.id+'\')">'+
-      '<div class="mtask-title">'+esc(t.title)+'</div>'+
-      (t.tag||t.pinned?'<div class="mtask-meta">'+(t.pinned?'📌 ':'')+esc(t.tag||'')+'</div>':'')+
+    '<div style="flex:1;min-width:0" onclick="openEditTask(\''+t.id+'\')">'+'<div class="mtask-title">'+esc(t.title)+'</div>'+(t.tag||t.pinned?'<div class="mtask-meta">'+(t.pinned?'📌 ':'')+esc(t.tag||'')+'</div>':'')+
     '</div>'+
+    '<button class="mtask-del-btn" onclick="deleteTaskMatrix(\''+t.id+'\',event)" title="删除">×</button>'+
   '</div>';
+}
+
+function deleteTaskMatrix(id,e){
+  if(e)e.stopPropagation();
+  S.tasks=S.tasks.filter(function(x){return x.id!==id;});
+  if(S.deletedIds.indexOf(id)===-1)S.deletedIds.push(id);
+  save();renderTodayTasks();renderAllTasks();renderGreeting();updateBadge();toast('已删除');
 }
 
 function toggleTaskMatrix(id){
