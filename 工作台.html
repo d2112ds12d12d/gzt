@@ -313,6 +313,55 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 @media(max-width:767px){.sidebar{display:none}.desktop-topbar{display:none}.app-body{display:contents}}
 .batch-row{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--rs);cursor:pointer;transition:background .12s;margin-bottom:4px;background:rgba(118,118,128,.06)}
 .batch-check{width:18px;height:18px;border-radius:50%;border:1.5px solid var(--surface4);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .15s}
+
+/* ── MATRIX VIEW ── */
+.view-toggle-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px}
+.view-toggle-bar .section-label{margin-bottom:0}
+.view-seg{display:flex;background:rgba(118,118,128,.1);border-radius:8px;padding:2px;gap:1px}
+.view-seg-btn{height:26px;padding:0 12px;border-radius:6px;border:none;background:transparent;font-size:12px;font-weight:500;color:var(--text3);cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:4px;transition:all .15s}
+.view-seg-btn.active{background:var(--surface);color:var(--accent);box-shadow:0 1px 4px rgba(0,0,0,.1)}
+.matrix-wrap{display:grid;grid-template-columns:1fr 1fr;grid-template-rows:auto auto;gap:10px;padding-bottom:80px}
+.matrix-axis-x{grid-column:1/-1;display:flex;justify-content:space-between;padding:0 4px;margin-bottom:-4px}
+.matrix-axis-x span{font-size:10px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text4)}
+.matrix-quad{border-radius:var(--r);padding:10px;min-height:160px;border:1.5px solid transparent;transition:border-color .2s,box-shadow .2s;position:relative}
+.matrix-quad.drag-over{border-color:var(--accent)!important;box-shadow:0 0 0 3px var(--accent-light);transform:scale(1.01)}
+.quad-q1{background:#fffbf0;border-color:rgba(255,149,0,.2)}
+.quad-q2{background:#f0f8ff;border-color:rgba(0,122,255,.15)}
+.quad-q3{background:#fff5f5;border-color:rgba(255,59,48,.15)}
+.quad-q4{background:var(--surface2);border-color:var(--border)}
+.quad-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.quad-label{font-size:9.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:2px 7px;border-radius:5px}
+.ql-q1{background:rgba(255,149,0,.15);color:#a66000}
+.ql-q2{background:rgba(0,122,255,.12);color:#004fad}
+.ql-q3{background:rgba(255,59,48,.12);color:#b0160c}
+.ql-q4{background:rgba(118,118,128,.12);color:#636366}
+.quad-count{font-size:10px;font-weight:600;color:var(--text3)}
+.quad-hint{font-size:10px;color:var(--text4);margin-bottom:6px;line-height:1.4}
+.mtask{background:var(--surface);border:1px solid var(--border);border-radius:var(--rxs);padding:8px 10px;margin-bottom:5px;display:flex;align-items:flex-start;gap:8px;cursor:grab;transition:box-shadow .15s,transform .15s,opacity .15s;box-shadow:var(--shadow-xs);user-select:none}
+.mtask:active{cursor:grabbing}
+.mtask.dragging{opacity:.4;transform:scale(.97)}
+.mtask.drag-placeholder{background:var(--accent-light);border:1.5px dashed var(--accent-border);box-shadow:none}
+.mtask-check{width:16px;height:16px;border-radius:50%;border:1.5px solid var(--surface4);flex-shrink:0;margin-top:1px;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .15s}
+.mtask.done-task .mtask-check{background:var(--done);border-color:var(--done)}
+.mtask-title{font-size:12.5px;color:var(--text1);line-height:1.4;flex:1;word-break:break-all}
+.mtask.done-task .mtask-title{color:var(--text4);text-decoration:line-through}
+.mtask-meta{font-size:10px;color:var(--text3);margin-top:2px}
+.mtask-drag-handle{font-size:12px;color:var(--text4);cursor:grab;flex-shrink:0;margin-top:2px;opacity:.5;transition:opacity .12s}
+.mtask:hover .mtask-drag-handle{opacity:1}
+.quad-empty{text-align:center;padding:18px 8px;color:var(--text4);font-size:11.5px;border:1.5px dashed var(--border);border-radius:var(--rxs);cursor:default}
+.focus-bar-matrix{background:var(--surface);border-radius:var(--rs);border:1px solid var(--border);padding:9px 12px;margin-bottom:12px;display:flex;align-items:center;gap:10px;box-shadow:var(--shadow-xs)}
+.focus-badge{font-size:10px;font-weight:700;background:rgba(255,149,0,.15);color:#a66000;padding:2px 8px;border-radius:5px;letter-spacing:.03em;text-transform:uppercase;white-space:nowrap}
+.focus-progress{display:flex;align-items:center;gap:6px;margin-left:auto;flex-shrink:0}
+.prog-bar{width:56px;height:4px;background:var(--surface3);border-radius:2px;overflow:hidden}
+.prog-fill{height:100%;background:var(--warn);border-radius:2px;transition:width .3s}
+.prog-text{font-size:10px;color:var(--text3)}
+.quad-add-btn{width:100%;display:flex;align-items:center;justify-content:center;gap:4px;background:transparent;border:none;color:var(--text4);font-size:11px;font-family:inherit;cursor:pointer;padding:5px 0 2px;transition:color .12s}
+.quad-add-btn:hover{color:var(--accent)}
+/* capture tag for quadrant */
+.capture-quad-row{display:flex;gap:5px;flex-wrap:wrap;margin-top:6px;padding:0 12px 8px}
+.capture-quad-btn{height:22px;padding:0 10px;border-radius:11px;border:1px solid var(--border2);background:rgba(118,118,128,.06);font-size:11px;color:var(--text2);cursor:pointer;font-family:inherit;transition:all .12s;white-space:nowrap}
+.capture-quad-btn:hover{background:var(--accent-light);border-color:var(--accent-border);color:var(--accent)}
+.capture-quad-btn.selected{background:var(--accent-light);border-color:var(--accent-border);color:var(--accent);font-weight:500}
 </style>
 </head>
 <body>
@@ -391,9 +440,23 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
           <div class="capture-tags" id="capture-tags"></div>
           <button class="capture-submit" onclick="submitCapture()">添加</button>
         </div>
+        <div class="capture-quad-row" id="capture-quad-row" style="display:none">
+          <span style="font-size:11px;color:var(--text3);line-height:22px;flex-shrink:0">象限：</span>
+          <button class="capture-quad-btn" onclick="selectQuad('q1',this)">Q1 立即做</button>
+          <button class="capture-quad-btn selected" onclick="selectQuad('q2',this)">Q2 计划做</button>
+          <button class="capture-quad-btn" onclick="selectQuad('q3',this)">Q3 授权做</button>
+          <button class="capture-quad-btn" onclick="selectQuad('q4',this)">Q4 考虑删</button>
+        </div>
       </div>
-      <div class="section-label">今日待办</div>
+      <div class="view-toggle-bar">
+        <div class="section-label" style="margin-bottom:0">今日待办</div>
+        <div class="view-seg">
+          <button class="view-seg-btn active" id="vbtn-list" onclick="switchView('list')">☰ 列表</button>
+          <button class="view-seg-btn" id="vbtn-matrix" onclick="switchView('matrix')">⊞ 四象限</button>
+        </div>
+      </div>
       <div id="today-tasks-list"></div>
+      <div id="today-matrix-view" style="display:none"></div>
     </div>
   </div>
 
@@ -558,6 +621,8 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 /* ── STATE ── */
 var S={tasks:[],books:[],notes:[],deletedIds:[],selectedTag:null,taskFilter:'all',currentTab:'today',_modalAction:null,_editingTaskId:null,_noteFilter:'all'};
 var TAGS=['工作','学习','生活','其他'];
+var _currentView='list';
+var _selectedQuad='q2';
 var NOTE_CATS=[
   {id:'experience',label:'经验'},{id:'method',label:'方法'},
   {id:'idea',label:'想法'},{id:'review',label:'复盘'},
@@ -722,6 +787,7 @@ function submitCapture(){
   var cleanTitle=urls.length?title.replace(URL_RE,'').trim():title;
   var links=urls.map(function(u){return{url:u,text:u};});
   var task={id:uid(),title:cleanTitle||title,tag:S.selectedTag,date:date,done:false,created:Date.now()};
+  if(_currentView==='matrix')task.quadrant=_selectedQuad||'q2';
   if(links.length)task.links=links;
   S.tasks.unshift(task);
   save();inp.value='';inp.style.height='auto';eid('date-preview').innerHTML='';_parsedDate=null;S.selectedTag=null;
@@ -1807,6 +1873,167 @@ function scheduleMidnightRefresh(){
     scheduleMidnightRefresh(); // 递归，下一天继续
   },ms);
 }
+
+/* ── MATRIX VIEW ── */
+var QUADS=[
+  {id:'q1',label:'Q1 · 立即做',cls:'ql-q1',quadCls:'quad-q1',hint:'重要 + 紧急'},
+  {id:'q2',label:'Q2 · 计划做',cls:'ql-q2',quadCls:'quad-q2',hint:'重要 + 不紧急'},
+  {id:'q3',label:'Q3 · 授权做',cls:'ql-q3',quadCls:'quad-q3',hint:'不重要 + 紧急'},
+  {id:'q4',label:'Q4 · 考虑删',cls:'ql-q4',quadCls:'quad-q4',hint:'不重要 + 不紧急'}
+];
+
+function selectQuad(q,btn){
+  _selectedQuad=q;
+  document.querySelectorAll('.capture-quad-btn').forEach(function(b){b.classList.remove('selected');});
+  if(btn)btn.classList.add('selected');
+}
+
+function switchView(v){
+  _currentView=v;
+  var isList=v==='list';
+  eid('today-tasks-list').style.display=isList?'':'none';
+  eid('today-matrix-view').style.display=isList?'none':'block';
+  eid('vbtn-list').classList.toggle('active',isList);
+  eid('vbtn-matrix').classList.toggle('active',!isList);
+  // show/hide quadrant selector in capture box
+  var qrow=eid('capture-quad-row');
+  if(qrow)qrow.style.display=isList?'none':'flex';
+  if(!isList)renderMatrixView();
+}
+
+function renderMatrixView(){
+  var el=eid('today-matrix-view');if(!el)return;
+  var today=todayStr();
+  var tasks=S.tasks.filter(function(t){return t.date===today&&!t.done;});
+  var done=S.tasks.filter(function(t){return t.date===today&&t.done;});
+
+  // count for focus bar
+  var total=tasks.length+done.length;
+  var doneCount=done.length;
+  var focusTask=tasks.find(function(t){return t.quadrant==='q1'&&t.pinned;})||tasks.find(function(t){return t.quadrant==='q1';})||tasks[0];
+
+  var focusHtml='';
+  if(total>0){
+    var pct=total>0?Math.round(doneCount/total*100):0;
+    focusHtml='<div class="focus-bar-matrix">'+
+      '<span class="focus-badge">🎯 今日焦点</span>'+
+      '<span style="font-size:12px;color:var(--text1);font-weight:500;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin:0 10px">'+(focusTask?esc(focusTask.title):'今日暂无待办')+'</span>'+
+      '<div class="focus-progress">'+
+        '<div class="prog-bar"><div class="prog-fill" style="width:'+pct+'%"></div></div>'+
+        '<span class="prog-text">'+doneCount+' / '+total+'</span>'+
+      '</div>'+
+    '</div>';
+  }
+
+  var axisHtml='<div class="matrix-axis-x">'+
+    '<span>⚡ 紧急</span><span>不紧急 →</span>'+
+  '</div>';
+
+  var quadsHtml=QUADS.map(function(q){
+    var qtasks=tasks.filter(function(t){return t.quadrant===q.id;});
+    // unassigned tasks go to q2 by default
+    if(q.id==='q2'){
+      var unassigned=tasks.filter(function(t){return !t.quadrant;});
+      qtasks=qtasks.concat(unassigned);
+    }
+    var tasksHtml=qtasks.map(function(t){return mTaskHtml(t,q.id);}).join('');
+    if(!tasksHtml)tasksHtml='<div class="quad-empty">拖入任务</div>';
+    return'<div class="matrix-quad '+q.quadCls+'" id="quad-'+q.id+'" '+
+      'ondragover="matrixDragOver(event,\''+q.id+'\')" '+
+      'ondragleave="matrixDragLeave(event,\''+q.id+'\')" '+
+      'ondrop="matrixDrop(event,\''+q.id+'\')">'+
+      '<div class="quad-header">'+
+        '<span class="quad-label '+q.cls+'">'+q.label+'</span>'+
+        '<span class="quad-count">'+qtasks.length+'</span>'+
+      '</div>'+
+      '<div class="quad-hint">'+q.hint+'</div>'+
+      '<div class="mtask-list" id="mtl-'+q.id+'">'+tasksHtml+'</div>'+
+      '<button class="quad-add-btn" onclick="quickAddToQuad(\''+q.id+'\')">＋ 添加</button>'+
+    '</div>';
+  }).join('');
+
+  el.innerHTML=focusHtml+axisHtml+'<div class="matrix-wrap">'+quadsHtml+'</div>';
+  initMatrixDrag();
+}
+
+function mTaskHtml(t,qid){
+  return'<div class="mtask'+(t.done?' done-task':'')+'" id="mti-'+t.id+'" draggable="true" '+
+    'data-id="'+t.id+'" data-quad="'+(t.quadrant||'q2')+'">'+
+    '<span class="mtask-drag-handle" title="拖拽换象限">⠿</span>'+
+    '<div class="mtask-check" onclick="toggleTaskMatrix(\''+t.id+'\')">'+
+      (t.done?'<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><path d="M1 3.5L3.5 6L9 1" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>':'')+
+    '</div>'+
+    '<div style="flex:1;min-width:0" onclick="openEditTask(\''+t.id+'\')">'+
+      '<div class="mtask-title">'+esc(t.title)+'</div>'+
+      (t.tag||t.pinned?'<div class="mtask-meta">'+(t.pinned?'📌 ':'')+esc(t.tag||'')+'</div>':'')+
+    '</div>'+
+  '</div>';
+}
+
+function toggleTaskMatrix(id){
+  var t=S.tasks.find(function(x){return x.id===id;});if(!t)return;
+  t.done=!t.done;save();
+  renderTodayTasks();renderMatrixView();renderGreeting();updateBadge();
+}
+
+var _dragId=null;
+function initMatrixDrag(){
+  document.querySelectorAll('.mtask[draggable]').forEach(function(el){
+    el.addEventListener('dragstart',function(e){
+      _dragId=el.dataset.id;
+      el.classList.add('dragging');
+      e.dataTransfer.effectAllowed='move';
+      e.dataTransfer.setData('text/plain',_dragId);
+    });
+    el.addEventListener('dragend',function(e){
+      el.classList.remove('dragging');
+      document.querySelectorAll('.matrix-quad').forEach(function(q){q.classList.remove('drag-over');});
+    });
+  });
+}
+
+function matrixDragOver(e,qid){
+  e.preventDefault();e.dataTransfer.dropEffect='move';
+  document.querySelectorAll('.matrix-quad').forEach(function(q){q.classList.remove('drag-over');});
+  var quad=eid('quad-'+qid);if(quad)quad.classList.add('drag-over');
+}
+function matrixDragLeave(e,qid){
+  // only remove if leaving the quad itself, not a child
+  if(!e.currentTarget.contains(e.relatedTarget)){
+    var quad=eid('quad-'+qid);if(quad)quad.classList.remove('drag-over');
+  }
+}
+function matrixDrop(e,qid){
+  e.preventDefault();
+  var id=_dragId||e.dataTransfer.getData('text/plain');
+  if(!id)return;
+  var t=S.tasks.find(function(x){return x.id===id;});
+  if(t&&t.quadrant!==qid){
+    t.quadrant=qid;
+    save();
+    toast(QUADS.find(function(q){return q.id===qid;}).label.split(' · ')[1]+' ✓');
+  }
+  _dragId=null;
+  document.querySelectorAll('.matrix-quad').forEach(function(q){q.classList.remove('drag-over');});
+  renderMatrixView();
+}
+
+function quickAddToQuad(qid){
+  var inp=eid('capture-input');
+  if(inp)inp.focus();
+  _selectedQuad=qid;
+  document.querySelectorAll('.capture-quad-btn').forEach(function(b){
+    var bq=b.textContent.toLowerCase();
+    b.classList.toggle('selected',bq.indexOf(qid)!==-1);
+  });
+}
+
+// patch renderTodayTasks to also refresh matrix if open
+var _origRenderTodayTasks=renderTodayTasks;
+renderTodayTasks=function(){
+  _origRenderTodayTasks();
+  if(_currentView==='matrix')renderMatrixView();
+};
 
 // 更新 confirmModal 增加 batchReschedule 和 recurringManager 处理
 var _origConfirmModal=confirmModal;
