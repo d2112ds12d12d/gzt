@@ -1,6 +1,14 @@
 {
   "tasks": [
     {
+      "id": "mp3qp78lckq",
+      "title": "新人交付看板迭代",
+      "tag": null,
+      "date": "05/13",
+      "done": false,
+      "created": 1778657412837
+    },
+    {
       "id": "mp2ma27k4vc",
       "title": "优化 授课 PPT（有效的屏幕 IC 封胶到底要不要豁免LG 个例案例？）",
       "tag": null,
