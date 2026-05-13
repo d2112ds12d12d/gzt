@@ -1,6 +1,16 @@
 {
   "tasks": [
     {
+      "id": "mp3zjdzr2mn",
+      "title": "0513 拆修刷题任务推送(设定晚上推送）",
+      "tag": null,
+      "date": "05/13",
+      "done": false,
+      "created": 1778672258199,
+      "parentId": "moybc6heh19",
+      "pinned": true
+    },
+    {
       "id": "mp3quhkkxhl",
       "title": "培训回放&考试推送",
       "tag": null,
@@ -191,13 +201,16 @@
       "title": "0512 拆修刷题任务推送(设定晚上推送）",
       "tag": null,
       "date": "05/13",
-      "done": false,
+      "done": true,
       "created": 1778329280210,
       "parentId": "moy6ef6jtav",
       "pinned": true,
       "note": "",
       "links": [],
-      "quadrant": "q1"
+      "quadrant": "q1",
+      "childIds": [
+        "mp3zjdzr2mn"
+      ]
     },
     {
       "id": "moy708hzslp",
