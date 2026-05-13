@@ -70,21 +70,6 @@
       "pinned": true
     },
     {
-      "id": "mp0yfhqxx6t",
-      "title": "查看评审会的会议回放，制作月度标准变更培训的课件（访问密码：6ZP4）",
-      "tag": null,
-      "date": "05/13",
-      "done": false,
-      "created": 1778488998297,
-      "links": [
-        {
-          "url": "https://meeting.tencent.com/crm/KPW4Oggmfd",
-          "text": "https://meeting.tencent.com/crm/KPW4Oggmfd"
-        }
-      ],
-      "pinned": false
-    },
-    {
       "id": "mp0vj3p6q5m",
       "title": "本周售后TOP10的售后问题分析（最晚周二下班前完成）",
       "tag": null,
@@ -578,6 +563,7 @@
     "moxs57ekamw",
     "mp2ahn2kunc",
     "mp0y3ba5532",
-    "moydewyrc5a"
+    "moydewyrc5a",
+    "mp0yfhqxx6t"
   ]
 }
