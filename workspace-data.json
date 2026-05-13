@@ -253,15 +253,6 @@
       ]
     },
     {
-      "id": "moy4r7blhxt",
-      "title": "现有业务的质量复盘是否有效？是否有迭代空间？",
-      "tag": null,
-      "date": "05/13",
-      "done": false,
-      "created": 1778318223825,
-      "parentId": "moxyai22pw7"
-    },
-    {
       "id": "moxyai22pw7",
       "title": "差异核对（黄浩瀚、刘陶胜）",
       "tag": null,
@@ -576,6 +567,7 @@
     "movm15vaf9t",
     "moydfb9b3s5",
     "mp0n7kub9ea",
-    "mp0j16vv7ig"
+    "mp0j16vv7ig",
+    "moy4r7blhxt"
   ]
 }
