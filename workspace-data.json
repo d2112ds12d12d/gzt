@@ -176,15 +176,6 @@
       "created": 1778332785599
     },
     {
-      "id": "moydewyrc5a",
-      "title": "新人交付看板优化",
-      "tag": null,
-      "date": "05/13",
-      "done": false,
-      "created": 1778332767075,
-      "pinned": true
-    },
-    {
       "id": "moybjgjwii4",
       "title": "拆修、复测新人肖体贵、曹剑材交付通知（另外需更新公表）",
       "tag": null,
@@ -586,6 +577,7 @@
     "moxvtxav2z4",
     "moxs57ekamw",
     "mp2ahn2kunc",
-    "mp0y3ba5532"
+    "mp0y3ba5532",
+    "moydewyrc5a"
   ]
 }
