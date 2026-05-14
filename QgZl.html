@@ -470,7 +470,19 @@
         }
         .zb-nav-item:hover { background: rgba(59,130,246,0.06); color: var(--btn-bg); }
         .zb-nav-item.active { background: rgba(59,130,246,0.08); color: var(--btn-bg); border-left-color: var(--btn-bg); font-weight: 600; }
-        .zb-sidebar-footer { margin-top: auto; padding: 10px 14px; border-top: 1px solid var(--border-color); font-size: 10px; color: var(--text-secondary); }
+        .zb-sidebar-footer { margin-top: auto; border-top: 1px solid var(--border-color); }
+        .zb-user-block { display:flex; align-items:center; gap:10px; padding:12px 14px; cursor:pointer; transition:background 0.15s; }
+        .zb-user-block:hover { background:rgba(59,130,246,0.05); }
+        .zb-avatar { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; flex-shrink:0; background:#dbeafe; color:#1d4ed8; }
+        .zb-avatar.viewer { background:var(--kpi-bg); color:var(--text-secondary); }
+        .zb-uname { font-size:12px; font-weight:600; color:var(--text-primary); line-height:1.3; }
+        .zb-urole { font-size:10px; color:#93c5fd; margin-top:1px; }
+        .zb-login-block { padding:12px 14px; }
+        .zb-login-lbl { font-size:10px; color:var(--text-secondary); margin-bottom:6px; }
+        .zb-login-input { width:100%; height:30px; border:1px solid var(--border-color); border-radius:8px; background:var(--filter-input-bg); color:var(--text-primary); font-size:11px; padding:0 10px; outline:none; box-sizing:border-box; }
+        .zb-login-btn { width:100%; margin-top:6px; height:28px; background:var(--btn-bg); color:#fff; border:none; border-radius:8px; font-size:11px; font-weight:600; cursor:pointer; transition:background 0.15s; }
+        .zb-login-btn:hover { background:var(--btn-hover); }
+        .zb-login-hint { font-size:10px; color:#ef4444; min-height:14px; margin-top:4px; }
         #zb-main { flex: 1; overflow-y: auto; min-width: 0; padding: 20px 24px; }
         /* 页面切换 */
         .zb-page { display: none; }
@@ -482,20 +494,31 @@
   <!-- 侧边栏 -->
   <nav id="zb-sidebar">
     <div class="zb-logo">
-      <div class="zb-brand">数据监察看板</div>
-      <div class="zb-sub">培训部 · 内部数据平台</div>
+      <div class="zb-brand">培训部数据看板</div>
+      <div class="zb-sub">内部数据平台</div>
     </div>
     <div class="zb-nav-lbl">数据模块</div>
     <div class="zb-nav-item active" onclick="zbNav('overview',this)">📊 数据总览</div>
     <div class="zb-nav-item" onclick="zbNav('detail',this)">🔍 差异明细</div>
-    <div class="zb-sidebar-footer">
-        <div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:6px;">
-            <span id="chip-qa" style="font-size:10px;padding:2px 7px;border-radius:8px;background:var(--kpi-bg);border:1px solid var(--border-color);color:var(--text-secondary);">📊 QA差异率</span>
-            <span id="chip-diff5" style="font-size:10px;padding:2px 7px;border-radius:8px;background:var(--kpi-bg);border:1px solid var(--border-color);color:var(--text-secondary);">📋 手机明细</span>
-            <span id="chip-sum" style="font-size:10px;padding:2px 7px;border-radius:8px;background:var(--kpi-bg);border:1px solid var(--border-color);color:var(--text-secondary);">📈 日汇总</span>
-            <span id="chip-diff4" style="font-size:10px;padding:2px 7px;border-radius:8px;background:var(--kpi-bg);border:1px solid var(--border-color);color:var(--text-secondary);">📋 五品类明细</span>
+    <div class="zb-sidebar-footer" id="zbSidebarFooter">
+      <!-- 未登录：显示登录框 -->
+      <div id="zbLoginBlock" class="zb-login-block">
+        <div class="zb-login-lbl">登录身份</div>
+        <input type="password" id="zbSidebarPwd" class="zb-login-input" placeholder="输入密码或 Token…" onkeydown="if(event.key==='Enter')zbSidebarLogin()">
+        <button class="zb-login-btn" onclick="zbSidebarLogin()">确认登录</button>
+        <div id="zbSidebarHint" class="zb-login-hint"></div>
+      </div>
+      <!-- 已登录：显示用户信息 -->
+      <div id="zbUserBlock" class="zb-user-block" style="display:none;" onclick="zbSidebarUserClick()">
+        <div id="zbSidebarAvatar" class="zb-avatar viewer">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </div>
-        <div style="font-size:10px;color:var(--text-secondary);">v4.0 · 培训部看板</div>
+        <div style="flex:1;min-width:0;">
+          <div id="zbSidebarName" class="zb-uname">访客</div>
+          <div id="zbSidebarRole" class="zb-urole" style="display:none;">管理</div>
+        </div>
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
     </div>
   </nav>
   <!-- 右侧主内容（原封不动） -->
@@ -526,11 +549,10 @@
                     </button>
                 </div>
                 <div class="right-buttons">
-                    <span id="zbRoleBadge" onclick="zbBadgeClick()" style="font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;cursor:pointer;border:1px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);transition:all .15s;">👁 查看者</span>
                     <button id="themeToggleBtn" class="theme-btn">🌙 夜间模式</button>
-                    <label for="combinedFileInput" class="upload-btn" style="cursor:pointer;display:none;">📁 上传文件</label>
+                    <label id="zbUploadBtnLabel" for="combinedFileInput" class="upload-btn" style="cursor:pointer;display:none;">📁 上传文件</label>
                     <button onclick="zbOpenLog()" class="theme-btn">📋 日志</button>
-                    <button id="exportDataBtn" class="export-btn" title="导出当前筛选明细">📤 导出Excel</button>
+                    <button id="exportDataBtn" class="export-btn" title="导出当前筛选明细" style="display:none;">📤 导出Excel</button>
                 </div>
                 <input type="file" id="combinedFileInput" style="display:none;" accept=".xlsx,.xls" multiple>
                 <input type="file" id="phoneFileInput" style="display:none;" accept=".xlsx,.xls" multiple>
@@ -2842,71 +2864,97 @@ function zbGetToken() {
     return _tk();
 }
 
+// ── 侧边栏身份区更新 ──
 function zbUpdateRoleBadge() {
-    const badge = document.getElementById('zbRoleBadge');
-    if (!badge) return;
-    if (zbRole === 'super')       { badge.textContent = '⚡ 超管'; badge.style.background = '#7c3aed20'; badge.style.color = '#7c3aed'; }
-    else if (zbRole === 'admin')  { badge.textContent = '🔑 管理员'; badge.style.background = '#2563eb20'; badge.style.color = '#2563eb'; }
-    else                          { badge.textContent = '👁 查看者'; badge.style.background = 'var(--kpi-bg)'; badge.style.color = 'var(--text-secondary)'; }
-    // 上传按钮：管理员及以上可见
-    const uploadBtn = document.querySelector('label[for="combinedFileInput"]');
-    if (uploadBtn) uploadBtn.style.display = (zbRole === 'admin' || zbRole === 'super') ? '' : 'none';
-    const exportBtn = document.getElementById('exportDataBtn');
-    if (exportBtn) exportBtn.style.display = (zbRole === 'admin' || zbRole === 'super') ? '' : 'none';
+    var loginBlock = document.getElementById('zbLoginBlock');
+    var userBlock  = document.getElementById('zbUserBlock');
+    var avatar     = document.getElementById('zbSidebarAvatar');
+    var nameEl     = document.getElementById('zbSidebarName');
+    var roleEl     = document.getElementById('zbSidebarRole');
+    var uploadBtn  = document.getElementById('zbUploadBtnLabel');
+    var exportBtn  = document.getElementById('exportDataBtn');
+    var canEdit    = (zbRole === 'admin' || zbRole === 'super');
+
+    if (uploadBtn) uploadBtn.style.display = canEdit ? '' : 'none';
+    if (exportBtn) exportBtn.style.display = canEdit ? '' : 'none';
+
+    if (zbRole === 'viewer') {
+        if (loginBlock) loginBlock.style.display = '';
+        if (userBlock)  userBlock.style.display  = 'none';
+        return;
+    }
+    // 已登录
+    if (loginBlock) loginBlock.style.display = 'none';
+    if (userBlock)  userBlock.style.display  = 'flex';
+
+    // 头像：管理员蓝色首字，超管紫色
+    if (avatar) {
+        var initials = zbRole === 'super' ? '超' : (zbRole === 'admin' ? '管' : '');
+        avatar.className = 'zb-avatar';
+        if (zbRole === 'super') { avatar.style.background='#ede9fe'; avatar.style.color='#6d28d9'; }
+        else { avatar.style.background='#dbeafe'; avatar.style.color='#1d4ed8'; }
+        avatar.textContent = initials;
+    }
+    if (nameEl) nameEl.textContent = zbRole === 'super' ? '超级管理员' : '管理员';
+    if (roleEl) {
+        roleEl.style.display = canEdit ? '' : 'none';
+        roleEl.textContent = zbRole === 'super' ? '超管' : '管理';
+    }
 }
 
-// ── 登录弹窗 ──
-function zbBadgeClick() {
-    if (zbRole === 'viewer') zbOpenLogin();
-    else zbLogout();
-}
-
-function zbOpenLogin() {
-    document.getElementById('zbLoginModal').style.display = 'flex';
-    setTimeout(() => document.getElementById('zbLoginPwd').focus(), 100);
-}
-function zbCloseLogin() {
-    document.getElementById('zbLoginModal').style.display = 'none';
-    document.getElementById('zbLoginPwd').value = '';
-    document.getElementById('zbLoginHint').textContent = '';
-}
-async function zbConfirmLogin() {
-    const v = document.getElementById('zbLoginPwd').value.trim();
-    if (!v) { document.getElementById('zbLoginHint').textContent = '请输入密码'; return; }
-    document.getElementById('zbLoginHint').textContent = '验证中…';
-    // 超管：Token验证（ghp_开头或超长字符串）
-    if (v.startsWith('ghp_') || v.length > 30) {
+// ── 侧边栏登录 ──
+async function zbSidebarLogin() {
+    var input = document.getElementById('zbSidebarPwd');
+    var hint  = document.getElementById('zbSidebarHint');
+    if (!input) return;
+    var v = input.value.trim();
+    if (!v) { hint.textContent = '请输入密码'; return; }
+    hint.textContent = '验证中…';
+    // 超管Token
+    if (v.startsWith('ghp_') || v.startsWith('github_pat_') || v.length > 30) {
         try {
-            const r = await fetch(`https://api.github.com/repos/${GH_USER}/${GH_REPO}`, { headers: { Authorization: 'token ' + v } });
+            var r = await fetch('https://api.github.com/repos/' + GH_USER + '/' + GH_REPO, { headers: { Authorization: 'token ' + v } });
             if (r.ok) {
                 zbRole = 'super'; zbToken = v;
                 localStorage.setItem('zb_role', 'super');
                 localStorage.setItem('zb_token', v);
-                zbCloseLogin(); zbUpdateRoleBadge();
+                input.value = ''; hint.textContent = '';
+                zbUpdateRoleBadge();
                 showToast('⚡ 超管模式已激活');
                 return;
             }
         } catch(e) {}
-        document.getElementById('zbLoginHint').textContent = 'Token无效，请重试';
+        hint.textContent = 'Token无效，请重试';
         return;
     }
-    // 管理员：密码验证
+    // 管理员密码
     if (v === ADMIN_PASSWORD) {
         zbRole = 'admin';
         localStorage.setItem('zb_role', 'admin');
-        zbCloseLogin(); zbUpdateRoleBadge();
+        input.value = ''; hint.textContent = '';
+        zbUpdateRoleBadge();
         showToast('✅ 已登录为管理员');
         return;
     }
-    document.getElementById('zbLoginHint').textContent = '密码错误';
+    hint.textContent = '密码错误';
 }
-function zbLogout() {
+
+// ── 侧边栏头像点击（退出） ──
+function zbSidebarUserClick() {
+    if (!confirm('确认退出登录？')) return;
     zbRole = 'viewer'; zbToken = '';
     localStorage.removeItem('zb_role');
     localStorage.removeItem('zb_token');
     zbUpdateRoleBadge();
     showToast('已退出登录');
 }
+
+// ── 兼容旧弹窗调用（保留以防万一） ──
+function zbBadgeClick() { }
+function zbOpenLogin() { }
+function zbCloseLogin() { }
+async function zbConfirmLogin() { }
+function zbLogout() { zbSidebarUserClick(); }
 
 // ── 云端拉取 ──
 async function zbLoadCloudData() {
