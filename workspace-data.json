@@ -43,17 +43,6 @@
       "pinned": true
     },
     {
-      "id": "mp4tw2c1pup",
-      "title": "调研张杰关于拆修专项的事情",
-      "tag": null,
-      "date": "05/14",
-      "done": false,
-      "created": 1778723238097,
-      "note": "1、后验的同学月考考的是现象值还是有效；\n2、后验的同学是否需要切单独的现象值刷题，不然白刷？",
-      "links": [],
-      "pinned": false
-    },
-    {
       "id": "mp4tbzg9d6f",
       "title": "月度标准变更内容同步拆修、复测",
       "tag": null,
@@ -654,6 +643,7 @@
     "moydfb9b3s5",
     "mp0n7kub9ea",
     "mp0j16vv7ig",
-    "moy4r7blhxt"
+    "moy4r7blhxt",
+    "mp4tw2c1pup"
   ]
 }
