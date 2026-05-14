@@ -864,7 +864,7 @@
             })();
 
             function normalizeLevel3(val) { let t = val?.trim(); return t && t !== "" ? t : "（错判）"; }
-            function showToast(msg, isError = false, detailHtml = '') {
+            window.showToast = function showToast(msg, isError = false, detailHtml = '') {
                 let t = document.querySelector('.toast-msg');
                 if (!t) { t = document.createElement('div'); t.className = 'toast-msg'; document.body.appendChild(t); }
                 if (isError) {
@@ -1908,7 +1908,7 @@
                 root.innerHTML = html;
             }
 
-            function fullRefresh() {
+            window.fullRefresh = function fullRefresh() {
                 if (!diffData.length && !summaryData.length) { clearAllPanels(); return; }
                 currentFilteredDiff = filterDiffData(diffData).slice().sort((a,b) => (a.date||'').localeCompare(b.date||''));
                 detailCurrentOffset = 0;
@@ -2031,7 +2031,7 @@
             // ── 当前选中品类（全局） ──
             let currentCat = '手机';
 
-            function bridgeData() {
+            window.bridgeData = function bridgeData() {
                 const DW_INSPECTOR_SITES = ['转转-青岛智能验机中心','转转-成都智能验机中心','转转-深圳智能验机中心'];
                 function mapDiff5(r) {
                     return {
@@ -2084,7 +2084,7 @@
             }
 
             // ── 你的上传逻辑（多文件、增量、自动识别表类型）──
-            async function processExcelFiles(files) {
+            window.processExcelFiles = async function processExcelFiles(files) {
                 if (!files.length) return;
                 showLoading();
                 showToast('正在解析…');
