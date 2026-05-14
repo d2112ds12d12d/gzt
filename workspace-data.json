@@ -1,6 +1,14 @@
 {
   "tasks": [
     {
+      "id": "mp5g4fttswk",
+      "title": "星级培训",
+      "tag": null,
+      "date": "05/14",
+      "done": false,
+      "created": 1778760580385
+    },
+    {
       "id": "mp5g1168go9",
       "title": "星级宣导（星期一早上）",
       "tag": null,
