@@ -2962,19 +2962,29 @@ async function zbPushToGitHub(tableType) {
     if (!fname || !window._DATA) return false;
     const keyMap = { qa:'qa', diff5:'diff5', sum:'sum', diff4:'diff4' };
     const dataKey = keyMap[tableType] || tableType;
-    const content = { rows: window._DATA[dataKey] || [], updated: new Date().toISOString() };
-    const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 0))));
+    const rows = window._DATA[dataKey] || [];
+    const content = { rows: rows, updated: new Date().toISOString() };
+    let b64 = '';
+    try {
+        const jsonStr = JSON.stringify(content, null, 0);
+        const bytes = new TextEncoder().encode(jsonStr);
+        let binary = '';
+        bytes.forEach(function(b){ binary += String.fromCharCode(b); });
+        b64 = btoa(binary);
+    } catch(e) { console.error('base64编码失败:', e); return false; }
     let sha = '';
     try {
         const r = await fetch(ghUrl(fname), { headers: { Authorization: 'token ' + token } });
         if (r.ok) { const j = await r.json(); sha = j.sha || ''; }
-    } catch(e) {}
-    const body = { message: `Update ${fname} via dashboard`, content: b64 };
+        else { console.warn('获取SHA失败:', r.status, fname); }
+    } catch(e) { console.warn('获取SHA异常:', e); }
+    const body = { message: 'Update ' + fname + ' via dashboard', content: b64 };
     if (sha) body.sha = sha;
     try {
         const res = await fetch(ghUrl(fname), { method: 'PUT', headers: { Authorization: 'token ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        if (!res.ok) { const errText = await res.text(); console.error('推送失败 ' + fname + ':', res.status, errText); }
         return res.ok;
-    } catch(e) { return false; }
+    } catch(e) { console.error('推送异常:', e); return false; }
 }
 
 // ── 推送修改记录 ──
@@ -3429,6 +3439,7 @@ async function zbBatchDelete(group) {
       if (typeof bridgeData === 'function') { bridgeData(); if (typeof fullRefresh === 'function') fullRefresh(); }
       zbRenderCloudManager();
       showToast('✅ 已批量删除 ' + keys.length + ' 条手机数据并同步云端');
+      setTimeout(function(){ zbLoadCloudData(); }, 2500);
     } else {
       showToast('⚠️ 本地已删除，但云端同步失败，请重试');
     }
@@ -3445,6 +3456,7 @@ async function zbBatchDelete(group) {
       if (typeof bridgeData === 'function') { bridgeData(); if (typeof fullRefresh === 'function') fullRefresh(); }
       zbRenderCloudManager();
       showToast('✅ 已批量删除 ' + keys.length + ' 条五品类数据并同步云端');
+      setTimeout(function(){ zbLoadCloudData(); }, 2500);
     } else {
       showToast('⚠️ 本地已删除，但云端同步失败，请重试');
     }
