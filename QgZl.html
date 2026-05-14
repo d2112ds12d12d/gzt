@@ -3254,7 +3254,9 @@ function zbRefreshCloud() {
   zbRefreshCloudManual();
 }
 
-// ── 云端管理：按日期+品类列出数据，支持删除 ──
+// ── 云端管理：多选批量删除 ──
+var _zbSelected = { phone: new Set(), five: new Set() };
+
 function zbRenderCloudManager() {
   var el = document.getElementById('zbCloudContent');
   if (!el) return;
@@ -3262,25 +3264,23 @@ function zbRenderCloudManager() {
   if (!DATA) { el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-secondary);font-size:13px;">暂无云端数据</div>'; return; }
   var canEdit = (typeof zbRole !== 'undefined') && (zbRole === 'admin' || zbRole === 'super');
 
-  // 手机组：qa + diff5，按日期聚合
+  // 重置选中状态
+  _zbSelected.phone.clear();
+  _zbSelected.five.clear();
+
+  // 手机组
   var phoneDates = new Set();
   (DATA.qa||[]).forEach(function(r){ if(r.date) phoneDates.add(r.date); });
   (DATA.diff5||[]).forEach(function(r){ if(r.date) phoneDates.add(r.date); });
   var phoneDateList = Array.from(phoneDates).sort().reverse();
 
-  // 五品类组：sum + diff4，按日期+品类聚合
+  // 五品类组
   var fiveCatMap = {};
-  (DATA.sum||[]).forEach(function(r){
-    if(!r.date||!r.cat) return;
-    var key = r.date + '||' + r.cat;
-    fiveCatMap[key] = true;
-  });
-  (DATA.diff4||[]).forEach(function(r){
-    if(!r.date||!r.cat) return;
-    var key = r.date + '||' + r.cat;
-    fiveCatMap[key] = true;
-  });
+  (DATA.sum||[]).forEach(function(r){ if(r.date&&r.cat) fiveCatMap[r.date+'||'+r.cat]=true; });
+  (DATA.diff4||[]).forEach(function(r){ if(r.date&&r.cat) fiveCatMap[r.date+'||'+r.cat]=true; });
   var fiveList = Object.keys(fiveCatMap).sort().reverse();
+
+  var catColors = { '笔记本':'#7c3aed','平板':'#059669','手表':'#d97706','耳机':'#db2777','相机':'#0284c7' };
 
   var html = '';
 
@@ -3291,39 +3291,59 @@ function zbRenderCloudManager() {
     html += '<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:10px 14px;font-size:12px;color:#dc2626;margin-bottom:14px;">⚠️ 删除操作不可撤销，将同步更新云端文件</div>';
   }
 
-  // 手机组
-  html += '<div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:8px;">📱 手机（QA差异率 + 手机差异明细）</div>';
+  // ── 手机组 ──
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">'
+    + '<div style="font-size:13px;font-weight:700;color:var(--text-primary);">📱 手机（QA差异率 + 手机差异明细）</div>';
+  if (canEdit && phoneDateList.length) {
+    html += '<div style="display:flex;gap:6px;">'
+      + '<button onclick="zbSelectAll(\'phone\')" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);cursor:pointer;">全选</button>'
+      + '<button onclick="zbSelectNone(\'phone\')" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);cursor:pointer;">取消</button>'
+      + '<button id="zbPhoneBatchBtn" onclick="zbBatchDelete(\'phone\')" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid #fca5a5;background:#fef2f2;color:#dc2626;cursor:pointer;font-weight:600;display:none;">🗑 批量删除</button>'
+      + '</div>';
+  }
+  html += '</div>';
+
   if (!phoneDateList.length) {
     html += '<div style="font-size:12px;color:var(--text-secondary);padding:8px 0 14px;">暂无数据</div>';
   } else {
     html += '<div style="border:1px solid var(--border-color);border-radius:10px;overflow:hidden;margin-bottom:16px;">';
     phoneDateList.forEach(function(date, i) {
       var bg = i % 2 === 0 ? 'var(--kpi-bg)' : 'var(--bg-card)';
-      html += '<div style="display:flex;align-items:center;padding:9px 14px;background:'+bg+';border-bottom:1px solid var(--border-color);">'
+      html += '<div id="zb-phone-row-'+i+'" style="display:flex;align-items:center;padding:9px 14px;background:'+bg+';border-bottom:1px solid var(--border-color);cursor:'+(canEdit?'pointer':'default')+'" '
+        + (canEdit ? 'onclick="zbToggleSelect(\'phone\',\''+date+'\','+i+')"' : '') + '>'
+        + (canEdit ? '<input type="checkbox" id="zb-phone-cb-'+i+'" data-key="'+date+'" style="margin-right:10px;width:15px;height:15px;cursor:pointer;accent-color:#dc2626;" onclick="event.stopPropagation();zbToggleSelect(\'phone\',\''+date+'\','+i+')">' : '')
         + '<span style="font-size:12px;color:var(--text-primary);flex:1;">'+date+'</span>'
-        + '<span style="font-size:11px;color:#2563eb;background:#2563eb18;padding:2px 8px;border-radius:6px;margin-right:10px;">手机</span>'
-        + (canEdit ? '<button onclick="zbDeletePhoneDate(\''+date+'\')" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid #fca5a5;background:#fef2f2;color:#dc2626;cursor:pointer;font-weight:600;">删除</button>' : '')
+        + '<span style="font-size:11px;color:#2563eb;background:#2563eb18;padding:2px 8px;border-radius:6px;">手机</span>'
         + '</div>';
     });
     html += '</div>';
   }
 
-  // 五品类组
-  html += '<div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:8px;">📦 五品类（日汇总 + 五品类差异明细）</div>';
+  // ── 五品类组 ──
+  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">'
+    + '<div style="font-size:13px;font-weight:700;color:var(--text-primary);">📦 五品类（日汇总 + 五品类差异明细）</div>';
+  if (canEdit && fiveList.length) {
+    html += '<div style="display:flex;gap:6px;">'
+      + '<button onclick="zbSelectAll(\'five\')" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);cursor:pointer;">全选</button>'
+      + '<button onclick="zbSelectNone(\'five\')" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);cursor:pointer;">取消</button>'
+      + '<button id="zbFiveBatchBtn" onclick="zbBatchDelete(\'five\')" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid #fca5a5;background:#fef2f2;color:#dc2626;cursor:pointer;font-weight:600;display:none;">🗑 批量删除</button>'
+      + '</div>';
+  }
+  html += '</div>';
+
   if (!fiveList.length) {
     html += '<div style="font-size:12px;color:var(--text-secondary);padding:8px 0;">暂无数据</div>';
   } else {
-    var catColors = { '笔记本':'#7c3aed', '平板':'#059669', '手表':'#d97706', '耳机':'#db2777', '相机':'#0284c7' };
     html += '<div style="border:1px solid var(--border-color);border-radius:10px;overflow:hidden;">';
     fiveList.forEach(function(key, i) {
-      var parts = key.split('||');
-      var date = parts[0], cat = parts[1];
+      var parts = key.split('||'), date = parts[0], cat = parts[1];
       var cc = catColors[cat] || '#64748b';
       var bg = i % 2 === 0 ? 'var(--kpi-bg)' : 'var(--bg-card)';
-      html += '<div style="display:flex;align-items:center;padding:9px 14px;background:'+bg+';border-bottom:1px solid var(--border-color);">'
+      html += '<div id="zb-five-row-'+i+'" style="display:flex;align-items:center;padding:9px 14px;background:'+bg+';border-bottom:1px solid var(--border-color);cursor:'+(canEdit?'pointer':'default')+'" '
+        + (canEdit ? 'onclick="zbToggleSelect(\'five\',\''+key+'\','+i+')"' : '') + '>'
+        + (canEdit ? '<input type="checkbox" id="zb-five-cb-'+i+'" data-key="'+key+'" style="margin-right:10px;width:15px;height:15px;cursor:pointer;accent-color:#dc2626;" onclick="event.stopPropagation();zbToggleSelect(\'five\',\''+key+'\','+i+')">' : '')
         + '<span style="font-size:12px;color:var(--text-primary);flex:1;">'+date+'</span>'
-        + '<span style="font-size:11px;color:'+cc+';background:'+cc+'18;padding:2px 8px;border-radius:6px;margin-right:10px;">'+cat+'</span>'
-        + (canEdit ? '<button onclick="zbDeleteFiveCat(\''+date+'\',\''+cat+'\')" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid #fca5a5;background:#fef2f2;color:#dc2626;cursor:pointer;font-weight:600;">删除</button>' : '')
+        + '<span style="font-size:11px;color:'+cc+';background:'+cc+'18;padding:2px 8px;border-radius:6px;">'+cat+'</span>'
         + '</div>';
     });
     html += '</div>';
@@ -3332,45 +3352,102 @@ function zbRenderCloudManager() {
   el.innerHTML = html;
 }
 
-// ── 删除手机某日数据并推送 ──
-async function zbDeletePhoneDate(date) {
-  if (!confirm('确认删除 '+date+' 的手机数据？此操作不可撤销。')) return;
-  var DATA = window._DATA;
-  if (!DATA) return;
-  DATA.qa    = (DATA.qa||[]).filter(function(r){ return r.date !== date; });
-  DATA.diff5 = (DATA.diff5||[]).filter(function(r){ return r.date !== date; });
-  zbSetCloudStatus('loading');
-  var ok1 = await zbPushToGitHub('qa');
-  var ok2 = await zbPushToGitHub('diff5');
-  zbSetCloudStatus(ok1 && ok2 ? 'ok' : 'err');
-  if (ok1 && ok2) {
-    zbAddLog({ type:'delete', desc: date+' 手机数据已删除' });
-    if (typeof bridgeData === 'function') { bridgeData(); if (typeof fullRefresh === 'function') fullRefresh(); }
-    zbRenderCloudManager();
-    alert('✅ 已删除并同步到云端');
+// ── 勾选逻辑 ──
+function zbToggleSelect(group, key, idx) {
+  var cb = document.getElementById('zb-'+group+'-cb-'+idx);
+  var row = document.getElementById('zb-'+group+'-row-'+idx);
+  if (!cb) return;
+  var checked = !cb.checked;
+  cb.checked = checked;
+  if (checked) {
+    _zbSelected[group].add(key);
+    if (row) row.style.background = '#fef2f2';
   } else {
-    alert('⚠️ 本地已删除，但云端同步失败，请重试');
+    _zbSelected[group].delete(key);
+    if (row) row.style.background = '';
+  }
+  zbUpdateBatchBtn(group);
+}
+
+function zbSelectAll(group) {
+  document.querySelectorAll('[id^="zb-'+group+'-cb-"]').forEach(function(cb) {
+    cb.checked = true;
+    _zbSelected[group].add(cb.dataset.key);
+    var row = document.getElementById(cb.id.replace('-cb-','-row-'));
+    if (row) row.style.background = '#fef2f2';
+  });
+  zbUpdateBatchBtn(group);
+}
+
+function zbSelectNone(group) {
+  document.querySelectorAll('[id^="zb-'+group+'-cb-"]').forEach(function(cb) {
+    cb.checked = false;
+    var row = document.getElementById(cb.id.replace('-cb-','-row-'));
+    if (row) row.style.background = '';
+  });
+  _zbSelected[group].clear();
+  zbUpdateBatchBtn(group);
+}
+
+function zbUpdateBatchBtn(group) {
+  var btnId = group === 'phone' ? 'zbPhoneBatchBtn' : 'zbFiveBatchBtn';
+  var btn = document.getElementById(btnId);
+  if (!btn) return;
+  var count = _zbSelected[group].size;
+  if (count > 0) {
+    btn.style.display = '';
+    btn.textContent = '🗑 删除已选（' + count + '）';
+  } else {
+    btn.style.display = 'none';
   }
 }
 
-// ── 删除五品类某日某品类数据并推送 ──
-async function zbDeleteFiveCat(date, cat) {
-  if (!confirm('确认删除 '+date+' 的【'+cat+'】数据？此操作不可撤销。')) return;
+// ── 批量删除 ──
+async function zbBatchDelete(group) {
+  var keys = Array.from(_zbSelected[group]);
+  if (!keys.length) return;
   var DATA = window._DATA;
   if (!DATA) return;
-  DATA.sum   = (DATA.sum||[]).filter(function(r){ return !(r.date===date && r.cat===cat); });
-  DATA.diff4 = (DATA.diff4||[]).filter(function(r){ return !(r.date===date && r.cat===cat); });
-  zbSetCloudStatus('loading');
-  var ok1 = await zbPushToGitHub('sum');
-  var ok2 = await zbPushToGitHub('diff4');
-  zbSetCloudStatus(ok1 && ok2 ? 'ok' : 'err');
-  if (ok1 && ok2) {
-    zbAddLog({ type:'delete', desc: date+' '+cat+' 数据已删除' });
-    if (typeof bridgeData === 'function') { bridgeData(); if (typeof fullRefresh === 'function') fullRefresh(); }
-    zbRenderCloudManager();
-    alert('✅ 已删除并同步到云端');
+
+  var label = group === 'phone' ? '手机' : '五品类';
+  var desc = keys.length === 1
+    ? (group === 'phone' ? keys[0] + ' 手机数据' : keys[0].replace('||',' ') + ' 数据')
+    : keys.length + ' 条' + label + '数据';
+
+  if (!confirm('确认批量删除以下 ' + keys.length + ' 项' + label + '数据？\n此操作不可撤销。')) return;
+
+  if (group === 'phone') {
+    var datesToDel = new Set(keys);
+    DATA.qa    = (DATA.qa||[]).filter(function(r){ return !datesToDel.has(r.date); });
+    DATA.diff5 = (DATA.diff5||[]).filter(function(r){ return !datesToDel.has(r.date); });
+    zbSetCloudStatus('loading');
+    var ok1 = await zbPushToGitHub('qa');
+    var ok2 = await zbPushToGitHub('diff5');
+    zbSetCloudStatus(ok1 && ok2 ? 'ok' : 'err');
+    if (ok1 && ok2) {
+      zbAddLog({ type:'delete', desc: desc + ' 已批量删除' });
+      if (typeof bridgeData === 'function') { bridgeData(); if (typeof fullRefresh === 'function') fullRefresh(); }
+      zbRenderCloudManager();
+      showToast('✅ 已批量删除 ' + keys.length + ' 条手机数据并同步云端');
+    } else {
+      showToast('⚠️ 本地已删除，但云端同步失败，请重试');
+    }
   } else {
-    alert('⚠️ 本地已删除，但云端同步失败，请重试');
+    var pairsToDelete = keys.map(function(k){ var p=k.split('||'); return {date:p[0],cat:p[1]}; });
+    DATA.sum   = (DATA.sum||[]).filter(function(r){ return !pairsToDelete.some(function(p){ return p.date===r.date && p.cat===r.cat; }); });
+    DATA.diff4 = (DATA.diff4||[]).filter(function(r){ return !pairsToDelete.some(function(p){ return p.date===r.date && p.cat===r.cat; }); });
+    zbSetCloudStatus('loading');
+    var ok3 = await zbPushToGitHub('sum');
+    var ok4 = await zbPushToGitHub('diff4');
+    zbSetCloudStatus(ok3 && ok4 ? 'ok' : 'err');
+    if (ok3 && ok4) {
+      zbAddLog({ type:'delete', desc: desc + ' 已批量删除' });
+      if (typeof bridgeData === 'function') { bridgeData(); if (typeof fullRefresh === 'function') fullRefresh(); }
+      zbRenderCloudManager();
+      showToast('✅ 已批量删除 ' + keys.length + ' 条五品类数据并同步云端');
+    } else {
+      showToast('⚠️ 本地已删除，但云端同步失败，请重试');
+    }
   }
 }
 
