@@ -6,7 +6,8 @@
       "tag": null,
       "date": "05/15",
       "done": false,
-      "created": 1778776880250
+      "created": 1778776880250,
+      "pinned": true
     },
     {
       "id": "mp5g4fttswk",
@@ -29,7 +30,8 @@
           "url": "https://doc.weixin.qq.com/sheet/e3_AS4AOwZAALMCNwRLo40EqTkG11kKa?scode=AJ4AfQfgAAwZmGMQs6AS4AOwZAALM&journal_source=chat&tab=BB08J2",
           "text": "星级质量训"
         }
-      ]
+      ],
+      "pinned": true
     },
     {
       "id": "mp5g1168go9",
