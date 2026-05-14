@@ -2,12 +2,14 @@
   "tasks": [
     {
       "id": "mp4wzw7mf7d",
-      "title": "星级提升",
+      "title": "星级提升思路整理",
       "tag": null,
       "date": "05/14",
       "done": false,
       "created": 1778728455634,
-      "pinned": true
+      "pinned": true,
+      "note": "1、组长&质检：核对好复测差异，会涉及星级评估和质量改善培训；\n2、培训师：对待复测的差异像对待QA 一样，标准没有或者模糊的不记责；",
+      "links": []
     },
     {
       "id": "mp4txu0t6pg",
