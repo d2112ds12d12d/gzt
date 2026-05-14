@@ -1,6 +1,14 @@
 {
   "tasks": [
     {
+      "id": "mp5d2ti4nqr",
+      "title": "0515拆修刷题任务推送(设定晚上推送）",
+      "tag": null,
+      "date": "05/14",
+      "done": false,
+      "created": 1778755465948
+    },
+    {
       "id": "mp564tliowd",
       "title": "复测看板萃取",
       "tag": null,
@@ -26,7 +34,7 @@
       "title": "星级提升思路整理",
       "tag": null,
       "date": "05/14",
-      "done": false,
+      "done": true,
       "created": 1778728455634,
       "pinned": true,
       "note": "1、组长&质检：核对好复测差异，会涉及星级评估和质量改善培训；\n2、培训师：对待复测的差异像对待QA 一样，标准没有或者模糊的不记责；\n3、复测：拍照清晰、要和质检核对、问题责任清楚",
