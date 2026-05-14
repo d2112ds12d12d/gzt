@@ -8,7 +8,8 @@
       "done": false,
       "created": 1778723238097,
       "note": "1、后验的同学月考考的是现象值还是有效；\n2、后验的同学是否需要切单独的现象值刷题，不然白刷？",
-      "links": []
+      "links": [],
+      "pinned": true
     },
     {
       "id": "mp4tbzg9d6f",
@@ -43,7 +44,7 @@
       "title": "0514 拆修刷题任务推送(设定晚上推送）",
       "tag": null,
       "date": "05/14",
-      "done": false,
+      "done": true,
       "created": 1778672258199,
       "parentId": "moybc6heh19",
       "pinned": true,
