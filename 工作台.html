@@ -445,10 +445,10 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
         </div>
         <div class="capture-quad-row" id="capture-quad-row" style="display:none">
           <span style="font-size:11px;color:var(--text3);line-height:22px;flex-shrink:0">象限：</span>
-          <button class="capture-quad-btn" onclick="selectQuad('q1',this)">Q1 立即做</button>
-          <button class="capture-quad-btn selected" onclick="selectQuad('q2',this)">Q2 计划做</button>
-          <button class="capture-quad-btn" onclick="selectQuad('q3',this)">Q3 授权做</button>
-          <button class="capture-quad-btn" onclick="selectQuad('q4',this)">Q4 考虑删</button>
+          <button class="capture-quad-btn" data-quad="q1" onclick="selectQuad('q1',this)">Q1 立即做</button>
+          <button class="capture-quad-btn selected" data-quad="q2" onclick="selectQuad('q2',this)">Q2 计划做</button>
+          <button class="capture-quad-btn" data-quad="q3" onclick="selectQuad('q3',this)">Q3 授权做</button>
+          <button class="capture-quad-btn" data-quad="q4" onclick="selectQuad('q4',this)">Q4 考虑删</button>
         </div>
       </div>
       <div class="view-toggle-bar">
@@ -871,6 +871,7 @@ function renderTodayTasks(){
   var el=eid('today-tasks-list');
   var today=sortTasks(S.tasks.filter(function(t){return t.date===todayStr();}));
   el.innerHTML=today.length?today.map(taskHtml).join(''):'<div class="empty-state"><div class="empty-icon">🌿</div><p>今天还没有待办<br>用上面的输入框快速添加</p></div>';
+  if(_currentView==='matrix')renderMatrixView();
 }
 
 function renderAllTasks(){
@@ -1891,6 +1892,15 @@ function selectQuad(q,btn){
   if(btn)btn.classList.add('selected');
 }
 
+function quickAddToQuad(qid){
+  var inp=eid('capture-input');
+  if(inp)inp.focus();
+  _selectedQuad=qid;
+  document.querySelectorAll('.capture-quad-btn').forEach(function(b){
+    b.classList.toggle('selected', b.dataset.quad===qid);
+  });
+}
+
 function switchView(v){
   _currentView=v;
   var isList=v==='list';
@@ -1933,11 +1943,12 @@ function renderMatrixView(){
   '</div>';
 
   var quadsHtml=QUADS.map(function(q){
-    var qtasks=tasks.filter(function(t){return t.quadrant===q.id;});
-    // unassigned tasks go to q2 by default
+    var qtasks;
     if(q.id==='q2'){
-      var unassigned=tasks.filter(function(t){return !t.quadrant;});
-      qtasks=qtasks.concat(unassigned);
+      // show tasks explicitly assigned to q2 plus unassigned tasks (no duplicates)
+      qtasks=tasks.filter(function(t){return !t.quadrant||t.quadrant===q.id;});
+    } else {
+      qtasks=tasks.filter(function(t){return t.quadrant===q.id;});
     }
     var tasksHtml=qtasks.map(function(t){return mTaskHtml(t,q.id);}).join('');
     if(!tasksHtml)tasksHtml='<div class="quad-empty">拖入任务</div>';
@@ -1993,8 +2004,9 @@ function initMatrixDrag(){
       e.dataTransfer.effectAllowed='move';
       e.dataTransfer.setData('text/plain',_dragId);
     });
-    el.addEventListener('dragend',function(e){
+    el.addEventListener('dragend',function(){
       el.classList.remove('dragging');
+      _dragId=null;
       document.querySelectorAll('.matrix-quad').forEach(function(q){q.classList.remove('drag-over');});
     });
   });
@@ -2014,34 +2026,23 @@ function matrixDragLeave(e,qid){
 function matrixDrop(e,qid){
   e.preventDefault();
   var id=_dragId||e.dataTransfer.getData('text/plain');
-  if(!id)return;
-  var t=S.tasks.find(function(x){return x.id===id;});
-  if(t&&t.quadrant!==qid){
-    t.quadrant=qid;
-    save();
-    toast(QUADS.find(function(q){return q.id===qid;}).label.split(' · ')[1]+' ✓');
-  }
   _dragId=null;
   document.querySelectorAll('.matrix-quad').forEach(function(q){q.classList.remove('drag-over');});
+  if(!id)return;
+  var t=S.tasks.find(function(x){return x.id===id;});
+  var currentQuad=t?t.quadrant||'q2':'q2';
+  if(t&&currentQuad!==qid){
+    t.quadrant=qid;
+    save();
+    var qdef=QUADS.find(function(q){return q.id===qid;});
+    if(qdef)toast(qdef.hint+' ✓');
+  }
   renderMatrixView();
 }
 
-function quickAddToQuad(qid){
-  var inp=eid('capture-input');
-  if(inp)inp.focus();
-  _selectedQuad=qid;
-  document.querySelectorAll('.capture-quad-btn').forEach(function(b){
-    var bq=b.textContent.toLowerCase();
-    b.classList.toggle('selected',bq.indexOf(qid)!==-1);
-  });
-}
 
-// patch renderTodayTasks to also refresh matrix if open
-var _origRenderTodayTasks=renderTodayTasks;
-renderTodayTasks=function(){
-  _origRenderTodayTasks();
-  if(_currentView==='matrix')renderMatrixView();
-};
+
+// renderTodayTasks already calls renderMatrixView when needed (see below)
 
 // 更新 confirmModal 增加 batchReschedule 和 recurringManager 处理
 var _origConfirmModal=confirmModal;
