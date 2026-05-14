@@ -518,6 +518,13 @@
                 <div class="marquee-wrap">
                     <span class="marquee-inner">欢迎使用数据监察看板 · 上传 QA差异率表 + 手机差异明细表即可查看数据 · 点击图表/表格可下钻查看明细 · 数据驱动，精益求精</span>
                 </div>
+                <!-- 云端状态 + 刷新按钮 -->
+                <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
+                    <span id="zbCloudStatus" style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;border:1px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);white-space:nowrap;">⏳ 连接中</span>
+                    <button id="zbRefreshBtn" onclick="zbRefreshCloudManual()" title="点击从GitHub拉取最新数据" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:5px 14px;border-radius:20px;border:1px solid #3b82f6;background:#eff6ff;color:#2563eb;cursor:pointer;white-space:nowrap;transition:all 0.2s;">
+                        🔄 刷新云端
+                    </button>
+                </div>
                 <div class="right-buttons">
                     <span id="zbRoleBadge" onclick="zbBadgeClick()" style="font-size:11px;font-weight:600;padding:4px 12px;border-radius:20px;cursor:pointer;border:1px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);transition:all .15s;">👁 查看者</span>
                     <button id="themeToggleBtn" class="theme-btn">🌙 夜间模式</button>
@@ -2938,10 +2945,12 @@ async function zbLoadCloudData() {
     } catch(e) {}
     if (loaded > 0) {
         showToast(`✅ 云端数据已加载（${loaded}/4）`);
+        if (typeof zbSetCloudStatus === 'function') zbSetCloudStatus('ok');
         if (typeof bridgeData === 'function') bridgeData();
         if (typeof fullRefresh === 'function') fullRefresh();
     } else {
         showToast('云端暂无数据，请上传文件');
+        if (typeof zbSetCloudStatus === 'function') zbSetCloudStatus('err');
     }
 }
 
@@ -3048,26 +3057,59 @@ function zbNav(name, el) {
 
 <!-- 日志弹窗 -->
 <div id="zbLogModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.45);z-index:800;align-items:center;justify-content:center;backdrop-filter:blur(6px);" onclick="if(event.target===this)zbCloseLog()">
-  <div style="background:var(--bg-card,#fff);border-radius:18px;width:640px;max-width:92vw;max-height:78vh;display:flex;flex-direction:column;border:1px solid var(--border-color);box-shadow:0 20px 40px rgba(0,0,0,0.2);">
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:16px 20px 12px;border-bottom:1px solid var(--border-color);">
-      <div style="font-size:14px;font-weight:700;color:var(--text-primary);">📋 上传日志</div>
+  <div style="background:var(--bg-card,#fff);border-radius:18px;width:680px;max-width:94vw;max-height:82vh;display:flex;flex-direction:column;border:1px solid var(--border-color);box-shadow:0 20px 40px rgba(0,0,0,0.2);">
+    <!-- 弹窗头部 -->
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:14px 20px 0;flex-shrink:0;">
+      <div style="display:flex;gap:0;border:1px solid var(--border-color);border-radius:10px;overflow:hidden;">
+        <button id="zbTabLog" onclick="zbSwitchLogTab('log')" style="padding:6px 18px;font-size:12px;font-weight:600;background:var(--btn-bg);color:white;border:none;cursor:pointer;">📋 上传日志</button>
+        <button id="zbTabCloud" onclick="zbSwitchLogTab('cloud')" style="padding:6px 18px;font-size:12px;font-weight:600;background:transparent;color:var(--text-secondary);border:none;cursor:pointer;">☁️ 云端管理</button>
+      </div>
       <span onclick="zbCloseLog()" style="cursor:pointer;font-size:20px;color:var(--text-secondary);padding:0 6px;line-height:1;">✕</span>
     </div>
+    <!-- 上传日志面板 -->
     <div id="zbLogList" style="flex:1;overflow-y:auto;padding:10px 20px;">
       <div style="text-align:center;padding:24px;color:var(--text-secondary);font-size:13px;">暂无上传记录</div>
+    </div>
+    <!-- 云端管理面板 -->
+    <div id="zbCloudPanel" style="display:none;flex:1;overflow-y:auto;padding:14px 20px;">
+      <div id="zbCloudContent">
+        <div style="text-align:center;padding:24px;color:var(--text-secondary);font-size:13px;">加载中…</div>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
 var _zbLog = JSON.parse(localStorage.getItem('zb_upload_log')||'[]');
+var _zbCurrentLogTab = 'log';
+
 function zbOpenLog(){
   var m=document.getElementById('zbLogModal');
-  if(m){ m.style.display='flex'; _zbRenderLog(); }
+  if(m){ m.style.display='flex'; zbSwitchLogTab(_zbCurrentLogTab); }
 }
 function zbCloseLog(){
   var m=document.getElementById('zbLogModal');
   if(m) m.style.display='none';
+}
+function zbSwitchLogTab(tab){
+  _zbCurrentLogTab = tab;
+  var logPanel = document.getElementById('zbLogList');
+  var cloudPanel = document.getElementById('zbCloudPanel');
+  var tabLog = document.getElementById('zbTabLog');
+  var tabCloud = document.getElementById('zbTabCloud');
+  if(tab==='log'){
+    if(logPanel) logPanel.style.display='';
+    if(cloudPanel) cloudPanel.style.display='none';
+    if(tabLog){ tabLog.style.background='var(--btn-bg)'; tabLog.style.color='white'; }
+    if(tabCloud){ tabCloud.style.background='transparent'; tabCloud.style.color='var(--text-secondary)'; }
+    _zbRenderLog();
+  } else {
+    if(logPanel) logPanel.style.display='none';
+    if(cloudPanel) cloudPanel.style.display='';
+    if(tabCloud){ tabCloud.style.background='var(--btn-bg)'; tabCloud.style.color='white'; }
+    if(tabLog){ tabLog.style.background='transparent'; tabLog.style.color='var(--text-secondary)'; }
+    zbRenderCloudManager();
+  }
 }
 function zbAddLog(entry){
   entry.time = new Date().toISOString();
@@ -3105,6 +3147,232 @@ function _zbRenderLog(){
 }
 
 // 品类切换已在initDashboard内部处理
+
+// ── 云端状态 ──
+function zbSetCloudStatus(status) {
+  var el = document.getElementById('zbCloudStatus');
+  if (!el) return;
+  if (status === 'ok') {
+    el.textContent = '✅ 云端已连接';
+    el.style.color = '#059669';
+    el.style.borderColor = '#86efac';
+    el.style.background = '#f0fdf4';
+    el.style.fontWeight = '700';
+  } else if (status === 'err') {
+    el.textContent = '❌ 云端未连接';
+    el.style.color = '#dc2626';
+    el.style.borderColor = '#fca5a5';
+    el.style.background = '#fef2f2';
+    el.style.fontWeight = '700';
+  } else {
+    el.textContent = '⏳ 连接中…';
+    el.style.color = '#92400e';
+    el.style.borderColor = '#fcd34d';
+    el.style.background = '#fffbeb';
+    el.style.fontWeight = '600';
+  }
+}
+
+// ── 手动刷新按钮 ──
+async function zbRefreshCloudManual() {
+  var btn = document.getElementById('zbRefreshBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.style.opacity = '0.6';
+    btn.style.cursor = 'not-allowed';
+    btn.innerHTML = '<span style="display:inline-block;animation:zbSpin 0.8s linear infinite;">🔄</span>&nbsp;加载中…';
+  }
+  zbSetCloudStatus('loading');
+
+  // 注入旋转动画（仅首次）
+  if (!document.getElementById('zbSpinStyle')) {
+    var s = document.createElement('style');
+    s.id = 'zbSpinStyle';
+    s.textContent = '@keyframes zbSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}';
+    document.head.appendChild(s);
+  }
+
+  var startTime = Date.now();
+  try {
+    await zbLoadCloudData();
+    var elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
+    zbSetCloudStatus('ok');
+    // 成功弹窗提示
+    _zbShowRefreshResult(true, elapsed);
+  } catch(e) {
+    zbSetCloudStatus('err');
+    _zbShowRefreshResult(false, null);
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      btn.style.cursor = 'pointer';
+      btn.innerHTML = '🔄 刷新云端';
+    }
+  }
+}
+
+function _zbShowRefreshResult(success, elapsed) {
+  // 移除旧弹窗
+  var old = document.getElementById('zbRefreshResultToast');
+  if (old) old.remove();
+
+  var toast = document.createElement('div');
+  toast.id = 'zbRefreshResultToast';
+  var msg, bg, border;
+  if (success) {
+    msg = '✅ 云端数据拉取成功！用时 ' + elapsed + 's，看板数据已更新。';
+    bg = '#f0fdf4'; border = '#86efac';
+    toast.style.color = '#15803d';
+  } else {
+    msg = '❌ 云端连接失败，请检查网络或稍后重试。';
+    bg = '#fef2f2'; border = '#fca5a5';
+    toast.style.color = '#dc2626';
+  }
+  toast.style.cssText = [
+    'position:fixed', 'top:70px', 'left:50%', 'transform:translateX(-50%)',
+    'background:' + bg, 'border:1.5px solid ' + border,
+    'padding:12px 24px', 'border-radius:50px', 'font-size:13px',
+    'font-weight:600', 'z-index:9999', 'white-space:nowrap',
+    'box-shadow:0 8px 24px rgba(0,0,0,0.12)',
+    'animation:zbFadeIn 0.25s ease'
+  ].join(';');
+  toast.textContent = msg;
+
+  if (!document.getElementById('zbFadeStyle')) {
+    var s2 = document.createElement('style');
+    s2.id = 'zbFadeStyle';
+    s2.textContent = '@keyframes zbFadeIn{from{opacity:0;transform:translateX(-50%) translateY(-10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}';
+    document.head.appendChild(s2);
+  }
+
+  document.body.appendChild(toast);
+  setTimeout(function(){ if(toast.parentNode) toast.remove(); }, 3500);
+}
+
+function zbRefreshCloud() {
+  zbRefreshCloudManual();
+}
+
+// ── 云端管理：按日期+品类列出数据，支持删除 ──
+function zbRenderCloudManager() {
+  var el = document.getElementById('zbCloudContent');
+  if (!el) return;
+  var DATA = window._DATA;
+  if (!DATA) { el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-secondary);font-size:13px;">暂无云端数据</div>'; return; }
+  var canEdit = (typeof zbRole !== 'undefined') && (zbRole === 'admin' || zbRole === 'super');
+
+  // 手机组：qa + diff5，按日期聚合
+  var phoneDates = new Set();
+  (DATA.qa||[]).forEach(function(r){ if(r.date) phoneDates.add(r.date); });
+  (DATA.diff5||[]).forEach(function(r){ if(r.date) phoneDates.add(r.date); });
+  var phoneDateList = Array.from(phoneDates).sort().reverse();
+
+  // 五品类组：sum + diff4，按日期+品类聚合
+  var fiveCatMap = {};
+  (DATA.sum||[]).forEach(function(r){
+    if(!r.date||!r.cat) return;
+    var key = r.date + '||' + r.cat;
+    fiveCatMap[key] = true;
+  });
+  (DATA.diff4||[]).forEach(function(r){
+    if(!r.date||!r.cat) return;
+    var key = r.date + '||' + r.cat;
+    fiveCatMap[key] = true;
+  });
+  var fiveList = Object.keys(fiveCatMap).sort().reverse();
+
+  var html = '';
+
+  // 权限提示
+  if (!canEdit) {
+    html += '<div style="background:#fef9c3;border:1px solid #fde047;border-radius:10px;padding:10px 14px;font-size:12px;color:#854d0e;margin-bottom:14px;">⚠️ 仅管理员及以上可删除数据</div>';
+  } else {
+    html += '<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:10px 14px;font-size:12px;color:#dc2626;margin-bottom:14px;">⚠️ 删除操作不可撤销，将同步更新云端文件</div>';
+  }
+
+  // 手机组
+  html += '<div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:8px;">📱 手机（QA差异率 + 手机差异明细）</div>';
+  if (!phoneDateList.length) {
+    html += '<div style="font-size:12px;color:var(--text-secondary);padding:8px 0 14px;">暂无数据</div>';
+  } else {
+    html += '<div style="border:1px solid var(--border-color);border-radius:10px;overflow:hidden;margin-bottom:16px;">';
+    phoneDateList.forEach(function(date, i) {
+      var bg = i % 2 === 0 ? 'var(--kpi-bg)' : 'var(--bg-card)';
+      html += '<div style="display:flex;align-items:center;padding:9px 14px;background:'+bg+';border-bottom:1px solid var(--border-color);">'
+        + '<span style="font-size:12px;color:var(--text-primary);flex:1;">'+date+'</span>'
+        + '<span style="font-size:11px;color:#2563eb;background:#2563eb18;padding:2px 8px;border-radius:6px;margin-right:10px;">手机</span>'
+        + (canEdit ? '<button onclick="zbDeletePhoneDate(\''+date+'\')" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid #fca5a5;background:#fef2f2;color:#dc2626;cursor:pointer;font-weight:600;">删除</button>' : '')
+        + '</div>';
+    });
+    html += '</div>';
+  }
+
+  // 五品类组
+  html += '<div style="font-size:13px;font-weight:700;color:var(--text-primary);margin-bottom:8px;">📦 五品类（日汇总 + 五品类差异明细）</div>';
+  if (!fiveList.length) {
+    html += '<div style="font-size:12px;color:var(--text-secondary);padding:8px 0;">暂无数据</div>';
+  } else {
+    var catColors = { '笔记本':'#7c3aed', '平板':'#059669', '手表':'#d97706', '耳机':'#db2777', '相机':'#0284c7' };
+    html += '<div style="border:1px solid var(--border-color);border-radius:10px;overflow:hidden;">';
+    fiveList.forEach(function(key, i) {
+      var parts = key.split('||');
+      var date = parts[0], cat = parts[1];
+      var cc = catColors[cat] || '#64748b';
+      var bg = i % 2 === 0 ? 'var(--kpi-bg)' : 'var(--bg-card)';
+      html += '<div style="display:flex;align-items:center;padding:9px 14px;background:'+bg+';border-bottom:1px solid var(--border-color);">'
+        + '<span style="font-size:12px;color:var(--text-primary);flex:1;">'+date+'</span>'
+        + '<span style="font-size:11px;color:'+cc+';background:'+cc+'18;padding:2px 8px;border-radius:6px;margin-right:10px;">'+cat+'</span>'
+        + (canEdit ? '<button onclick="zbDeleteFiveCat(\''+date+'\',\''+cat+'\')" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid #fca5a5;background:#fef2f2;color:#dc2626;cursor:pointer;font-weight:600;">删除</button>' : '')
+        + '</div>';
+    });
+    html += '</div>';
+  }
+
+  el.innerHTML = html;
+}
+
+// ── 删除手机某日数据并推送 ──
+async function zbDeletePhoneDate(date) {
+  if (!confirm('确认删除 '+date+' 的手机数据？此操作不可撤销。')) return;
+  var DATA = window._DATA;
+  if (!DATA) return;
+  DATA.qa    = (DATA.qa||[]).filter(function(r){ return r.date !== date; });
+  DATA.diff5 = (DATA.diff5||[]).filter(function(r){ return r.date !== date; });
+  zbSetCloudStatus('loading');
+  var ok1 = await zbPushToGitHub('qa');
+  var ok2 = await zbPushToGitHub('diff5');
+  zbSetCloudStatus(ok1 && ok2 ? 'ok' : 'err');
+  if (ok1 && ok2) {
+    zbAddLog({ type:'delete', desc: date+' 手机数据已删除' });
+    if (typeof bridgeData === 'function') { bridgeData(); if (typeof fullRefresh === 'function') fullRefresh(); }
+    zbRenderCloudManager();
+    alert('✅ 已删除并同步到云端');
+  } else {
+    alert('⚠️ 本地已删除，但云端同步失败，请重试');
+  }
+}
+
+// ── 删除五品类某日某品类数据并推送 ──
+async function zbDeleteFiveCat(date, cat) {
+  if (!confirm('确认删除 '+date+' 的【'+cat+'】数据？此操作不可撤销。')) return;
+  var DATA = window._DATA;
+  if (!DATA) return;
+  DATA.sum   = (DATA.sum||[]).filter(function(r){ return !(r.date===date && r.cat===cat); });
+  DATA.diff4 = (DATA.diff4||[]).filter(function(r){ return !(r.date===date && r.cat===cat); });
+  zbSetCloudStatus('loading');
+  var ok1 = await zbPushToGitHub('sum');
+  var ok2 = await zbPushToGitHub('diff4');
+  zbSetCloudStatus(ok1 && ok2 ? 'ok' : 'err');
+  if (ok1 && ok2) {
+    zbAddLog({ type:'delete', desc: date+' '+cat+' 数据已删除' });
+    if (typeof bridgeData === 'function') { bridgeData(); if (typeof fullRefresh === 'function') fullRefresh(); }
+    zbRenderCloudManager();
+    alert('✅ 已删除并同步到云端');
+  } else {
+    alert('⚠️ 本地已删除，但云端同步失败，请重试');
+  }
+}
 
 // ── 上传弹窗 ──
 function zbOpenUpload() {
