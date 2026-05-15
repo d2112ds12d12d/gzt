@@ -539,7 +539,7 @@
         <div class="container">
             <div class="top-bar">
                 <div class="marquee-wrap">
-                    <span class="marquee-inner">欢迎使用数据监察看板 · 上传 QA差异率表 + 手机差异明细表即可查看数据 · 点击图表/表格可下钻查看明细 · 数据驱动，精益求精</span>
+                    <span class="marquee-inner">欢迎使用培训部数据看板 · 数据驱动，精益求精</span>
                 </div>
                 <!-- 云端状态 + 刷新按钮 -->
                 <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
@@ -603,7 +603,7 @@
             <div class="card">
                 <div class="card-title">📈 核心质量指标（点击卡片查看明细）</div>
                 <div class="stats-grid" id="statsArea"></div>
-                <div style="font-size:11px;margin-top:10px;color:var(--text-secondary);">※ 主客观差异量 = 客观差异量 + 主观差异量；客观执行差异率 = 客观+执行问题设备占比</div>
+                <div style="font-size:11px;margin-top:10px;color:var(--text-secondary);">※ 客观执行差异率 = 客观+执行问题设备占比；差异率越低越好，排行榜从低到高排列</div>
             </div>
 
             <!-- 新排行榜 -->
@@ -1030,14 +1030,12 @@
                 const execObjTotal = execCodeSet.size;
                 const mk = (type, val, label, deviceCount) => `<div class="stats-item" data-type="${type}" data-count="${deviceCount||''}"><div class="stats-number">${val}</div><div class="stats-label">${label}</div></div>`;
                 const html =
-                    mk('total_checks', totalChecks,  '总抽检量') +
-                    mk('unique_all',   totalDiff,     '主客观差异量', totalDiff) +
-                    mk('unique_obj',   uniqueCodesObj,   '客观差异量', uniqueCodesObj) +
-                    mk('unique_subj',  uniqueCodesSubj,  '主观差异量', uniqueCodesSubj) +
+                    mk('total_checks', totalChecks,    '总抽检量') +
                     mk('total_diff',   totalChecks?(totalDiff/totalChecks*100).toFixed(2)+'%':'0%',       '主客观差异率',    totalDiff) +
-                    mk('subj_diff',    totalChecks?(uniqueCodesSubj/totalChecks*100).toFixed(2)+'%':'0%', '主观差异率',      uniqueCodesSubj) +
                     mk('obj_diff',     totalChecks?(uniqueCodesObj/totalChecks*100).toFixed(2)+'%':'0%',  '客观差异率',      uniqueCodesObj) +
-                    mk('exec_diff',    totalChecks?(execObjTotal/totalChecks*100).toFixed(2)+'%':'0%',    '客观执行差异率',  execObjTotal);
+                    mk('exec_diff',    totalChecks?(execObjTotal/totalChecks*100).toFixed(2)+'%':'0%',    '客观执行差异率',  execObjTotal) +
+                    mk('exec_count',   execObjTotal,   '客观执行差异量', execObjTotal) +
+                    mk('subj_diff',    totalChecks?(uniqueCodesSubj/totalChecks*100).toFixed(2)+'%':'0%', '主观差异率',      uniqueCodesSubj);
                 statsArea.innerHTML = html;
                 cache.stats = html;
                 cache.filterHash = hash;
@@ -1722,12 +1720,12 @@
 
                 // 大仓
                 // 大仓：智能验机中心（动态排名）+ 后验中心仓（固定在底部）
-                const dwDynRows = buildRows(DW_SITES, false).sort((a,b) => (b.rate||0) - (a.rate||0));
+                const dwDynRows = buildRows(DW_SITES, false).sort((a,b) => (a.rate===null?1:0) - (b.rate===null?1:0) || (a.rate||0) - (b.rate||0));
                 const dwFixRows = buildRows(DW_HOUYAN, true);
                 // 中心仓：排除大仓和后验中心仓，动态排名
                 const allSites = [...new Set([...DATA.qa,...DATA.sum].map(r=>r.site).filter(Boolean))];
                 const zxDynamic = allSites.filter(s => !DW_SITES.includes(s) && !DW_HOUYAN.includes(s));
-                const zxDynRows = buildRows(zxDynamic, false).sort((a,b) => (b.rate||0) - (a.rate||0));
+                const zxDynRows = buildRows(zxDynamic, false).sort((a,b) => (a.rate===null?1:0) - (b.rate===null?1:0) || (a.rate||0) - (b.rate||0));
                 const zxFixRows = [];
 
                 function rateColor(rate) {
@@ -2319,7 +2317,7 @@
                 else if (type === 'total_diff' || type === 'unique_all') { records = currentFilteredDiff; labelName = '差异总量'; }
                 else if (type === 'obj_diff' || type === 'unique_obj') { records = currentFilteredDiff.filter(d => isObjective(d.category)); labelName = '客观差异'; }
                 else if (type === 'subj_diff' || type === 'unique_subj') { records = currentFilteredDiff.filter(d => isSubjective(d.category)); labelName = '主观差异'; }
-                else if (type === 'exec_diff') { records = currentFilteredDiff.filter(d => isObjective(d.category) && isExecutionIssue(d.judgedIssueType)); labelName = '客观执行差异'; }
+                else if (type === 'exec_diff' || type === 'exec_count') { records = currentFilteredDiff.filter(d => isObjective(d.category) && isExecutionIssue(d.judgedIssueType)); labelName = '客观执行差异'; }
                 const countStr = deviceCount ? `${deviceCount} 台设备 · ` : '';
                 if (records.length) openDetailWithData(records, `${labelName}明细（${countStr}${records.length}条）`);
                 else showToast('暂无数据');
