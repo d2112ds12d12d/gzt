@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>数据监察看板｜智能分析</title>
+    <title>培训部数据看板</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -503,8 +503,8 @@
     <div class="zb-sidebar-footer" id="zbSidebarFooter">
       <!-- 未登录：显示登录框 -->
       <div id="zbLoginBlock" class="zb-login-block">
-        <div class="zb-login-lbl">登录身份</div>
-        <input type="password" id="zbSidebarPwd" class="zb-login-input" placeholder="输入密码或 Token…" onkeydown="if(event.key==='Enter')zbSidebarLogin()">
+        <div class="zb-login-lbl">登录 ID</div>
+        <input type="password" id="zbSidebarPwd" class="zb-login-input" placeholder="输入 ID…" onkeydown="if(event.key==='Enter')zbSidebarLogin()">
         <button class="zb-login-btn" onclick="zbSidebarLogin()">确认登录</button>
         <div id="zbSidebarHint" class="zb-login-hint"></div>
       </div>
@@ -542,13 +542,9 @@
                     <span class="marquee-inner">欢迎使用培训部数据看板 · 数据驱动，精益求精</span>
                 </div>
                 <!-- 云端状态 + 刷新按钮 -->
-                <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-                    <span id="zbCloudStatus" style="font-size:11px;font-weight:600;padding:3px 10px;border-radius:20px;border:1px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);white-space:nowrap;">⏳ 连接中</span>
-                    <button id="zbRefreshBtn" onclick="zbRefreshCloudManual()" title="点击从GitHub拉取最新数据" style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;padding:5px 14px;border-radius:20px;border:1px solid #3b82f6;background:#eff6ff;color:#2563eb;cursor:pointer;white-space:nowrap;transition:all 0.2s;">
-                        🔄 刷新云端
-                    </button>
-                </div>
                 <div class="right-buttons">
+                    <span id="zbCloudStatus" class="theme-btn" style="font-size:13px;font-weight:600;cursor:default;">⏳ 连接中</span>
+                    <button id="zbRefreshBtn" onclick="zbRefreshCloudManual()" class="theme-btn" title="点击从GitHub拉取最新数据">🔄 刷新云端</button>
                     <button id="themeToggleBtn" class="theme-btn">🌙 夜间模式</button>
                     <label id="zbUploadBtnLabel" for="combinedFileInput" class="upload-btn" style="cursor:pointer;display:none;">📁 上传文件</label>
                     <button onclick="zbOpenLog()" class="theme-btn">📋 日志</button>
@@ -3066,6 +3062,8 @@ async function zbPushToGitHub(tableType) {
     const keyMap = { qa:'qa', diff5:'diff5', sum:'sum', diff4:'diff4' };
     const dataKey = keyMap[tableType] || tableType;
     const rows = window._DATA[dataKey] || [];
+    // 安全检查：拒绝推送空数组，避免误清空云端数据
+    if (!rows.length) { console.warn('zbPushToGitHub: 拒绝推送空数组，保护云端数据安全 -', tableType); return false; }
     const content = { rows: rows, updated: new Date().toISOString() };
     let b64 = '';
     try {
