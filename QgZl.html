@@ -2864,6 +2864,18 @@ function _tk() { return _t.join(''); }
 
 function ghUrl(file) { return `https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${GH_FOLDER}/${file}`; }
 function ghRaw(file) { return `https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/${GH_FOLDER}/${file}?t=${Date.now()}`; }
+// GitHub Contents API — 绕过 CDN，推送后几乎立即可读，需要 Token
+async function ghApiFetch(fname, token) {
+    const r = await fetch(ghUrl(fname), { headers: { Authorization: 'token ' + token, 'Cache-Control': 'no-cache' } });
+    if (!r.ok) return null;
+    const meta = await r.json();
+    if (!meta.content) return null;
+    // contents API 返回 base64，需要解码成 JSON
+    const binary = atob(meta.content.replace(/\n/g,''));
+    const bytes = new Uint8Array(binary.length);
+    for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
+    return JSON.parse(new TextDecoder().decode(bytes));
+}
 
 // ══════════════════════════════════════════
 // 角色体系：viewer（查看者）| admin（管理员）| super（超管，隐藏）
@@ -2970,16 +2982,23 @@ async function zbConfirmLogin() { }
 function zbLogout() { zbSidebarUserClick(); }
 
 // ── 云端拉取 ──
-async function zbLoadCloudData() {
+async function zbLoadCloudData(useApi) {
     showToast('⏳ 正在加载云端数据…');
     const keyMap = { qa:'qa', diff5:'diff5', sum:'sum', diff4:'diff4' };
+    const token = zbGetToken();
+    // 有 Token 且指定 useApi 时走 Contents API（绕过CDN，近实时）；否则走 raw CDN（快、省限额）
+    const viaApi = !!(useApi && token);
     let loaded = 0;
     for (const [key, fname] of Object.entries(GH_FILES)) {
         if (!keyMap[key]) continue;
         try {
-            const r = await fetch(ghRaw(fname));
-            if (!r.ok) continue;
-            const json = await r.json();
+            let json = null;
+            if (viaApi) {
+                json = await ghApiFetch(fname, token);
+            } else {
+                const r = await fetch(ghRaw(fname));
+                if (r.ok) json = await r.json();
+            }
             if (json && json.rows) {
                 window._DATA[keyMap[key]] = json.rows;
                 loaded++;
@@ -2988,24 +3007,21 @@ async function zbLoadCloudData() {
     }
     // 加载修改记录
     try {
-        const r = await fetch(ghRaw(GH_FILES.inspector));
-        if (r.ok) {
-            const json = await r.json();
-            if (json && json.edits) {
-                try { dtEdits = json.edits; } catch(e) {}
-            }
-        }
+        let json = null;
+        if (viaApi) { json = await ghApiFetch(GH_FILES.inspector, token); }
+        else { const r = await fetch(ghRaw(GH_FILES.inspector)); if (r.ok) json = await r.json(); }
+        if (json && json.edits) { try { dtEdits = json.edits; } catch(e) {} }
     } catch(e) {}
     // 加载日志
     try {
-        const r = await fetch(ghRaw(GH_FILES.log));
-        if (r.ok) {
-            const json = await r.json();
-            if (json && json.logs) { _zbLog = json.logs; localStorage.setItem('zb_upload_log', JSON.stringify(_zbLog)); }
-        }
+        let json = null;
+        if (viaApi) { json = await ghApiFetch(GH_FILES.log, token); }
+        else { const r = await fetch(ghRaw(GH_FILES.log)); if (r.ok) json = await r.json(); }
+        if (json && json.logs) { _zbLog = json.logs; localStorage.setItem('zb_upload_log', JSON.stringify(_zbLog)); }
     } catch(e) {}
     if (loaded > 0) {
-        showToast(`✅ 云端数据已加载（${loaded}/4）`);
+        const src = viaApi ? '（API直连）' : '';
+        showToast('✅ 云端数据已加载（' + loaded + '/4）' + src);
         if (typeof zbSetCloudStatus === 'function') zbSetCloudStatus('ok');
         if (typeof bridgeData === 'function') bridgeData();
         if (typeof fullRefresh === 'function') fullRefresh();
@@ -3315,7 +3331,7 @@ async function zbRefreshCloudManual() {
 
   var startTime = Date.now();
   try {
-    await zbLoadCloudData();
+    await zbLoadCloudData(true);  // 手动刷新走 API，绕过 CDN 缓存
     var elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
     zbSetCloudStatus('ok');
     // 成功弹窗提示
@@ -3549,8 +3565,8 @@ async function zbBatchDelete(group) {
       zbAddLog({ type:'delete', desc: desc + ' 已批量删除' });
       if (typeof bridgeData === 'function') { bridgeData(); if (typeof fullRefresh === 'function') fullRefresh(); }
       zbRenderCloudManager();
-      showToast('✅ 已批量删除 ' + keys.length + ' 条手机数据并同步云端');
-      setTimeout(function(){ zbLoadCloudData(); }, 2500);
+      showToast('✅ 已删除 ' + keys.length + ' 条手机数据并推送云端，异地同学点「刷新云端」即可同步');
+      // 不回拉云端，信任本地内存状态（CDN有60s缓存，回拉会拿到旧数据）
     } else {
       showToast('⚠️ 本地已删除，但云端同步失败，请重试');
     }
@@ -3566,8 +3582,8 @@ async function zbBatchDelete(group) {
       zbAddLog({ type:'delete', desc: desc + ' 已批量删除' });
       if (typeof bridgeData === 'function') { bridgeData(); if (typeof fullRefresh === 'function') fullRefresh(); }
       zbRenderCloudManager();
-      showToast('✅ 已批量删除 ' + keys.length + ' 条五品类数据并同步云端');
-      setTimeout(function(){ zbLoadCloudData(); }, 2500);
+      showToast('✅ 已删除 ' + keys.length + ' 条五品类数据并推送云端，异地同学点「刷新云端」即可同步');
+      // 不回拉云端，信任本地内存状态（CDN有60s缓存，回拉会拿到旧数据）
     } else {
       showToast('⚠️ 本地已删除，但云端同步失败，请重试');
     }
