@@ -1657,22 +1657,15 @@
             }
 
             function calcSiteRate(site, cat, dateFilter) {
-                // 手机：分母=总抽检量(表1 totalChecks)，分子=总客观差异量(表1 objDiff)
+                // 手机：分母=大盘抽检量(F列checks)，分子=表2大盘评估/站点 客观执行去重码
                 // 五品类：分母=sum.checks，分子=diff4客观执行去重码
+                // 三者口径统一：差异率、小字大盘台数、小字执行台数均用大盘口径
                 let checks = 0, execDiff = 0;
                 if (cat === '手机') {
                     const qaRows = DATA.qa.filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true));
-                    // 优先用总抽检量，兜底用大盘抽检量
-                    checks = qaRows.reduce((s,r) => s + (r.totalChecks||r.checks||0), 0);
-                    // 优先用表1直接存的总客观差异量
-                    const directObjDiff = qaRows.reduce((s,r) => s + (r.objDiff||0), 0);
-                    if (directObjDiff > 0) {
-                        execDiff = directObjDiff;
-                    } else {
-                        // 兜底：从diff5算客观差异（不限制judgedType）
-                        const diffRows = DATA.diff5.filter(r => r.site === site && r.cat === cat && r.strategy === '大盘评估/站点' && r.subjobj && r.subjobj.includes('客观') && (dateFilter ? dateFilter(r.date) : true));
-                        execDiff = new Set(diffRows.map(r => r.code).filter(Boolean)).size;
-                    }
+                    checks = qaRows.reduce((s,r) => s + (r.checks||0), 0);
+                    const diffRows = DATA.diff5.filter(r => r.site === site && r.cat === cat && r.strategy === '大盘评估/站点' && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true));
+                    execDiff = new Set(diffRows.map(r => r.code).filter(Boolean)).size;
                 } else {
                     const smRows = DATA.sum.filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true));
                     checks = smRows.reduce((s,r) => s + (r.checks||0), 0);
