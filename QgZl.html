@@ -2888,7 +2888,7 @@ function ghUrl(file) { return `https://api.github.com/repos/${GH_USER}/${GH_REPO
 function ghRaw(file) { return `https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/${GH_FOLDER}/${file}?t=${Date.now()}`; }
 // GitHub Contents API — 绕过 CDN，推送后几乎立即可读，需要 Token
 async function ghApiFetch(fname, token) {
-    const r = await fetch(ghUrl(fname), { headers: { Authorization: 'token ' + token, 'Cache-Control': 'no-cache' } });
+    const r = await fetch(ghUrl(fname) + '?t=' + Date.now(), { headers: { Authorization: 'token ' + token } });
     if (!r.ok) return null;
     const meta = await r.json();
     if (!meta.content) return null;
@@ -3021,9 +3021,16 @@ async function zbLoadCloudData(useApi) {
                 const r = await fetch(ghRaw(fname));
                 if (r.ok) json = await r.json();
             }
-            if (json && json.rows) {
+            if (json && json.rows && json.rows.length > 0) {
                 window._DATA[keyMap[key]] = json.rows;
                 loaded++;
+            } else if (json && json.rows && json.rows.length === 0) {
+                // 云端返回空数组：只有当本地也没数据时才清空，避免误覆盖
+                if (!window._DATA[keyMap[key]] || !window._DATA[keyMap[key]].length) {
+                    window._DATA[keyMap[key]] = [];
+                } else {
+                    console.warn('云端返回空数组但本地有数据，跳过覆盖:', fname);
+                }
             }
         } catch(e) { console.warn('云端加载失败:', fname, e); }
     }
