@@ -494,7 +494,10 @@
   <!-- 侧边栏 -->
   <nav id="zb-sidebar">
     <div class="zb-logo">
-      <div class="zb-brand">培训部数据看板</div>
+      <div style="display:flex;align-items:baseline;gap:5px;">
+        <div class="zb-brand">培训部数据看板</div>
+        <span style="font-size:10px;color:var(--text-secondary);opacity:0.6;">v1.01</span>
+      </div>
       <div class="zb-sub">内部数据平台</div>
     </div>
     <div class="zb-nav-lbl">数据模块</div>
@@ -519,9 +522,7 @@
         </div>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
-      <div style="padding:4px 14px 10px;display:flex;justify-content:flex-end;">
-        <span style="font-size:10px;color:var(--text-secondary);padding:2px 6px;border-radius:4px;border:0.5px solid var(--border-color);background:var(--kpi-bg);">v1.0</span>
-      </div>
+  
     </div>
   </nav>
   <!-- 右侧主内容（原封不动） -->
@@ -3077,11 +3078,14 @@ async function zbPushToGitHub(tableType, force) {
         b64 = btoa(binary);
     } catch(e) { console.error('base64编码失败:', e); return false; }
     let sha = '';
-    try {
-        const r = await fetch(ghUrl(fname), { headers: { Authorization: 'token ' + token } });
-        if (r.ok) { const j = await r.json(); sha = j.sha || ''; }
-        else { console.warn('获取SHA失败:', r.status, fname); }
-    } catch(e) { console.warn('获取SHA异常:', e); }
+    // 每次推送前重新获取最新SHA，避免409冲突
+    for (let retry = 0; retry < 3; retry++) {
+        try {
+            const r = await fetch(ghUrl(fname) + '?t=' + Date.now(), { headers: { Authorization: 'token ' + token } });
+            if (r.ok) { const j = await r.json(); sha = j.sha || ''; break; }
+            else { console.warn('获取SHA失败:', r.status, fname); break; }
+        } catch(e) { console.warn('获取SHA异常:', e); break; }
+    }
     const body = { message: 'Update ' + fname + ' via dashboard', content: b64 };
     if (sha) body.sha = sha;
     try {
@@ -3130,7 +3134,7 @@ if (!window._dashboardStarted) {
     }, 300);
 }
 </script>
-
+<script>
 // 排行榜点仓 → 切换站点筛选器 → 全局刷新
 function zbClickRankSite(el) {
     var site = el.dataset.site;
@@ -3138,7 +3142,6 @@ function zbClickRankSite(el) {
     var wf = document.getElementById('warehouseFilter');
     if (!wf) return;
     if (wf.value === site) {
-        // 再次点击同仓 → 恢复全部
         wf.value = '__ALL__';
     } else {
         wf.value = site;
