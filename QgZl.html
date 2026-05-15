@@ -1135,7 +1135,7 @@
                 const result = [];
                 for (let [site, total] of siteTotalMap.entries()) { const dev = siteExecCodeSet.get(site)?.size || 0; result.push({ site, rate: total ? (dev/total*100) : 0 }); }
                 result.sort((a,b) => b.rate - a.rate);
-                document.getElementById('objRankBody').innerHTML = result.map((item, idx) => `<tr class="${idx===0?'rank-1':idx===1?'rank-2':idx===2?'rank-3':''}" data-site="${item.site.replace(/"/g,'&quot;')}"><td>${idx+1}</td><td>${item.site}</td><td>${item.rate.toFixed(2)}%</td></tr>`).join('');
+                const objRankEl = document.getElementById('objRankBody'); if(objRankEl) objRankEl.innerHTML = result.map((item, idx) => `<tr class="${idx===0?'rank-1':idx===1?'rank-2':idx===2?'rank-3':''}" data-site="${item.site.replace(/"/g,'&quot;')}"><td>${idx+1}</td><td>${item.site}</td><td>${item.rate.toFixed(2)}%</td></tr>`).join('');
             }
 
             function getFilteredForProblemType() {
@@ -3057,7 +3057,7 @@ async function zbLoadCloudData(useApi) {
 }
 
 // ── 推送到GitHub ──
-async function zbPushToGitHub(tableType) {
+async function zbPushToGitHub(tableType, force) {
     if (zbRole !== 'admin' && zbRole !== 'super') return false;
     const token = zbGetToken();
     const fname = GH_FILES[tableType];
@@ -3065,8 +3065,8 @@ async function zbPushToGitHub(tableType) {
     const keyMap = { qa:'qa', diff5:'diff5', sum:'sum', diff4:'diff4' };
     const dataKey = keyMap[tableType] || tableType;
     const rows = window._DATA[dataKey] || [];
-    // 安全检查：拒绝推送空数组，避免误清空云端数据
-    if (!rows.length) { console.warn('zbPushToGitHub: 拒绝推送空数组，保护云端数据安全 -', tableType); return false; }
+    // 安全检查：非强制模式下拒绝推送空数组，避免误清空云端数据
+    if (!rows.length && !force) { console.warn('zbPushToGitHub: 拒绝推送空数组，保护云端数据安全 -', tableType); return false; }
     const content = { rows: rows, updated: new Date().toISOString() };
     let b64 = '';
     try {
@@ -3585,8 +3585,8 @@ async function zbBatchDelete(group) {
     DATA.qa    = (DATA.qa||[]).filter(function(r){ return !datesToDel.has(r.date); });
     DATA.diff5 = (DATA.diff5||[]).filter(function(r){ return !datesToDel.has(r.date); });
     zbSetCloudStatus('loading');
-    var ok1 = await zbPushToGitHub('qa');
-    var ok2 = await zbPushToGitHub('diff5');
+    var ok1 = await zbPushToGitHub('qa', true);
+    var ok2 = await zbPushToGitHub('diff5', true);
     zbSetCloudStatus(ok1 && ok2 ? 'ok' : 'err');
     if (ok1 && ok2) {
       zbAddLog({ type:'delete', desc: desc + ' 已批量删除' });
@@ -3602,8 +3602,8 @@ async function zbBatchDelete(group) {
     DATA.sum   = (DATA.sum||[]).filter(function(r){ return !pairsToDelete.some(function(p){ return p.date===r.date && p.cat===r.cat; }); });
     DATA.diff4 = (DATA.diff4||[]).filter(function(r){ return !pairsToDelete.some(function(p){ return p.date===r.date && p.cat===r.cat; }); });
     zbSetCloudStatus('loading');
-    var ok3 = await zbPushToGitHub('sum');
-    var ok4 = await zbPushToGitHub('diff4');
+    var ok3 = await zbPushToGitHub('sum', true);
+    var ok4 = await zbPushToGitHub('diff4', true);
     zbSetCloudStatus(ok3 && ok4 ? 'ok' : 'err');
     if (ok3 && ok4) {
       zbAddLog({ type:'delete', desc: desc + ' 已批量删除' });
