@@ -1661,20 +1661,27 @@
             }
 
             function calcSiteRate(site, cat, dateFilter) {
-                // 手机用 DATA.qa + DATA.diff5，其他品类用 DATA.sum + DATA.diff4
+                // 手机：分母=总抽检量(表1 totalChecks)，分子=总客观差异量(表1 objDiff)
+                // 五品类：分母=sum.checks，分子=diff4客观执行去重码
                 let checks = 0, execDiff = 0;
                 if (cat === '手机') {
                     const qaRows = DATA.qa.filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true));
-                    checks = qaRows.reduce((s,r) => s + (r.checks||0), 0);
-                    const diffRows = DATA.diff5.filter(r => r.site === site && r.cat === cat && r.strategy === '大盘评估/站点' && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true));
-                    const uniq = new Set(diffRows.map(r => r.code).filter(Boolean));
-                    execDiff = uniq.size;
+                    // 优先用总抽检量，兜底用大盘抽检量
+                    checks = qaRows.reduce((s,r) => s + (r.totalChecks||r.checks||0), 0);
+                    // 优先用表1直接存的总客观差异量
+                    const directObjDiff = qaRows.reduce((s,r) => s + (r.objDiff||0), 0);
+                    if (directObjDiff > 0) {
+                        execDiff = directObjDiff;
+                    } else {
+                        // 兜底：从diff5算客观差异（不限制judgedType）
+                        const diffRows = DATA.diff5.filter(r => r.site === site && r.cat === cat && r.strategy === '大盘评估/站点' && r.subjobj && r.subjobj.includes('客观') && (dateFilter ? dateFilter(r.date) : true));
+                        execDiff = new Set(diffRows.map(r => r.code).filter(Boolean)).size;
+                    }
                 } else {
                     const smRows = DATA.sum.filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true));
                     checks = smRows.reduce((s,r) => s + (r.checks||0), 0);
                     const diffRows = DATA.diff4.filter(r => r.site === site && r.cat === cat && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true));
-                    const uniq = new Set(diffRows.map(r => r.code).filter(Boolean));
-                    execDiff = uniq.size;
+                    execDiff = new Set(diffRows.map(r => r.code).filter(Boolean)).size;
                 }
                 return checks > 0 ? (execDiff / checks * 100) : null;
             }
@@ -1700,11 +1707,26 @@
                 const latestDate = allDates[allDates.length - 1];
                 const prevDate   = allDates.length >= 2 ? allDates[allDates.length - 2] : null;
 
+                function calcSiteDetail(site, cat, dateFilter) {
+                    // 返回 { checks（大盘量）, execDiff（客观执行量）}
+                    let checks = 0, execDiff = 0;
+                    if (cat === '手机') {
+                        const qaRows = DATA.qa.filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true));
+                        checks = qaRows.reduce((s,r) => s + (r.checks||0), 0);
+                        const diffRows = DATA.diff5.filter(r => r.site === site && r.cat === cat && r.strategy === '大盘评估/站点' && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true));
+                        execDiff = new Set(diffRows.map(r => r.code).filter(Boolean)).size;
+                    } else {
+                        const smRows = DATA.sum.filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true));
+                        checks = smRows.reduce((s,r) => s + (r.checks||0), 0);
+                        const diffRows = DATA.diff4.filter(r => r.site === site && r.cat === cat && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true));
+                        execDiff = new Set(diffRows.map(r => r.code).filter(Boolean)).size;
+                    }
+                    return { checks, execDiff };
+                }
+
                 function buildRows(sites, isFixed) {
                     return sites.map(site => {
-                        // 差异率用完整筛选期间累计（与核心指标口径一致）
                         const totalRate = calcSiteRate(site, cat, inRange);
-                        // 环比用最后一天 vs 前一天
                         const todayRate = calcSiteRate(site, cat, d => d === latestDate);
                         const yestRate  = prevDate ? calcSiteRate(site, cat, d => d === prevDate) : null;
                         let change = '—', changeCls = 'flat';
@@ -1714,7 +1736,9 @@
                             else if (diff > 0) { change = '↑' + diff.toFixed(2) + '%'; changeCls = 'up'; }
                             else { change = '↓' + Math.abs(diff).toFixed(2) + '%'; changeCls = 'down'; }
                         }
-                        return { site, rate: totalRate, change, changeCls, isFixed };
+                        // 计算大盘量和客观执行量用于小字展示
+                        const detail = calcSiteDetail(site, cat, inRange);
+                        return { site, rate: totalRate, change, changeCls, isFixed, checks: detail.checks, execDiff: detail.execDiff };
                     });
                 }
 
@@ -1741,11 +1765,15 @@
                         const noTxt = r.isFixed ? '—' : String(i+1);
                         const color = rateColor(r.rate);
                         const pct = maxRate > 0 && r.rate !== null ? (r.rate / maxRate * 100).toFixed(0) : 0;
+                        const metaHtml = (r.checks !== undefined)
+                            ? `<div style="font-size:10px;color:var(--text-secondary);line-height:1.6;text-align:right;white-space:nowrap;min-width:90px;">大盘 ${r.checks}台 · 客观执行 ${r.execDiff}台</div>`
+                            : '';
                         return `<div class="rank-row" data-site="${r.site}" onclick="zbClickRankSite(this)" style="cursor:pointer;">
                             <div class="rank-no ${noCls}">${noTxt}</div>
                             <div class="rank-name" title="${r.site}">${r.site}</div>
                             <div class="rank-bar-wrap"><div class="rank-bar-inner" style="width:${pct}%;background:${color}"></div></div>
                             <div class="rank-rate" style="color:${color}">${r.rate !== null ? r.rate.toFixed(2)+'%' : '—'}</div>
+                            ${metaHtml}
                             <div class="rank-change ${r.changeCls}">${r.change}</div>
                         </div>`;
                     }).join('');
@@ -2098,7 +2126,7 @@
                     };
                 }
                 if (currentCat === '手机') {
-                    summaryData = DATA.qa.map(r => ({ siteName: r.site, totalChecks: r.checks, date: r.date }));
+                    summaryData = DATA.qa.map(r => ({ siteName: r.site, totalChecks: r.totalChecks||r.checks, date: r.date }));
                     diffData = DATA.diff5.filter(r => r.strategy === '大盘评估/站点').map(mapDiff5);
                 } else {
                     summaryData = DATA.sum.filter(r => r.cat === currentCat).map(r => ({ siteName: r.site, totalChecks: r.checks, date: r.date }));
@@ -2127,7 +2155,7 @@
                         let parsed = [], tableType = '', tableName = '';
                         if ('大盘抽检设备数量' in fr) {
                             tableType = 'qa'; tableName = 'QA差异率_站点维度';
-                            parsed = rows.map(r => ({ date:nd(r['抽检日期']), site:(r['站点名称']||'').trim(), cat:CAT_MAP[r['品类名称']]||r['品类名称']||'', checks:parseFloat(r['大盘抽检设备数量'])||0 }));
+                            parsed = rows.map(r => ({ date:nd(r['抽检日期']), site:(r['站点名称']||'').trim(), cat:CAT_MAP[r['品类名称']]||r['品类名称']||'', checks:parseFloat(r['大盘抽检设备数量'])||0, totalChecks:parseFloat(r['总抽检量'])||parseFloat(r['大盘抽检设备数量'])||0, objDiff:parseFloat(r['总客观差异量'])||0 }));
                             DATA.qa = smartMerge(DATA.qa, parsed, r => r.date+'|'+r.site+'|'+r.cat);
                         } else if ('主客观问题分类' in fr && '策略类别' in fr) {
                             tableType = 'diff5'; tableName = '手机差异明细';
