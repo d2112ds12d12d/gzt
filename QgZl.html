@@ -603,7 +603,7 @@
             <div class="card">
                 <div class="card-title">📈 核心质量指标（点击卡片查看明细）</div>
                 <div class="stats-grid" id="statsArea"></div>
-                <div style="font-size:11px;margin-top:10px;color:var(--text-secondary);">※ 差异总量按质检码去重；客观执行差异率 = 客观+执行问题设备占比</div>
+                <div style="font-size:11px;margin-top:10px;color:var(--text-secondary);">※ 主客观差异量 = 客观差异量 + 主观差异量；客观执行差异率 = 客观+执行问题设备占比</div>
             </div>
 
             <!-- 新排行榜 -->
@@ -1022,22 +1022,22 @@
                 if (!summaryData.length) { statsArea.innerHTML = '<div class="stats-item">⚠️ 请加载数据</div>'; return; }
                 const filteredSummary = filterSummaryData(summaryData);
                 let totalChecks = filteredSummary.reduce((acc, r) => acc + (r.totalChecks || 0), 0);
-                const uniqueCodesAll = new Set(currentFilteredDiff.map(d => d.code)).size;
                 const uniqueCodesObj = new Set(currentFilteredDiff.filter(d => isObjective(d.category)).map(d => d.code)).size;
                 const uniqueCodesSubj = new Set(currentFilteredDiff.filter(d => isSubjective(d.category)).map(d => d.code)).size;
+                const totalDiff = uniqueCodesObj + uniqueCodesSubj;
                 const execCodeSet = new Set();
                 currentFilteredDiff.forEach(d => { if (isObjective(d.category) && isExecutionIssue(d.judgedIssueType) && d.code) execCodeSet.add(d.code); });
                 const execObjTotal = execCodeSet.size;
                 const mk = (type, val, label, deviceCount) => `<div class="stats-item" data-type="${type}" data-count="${deviceCount||''}"><div class="stats-number">${val}</div><div class="stats-label">${label}</div></div>`;
                 const html =
                     mk('total_checks', totalChecks,  '总抽检量') +
-                    mk('unique_all',   uniqueCodesAll, '差异总量',  uniqueCodesAll) +
-                    mk('total_diff',   totalChecks?(uniqueCodesAll/totalChecks*100).toFixed(2)+'%':'0%',  '抽检差异率',      uniqueCodesAll) +
-                    mk('obj_diff',     totalChecks?(uniqueCodesObj/totalChecks*100).toFixed(2)+'%':'0%',  '客观抽检差异率',  uniqueCodesObj) +
-                    mk('exec_diff',    totalChecks?(execObjTotal/totalChecks*100).toFixed(2)+'%':'0%',    '客观执行差异率',  execObjTotal) +
-                    mk('subj_diff',    totalChecks?(uniqueCodesSubj/totalChecks*100).toFixed(2)+'%':'0%', '主观抽检差异率',  uniqueCodesSubj) +
+                    mk('unique_all',   totalDiff,     '主客观差异量', totalDiff) +
                     mk('unique_obj',   uniqueCodesObj,   '客观差异量', uniqueCodesObj) +
-                    mk('unique_subj',  uniqueCodesSubj,  '主观差异量', uniqueCodesSubj);
+                    mk('unique_subj',  uniqueCodesSubj,  '主观差异量', uniqueCodesSubj) +
+                    mk('total_diff',   totalChecks?(totalDiff/totalChecks*100).toFixed(2)+'%':'0%',       '主客观差异率',    totalDiff) +
+                    mk('subj_diff',    totalChecks?(uniqueCodesSubj/totalChecks*100).toFixed(2)+'%':'0%', '主观差异率',      uniqueCodesSubj) +
+                    mk('obj_diff',     totalChecks?(uniqueCodesObj/totalChecks*100).toFixed(2)+'%':'0%',  '客观差异率',      uniqueCodesObj) +
+                    mk('exec_diff',    totalChecks?(execObjTotal/totalChecks*100).toFixed(2)+'%':'0%',    '客观执行差异率',  execObjTotal);
                 statsArea.innerHTML = html;
                 cache.stats = html;
                 cache.filterHash = hash;
@@ -2047,7 +2047,15 @@
                 const el = document.getElementById(id);
                 if (el) el.classList.toggle('loaded', ok);
             }
-            function smartMerge(existing, incoming){ if(!existing.length)return incoming; const inDates=new Set(incoming.map(r=>r.date).filter(Boolean)); return [...existing.filter(r=>!inDates.has(r.date)),...incoming]; }
+            function smartMerge(existing, incoming, keyFn){
+                if(!existing.length) return incoming;
+                if(keyFn){
+                    const inKeys = new Set(incoming.map(keyFn).filter(Boolean));
+                    return [...existing.filter(r => !inKeys.has(keyFn(r))), ...incoming];
+                }
+                const inDates = new Set(incoming.map(r=>r.date).filter(Boolean));
+                return [...existing.filter(r=>!inDates.has(r.date)), ...incoming];
+            }
 
             // ── 桥接：把你的数据倒进小田的两个桶 ──────────────
             // ── 当前选中品类（全局） ──
@@ -2122,11 +2130,11 @@
                         if ('大盘抽检设备数量' in fr) {
                             tableType = 'qa'; tableName = 'QA差异率_站点维度';
                             parsed = rows.map(r => ({ date:nd(r['抽检日期']), site:(r['站点名称']||'').trim(), cat:CAT_MAP[r['品类名称']]||r['品类名称']||'', checks:parseFloat(r['大盘抽检设备数量'])||0 }));
-                            DATA.qa = smartMerge(DATA.qa, parsed);
+                            DATA.qa = smartMerge(DATA.qa, parsed, r => r.date+'|'+r.site+'|'+r.cat);
                         } else if ('主客观问题分类' in fr && '策略类别' in fr) {
                             tableType = 'diff5'; tableName = '手机差异明细';
                             parsed = rows.map(r => ({ date:nd(r['日期']), code:(r['质检码']||'').trim(), site:(r['站点名称']||'').trim(), cat:CAT_MAP[r['品类名称']]||r['品类名称']||'', strategy:(r['策略类别']||'').trim(), level1:r['一级项名称']||'', level2:r['二级项名称']||'', level3_orig:r['原三级项名称']||'', level3_new:r['新三级项名称']||'', subjobj:(r['主客观问题分类']||'').trim(), issueType:(r['问题类型']||'').trim(), judgedType:(r['抽检判定的问题类型']||'').trim(), inspector:extractCN(r['原操作人名称']||''), qaInspector:extractCN(r['新操作人名称']||'') }));
-                            DATA.diff5 = smartMerge(DATA.diff5, parsed);
+                            DATA.diff5 = smartMerge(DATA.diff5, parsed, r => r.date+'|'+r.code+'|'+r.site);
                         } else if ('抽检总量' in fr && '品类' in fr && !('质检码' in fr)) {
                             tableType = 'sum'; tableName = '日汇总';
                             parsed = rows.map(r => ({ date:nd(r['日期']), site:(r['站点']||'').trim(), cat:CAT_MAP[r['品类']]||r['品类']||'', checks:parseFloat(r['抽检总量'])||0 }));
@@ -2139,6 +2147,11 @@
                             showToast('⚠️ 无法识别: ' + file.name); continue;
                         }
                         showToast('✓ ' + tableName + ' 已加载');
+                        // 写上传日志（按日期+表类型记录，用于绿灯显示）
+                        const _parsedDates = parsed.map(r=>r.date).filter(Boolean);
+                        const _dMin = _parsedDates.length ? _parsedDates.reduce((a,b)=>a<b?a:b) : '—';
+                        const _dMax = _parsedDates.length ? _parsedDates.reduce((a,b)=>a>b?a:b) : '—';
+                        zbAddLog({ type: tableType, tableName: tableName, rows: parsed.length, dateMin: _dMin, dateMax: _dMax, dates: [...new Set(_parsedDates)] });
                         // 管理员及以上：自动推送到GitHub云端
                         if (typeof zbPushToGitHub === 'function' && (zbRole === 'admin' || zbRole === 'super')) {
                             zbPushToGitHub(tableType).then(ok => {
@@ -3178,28 +3191,78 @@ function zbAddLog(entry){
 function _zbRenderLog(){
   var el=document.getElementById('zbLogList'); if(!el) return;
   if(!_zbLog.length){ el.innerHTML='<div style="text-align:center;padding:24px;color:var(--text-secondary);font-size:13px;">暂无上传记录</div>'; return; }
+
+  // 按数据日期分组，统计每天哪些表上传了
+  var dateTableMap = {}; // date -> {qa, diff5, sum, diff4}
+  var phoneTypes = ['qa','diff5'];
+  var fiveTypes = ['sum','diff4'];
+  _zbLog.forEach(function(log){
+    if(!log.dates || !log.type) return;
+    log.dates.forEach(function(d){
+      if(!d || d==='—') return;
+      if(!dateTableMap[d]) dateTableMap[d] = {};
+      dateTableMap[d][log.type] = true;
+    });
+  });
+
   var colors={qa:'#2563eb',diff5:'#2563eb',sum:'#059669',diff4:'#059669'};
   var names={qa:'QA差异率',diff5:'手机差异明细',sum:'日汇总',diff4:'五品类明细'};
+
+  function lamp(on, label){ return '<span title="'+label+'" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;color:'+(on?'#059669':'#dc2626')+';white-space:nowrap;">'+(on?'🟢':'🔴')+label+'</span>'; }
+
   el.innerHTML=_zbLog.map(function(log){
     if(log.type==='edit'){
       var t2=new Date(log.time);
       var ts2=(t2.getMonth()+1)+'/'+(t2.getDate())+' '+(('0'+t2.getHours()).slice(-2))+':'+(('0'+t2.getMinutes()).slice(-2));
-      return '<div style="display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--border-color);">'
+      return '<div style="display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border-color);">'
         +'<span style="font-size:11px;color:var(--text-secondary);white-space:nowrap;min-width:65px;">'+ts2+'</span>'
         +'<span style="font-size:11px;padding:2px 8px;border-radius:6px;background:#7c3aed20;color:#7c3aed;font-weight:600;white-space:nowrap;">✏️ 修改</span>'
         +'<span style="font-size:11px;color:var(--text-secondary);flex:1;">质检码 <strong>'+log.code+'</strong> 的「'+log.col+'」：'+log.from+' → '+log.to+'</span>'
+        +'</div>';
+    }
+    if(log.type==='delete'){
+      var td=new Date(log.time);
+      var tsd=(td.getMonth()+1)+'/'+(td.getDate())+' '+('0'+td.getHours()).slice(-2)+':'+('0'+td.getMinutes()).slice(-2);
+      return '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:0.5px solid var(--border-color);">'
+        +'<span style="font-size:11px;color:var(--text-secondary);white-space:nowrap;min-width:65px;">'+tsd+'</span>'
+        +'<span style="font-size:11px;padding:2px 8px;border-radius:6px;background:#dc262620;color:#dc2626;font-weight:600;white-space:nowrap;">🗑 删除</span>'
+        +'<span style="font-size:11px;color:var(--text-secondary);flex:1;">'+(log.desc||'')+'</span>'
         +'</div>';
     }
 
     var t=new Date(log.time);
     var ts=(t.getMonth()+1)+'/'+(t.getDate())+' '+('0'+t.getHours()).slice(-2)+':'+('0'+t.getMinutes()).slice(-2);
     var c=colors[log.type]||'#64748b';
-    return '<div style="display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border-color);">'
-      +'<span style="font-size:11px;color:var(--text-secondary);white-space:nowrap;min-width:65px;">'+ts+'</span>'
+    var isPhone = phoneTypes.indexOf(log.type) >= 0;
+    var isFive  = fiveTypes.indexOf(log.type) >= 0;
+
+    // 灯组：按数据日期范围检查配套子表
+    var lampsHtml = '';
+    if(isPhone){
+      var dMin = log.dateMin, dMax = log.dateMax;
+      var datesToCheck = (log.dates && log.dates.length) ? log.dates : (dMin===dMax?[dMin]:[dMin,dMax]);
+      // 取代表日（最新一天）检查
+      var repDate = datesToCheck[datesToCheck.length-1]||dMax;
+      var dm = dateTableMap[repDate]||{};
+      lampsHtml = '<span style="display:flex;gap:6px;margin-left:auto;align-items:center;">'
+        + lamp(!!dm.qa,   'QA差异率')
+        + lamp(!!dm.diff5,'手机明细')
+        +'</span>';
+    } else if(isFive){
+      var repDate2 = (log.dates&&log.dates.length)?log.dates[log.dates.length-1]:(log.dateMax||'');
+      var dm2 = dateTableMap[repDate2]||{};
+      lampsHtml = '<span style="display:flex;gap:6px;margin-left:auto;align-items:center;">'
+        + lamp(!!dm2.sum,  '日汇总')
+        + lamp(!!dm2.diff4,'五品类明细')
+        +'</span>';
+    }
+
+    return '<div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:0.5px solid var(--border-color);">'
+      +'<span style="font-size:11px;color:var(--text-secondary);white-space:nowrap;min-width:60px;">'+ts+'</span>'
       +'<span style="font-size:11px;padding:2px 8px;border-radius:6px;background:'+c+'20;color:'+c+';font-weight:600;white-space:nowrap;">'+(names[log.type]||log.type)+'</span>'
-      +'<span style="font-size:11px;color:var(--text-secondary);">'+(log.dateMin||'—')+' ~ '+(log.dateMax||'—')+'</span>'
+      +'<span style="font-size:11px;color:var(--text-secondary);">'+(log.dateMin||'—')+(log.dateMin!==log.dateMax?' ~ '+(log.dateMax||'—'):'')+'</span>'
       +'<span style="font-size:11px;font-weight:600;color:var(--text-primary);">'+log.rows+'条</span>'
-      +'<span style="font-size:10px;color:#059669;margin-left:auto;">✅ 已加载</span>'
+      + lampsHtml
       +'</div>';
   }).join('');
 }
