@@ -1,6 +1,15 @@
 {
   "tasks": [
     {
+      "id": "mp6cpupakua",
+      "title": "共创案例库，提高课件的制作和培训的效果",
+      "tag": null,
+      "date": "05/15",
+      "done": false,
+      "created": 1778815327150,
+      "pinned": true
+    },
+    {
       "id": "mp5ptsvuy5v",
       "title": "俩质量看板需求落地",
       "tag": null,
