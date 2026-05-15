@@ -60,11 +60,13 @@
     },
     {
       "id": "mp564tliowd",
-      "title": "复测看板萃取",
+      "title": "看板建设思路萃取",
       "tag": null,
       "date": "05/15",
       "done": false,
-      "created": 1778743802070
+      "created": 1778743802070,
+      "note": "1、质量运营TOP 人看板萃取；\n2、复测看板萃取；\n3、",
+      "links": []
     },
     {
       "id": "mp4xm1xw3bo",
