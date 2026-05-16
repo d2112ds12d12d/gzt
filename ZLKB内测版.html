@@ -1805,8 +1805,18 @@
                     detailCurrentOffset = 0;
                     safeRender(updateStatsBoard, 'statsArea');
                     safeRender(renderTrendChart, 'trendChart');
+                    safeRender(renderPersonStackChart, 'personStackChart');
+                    safeRender(renderIssueTypeChart, 'issueTypeChart');
+                    safeRender(renderObjWarehouseRanking, 'objRankBody');
+                    safeRender(buildPersonList, 'personTableBody');
+                    safeRender(renderObjectiveRankings);
+                    safeRender(renderDetailTable, 'detailTableBody');
                     renderNewRankBoard();
                     if (trendChart) trendChart.resize();
+                    if (personStackChart) personStackChart.resize();
+                    if (issueTypeChart) issueTypeChart.resize();
+                    if (typeof window._wtRefresh === 'function') setTimeout(window._wtRefresh, 0);
+                    safeRender(renderIssueAnalysis, 'issue-analysis-root');
                     hideLoading();
                 }, 0);
             }
