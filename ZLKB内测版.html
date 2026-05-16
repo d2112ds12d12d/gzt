@@ -580,11 +580,31 @@
                     <span class="cat-tab" id="globalCat-手表">⌚ 手表</span>
                     <span class="cat-tab" id="globalCat-耳机">🎧 耳机</span>
                     <span class="cat-tab" id="globalCat-相机">📷 相机</span>
+                    <div class="sticky-divider"></div>
+                    <span style="font-size:11px;font-weight:600;color:var(--text-secondary);flex-shrink:0;">站点类型</span>
+                    <span class="cat-tab active" id="globalSiteType-ALL" data-site-type="ALL">全部</span>
+                    <span class="cat-tab" id="globalSiteType-DW" data-site-type="DW">大仓</span>
+                    <span class="cat-tab" id="globalSiteType-ZX" data-site-type="ZX">中心仓</span>
                 </div>
             </div>
             <!-- 第二行：其他筛选 -->
             <div class="filter-bar" style="margin-bottom:24px;">
-                <div class="filter-group"><label>🏚️ 站点</label><select id="warehouseFilter"><option value="__ALL__">全部站点</option></select></div>
+                <div class="filter-group person-search-group" style="position:relative;min-width:160px;flex:1 1 160px;max-width:240px;">
+                    <label>🏚️ 站点（多选）</label>
+                    <div id="warehouseMultiTrigger" class="person-dropdown-trigger" tabindex="0">
+                        <span id="warehouseMultiLabel">全部站点</span>
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="margin-left:auto;flex-shrink:0;opacity:0.5"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                    <div id="warehouseMultiPanel" class="person-dropdown-panel" style="display:none;">
+                        <input type="text" id="warehouseMultiSearch" placeholder="搜索站点..." class="person-search-input" autocomplete="off">
+                        <div style="padding:4px 10px;border-bottom:1px solid var(--border-color);display:flex;gap:8px;">
+                            <span id="warehouseMultiSelAll" style="font-size:11px;color:var(--btn-bg);cursor:pointer;font-weight:600;">全选</span>
+                            <span id="warehouseMultiClear" style="font-size:11px;color:var(--text-secondary);cursor:pointer;">清空</span>
+                        </div>
+                        <div id="warehouseMultiList" class="person-dropdown-list"></div>
+                    </div>
+                    <input type="hidden" id="warehouseFilter" value="__ALL__">
+                </div>
                 <div class="filter-group person-search-group" style="position:relative; min-width:160px; flex:1 1 160px; max-width:220px;">
                     <label>👤 质检人员</label>
                     <div id="personDropdownTrigger" class="person-dropdown-trigger" tabindex="0">
@@ -607,7 +627,7 @@
 
             <!-- KPI -->
             <div class="card">
-                <div class="card-title">📈 核心质量指标（点击卡片查看明细）</div>
+                <div class="card-title">📈 核心质量指标 · 全国总览（点击卡片查看明细）</div>
                 <div class="stats-grid" id="statsArea"></div>
                 <div style="font-size:11px;margin-top:10px;color:var(--text-secondary);">※ 客观执行差异率 = 客观+执行问题设备占比；差异率越低越好，排行榜从低到高排列</div>
             </div>
@@ -615,17 +635,19 @@
             <!-- 新排行榜 -->
             <div class="card">
                 <div class="card-header" style="margin-bottom:10px;">
-                    <div class="card-title">🏆 站点客观执行差异率排行 <span style="font-size:11px;font-weight:400;color:var(--text-secondary);margin-left:6px;">差异率=筛选期间累计 · ↑↓=较前日变化</span></div>
-                    
+                    <div class="card-title">🏆 差异排行榜 · 全国总览 <span style="font-size:11px;font-weight:400;color:var(--text-secondary);margin-left:6px;">差异率=筛选期间累计 · ↑↓=较前日变化</span></div>
                 </div>
-                <div class="rank-board">
+                <div class="rank-board" style="grid-template-columns:1fr 1fr;">
                     <div>
-                        <div class="rank-col-title">🏭 大仓（智能验机中心 + 后验中心仓）</div>
+                        <div class="rank-col-title">🏭 站点差异率排名（低→高）</div>
+                        <div style="font-size:10px;color:var(--text-secondary);margin-bottom:6px;font-weight:600;">大仓（智能验机中心 + 后验中心仓）</div>
                         <div id="rankBoardDW"></div>
+                        <div style="font-size:10px;color:var(--text-secondary);margin:8px 0 6px;font-weight:600;padding-top:6px;border-top:1px dashed var(--border-color);">中心仓</div>
+                        <div id="rankBoardZX"></div>
                     </div>
                     <div>
-                        <div class="rank-col-title">🏪 中心仓</div>
-                        <div id="rankBoardZX"></div>
+                        <div class="rank-col-title">👤 质检人差异排名（高→低）</div>
+                        <div id="rankBoardPerson"></div>
                     </div>
                 </div>
                 <div style="font-size:10px;color:var(--text-secondary);margin-top:8px;">
@@ -633,50 +655,14 @@
                 </div>
             </div>
 
-            <!-- ── 周度差异率趋势（T-4周）新增模块 ── -->
-            <div class="card" id="weeklyTrendCard">
+            <!-- 全国差异率趋势图 -->
+            <div class="card" id="nationalTrendCard">
                 <div class="card-header" style="margin-bottom:12px;align-items:flex-start;">
-                    <div class="card-title">📈 周度质量趋势图（客观执行）</div>
-                    <div class="wt-toolbar" style="align-items:flex-start;gap:14px;">
-                        <!-- 仓多选 -->
-                        <div style="display:flex;flex-direction:column;gap:4px;">
-                            <span class="wt-label">仓（可多选）</span>
-                            <div id="wt-wh-trigger" class="wt-multi-trigger">
-                                <span id="wt-wh-placeholder">— 选择站点 —</span>
-                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="flex-shrink:0;opacity:0.5;margin-left:6px;"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                <div id="wt-wh-panel" class="wt-multi-panel" style="display:none;">
-                                    <input id="wt-wh-search" type="text" placeholder="搜索站点..." class="wt-search-input">
-                                    <div id="wt-wh-list" class="wt-multi-list"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- 品类多选勾选 -->
-                        <div style="display:flex;flex-direction:column;gap:6px;">
-                            <span class="wt-label">品类</span>
-                            <div id="wt-cat-checks" class="wt-cat-checks">
-                                <label class="wt-cat-item"><input type="checkbox" value="手机"> 手机</label>
-                                <label class="wt-cat-item"><input type="checkbox" value="笔记本"> 笔记本</label>
-                                <label class="wt-cat-item"><input type="checkbox" value="平板"> 平板</label>
-                                <label class="wt-cat-item"><input type="checkbox" value="手表"> 手表</label>
-                                <label class="wt-cat-item"><input type="checkbox" value="耳机"> 耳机</label>
-                                <label class="wt-cat-item"><input type="checkbox" value="相机"> 相机</label>
-                            </div>
-                        </div>
-                        <button class="wt-clear-btn" id="wt-clear-btn" style="align-self:flex-end;">清空</button>
-                    </div>
+                    <div class="card-title" id="nationalTrendTitle">📉 差异率趋势 · 全国总览</div>
+                    <div style="font-size:11px;color:var(--text-secondary);margin-left:auto;flex-shrink:0;">数据跟随顶部「站点」筛选变化 · KPI 和排行榜不受影响</div>
                 </div>
-                <!-- 已选站点tags -->
-                <div class="wt-lines-display" id="wt-wh-tags"></div>
-                <div id="wt-chart-area" class="wt-chart-area"></div>
-                <div id="wt-table-wrap" class="wt-data-table-wrap" style="display:none;">
-                    <table class="wt-data-table" id="wt-data-table">
-                        <thead id="wt-table-head"></thead>
-                        <tbody id="wt-table-body"></tbody>
-                    </table>
-                </div>
-                <div class="wt-footer-note">
-                    ↑红=上升（变差）· ↓绿=下降（改善）· 周环比=(本周−上周)/上周×100% · 本周未结束显示「进行中」
-                </div>
+                <div id="nationalTrendChart" style="width:100%;height:300px;"></div>
+                <div style="font-size:10px;color:var(--text-secondary);margin-top:6px;">X轴 = 日期 · Y轴 = 差异率% · 可在顶部选择站点查看多站点对比（多条线）</div>
             </div>
 
             <!-- 问题项分析卡片 -->
@@ -2465,6 +2451,249 @@
                 var cat = el.id.replace('globalCat-', '');
                 el.onclick = function() { switchCat(cat); };
             });
+
+            // ── 站点类型定义 ──
+            var ZB_DW_SITES = [
+                '转转-青岛智能验机中心','转转-成都智能验机中心','转转-深圳智能验机中心',
+                '成都后验中心仓','深圳后验中心仓','青岛后验中心仓'
+            ];
+            var currentSiteType = 'ALL'; // ALL / DW / ZX
+            var selectedWarehouses_multi = []; // 趋势图多选站点
+
+            // 判断站点类型
+            function getSiteType(name) {
+                return ZB_DW_SITES.indexOf(name) >= 0 ? 'DW' : 'ZX';
+            }
+
+            // 站点类型筛选按钮
+            document.querySelectorAll('[data-site-type]').forEach(function(el) {
+                el.addEventListener('click', function() {
+                    currentSiteType = el.dataset.siteType;
+                    document.querySelectorAll('[data-site-type]').forEach(function(b) {
+                        b.classList.toggle('active', b.dataset.siteType === currentSiteType);
+                    });
+                    // 重建多选列表
+                    zbBuildWarehouseMultiList();
+                    // 清空已选（类型切换后已选可能不合法）
+                    selectedWarehouses_multi = [];
+                    zbUpdateWarehouseMultiLabel();
+                    zbRenderNationalTrend();
+                });
+            });
+
+            // ── 站点多选 ──
+            function zbGetFilteredSiteList() {
+                var all = Array.from(warehouseSet).sort();
+                if (currentSiteType === 'ALL') return all;
+                return all.filter(function(s) {
+                    return currentSiteType === 'DW' ? getSiteType(s) === 'DW' : getSiteType(s) === 'ZX';
+                });
+            }
+
+            function zbBuildWarehouseMultiList() {
+                var listEl = document.getElementById('warehouseMultiList');
+                if (!listEl) return;
+                var kw = (document.getElementById('warehouseMultiSearch').value || '').trim();
+                var sites = zbGetFilteredSiteList().filter(function(s) {
+                    return !kw || s.includes(kw);
+                });
+                listEl.innerHTML = sites.map(function(s) {
+                    var checked = selectedWarehouses_multi.indexOf(s) >= 0;
+                    return '<div class="person-dropdown-item' + (checked ? ' selected' : '') + '" data-wh="' + s.replace(/"/g,'&quot;') + '">'
+                        + (checked ? '✓ ' : '') + s + '</div>';
+                }).join('');
+            }
+
+            function zbUpdateWarehouseMultiLabel() {
+                var lbl = document.getElementById('warehouseMultiLabel');
+                if (!lbl) return;
+                if (!selectedWarehouses_multi.length) {
+                    lbl.textContent = '全部站点';
+                } else if (selectedWarehouses_multi.length === 1) {
+                    lbl.textContent = selectedWarehouses_multi[0];
+                } else {
+                    lbl.textContent = selectedWarehouses_multi[0] + ' 等' + selectedWarehouses_multi.length + '个';
+                }
+            }
+
+            (function initWarehouseMultiDropdown() {
+                var trigger = document.getElementById('warehouseMultiTrigger');
+                var panel   = document.getElementById('warehouseMultiPanel');
+                var search  = document.getElementById('warehouseMultiSearch');
+                var listEl  = document.getElementById('warehouseMultiList');
+                var selAll  = document.getElementById('warehouseMultiSelAll');
+                var clear   = document.getElementById('warehouseMultiClear');
+                if (!trigger || !panel) return;
+
+                function openPanel() { panel.style.display = 'block'; trigger.classList.add('open'); zbBuildWarehouseMultiList(); if(search) { search.value=''; search.focus(); } }
+                function closePanel() { panel.style.display = 'none'; trigger.classList.remove('open'); }
+
+                trigger.addEventListener('click', function(e) { e.stopPropagation(); panel.style.display==='none' ? openPanel() : closePanel(); });
+
+                if (search) {
+                    search.addEventListener('input', function() { zbBuildWarehouseMultiList(); });
+                    search.addEventListener('click', function(e) { e.stopPropagation(); });
+                }
+
+                if (listEl) {
+                    listEl.addEventListener('click', function(e) {
+                        var item = e.target.closest('[data-wh]');
+                        if (!item) return;
+                        var val = item.dataset.wh;
+                        var idx = selectedWarehouses_multi.indexOf(val);
+                        if (idx >= 0) selectedWarehouses_multi.splice(idx, 1);
+                        else selectedWarehouses_multi.push(val);
+                        zbBuildWarehouseMultiList();
+                        zbUpdateWarehouseMultiLabel();
+                        zbRenderNationalTrend();
+                    });
+                }
+
+                if (selAll) {
+                    selAll.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        selectedWarehouses_multi = zbGetFilteredSiteList().slice();
+                        zbBuildWarehouseMultiList();
+                        zbUpdateWarehouseMultiLabel();
+                        zbRenderNationalTrend();
+                    });
+                }
+
+                if (clear) {
+                    clear.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        selectedWarehouses_multi = [];
+                        zbBuildWarehouseMultiList();
+                        zbUpdateWarehouseMultiLabel();
+                        zbRenderNationalTrend();
+                    });
+                }
+
+                document.addEventListener('click', function(e) {
+                    if (!trigger.contains(e.target) && !panel.contains(e.target)) closePanel();
+                });
+            })();
+
+            // ── 质检人排行榜渲染 ──
+            function buildPersonRankBoard() {
+                var el = document.getElementById('rankBoardPerson');
+                if (!el) return;
+                var allDiff = window._allDiffData || [];
+                if (!allDiff.length) { el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-secondary);font-size:12px;">暂无数据</div>'; return; }
+                var map = {};
+                allDiff.forEach(function(d) {
+                    var p = d.person || '未知';
+                    map[p] = (map[p] || 0) + 1;
+                });
+                var list = Object.keys(map).map(function(name){ return { name:name, total:map[name] }; })
+                    .sort(function(a,b){ return b.total - a.total; }).slice(0, 10);
+                var max = list[0] ? list[0].total : 1;
+                var noClsMap = ['top1','top2','top3','normal','normal','normal','normal','normal','normal','normal'];
+                el.innerHTML = list.map(function(p, idx) {
+                    var pct = Math.round(p.total / max * 100);
+                    var color = idx === 0 ? '#dc2626' : idx === 1 ? '#d97706' : idx === 2 ? '#ca8a04' : '#64748b';
+                    return '<div class="rank-row" data-person="' + p.name.replace(/"/g,'&quot;') + '">'
+                        + '<span class="rank-no ' + noClsMap[idx] + '">' + (idx+1) + '</span>'
+                        + '<span class="rank-name">' + p.name + '</span>'
+                        + '<div class="rank-bar-wrap"><div class="rank-bar-inner" style="width:' + pct + '%;background:' + color + ';"></div></div>'
+                        + '<span class="rank-rate" style="color:' + color + ';">' + p.total + '次</span>'
+                        + '</div>';
+                }).join('');
+            }
+
+            // 质检人排行榜点击 → 跳质检人详情页（事件委托）
+            var rankBoardPerson = document.getElementById('rankBoardPerson');
+            if (rankBoardPerson) {
+                rankBoardPerson.addEventListener('click', function(e) {
+                    var row = e.target.closest('[data-person]');
+                    if (!row) return;
+                    if (typeof zbNavToPerson === 'function') zbNavToPerson(row.dataset.person);
+                });
+            }
+
+            // ── 全国差异率趋势图 ──
+            var _nationalTrendChart = null;
+            function zbRenderNationalTrend() {
+                var el = document.getElementById('nationalTrendChart');
+                if (!el || typeof echarts === 'undefined') return;
+                if (!_nationalTrendChart) _nationalTrendChart = echarts.init(el);
+
+                var allDiff = window._allDiffData || [];
+                var titleEl = document.getElementById('nationalTrendTitle');
+                var isDark = document.body.classList.contains('dark');
+                var textColor = isDark ? '#e2e8f0' : '#1e293b';
+                var axisColor = isDark ? '#475569' : '#cbd5e1';
+                var PALETTE = ['#3b82f6','#ef4444','#10b981','#f59e0b','#8b5cf6','#06b6d4','#f97316','#ec4899'];
+
+                // 如果没选站点，显示全国总线
+                if (!selectedWarehouses_multi.length) {
+                    if (titleEl) titleEl.textContent = '📉 差异率趋势 · 全国总览';
+                    // 按日期聚合
+                    var dateMap = {};
+                    allDiff.forEach(function(d) {
+                        if (!d.date) return;
+                        var dt = d.date.split(' ')[0];
+                        if (!dateMap[dt]) dateMap[dt] = new Set();
+                        dateMap[dt].add(d.code);
+                    });
+                    var xData = Object.keys(dateMap).sort();
+                    var yData = xData.map(function(dt){ return dateMap[dt].size; });
+                    _nationalTrendChart.setOption({
+                        tooltip: { trigger:'axis' },
+                        xAxis: { type:'category', data:xData, axisLabel:{ rotate:35, color:textColor }, axisLine:{ lineStyle:{ color:axisColor } } },
+                        yAxis: { type:'value', name:'差异设备数', nameTextStyle:{ color:textColor }, axisLabel:{ color:textColor } },
+                        series: [{ name:'全国', type:'line', data:yData, smooth:true, areaStyle:{ opacity:0.08 }, itemStyle:{ color:'#3b82f6' }, lineStyle:{ color:'#3b82f6', width:2 } }],
+                        legend: { show:false }
+                    }, true);
+                } else {
+                    // 多站点多条线
+                    var names = selectedWarehouses_multi;
+                    if (titleEl) titleEl.textContent = '📉 差异率趋势 · ' + names.join(' / ');
+                    var allDates = new Set();
+                    var siteData = {};
+                    names.forEach(function(site) {
+                        siteData[site] = {};
+                        allDiff.filter(function(d){ return d.warehouse === site; }).forEach(function(d) {
+                            if (!d.date) return;
+                            var dt = d.date.split(' ')[0];
+                            if (!siteData[site][dt]) siteData[site][dt] = new Set();
+                            siteData[site][dt].add(d.code);
+                            allDates.add(dt);
+                        });
+                    });
+                    var xData = Array.from(allDates).sort();
+                    var series = names.map(function(site, idx) {
+                        return {
+                            name: site,
+                            type: 'line',
+                            smooth: true,
+                            data: xData.map(function(dt){ return siteData[site][dt] ? siteData[site][dt].size : 0; }),
+                            itemStyle: { color: PALETTE[idx % PALETTE.length] },
+                            lineStyle: { color: PALETTE[idx % PALETTE.length], width:2 },
+                            areaStyle: { opacity:0.05 }
+                        };
+                    });
+                    _nationalTrendChart.setOption({
+                        tooltip: { trigger:'axis' },
+                        legend: { data:names, textStyle:{ color:textColor }, top:0 },
+                        xAxis: { type:'category', data:xData, axisLabel:{ rotate:35, color:textColor }, axisLine:{ lineStyle:{ color:axisColor } } },
+                        yAxis: { type:'value', name:'差异设备数', nameTextStyle:{ color:textColor }, axisLabel:{ color:textColor } },
+                        series: series
+                    }, true);
+                }
+                _nationalTrendChart.resize();
+            }
+
+            // 在 fullRefresh 后也刷新趋势图和质检人排行
+            var _origFullRefresh = fullRefresh;
+            fullRefresh = function() {
+                _origFullRefresh.apply(this, arguments);
+                setTimeout(function() {
+                    buildPersonRankBoard();
+                    zbRenderNationalTrend();
+                    zbBuildWarehouseMultiList();
+                }, 100);
+            };
         }
 
 
