@@ -381,17 +381,9 @@ body.dark .rank-1 td{background:#7f4a4acc;}body.dark .rank-2 td{background:#2d5a
           <div class="card-title">🏆 站点差异率排行</div>
           <div class="card-note">点击站点名进入详情</div>
         </div>
-        <div class="rank-board">
-          <div>
-            <div class="rank-col-title">🏭 大仓（智能验机中心 + 后验中心仓）</div>
-            <div id="rankBoardDW"></div>
-          </div>
-          <div>
-            <div class="rank-col-title">🏢 中心仓</div>
-            <div id="rankBoardZX"></div>
-          </div>
-        </div>
-        <div style="font-size:10px;color:var(--sub);margin-top:8px;">↑红=上升(变差)·↓绿=下降(改善)·—=无当日数据</div>
+        <div id="rankBoardDW" style="max-height:420px;overflow-y:auto;"></div>
+        <div id="rankBoardZX" style="display:none;"></div>
+        <div style="font-size:10px;color:var(--sub);margin-top:8px;">↑红=上升(变差)·↓绿=下降(改善)·—=无当日数据·大仓排在末尾</div>
       </div>
       <div class="card" style="margin-bottom:0;">
         <div class="card-hd">
@@ -1607,14 +1599,54 @@ body.dark .rank-1 td{background:#7f4a4acc;}body.dark .rank-2 td{background:#2d5a
                     }).join('');
                 }
 
-                const zxMax = Math.max(...zxDynRows.map(r=>r.rate||0), 0.001);
-                const dwMax = Math.max(...dwDynRows.map(r=>r.rate||0), ...dwFixRows.map(r=>r.rate||0), 0.001);
-                document.getElementById('rankBoardDW').innerHTML =
-                    renderRows(dwDynRows, dwMax) +
-                    (dwFixRows.length ? '<div class="rank-fixed-divider">— 后验中心仓 —</div>' + renderRows(dwFixRows, dwMax) : '');
-                document.getElementById('rankBoardZX').innerHTML =
-                    renderRows(zxDynRows, zxMax) +
-                    (zxFixRows.length ? '<div class="rank-fixed-divider">— 后验中心仓 —</div>' + renderRows(zxFixRows, zxMax) : '');
+                // 合并排行：中心仓动态排名在前，大仓（智能验机+后验）排在后面
+                const allMax = Math.max(
+                    ...zxDynRows.map(r=>r.rate||0),
+                    ...dwDynRows.map(r=>r.rate||0),
+                    ...dwFixRows.map(r=>r.rate||0),
+                    0.001
+                );
+                // 中心仓统一排名
+                const mergedZX = zxDynRows.map((r,i) => ({...r, globalIdx: i}));
+                // 大仓（智能验机）紧接其后
+                const mergedDW = dwDynRows.map(r => ({...r, isDW: true}));
+                // 后验中心仓固定在最末
+                const mergedFix = dwFixRows.map(r => ({...r, isDW: true, isFixed: true}));
+
+                function renderMergedRows(rows, maxRate, startIdx) {
+                    let idx = startIdx;
+                    return rows.map((r) => {
+                        const color = rateColor(r.rate);
+                        const pct = maxRate > 0 && r.rate !== null ? (r.rate / maxRate * 100).toFixed(0) : 0;
+                        const noTxt = r.isFixed ? '—' : String(idx++);
+                        const metaHtml = (r.checks !== undefined)
+                            ? `<span style="font-size:10px;color:var(--sub);white-space:nowrap;">大盘${r.checks}台·执行${r.execDiff}台</span>`
+                            : '';
+                        return `<div class="rank-row" data-site="${r.site}" onclick="zbClickRankSite(this)" style="cursor:pointer;">
+                            <div class="rank-no">${noTxt}</div>
+                            <div class="rank-name" data-site="${r.site}" title="${r.site}" onclick="event.stopPropagation();openStation('${r.site.replace(/'/g,"\\'")}');">${r.site}</div>
+                            <div class="rank-bar-wrap"><div class="rank-bar-inner" style="width:${pct}%;background:${color}"></div></div>
+                            <div class="rank-rate" style="color:${color}">${r.rate !== null ? r.rate.toFixed(2)+'%' : '—'}</div>
+                            ${metaHtml}
+                            <div class="rank-change ${r.changeCls}">${r.change}</div>
+                        </div>`;
+                    }).join('');
+                }
+
+                const rankBoardEl = document.getElementById('rankBoardDW');
+                if (rankBoardEl) {
+                    let html = renderMergedRows(mergedZX, allMax, 1);
+                    if (mergedDW.length) {
+                        html += '<div class="rank-fixed-divider">— 大仓 —</div>' + renderMergedRows(mergedDW, allMax, mergedZX.length + 1);
+                    }
+                    if (mergedFix.length) {
+                        html += '<div class="rank-fixed-divider">— 后验中心仓 —</div>' + renderMergedRows(mergedFix, allMax, mergedZX.length + mergedDW.length + 1);
+                    }
+                    rankBoardEl.innerHTML = html;
+                }
+                // ZX容器清空（不再使用）
+                const zxEl = document.getElementById('rankBoardZX');
+                if (zxEl) zxEl.innerHTML = '';
             }
 
             function clearAllPanels() {
@@ -1789,6 +1821,7 @@ body.dark .rank-1 td{background:#7f4a4acc;}body.dark .rank-2 td{background:#2d5a
                 showLoading();
                 setTimeout(function() {
                     currentFilteredDiff = filterDiffData(diffData).slice().sort((a,b) => (a.date||'').localeCompare(b.date||''));
+                    window.currentFilteredDiff = currentFilteredDiff; // 暴露给下钻函数
                     detailCurrentOffset = 0;
                     safeRender(updateStatsBoard, 'statsArea');
                     safeRender(renderTrendChart, 'trendChart');
@@ -2071,8 +2104,12 @@ body.dark .rank-1 td{background:#7f4a4acc;}body.dark .rank-2 td{background:#2d5a
             });
             safeOn('personTable', 'click', e => {
                 const tr = e.target.closest('tr'); if (tr?.dataset.person) {
-                    const filtered = currentFilteredDiff.filter(d => d.person === tr.dataset.person);
-                    openDetailWithData(filtered, `质检人员【${tr.dataset.person}】明细 (${filtered.length}条)`);
+                    if (typeof window.openPerson === 'function') {
+                        window.openPerson(tr.dataset.person);
+                    } else {
+                        const filtered = currentFilteredDiff.filter(d => d.person === tr.dataset.person);
+                        openDetailWithData(filtered, `质检人员【${tr.dataset.person}】明细 (${filtered.length}条)`);
+                    }
                 }
             });
 
@@ -3517,6 +3554,16 @@ document.addEventListener('DOMContentLoaded', function(){
 
 <!-- ══ 下钻 & 导航逻辑 ══ -->
 <script>
+// ── 提前暴露，使用延迟绑定确保函数定义后才执行 ──
+window.openStation = function(name) {
+    if (typeof openStation === 'function') openStation(name);
+    else setTimeout(function(){ if(typeof openStation==='function') openStation(name); }, 200);
+};
+window.openPerson = function(name) {
+    if (typeof openPerson === 'function') openPerson(name);
+    else setTimeout(function(){ if(typeof openPerson==='function') openPerson(name); }, 200);
+};
+
 var _prevPage = 'overview';
 
 function zbNav(name, el) {
