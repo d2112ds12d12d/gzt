@@ -3031,6 +3031,140 @@ function zbClickRankSite(el) {
     wf.dispatchEvent(new Event('change'));
 }
 
+// ── 站点详情 ──
+var _stRecs = [], _stShown = 0, _stChart = null;
+function openStation(name) {
+    zbNav('station', null);
+    addRecent('station', name);
+    var data = window.currentFilteredDiff || [];
+    _stRecs = data.filter(function(d){ return d.warehouse===name; }).sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
+    _stShown = 0;
+
+    document.getElementById('stationTitle').textContent = name;
+    var sd = document.getElementById('startDateFilter'), ed = document.getElementById('endDateFilter');
+    document.getElementById('stationSub').textContent = '数据周期 ' + (sd?sd.value:'') + ' – ' + (ed?ed.value:'');
+
+    var total = _stRecs.length;
+    var obj = _stRecs.filter(function(d){ return d.category&&d.category.includes('客观')&&!d.category.includes('主观'); }).length;
+    var subj = _stRecs.filter(function(d){ return d.category&&d.category.includes('主观'); }).length;
+    var exec = _stRecs.filter(function(d){ return d.judgedIssueType==='执行问题'&&d.category&&d.category.includes('客观')&&!d.category.includes('主观'); }).length;
+
+    var badge = document.getElementById('stationBadge');
+    badge.textContent = '差异 ' + total + ' 次';
+    badge.style.cssText = 'background:' + (total>10?'#FEF2F2':total>5?'#FFFBEB':'#F0FDF4') + ';color:' + (total>10?'#DC2626':total>5?'#D97706':'#059669') + ';font-size:11px;padding:4px 12px;border-radius:8px;font-weight:500;';
+
+    document.getElementById('stationKpi').innerHTML = [
+        {l:'差异总次数',v:total},{l:'客观差异',v:obj},{l:'主观差异',v:subj},{l:'执行问题',v:exec}
+    ].map(function(k){ return '<div class="dkpi"><div class="dkpi-lbl">'+k.l+'</div><div class="dkpi-num">'+k.v+'</div></div>'; }).join('');
+
+    // 趋势图
+    var dateMap = {};
+    _stRecs.forEach(function(d){ if(d.date) dateMap[d.date]=(dateMap[d.date]||0)+1; });
+    var dates = Object.keys(dateMap).sort(), vals = dates.map(function(d){ return dateMap[d]; });
+    var cel = document.getElementById('stationChart');
+    if (_stChart) _stChart.dispose();
+    if (cel && typeof echarts!=='undefined') {
+        _stChart = echarts.init(cel);
+        var dark = document.body.classList.contains('dark');
+        _stChart.setOption({backgroundColor:'transparent',tooltip:{trigger:'axis'},grid:{top:15,left:45,right:15,bottom:28},
+            xAxis:{type:'category',data:dates,axisLabel:{color:dark?'#94a3b8':'#64748b',fontSize:10},axisLine:{lineStyle:{color:dark?'#334155':'#e2e8f0'}},splitLine:{show:false}},
+            yAxis:{type:'value',minInterval:1,axisLabel:{color:dark?'#94a3b8':'#64748b',fontSize:10},splitLine:{lineStyle:{color:dark?'#334155':'#e2e8f0',type:'dashed'}}},
+            series:[{type:'bar',data:vals,itemStyle:{color:'#3B82F6',borderRadius:[3,3,0,0]},barMaxWidth:28}]});
+    }
+
+    // 问题类型
+    var im = {}; _stRecs.forEach(function(d){ if(d.issueType) im[d.issueType]=(im[d.issueType]||0)+1; });
+    var il = Object.entries(im).sort(function(a,b){ return b[1]-a[1]; }).slice(0,6);
+    var mx = il[0]?il[0][1]:1;
+    document.getElementById('stationIssues').innerHTML = il.map(function(x){ return '<div class="bar-row"><span class="bar-name">'+x[0]+'</span><div class="bar-wrap"><div class="bar-fill" style="width:'+Math.round(x[1]/mx*100)+'%;"></div></div><span class="bar-val">'+x[1]+'次</span></div>'; }).join('') || '<div style="color:var(--sub);font-size:12px;padding:8px 0;">暂无数据</div>';
+
+    // 涉及质检人
+    var pm = {}; _stRecs.forEach(function(d){ if(d.person) pm[d.person]=(pm[d.person]||0)+1; });
+    var pl = Object.entries(pm).sort(function(a,b){ return b[1]-a[1]; });
+    var pmx = pl[0]?pl[0][1]:1;
+    var pc = ['#FCA5A5','#FDE68A','#6EE7B7','#93C5FD','#C4B5FD'];
+    document.getElementById('stationPersons').innerHTML = pl.map(function(x,i){ return '<div class="bar-row" style="cursor:pointer;" onclick="openPerson(''+x[0].replace(/'/g,'\'')+'')" ><span class="bar-name link">'+x[0]+'</span><div class="bar-wrap"><div class="bar-fill" style="width:'+Math.round(x[1]/pmx*100)+'%;background:'+pc[i%pc.length]+';"></div></div><span class="bar-val">'+x[1]+'次</span></div>'; }).join('') || '<div style="color:var(--sub);font-size:12px;padding:8px 0;">暂无数据</div>';
+
+    document.getElementById('stationCount').textContent = '共 ' + total + ' 条';
+    _stShown = 0; renderStationRows(15);
+}
+function renderStationRows(n) {
+    var slice = _stRecs.slice(_stShown, _stShown+n);
+    var html = slice.map(function(d){
+        var isS = d.category&&d.category.includes('主观');
+        return '<tr><td>'+( d.date||'-')+'</td><td style="font-family:monospace;font-size:10px;">'+(d.code||'-')+'</td>'
+            +'<td><span class="badge-s '+(isS?'badge-subj':'badge-obj')+'">'+(isS?'主观':'客观')+'</span></td>'
+            +'<td>'+(d.issueType||'-')+'</td><td>'+(d.level3||d.level3_orig||'-')+'</td><td>'+(d.person||'-')+'</td></tr>';
+    }).join('');
+    var tb = document.getElementById('stationBody');
+    if (_stShown===0) tb.innerHTML=html; else tb.innerHTML+=html;
+    _stShown += slice.length;
+    document.getElementById('stationMore').style.display = _stShown<_stRecs.length?'':'none';
+}
+function loadMoreStation(){ renderStationRows(15); }
+
+// ── 质检人详情 ──
+var _prRecs = [], _prShown = 0;
+function openPerson(name) {
+    zbNav('person', null);
+    addRecent('person', name);
+    var data = window.currentFilteredDiff || [];
+    _prRecs = data.filter(function(d){ return d.person===name; }).sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
+    _prShown = 0;
+
+    document.getElementById('personTitle').textContent = name;
+    var sd = document.getElementById('startDateFilter'), ed = document.getElementById('endDateFilter');
+    document.getElementById('personSub').textContent = '数据周期 ' + (sd?sd.value:'') + ' – ' + (ed?ed.value:'');
+
+    var total = _prRecs.length;
+    var obj = _prRecs.filter(function(d){ return d.category&&d.category.includes('客观')&&!d.category.includes('主观'); }).length;
+    var subj = _prRecs.filter(function(d){ return d.category&&d.category.includes('主观'); }).length;
+    var sites = new Set(_prRecs.map(function(d){ return d.warehouse; })).size;
+
+    var badge = document.getElementById('personBadge');
+    badge.textContent = '累计差异 ' + total + ' 次';
+    badge.style.cssText = 'background:' + (total>10?'#FEF2F2':total>5?'#FFFBEB':'#F0FDF4') + ';color:' + (total>10?'#DC2626':total>5?'#D97706':'#059669') + ';font-size:11px;padding:4px 12px;border-radius:8px;font-weight:500;';
+
+    document.getElementById('personKpi').innerHTML = [
+        {l:'累计差异次数',v:total},{l:'涉及站点数',v:sites},{l:'客观问题',v:obj},{l:'主观问题',v:subj}
+    ].map(function(k){ return '<div class="dkpi"><div class="dkpi-lbl">'+k.l+'</div><div class="dkpi-num">'+k.v+'</div></div>'; }).join('');
+
+    var im = {}; _prRecs.forEach(function(d){ if(d.issueType) im[d.issueType]=(im[d.issueType]||0)+1; });
+    var il = Object.entries(im).sort(function(a,b){ return b[1]-a[1]; }).slice(0,5);
+    var mx = il[0]?il[0][1]:1;
+    document.getElementById('personIssues').innerHTML = il.map(function(x){ return '<div class="bar-row"><span class="bar-name">'+x[0]+'</span><div class="bar-wrap"><div class="bar-fill" style="width:'+Math.round(x[1]/mx*100)+'%;"></div></div><span class="bar-val">'+x[1]+'次</span></div>'; }).join('') || '<div style="color:var(--sub);font-size:12px;padding:8px 0;">暂无数据</div>';
+
+    var sm = {}; _prRecs.forEach(function(d){ if(d.warehouse) sm[d.warehouse]=(sm[d.warehouse]||0)+1; });
+    var sl = Object.entries(sm).sort(function(a,b){ return b[1]-a[1]; });
+    var smx = sl[0]?sl[0][1]:1;
+    var sc = ['#FCA5A5','#FDE68A','#6EE7B7','#93C5FD','#C4B5FD'];
+    document.getElementById('personStations').innerHTML = sl.map(function(x,i){ return '<div class="bar-row" style="cursor:pointer;" onclick="openStation(''+x[0].replace(/'/g,'\'')+'')" ><span class="bar-name link">'+x[0]+'</span><div class="bar-wrap"><div class="bar-fill" style="width:'+Math.round(x[1]/smx*100)+'%;background:'+sc[i%sc.length]+';"></div></div><span class="bar-val">'+x[1]+'次</span></div>'; }).join('') || '<div style="color:var(--sub);font-size:12px;padding:8px 0;">暂无数据</div>';
+
+    document.getElementById('personCount').textContent = '共 ' + total + ' 条';
+    _prShown = 0; renderPersonRows(15);
+}
+function renderPersonRows(n) {
+    var slice = _prRecs.slice(_prShown, _prShown+n);
+    var html = slice.map(function(d){
+        var isS = d.category&&d.category.includes('主观');
+        return '<div class="tl-item"><div class="tl-dot" style="background:' + (isS?'#EF9F27':'#E24B4A') + ';"></div>'
+            +'<span class="tl-date">'+(d.date||'-')+'</span>'
+            +'<div class="tl-body"><div class="tl-title">'+(d.issueType||'')+(d.level3?' · '+d.level3:'')
+            +'<span class="badge-s '+(isS?'badge-subj':'badge-obj')+'">'+(isS?'主观':'客观')+'</span></div>'
+            +'<div class="tl-sub">'+(d.warehouse||'-')+' · '+(d.code||'-')+'</div></div></div>';
+    }).join('');
+    var el = document.getElementById('personTimeline');
+    if (_prShown===0) el.innerHTML=html; else el.innerHTML+=html;
+    _prShown += slice.length;
+    document.getElementById('personMore').style.display = _prShown<_prRecs.length?'':'none';
+}
+function loadMorePerson(){ renderPersonRows(15); }
+
+// ── 暴露给全局，让排行榜和人员表可以触发下钻 ──
+window.openStation = openStation;
+window.openPerson = openPerson;
+
+// ── 质检人排名渲染（新） ──
 function zbNav(name, el) {
     document.querySelectorAll('.zb-page').forEach(function(p){ p.classList.remove('active'); });
     document.querySelectorAll('.zb-nav-item').forEach(function(n){ n.classList.remove('active'); });
@@ -3561,16 +3695,6 @@ document.addEventListener('DOMContentLoaded', function(){
 
 <!-- ══ 下钻 & 导航逻辑 ══ -->
 <script>
-// ── 提前暴露，使用延迟绑定确保函数定义后才执行 ──
-window.openStation = function(name) {
-    if (typeof openStation === 'function') openStation(name);
-    else setTimeout(function(){ if(typeof openStation==='function') openStation(name); }, 200);
-};
-window.openPerson = function(name) {
-    if (typeof openPerson === 'function') openPerson(name);
-    else setTimeout(function(){ if(typeof openPerson==='function') openPerson(name); }, 200);
-};
-
 var _prevPage = 'overview';
 
 function zbNav(name, el) {
@@ -3598,147 +3722,20 @@ function addRecent(type, name) {
     el.innerHTML = _recent.map(function(r) {
         var dot = r.type==='station' ? '#FCA5A5' : '#93C5FD';
         var icon = r.type==='station' ? '🏭' : '👤';
-        var fn = r.type==='station' ? 'openStation' : 'openPerson';
-        return '<div class="sb-item recent" onclick="'+fn+'(''+r.name.replace(/'/g,'\'')+'')" style="font-size:11px;padding:7px 10px;border-left:none;">'
-            + '<span style="width:6px;height:6px;border-radius:50%;background:'+dot+';flex-shrink:0;display:inline-block;"></span>'
+        var dtype = r.type==='station' ? 'data-drillsite' : 'data-drillperson';
+        return '<div class="sb-item recent" '+dtype+'="'+r.name+'" style="font-size:11px;padding:7px 10px;border-left:none;cursor:pointer;">'
+            + '<span style="width:6px;height:6px;border-radius:50%;background:'+dot+';flex-shrink:0;display:inline-block;margin-right:2px;"></span>'
             + icon + ' ' + r.name + '</div>';
     }).join('');
+    // 事件委托
+    el.onclick = function(e) {
+        var row = e.target.closest('[data-drillsite]');
+        if (row) { openStation(row.dataset.drillsite); return; }
+        row = e.target.closest('[data-drillperson]');
+        if (row) { openPerson(row.dataset.drillperson); }
+    };
 }
 
-// ── 站点详情 ──
-var _stRecs = [], _stShown = 0, _stChart = null;
-function openStation(name) {
-    zbNav('station', null);
-    addRecent('station', name);
-    var data = window.currentFilteredDiff || [];
-    _stRecs = data.filter(function(d){ return d.warehouse===name; }).sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
-    _stShown = 0;
-
-    document.getElementById('stationTitle').textContent = name;
-    var sd = document.getElementById('startDateFilter'), ed = document.getElementById('endDateFilter');
-    document.getElementById('stationSub').textContent = '数据周期 ' + (sd?sd.value:'') + ' – ' + (ed?ed.value:'');
-
-    var total = _stRecs.length;
-    var obj = _stRecs.filter(function(d){ return d.category&&d.category.includes('客观')&&!d.category.includes('主观'); }).length;
-    var subj = _stRecs.filter(function(d){ return d.category&&d.category.includes('主观'); }).length;
-    var exec = _stRecs.filter(function(d){ return d.judgedIssueType==='执行问题'&&d.category&&d.category.includes('客观')&&!d.category.includes('主观'); }).length;
-
-    var badge = document.getElementById('stationBadge');
-    badge.textContent = '差异 ' + total + ' 次';
-    badge.style.cssText = 'background:' + (total>10?'#FEF2F2':total>5?'#FFFBEB':'#F0FDF4') + ';color:' + (total>10?'#DC2626':total>5?'#D97706':'#059669') + ';font-size:11px;padding:4px 12px;border-radius:8px;font-weight:500;';
-
-    document.getElementById('stationKpi').innerHTML = [
-        {l:'差异总次数',v:total},{l:'客观差异',v:obj},{l:'主观差异',v:subj},{l:'执行问题',v:exec}
-    ].map(function(k){ return '<div class="dkpi"><div class="dkpi-lbl">'+k.l+'</div><div class="dkpi-num">'+k.v+'</div></div>'; }).join('');
-
-    // 趋势图
-    var dateMap = {};
-    _stRecs.forEach(function(d){ if(d.date) dateMap[d.date]=(dateMap[d.date]||0)+1; });
-    var dates = Object.keys(dateMap).sort(), vals = dates.map(function(d){ return dateMap[d]; });
-    var cel = document.getElementById('stationChart');
-    if (_stChart) _stChart.dispose();
-    if (cel && typeof echarts!=='undefined') {
-        _stChart = echarts.init(cel);
-        var dark = document.body.classList.contains('dark');
-        _stChart.setOption({backgroundColor:'transparent',tooltip:{trigger:'axis'},grid:{top:15,left:45,right:15,bottom:28},
-            xAxis:{type:'category',data:dates,axisLabel:{color:dark?'#94a3b8':'#64748b',fontSize:10},axisLine:{lineStyle:{color:dark?'#334155':'#e2e8f0'}},splitLine:{show:false}},
-            yAxis:{type:'value',minInterval:1,axisLabel:{color:dark?'#94a3b8':'#64748b',fontSize:10},splitLine:{lineStyle:{color:dark?'#334155':'#e2e8f0',type:'dashed'}}},
-            series:[{type:'bar',data:vals,itemStyle:{color:'#3B82F6',borderRadius:[3,3,0,0]},barMaxWidth:28}]});
-    }
-
-    // 问题类型
-    var im = {}; _stRecs.forEach(function(d){ if(d.issueType) im[d.issueType]=(im[d.issueType]||0)+1; });
-    var il = Object.entries(im).sort(function(a,b){ return b[1]-a[1]; }).slice(0,6);
-    var mx = il[0]?il[0][1]:1;
-    document.getElementById('stationIssues').innerHTML = il.map(function(x){ return '<div class="bar-row"><span class="bar-name">'+x[0]+'</span><div class="bar-wrap"><div class="bar-fill" style="width:'+Math.round(x[1]/mx*100)+'%;"></div></div><span class="bar-val">'+x[1]+'次</span></div>'; }).join('') || '<div style="color:var(--sub);font-size:12px;padding:8px 0;">暂无数据</div>';
-
-    // 涉及质检人
-    var pm = {}; _stRecs.forEach(function(d){ if(d.person) pm[d.person]=(pm[d.person]||0)+1; });
-    var pl = Object.entries(pm).sort(function(a,b){ return b[1]-a[1]; });
-    var pmx = pl[0]?pl[0][1]:1;
-    var pc = ['#FCA5A5','#FDE68A','#6EE7B7','#93C5FD','#C4B5FD'];
-    document.getElementById('stationPersons').innerHTML = pl.map(function(x,i){ return '<div class="bar-row" style="cursor:pointer;" onclick="openPerson(''+x[0].replace(/'/g,'\'')+'')" ><span class="bar-name link">'+x[0]+'</span><div class="bar-wrap"><div class="bar-fill" style="width:'+Math.round(x[1]/pmx*100)+'%;background:'+pc[i%pc.length]+';"></div></div><span class="bar-val">'+x[1]+'次</span></div>'; }).join('') || '<div style="color:var(--sub);font-size:12px;padding:8px 0;">暂无数据</div>';
-
-    document.getElementById('stationCount').textContent = '共 ' + total + ' 条';
-    _stShown = 0; renderStationRows(15);
-}
-function renderStationRows(n) {
-    var slice = _stRecs.slice(_stShown, _stShown+n);
-    var html = slice.map(function(d){
-        var isS = d.category&&d.category.includes('主观');
-        return '<tr><td>'+( d.date||'-')+'</td><td style="font-family:monospace;font-size:10px;">'+(d.code||'-')+'</td>'
-            +'<td><span class="badge-s '+(isS?'badge-subj':'badge-obj')+'">'+(isS?'主观':'客观')+'</span></td>'
-            +'<td>'+(d.issueType||'-')+'</td><td>'+(d.level3||d.level3_orig||'-')+'</td><td>'+(d.person||'-')+'</td></tr>';
-    }).join('');
-    var tb = document.getElementById('stationBody');
-    if (_stShown===0) tb.innerHTML=html; else tb.innerHTML+=html;
-    _stShown += slice.length;
-    document.getElementById('stationMore').style.display = _stShown<_stRecs.length?'':'none';
-}
-function loadMoreStation(){ renderStationRows(15); }
-
-// ── 质检人详情 ──
-var _prRecs = [], _prShown = 0;
-function openPerson(name) {
-    zbNav('person', null);
-    addRecent('person', name);
-    var data = window.currentFilteredDiff || [];
-    _prRecs = data.filter(function(d){ return d.person===name; }).sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
-    _prShown = 0;
-
-    document.getElementById('personTitle').textContent = name;
-    var sd = document.getElementById('startDateFilter'), ed = document.getElementById('endDateFilter');
-    document.getElementById('personSub').textContent = '数据周期 ' + (sd?sd.value:'') + ' – ' + (ed?ed.value:'');
-
-    var total = _prRecs.length;
-    var obj = _prRecs.filter(function(d){ return d.category&&d.category.includes('客观')&&!d.category.includes('主观'); }).length;
-    var subj = _prRecs.filter(function(d){ return d.category&&d.category.includes('主观'); }).length;
-    var sites = new Set(_prRecs.map(function(d){ return d.warehouse; })).size;
-
-    var badge = document.getElementById('personBadge');
-    badge.textContent = '累计差异 ' + total + ' 次';
-    badge.style.cssText = 'background:' + (total>10?'#FEF2F2':total>5?'#FFFBEB':'#F0FDF4') + ';color:' + (total>10?'#DC2626':total>5?'#D97706':'#059669') + ';font-size:11px;padding:4px 12px;border-radius:8px;font-weight:500;';
-
-    document.getElementById('personKpi').innerHTML = [
-        {l:'累计差异次数',v:total},{l:'涉及站点数',v:sites},{l:'客观问题',v:obj},{l:'主观问题',v:subj}
-    ].map(function(k){ return '<div class="dkpi"><div class="dkpi-lbl">'+k.l+'</div><div class="dkpi-num">'+k.v+'</div></div>'; }).join('');
-
-    var im = {}; _prRecs.forEach(function(d){ if(d.issueType) im[d.issueType]=(im[d.issueType]||0)+1; });
-    var il = Object.entries(im).sort(function(a,b){ return b[1]-a[1]; }).slice(0,5);
-    var mx = il[0]?il[0][1]:1;
-    document.getElementById('personIssues').innerHTML = il.map(function(x){ return '<div class="bar-row"><span class="bar-name">'+x[0]+'</span><div class="bar-wrap"><div class="bar-fill" style="width:'+Math.round(x[1]/mx*100)+'%;"></div></div><span class="bar-val">'+x[1]+'次</span></div>'; }).join('') || '<div style="color:var(--sub);font-size:12px;padding:8px 0;">暂无数据</div>';
-
-    var sm = {}; _prRecs.forEach(function(d){ if(d.warehouse) sm[d.warehouse]=(sm[d.warehouse]||0)+1; });
-    var sl = Object.entries(sm).sort(function(a,b){ return b[1]-a[1]; });
-    var smx = sl[0]?sl[0][1]:1;
-    var sc = ['#FCA5A5','#FDE68A','#6EE7B7','#93C5FD','#C4B5FD'];
-    document.getElementById('personStations').innerHTML = sl.map(function(x,i){ return '<div class="bar-row" style="cursor:pointer;" onclick="openStation(''+x[0].replace(/'/g,'\'')+'')" ><span class="bar-name link">'+x[0]+'</span><div class="bar-wrap"><div class="bar-fill" style="width:'+Math.round(x[1]/smx*100)+'%;background:'+sc[i%sc.length]+';"></div></div><span class="bar-val">'+x[1]+'次</span></div>'; }).join('') || '<div style="color:var(--sub);font-size:12px;padding:8px 0;">暂无数据</div>';
-
-    document.getElementById('personCount').textContent = '共 ' + total + ' 条';
-    _prShown = 0; renderPersonRows(15);
-}
-function renderPersonRows(n) {
-    var slice = _prRecs.slice(_prShown, _prShown+n);
-    var html = slice.map(function(d){
-        var isS = d.category&&d.category.includes('主观');
-        return '<div class="tl-item"><div class="tl-dot" style="background:' + (isS?'#EF9F27':'#E24B4A') + ';"></div>'
-            +'<span class="tl-date">'+(d.date||'-')+'</span>'
-            +'<div class="tl-body"><div class="tl-title">'+(d.issueType||'')+(d.level3?' · '+d.level3:'')
-            +'<span class="badge-s '+(isS?'badge-subj':'badge-obj')+'">'+(isS?'主观':'客观')+'</span></div>'
-            +'<div class="tl-sub">'+(d.warehouse||'-')+' · '+(d.code||'-')+'</div></div></div>';
-    }).join('');
-    var el = document.getElementById('personTimeline');
-    if (_prShown===0) el.innerHTML=html; else el.innerHTML+=html;
-    _prShown += slice.length;
-    document.getElementById('personMore').style.display = _prShown<_prRecs.length?'':'none';
-}
-function loadMorePerson(){ renderPersonRows(15); }
-
-// ── 暴露给全局，让排行榜和人员表可以触发下钻 ──
-window.openStation = openStation;
-window.openPerson = openPerson;
-
-// ── 质检人排名渲染（新） ──
 function renderPersonRankList() {
     var data = window.currentFilteredDiff || [];
     var map = {};
