@@ -1622,9 +1622,10 @@ body.dark .rank-1 td{background:#7f4a4acc;}body.dark .rank-2 td{background:#2d5a
                         const metaHtml = (r.checks !== undefined)
                             ? `<span style="font-size:10px;color:var(--sub);white-space:nowrap;">大盘${r.checks}台·执行${r.execDiff}台</span>`
                             : '';
-                        return `<div class="rank-row" data-site="${r.site}" onclick="zbClickRankSite(this)" style="cursor:pointer;">
+                        // 用 data-drillsite 存站点名，不用 onclick 内联避免引号冲突
+                        return `<div class="rank-row" data-drillsite="${r.site.replace(/"/g,'&quot;')}" style="cursor:pointer;">
                             <div class="rank-no">${noTxt}</div>
-                            <div class="rank-name" data-site="${r.site}" title="${r.site}" onclick="event.stopPropagation();openStation('${r.site.replace(/'/g,"\\'")}');">${r.site}</div>
+                            <div class="rank-name" title="${r.site}">${r.site}</div>
                             <div class="rank-bar-wrap"><div class="rank-bar-inner" style="width:${pct}%;background:${color}"></div></div>
                             <div class="rank-rate" style="color:${color}">${r.rate !== null ? r.rate.toFixed(2)+'%' : '—'}</div>
                             ${metaHtml}
@@ -1635,16 +1636,22 @@ body.dark .rank-1 td{background:#7f4a4acc;}body.dark .rank-2 td{background:#2d5a
 
                 const rankBoardEl = document.getElementById('rankBoardDW');
                 if (rankBoardEl) {
-                    let html = renderMergedRows(mergedZX, allMax, 1);
+                    let rankHtml = renderMergedRows(mergedZX, allMax, 1);
                     if (mergedDW.length) {
-                        html += '<div class="rank-fixed-divider">— 大仓 —</div>' + renderMergedRows(mergedDW, allMax, mergedZX.length + 1);
+                        rankHtml += '<div class="rank-fixed-divider">— 大仓 —</div>' + renderMergedRows(mergedDW, allMax, mergedZX.length + 1);
                     }
                     if (mergedFix.length) {
-                        html += '<div class="rank-fixed-divider">— 后验中心仓 —</div>' + renderMergedRows(mergedFix, allMax, mergedZX.length + mergedDW.length + 1);
+                        rankHtml += '<div class="rank-fixed-divider">— 后验中心仓 —</div>' + renderMergedRows(mergedFix, allMax, mergedZX.length + mergedDW.length + 1);
                     }
-                    rankBoardEl.innerHTML = html;
+                    rankBoardEl.innerHTML = rankHtml;
+                    // 事件委托绑在容器上，每次重渲染后重新绑定
+                    rankBoardEl.onclick = function(e) {
+                        var row = e.target.closest('[data-drillsite]');
+                        if (row && row.dataset.drillsite) {
+                            openStation(row.dataset.drillsite);
+                        }
+                    };
                 }
-                // ZX容器清空（不再使用）
                 const zxEl = document.getElementById('rankBoardZX');
                 if (zxEl) zxEl.innerHTML = '';
             }
@@ -3743,12 +3750,17 @@ function renderPersonRankList() {
     el.innerHTML = list.map(function(x, i){
         var color = i===0?'#DC2626':i===1?'#D97706':i===2?'#D97706':'var(--sub)';
         var bg = i===0?'#FEF2F2':i===1?'#FFFBEB':i===2?'#FFFBEB':'var(--filter-input)';
-        return '<div class="drill-person" data-person="'+x[0]+'" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;cursor:pointer;transition:background .15s;margin-bottom:3px;">'
+        return '<div data-drillperson="'+x[0]+'" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;cursor:pointer;transition:background .15s;margin-bottom:3px;">'
             + '<span style="font-size:10px;color:'+color+';width:18px;text-align:center;font-weight:600;">'+(i+1)+'</span>'
             + '<span class="rank-name" style="flex:1;font-size:12px;color:var(--text);">'+x[0]+'</span>'
             + '<span style="font-size:10px;padding:2px 8px;border-radius:6px;font-weight:500;background:'+bg+';color:'+color+';">'+x[1]+'次</span>'
             + '</div>';
     }).join('');
+    // 事件委托绑在容器上
+    el.onclick = function(e) {
+        var row = e.target.closest('[data-drillperson]');
+        if (row && row.dataset.drillperson) openPerson(row.dataset.drillperson);
+    };
 }
 
 // ── 拦截 fullRefresh 额外渲染人员排名 ──
@@ -3758,30 +3770,14 @@ window.fullRefresh = function() {
     setTimeout(renderPersonRankList, 100);
 };
 
-// ── 事件委托：排行榜站点下钻 + 质检人下钻 ──
-document.addEventListener('click', function(e) {
-    // 站点排行榜点击
-    var rankRow = e.target.closest('.drill-station[data-site]');
-    if (rankRow) {
-        var site = rankRow.dataset.site;
-        if (site) { openStation(site); return; }
-    }
-    // 质检人排名点击
-    var personRow = e.target.closest('.drill-person[data-person]');
-    if (personRow) {
-        var person = personRow.dataset.person;
-        if (person) { openPerson(person); return; }
-    }
-});
-
-// 悬停样式
+// ── 排行榜悬停样式（事件委托已移到各容器上）──
 document.addEventListener('mouseover', function(e) {
-    var r = e.target.closest('.drill-station .rank-name, .drill-person .rank-name');
-    if (r) { r.style.color='#3B82F6'; r.style.textDecoration='underline'; }
+    var row = e.target.closest('[data-drillsite],[data-drillperson]');
+    if (row) { var nm = row.querySelector('.rank-name'); if(nm){ nm.style.color='#3B82F6'; nm.style.textDecoration='underline'; } }
 });
 document.addEventListener('mouseout', function(e) {
-    var r = e.target.closest('.drill-station .rank-name, .drill-person .rank-name');
-    if (r) { r.style.color=''; r.style.textDecoration=''; }
+    var row = e.target.closest('[data-drillsite],[data-drillperson]');
+    if (row) { var nm = row.querySelector('.rank-name'); if(nm){ nm.style.color=''; nm.style.textDecoration=''; } }
 });
 </script>
 
