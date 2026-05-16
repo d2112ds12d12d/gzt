@@ -3083,7 +3083,9 @@ function openStation(name) {
     var pl = Object.entries(pm).sort(function(a,b){ return b[1]-a[1]; });
     var pmx = pl[0]?pl[0][1]:1;
     var pc = ['#FCA5A5','#FDE68A','#6EE7B7','#93C5FD','#C4B5FD'];
-    document.getElementById('stationPersons').innerHTML = pl.map(function(x,i){ return '<div class="bar-row" style="cursor:pointer;" onclick="openPerson(''+x[0].replace(/'/g,'\'')+'')" ><span class="bar-name link">'+x[0]+'</span><div class="bar-wrap"><div class="bar-fill" style="width:'+Math.round(x[1]/pmx*100)+'%;background:'+pc[i%pc.length]+';"></div></div><span class="bar-val">'+x[1]+'次</span></div>'; }).join('') || '<div style="color:var(--sub);font-size:12px;padding:8px 0;">暂无数据</div>';
+    var spEl = document.getElementById('stationPersons');
+    spEl.innerHTML = pl.map(function(x,i){ return '<div class="bar-row" data-drillperson="'+x[0]+'" style="cursor:pointer;"><span class="bar-name link">'+x[0]+'</span><div class="bar-wrap"><div class="bar-fill" style="width:'+Math.round(x[1]/pmx*100)+'%;background:'+pc[i%pc.length]+';"></div></div><span class="bar-val">'+x[1]+'次</span></div>'; }).join('') || '<div style="color:var(--sub);font-size:12px;padding:8px 0;">暂无数据</div>';
+    spEl.onclick = function(e){ var r=e.target.closest('[data-drillperson]'); if(r) openPerson(r.dataset.drillperson); };
 
     document.getElementById('stationCount').textContent = '共 ' + total + ' 条';
     _stShown = 0; renderStationRows(15);
@@ -3138,7 +3140,9 @@ function openPerson(name) {
     var sl = Object.entries(sm).sort(function(a,b){ return b[1]-a[1]; });
     var smx = sl[0]?sl[0][1]:1;
     var sc = ['#FCA5A5','#FDE68A','#6EE7B7','#93C5FD','#C4B5FD'];
-    document.getElementById('personStations').innerHTML = sl.map(function(x,i){ return '<div class="bar-row" style="cursor:pointer;" onclick="openStation(''+x[0].replace(/'/g,'\'')+'')" ><span class="bar-name link">'+x[0]+'</span><div class="bar-wrap"><div class="bar-fill" style="width:'+Math.round(x[1]/smx*100)+'%;background:'+sc[i%sc.length]+';"></div></div><span class="bar-val">'+x[1]+'次</span></div>'; }).join('') || '<div style="color:var(--sub);font-size:12px;padding:8px 0;">暂无数据</div>';
+    var psEl = document.getElementById('personStations');
+    psEl.innerHTML = sl.map(function(x,i){ return '<div class="bar-row" data-drillsite="'+x[0]+'" style="cursor:pointer;"><span class="bar-name link">'+x[0]+'</span><div class="bar-wrap"><div class="bar-fill" style="width:'+Math.round(x[1]/smx*100)+'%;background:'+sc[i%sc.length]+';"></div></div><span class="bar-val">'+x[1]+'次</span></div>'; }).join('') || '<div style="color:var(--sub);font-size:12px;padding:8px 0;">暂无数据</div>';
+    psEl.onclick = function(e){ var r=e.target.closest('[data-drillsite]'); if(r) openStation(r.dataset.drillsite); };
 
     document.getElementById('personCount').textContent = '共 ' + total + ' 条';
     _prShown = 0; renderPersonRows(15);
