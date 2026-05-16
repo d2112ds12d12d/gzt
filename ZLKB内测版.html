@@ -496,7 +496,7 @@
     <div class="zb-logo">
       <div style="display:flex;align-items:baseline;gap:5px;">
         <div class="zb-brand">培训部数据看板</div>
-        <span style="font-size:10px;color:var(--text-secondary);opacity:0.6;">v1.08b</span>
+        <span style="font-size:10px;color:var(--text-secondary);opacity:0.6;">v1.08c</span>
       </div>
       <div class="zb-sub">内部数据平台</div>
     </div>
@@ -1263,7 +1263,14 @@
                 }).join('');
             }
 
-            // 列表点击用事件委托，不用内联onclick
+            function dtClosePopup() {
+                var _popup = document.getElementById('dtColPopup');
+                if (_popup) _popup.style.display = 'none';
+                dtPopupCol = null;
+            }
+
+            // 列筛选事件（差异明细tab已删，整块跳过）
+            if (document.getElementById('dtColList')) {
             document.getElementById('dtColList').addEventListener('click', function(e) {
                 e.stopPropagation();
                 const item = e.target.closest('.dt-popup-item');
@@ -1281,13 +1288,6 @@
                 const item = e.target.closest('.dt-popup-item');
                 if (item) item.style.background = '';
             });
-
-            function dtClosePopup() {
-                document.getElementById('dtColPopup').style.display = 'none';
-                dtPopupCol = null;
-            }
-
-            // 事件绑定
             document.getElementById('dtColSearch').addEventListener('input', function() { dtRenderPopupList(this.value); });
             document.getElementById('dtColSearch').addEventListener('click', function(e) { e.stopPropagation(); });
             document.getElementById('dtColSelAll').addEventListener('click', function(e) {
@@ -1313,33 +1313,17 @@
                 }
                 dtClosePopup();
             });
-
-            var dtPageSizeEl = document.getElementById('dtPageSize');
-            if (dtPageSizeEl) {
-                dtPageSizeEl.addEventListener('change', function() {
-                    dtPageSize = parseInt(this.value) || 20;
-                    dtCurrentPage = 1;
-                    renderDetailTable();
-                });
-            }
             document.getElementById('dtColCancel').addEventListener('click', function(e) {
                 e.stopPropagation();
                 dtClosePopup();
             });
-            document.addEventListener('click', function(e) {
-                const popup = document.getElementById('dtColPopup');
-                if (popup.style.display !== 'none' && !popup.contains(e.target) && !e.target.classList.contains('dt-filter-icon')) {
-                    dtClosePopup();
-                }
-            });
-
-            // 列头筛选图标点击
             document.getElementById('detailTableHead').addEventListener('click', function(e) {
                 const icon = e.target.closest('.dt-filter-icon');
                 if (!icon) return;
                 e.stopPropagation();
                 dtOpenColFilter(icon.dataset.col, icon);
             });
+            } // end dtColList guard
 
             // 单元格编辑：事件委托
             var _dtBody = document.getElementById('detailTableBody');
