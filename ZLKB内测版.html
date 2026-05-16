@@ -1617,7 +1617,7 @@
                 );
             }
 
-            function openDetailWithData(records, title) {
+            window.openDetailWithData = function openDetailWithData(records, title) {
                 if (!records.length) { showToast('无明细数据'); return; }
                 currentModalRecords = [...records];
                 modalTitle.innerText = title;
