@@ -504,6 +504,11 @@
     <div class="zb-nav-item active" onclick="zbNav('overview',this)">📊 数据总览</div>
     <div class="zb-nav-item" onclick="zbNav('detail',this)">🔍 差异明细</div>
     <div id="zb-nav-site" class="zb-nav-item" style="display:none;" onclick="zbNav('site',this)">🏢 站点详情</div>
+    <div id="zb-nav-person" class="zb-nav-item" style="display:none;" onclick="zbNav('person',this)">👤 质检人详情</div>
+    <div id="zb-recent-block" style="display:none;border-top:1px solid var(--border-color);padding:10px 0 0;">
+      <div class="zb-nav-lbl" style="padding-top:4px;">最近查看</div>
+      <div id="zb-recent-list"></div>
+    </div>
     <div class="zb-sidebar-footer" id="zbSidebarFooter">
       <!-- 未登录：显示登录框 -->
       <div id="zbLoginBlock" class="zb-login-block">
@@ -808,7 +813,7 @@
                   <div id="siteIssueChart" style="width:100%;height:280px;"></div>
                 </div>
                 <div class="card">
-                  <div class="card-title" style="margin-bottom:14px;">👤 涉及质检人（点击查看明细）</div>
+                  <div class="card-title" style="margin-bottom:14px;">👤 涉及质检人（点击跳转质检人详情）</div>
                   <div style="overflow-x:auto;">
                     <table class="rank-table" id="sitePersonTable">
                       <thead><tr><th>排名</th><th>质检人员</th><th>差异次数</th><th>客观</th><th>主观</th></tr></thead>
@@ -818,6 +823,32 @@
                 </div>
               </div>
             </div><!-- end zb-page site -->
+
+            <!-- ══ 质检人详情页 ══ -->
+            <div class="zb-page" id="zb-page-person">
+              <div class="card" style="margin-bottom:16px;">
+                <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+                  <button id="personBackBtn" style="display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:20px;border:1px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;">← 返回总览</button>
+                  <div id="personDetailTitle" style="font-size:1.1rem;font-weight:700;color:var(--text-primary);">质检人详情</div>
+                </div>
+              </div>
+              <div class="card" style="margin-bottom:16px;">
+                <div id="personKpiRow" class="stats-grid"></div>
+              </div>
+              <div class="card" style="margin-bottom:16px;">
+                <div class="card-title" style="margin-bottom:14px;">📉 每日差异趋势（点击柱体查看明细）</div>
+                <div id="personTrendChart" style="width:100%;height:300px;"></div>
+              </div>
+              <div class="card">
+                <div class="card-title" style="margin-bottom:14px;">🏢 涉及站点（点击查看该质检人在此站点的明细）</div>
+                <div style="overflow-x:auto;">
+                  <table class="rank-table" id="personSiteTable">
+                    <thead><tr><th>站点名称</th><th>差异次数</th><th>客观</th><th>主观</th><th>操作</th></tr></thead>
+                    <tbody id="personSiteBody"></tbody>
+                  </table>
+                </div>
+              </div>
+            </div><!-- end zb-page person -->
         </div>
     </div>
 
@@ -3197,6 +3228,7 @@ function zbNavToSite(siteName) {
 
     // 切换页面
     var siteNavEl = document.getElementById('zb-nav-site');
+    zbAddRecent('site', siteName);
     zbNav('site', siteNavEl);
 
     // 渲染站点数据
@@ -3319,31 +3351,196 @@ function zbNav(name, el) {
     if (el) el.classList.add('active');
 }
 
-// 返回总览按钮
+// ── 最近查看记录（内存，不持久化）──
+var _zbRecentHistory = [];
+
+function zbAddRecent(type, name) {
+    // 去重：先移除同一条
+    _zbRecentHistory = _zbRecentHistory.filter(function(r) {
+        return !(r.type === type && r.name === name);
+    });
+    _zbRecentHistory.unshift({ type: type, name: name });
+    if (_zbRecentHistory.length > 5) _zbRecentHistory = _zbRecentHistory.slice(0, 5);
+    zbRenderRecent();
+}
+
+function zbRenderRecent() {
+    var block = document.getElementById('zb-recent-block');
+    var list  = document.getElementById('zb-recent-list');
+    if (!block || !list) return;
+    if (!_zbRecentHistory.length) { block.style.display = 'none'; return; }
+    block.style.display = '';
+    list.innerHTML = _zbRecentHistory.map(function(r) {
+        var icon = r.type === 'site' ? '🏢' : '👤';
+        var label = icon + ' ' + r.name;
+        var attr  = r.type === 'site'
+            ? 'data-recent-site="' + r.name.replace(/"/g, '&quot;') + '"'
+            : 'data-recent-person="' + r.name.replace(/"/g, '&quot;') + '"';
+        return '<div class="zb-nav-item" style="font-size:11px;padding:5px 14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;" ' + attr + ' title="' + r.name + '">' + label + '</div>';
+    }).join('');
+}
+
+// ── 质检人详情页：跳转 + 渲染 ──
+var _personChart_trend = null;
+
+function zbNavToPerson(personName) {
+    var navItem = document.getElementById('zb-nav-person');
+    if (navItem) {
+        navItem.style.display = '';
+        navItem.textContent = '👤 ' + personName;
+    }
+    var titleEl = document.getElementById('personDetailTitle');
+    if (titleEl) titleEl.textContent = '👤 ' + personName + ' · 质检人详情';
+
+    zbAddRecent('person', personName);
+    zbNav('person', navItem);
+    zbRenderPersonDetail(personName);
+}
+
+function zbRenderPersonDetail(personName) {
+    var allDiff = window._allDiffData || [];
+    var personDiff = allDiff.filter(function(d) { return d.person === personName; });
+
+    // ── KPI ──
+    var kpiEl = document.getElementById('personKpiRow');
+    if (kpiEl) {
+        if (!personDiff.length) {
+            kpiEl.innerHTML = '<div class="stats-item" style="grid-column:1/-1;text-align:center;color:var(--text-secondary);">暂无数据</div>';
+        } else {
+            var total  = personDiff.length;
+            var obj    = personDiff.filter(function(d){ return d.category && d.category.includes('客观'); }).length;
+            var subj   = personDiff.filter(function(d){ return d.category && d.category.includes('主观'); }).length;
+            var sites  = new Set(personDiff.map(function(d){ return d.warehouse; })).size;
+            var mk = function(num, label, color) {
+                return '<div class="stats-item"><div class="stats-number" style="color:' + (color||'#3b82f6') + '">' + num + '</div><div class="stats-label">' + label + '</div></div>';
+            };
+            kpiEl.innerHTML = mk(total,'总差异次数') + mk(obj,'客观差异','#dc2626') + mk(subj,'主观差异','#f59e0b') + mk(sites,'涉及站点数','#10b981');
+        }
+    }
+
+    // ── 趋势图 ──
+    var trendEl = document.getElementById('personTrendChart');
+    if (trendEl && typeof echarts !== 'undefined') {
+        if (!_personChart_trend) _personChart_trend = echarts.init(trendEl);
+        var dateMap = {};
+        personDiff.forEach(function(d) {
+            if (!d.date) return;
+            var dt = d.date.split(' ')[0];
+            dateMap[dt] = (dateMap[dt] || 0) + 1;
+        });
+        var sorted = Object.keys(dateMap).sort();
+        var yData  = sorted.map(function(dt){ return dateMap[dt]; });
+        var textColor = document.body.classList.contains('dark') ? '#e2e8f0' : '#1e293b';
+        _personChart_trend.setOption({
+            tooltip: { trigger: 'axis' },
+            xAxis: { type:'category', data:sorted, axisLabel:{ rotate:35, color:textColor }, axisLine:{ lineStyle:{ color: document.body.classList.contains('dark') ? '#475569' : '#cbd5e1' } } },
+            yAxis: { type:'value', name:'差异次数', nameTextStyle:{ color:textColor }, axisLabel:{ color:textColor } },
+            series: [{ type:'bar', data:yData, itemStyle:{ borderRadius:[6,6,0,0], color: new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'#4f9eff'},{offset:1,color:'#1e6df2'}]) }, label:{ show:true, position:'top', color:textColor } }]
+        }, true);
+        _personChart_trend.off('click');
+        _personChart_trend.on('click', function(params) {
+            if (params.componentType !== 'series') return;
+            var date = sorted[params.dataIndex];
+            var filtered = personDiff.filter(function(d){ return d.date && d.date.split(' ')[0] === date; });
+            if (typeof openDetailWithData === 'function') openDetailWithData(filtered, '👤 ' + personName + ' · ' + date + '（' + filtered.length + '条）');
+        });
+        _personChart_trend.resize();
+    }
+
+    // ── 涉及站点列表 ──
+    var siteBodyEl = document.getElementById('personSiteBody');
+    if (siteBodyEl) {
+        var siteMap = {};
+        personDiff.forEach(function(d) {
+            var s = d.warehouse || '未知';
+            if (!siteMap[s]) siteMap[s] = { total:0, obj:0, subj:0 };
+            siteMap[s].total++;
+            if (d.category && d.category.includes('客观')) siteMap[s].obj++;
+            if (d.category && d.category.includes('主观')) siteMap[s].subj++;
+        });
+        var siteList = Object.keys(siteMap).map(function(name){
+            return { name:name, total:siteMap[name].total, obj:siteMap[name].obj, subj:siteMap[name].subj };
+        }).sort(function(a,b){ return b.total - a.total; });
+
+        siteBodyEl.innerHTML = siteList.map(function(s) {
+            return '<tr>'
+                + '<td>' + s.name + '</td>'
+                + '<td>' + s.total + '</td>'
+                + '<td>' + s.obj + '</td>'
+                + '<td>' + s.subj + '</td>'
+                + '<td><span style="cursor:pointer;color:#3b82f6;font-size:11px;padding:2px 8px;border:1px solid #3b82f6;border-radius:10px;white-space:nowrap;"'
+                + ' data-drill-person="' + personName.replace(/"/g,'&quot;') + '"'
+                + ' data-drill-site="' + s.name.replace(/"/g,'&quot;') + '"'
+                + '>查看明细</span></td>'
+                + '</tr>';
+        }).join('');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
-    var backBtn = document.getElementById('siteBackBtn');
-    if (backBtn) {
-        backBtn.addEventListener('click', function() {
-            var overviewNavEl = document.querySelector('.zb-nav-item[onclick*="overview"]');
-            zbNav('overview', overviewNavEl);
+
+    // 站点详情页：返回总览
+    var siteBackBtn = document.getElementById('siteBackBtn');
+    if (siteBackBtn) {
+        siteBackBtn.addEventListener('click', function() {
+            zbNav('overview', document.querySelector('.zb-nav-item[onclick*="overview"]'));
         });
     }
 
-    // 质检人列表：事件委托，点击行查看该站点×该质检人的明细
+    // 质检人详情页：返回总览
+    var personBackBtn = document.getElementById('personBackBtn');
+    if (personBackBtn) {
+        personBackBtn.addEventListener('click', function() {
+            zbNav('overview', document.querySelector('.zb-nav-item[onclick*="overview"]'));
+        });
+    }
+
+    // 站点详情页：质检人列表点击 → 跳转质检人详情页
     var sitePersonTable = document.getElementById('sitePersonTable');
     if (sitePersonTable) {
         sitePersonTable.addEventListener('click', function(e) {
             var tr = e.target.closest('tr[data-person]');
             if (!tr) return;
-            var personName = tr.dataset.person;
-            var siteName   = tr.dataset.site;
+            zbNavToPerson(tr.dataset.person);
+        });
+    }
+
+    // 质检人详情页：涉及站点「查看明细」→ 弹明细弹窗
+    var personSiteTable = document.getElementById('personSiteTable');
+    if (personSiteTable) {
+        personSiteTable.addEventListener('click', function(e) {
+            var btn = e.target.closest('[data-drill-person]');
+            if (!btn) return;
+            var personName = btn.dataset.drillPerson;
+            var siteName   = btn.dataset.drillSite;
             var allDiff = window._allDiffData || [];
-            var filtered = allDiff.filter(function(d) {
-                return d.warehouse === siteName && d.person === personName;
+            var filtered = allDiff.filter(function(d){
+                return d.person === personName && d.warehouse === siteName;
             });
             if (typeof openDetailWithData === 'function') {
-                openDetailWithData(filtered, '👤 ' + personName + ' · ' + siteName + '（' + filtered.length + '条）');
+                openDetailWithData(filtered, '👤 ' + personName + ' · 🏢 ' + siteName + '（' + filtered.length + '条）');
             }
+        });
+    }
+
+    // 总览页：personTableBody 点击质检人姓名 → 跳转质检人详情页
+    var personTableBody = document.getElementById('personTableBody');
+    if (personTableBody) {
+        personTableBody.addEventListener('click', function(e) {
+            var tr = e.target.closest('tr[data-person]');
+            if (!tr) return;
+            zbNavToPerson(tr.dataset.person);
+        });
+    }
+
+    // 侧边栏「最近查看」：事件委托
+    var recentList = document.getElementById('zb-recent-list');
+    if (recentList) {
+        recentList.addEventListener('click', function(e) {
+            var item = e.target.closest('[data-recent-site],[data-recent-person]');
+            if (!item) return;
+            if (item.dataset.recentSite) zbNavToSite(item.dataset.recentSite);
+            else if (item.dataset.recentPerson) zbNavToPerson(item.dataset.recentPerson);
         });
     }
 });
