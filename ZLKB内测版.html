@@ -496,7 +496,7 @@
     <div class="zb-logo">
       <div style="display:flex;align-items:baseline;gap:5px;">
         <div class="zb-brand">培训部数据看板</div>
-        <span style="font-size:10px;color:var(--text-secondary);opacity:0.6;">v1.08c</span>
+        <span style="font-size:10px;color:var(--text-secondary);opacity:0.6;">v1.08d</span>
       </div>
       <div class="zb-sub">内部数据平台</div>
     </div>
@@ -1061,7 +1061,8 @@
             }
 
             function renderObjWarehouseRanking() {
-                if (!summaryData.length || !diffData.length) { document.getElementById('objRankBody').innerHTML = '<tr><td colspan="3">无数据</td></tr>'; return; }
+                const objRankEl = document.getElementById('objRankBody');
+                if (!summaryData.length || !diffData.length) { if(objRankEl) objRankEl.innerHTML = '<tr><td colspan="3">无数据</td></tr>'; return; }
                 const siteTotalMap = new Map();
                 let fs = filterSummaryData(summaryData);
                 fs.forEach(s => siteTotalMap.set(s.siteName, (siteTotalMap.get(s.siteName)||0)+(s.totalChecks||0)));
@@ -1071,7 +1072,7 @@
                 const result = [];
                 for (let [site, total] of siteTotalMap.entries()) { const dev = siteExecCodeSet.get(site)?.size || 0; result.push({ site, rate: total ? (dev/total*100) : 0 }); }
                 result.sort((a,b) => b.rate - a.rate);
-                const objRankEl = document.getElementById('objRankBody'); if(objRankEl) objRankEl.innerHTML = result.map((item, idx) => `<tr class="${idx===0?'rank-1':idx===1?'rank-2':idx===2?'rank-3':''}" data-site="${item.site.replace(/"/g,'&quot;')}"><td>${idx+1}</td><td>${item.site}</td><td>${item.rate.toFixed(2)}%</td></tr>`).join('');
+                if(objRankEl) objRankEl.innerHTML = result.map((item, idx) => `<tr class="${idx===0?'rank-1':idx===1?'rank-2':idx===2?'rank-3':''}" data-site="${item.site.replace(/"/g,'&quot;')}"><td>${idx+1}</td><td>${item.site}</td><td>${item.rate.toFixed(2)}%</td></tr>`).join('');
             }
 
             function getFilteredForProblemType() {
@@ -1082,10 +1083,12 @@
                 const data = getFilteredForProblemType();
                 const modelMap = new Map(); data.forEach(d => { if (d.model) modelMap.set(d.model, (modelMap.get(d.model)||0)+1); });
                 const modelRank = Array.from(modelMap.entries()).map(([n,c]) => ({ name: n, count: c })).sort((a,b) => b.count - a.count).slice(0,8);
-                document.getElementById('modelRankBody').innerHTML = modelRank.map((m,i) => `<tr data-model="${m.name.replace(/"/g,'&quot;')}"><td>${i+1}</td><td>${m.name}</td><td>${m.count}</td></tr>`).join('');
+                const modelEl = document.getElementById('modelRankBody');
+                if (modelEl) modelEl.innerHTML = modelRank.map((m,i) => `<tr data-model="${m.name.replace(/"/g,'&quot;')}"><td>${i+1}</td><td>${m.name}</td><td>${m.count}</td></tr>`).join('');
                 const l3Map = new Map(); data.forEach(d => { let n = normalizeLevel3(d.level3); l3Map.set(n, (l3Map.get(n)||0)+1); });
                 const l3Rank = Array.from(l3Map.entries()).map(([n,c]) => ({ name: n, count: c })).sort((a,b) => b.count - a.count).slice(0,8);
-                document.getElementById('issueRankBody').innerHTML = l3Rank.map((m,i) => `<tr data-level3="${m.name.replace(/"/g,'&quot;')}"><td>${i+1}</td><td>${m.name}</td><td>${m.count}</td></tr>`).join('');
+                const issueEl = document.getElementById('issueRankBody');
+                if (issueEl) issueEl.innerHTML = l3Rank.map((m,i) => `<tr data-level3="${m.name.replace(/"/g,'&quot;')}"><td>${i+1}</td><td>${m.name}</td><td>${m.count}</td></tr>`).join('');
             }
 
             function buildPersonList() {
@@ -1102,8 +1105,8 @@
 
             function renderPersonTablePage() {
                 const end = currentPersonPage * 10, show = allPersonList.slice(0, end);
-                document.getElementById('personTableBody').innerHTML = show.map((p, idx) => `<tr data-person="${p.person.replace(/"/g,'&quot;')}"><td>${idx+1}</td><td>${p.person}</td><td>${p.total}</td><td>${p.obj}</td><td>${p.subj}</td><td>${p.warehouse}</td></tr>`).join('');
-                personLoadMoreBtn.style.display = end < allPersonList.length ? 'block' : 'none';
+                const personEl = document.getElementById('personTableBody');
+                if (personEl) personEl.innerHTML = show.map((p, idx) => `<tr data-person="${p.person.replace(/"/g,'&quot;')}"><td>${idx+1}</td><td>${p.person}</td><td>${p.total}</td><td>${p.obj}</td><td>${p.subj}</td><td>${p.warehouse}</td></tr>`).join('');
             }
 
             function loadMorePersons() { currentPersonPage++; renderPersonTablePage(); }
