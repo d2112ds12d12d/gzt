@@ -496,13 +496,12 @@
     <div class="zb-logo">
       <div style="display:flex;align-items:baseline;gap:5px;">
         <div class="zb-brand">培训部数据看板</div>
-        <span style="font-size:10px;color:var(--text-secondary);opacity:0.6;">v1.07</span>
+        <span style="font-size:10px;color:var(--text-secondary);opacity:0.6;">v1.08</span>
       </div>
       <div class="zb-sub">内部数据平台</div>
     </div>
     <div class="zb-nav-lbl">数据模块</div>
     <div class="zb-nav-item active" onclick="zbNav('overview',this)">📊 数据总览</div>
-    <div class="zb-nav-item" onclick="zbNav('detail',this)">🔍 差异明细</div>
     <div id="zb-nav-site" class="zb-nav-item" style="display:none;" onclick="zbNav('site',this)">🏢 站点详情</div>
     <div id="zb-nav-person" class="zb-nav-item" style="display:none;" onclick="zbNav('person',this)">👤 质检人详情</div>
     <div id="zb-recent-block" style="display:none;border-top:1px solid var(--border-color);padding:10px 0 0;">
@@ -652,104 +651,7 @@
 
             <!-- 问题项分析卡片 -->
 
-            <!-- 人员洞察&问题分类（已移除站点排行榜） -->
-            <div class="card">
-                <div class="card-header"><div class="card-title">📊 人员洞察 & 问题分类</div></div>
-                <div class="insight-grid">
-                    <div id="personStackChart" class="chart-box"></div>
-                    <div id="issueTypeChart" class="right-chart-container"></div>
-                </div>
-            </div>
-
             </div><!-- end zb-page overview -->
-            <div class="zb-page" id="zb-page-detail">
-            <div class="card">
-                <div class="card-title">📅 每日抽检差异趋势（设备去重）· 点击柱体查看当日明细</div>
-                <div id="trendChart" class="trend-chart-box"></div>
-            </div>
-            <div class="card">
-                <div class="card-header"><div class="card-title">🏆 问题深度排行（TOP8 客观/主观切换）</div></div>
-                <div class="switch-group" id="problemTypeSwitch">
-                    <button class="switch-btn active" data-type="OBJ">📊 客观问题 TOP8</button>
-                    <button class="switch-btn" data-type="SUBJ">📊 主观问题 TOP8</button>
-                </div>
-                <div class="two-col">
-                    <div>
-                        <h4 style="margin-bottom:8px;">📱 高差异型号 · 点击行查看明细</h4>
-                        <table class="ranking-table" id="modelRankTable"><thead><tr><th>排名</th><th>型号名称</th><th>差异次数</th></tr></thead><tbody id="modelRankBody"></tbody></table>
-                    </div>
-                    <div>
-                        <h4 style="margin-bottom:8px;">⚠️ 高频三级项 · 点击行查看明细</h4>
-                        <table class="ranking-table" id="issueRankTable"><thead><tr><th>排名</th><th>三级项名称</th><th>差异次数</th></tr></thead><tbody id="issueRankBody"></tbody></table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-title">👤 质检人员差异排名（点击查看明细）</div>
-                <div style="overflow-x:auto;">
-                    <table class="rank-table" id="personTable">
-                        <thead><tr><th>排名</th><th>质检人员</th><th>总差异次数</th><th>客观次数</th><th>主观次数</th><th>所属中心仓</th></tr></thead>
-                        <tbody id="personTableBody"></tbody>
-                    </table>
-                </div>
-                <div id="personLoadMoreBtn" class="load-more-btn" style="display:none;">显示更多</div>
-            </div>
-
-            <!-- 列筛选浮层 -->
-            <div id="dtColPopup" style="display:none;position:fixed;z-index:9999;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);width:200px;flex-direction:column;overflow:hidden;">
-                <input id="dtColSearch" placeholder="搜索..." style="padding:8px 12px;border:none;border-bottom:1px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);font-size:12px;outline:none;width:100%;box-sizing:border-box;">
-                <div style="padding:4px 0;display:flex;gap:6px;border-bottom:1px solid var(--border-color);padding:6px 10px;">
-                    <span id="dtColSelAll" style="font-size:11px;color:var(--btn-bg);cursor:pointer;font-weight:600;">全选</span>
-                    <span style="color:var(--border-color);">|</span>
-                    <span id="dtColClearSel" style="font-size:11px;color:var(--text-secondary);cursor:pointer;">清空</span>
-                </div>
-                <div id="dtColList" style="max-height:220px;overflow-y:auto;padding:4px 0;"></div>
-                <div style="padding:8px 10px;border-top:1px solid var(--border-color);display:flex;gap:6px;">
-                    <button id="dtColConfirm" style="flex:1;padding:5px;background:var(--btn-bg);color:white;border:none;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600;">确定</button>
-                    <button id="dtColCancel" style="flex:1;padding:5px;background:var(--kpi-bg);color:var(--text-secondary);border:1px solid var(--border-color);border-radius:8px;font-size:12px;cursor:pointer;">取消</button>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-title">📋 差异明细（三级项 + QA抽检人）</div>
-                <div style="overflow-x:auto;">
-                    <table class="detail-table" id="detailTable">
-                        <thead id="detailTableHead">
-                            <tr>
-                                <th data-col="date">日期 <span class="dt-filter-icon" data-col="date">⏷</span></th>
-                                <th data-col="warehouse">站点名称 <span class="dt-filter-icon" data-col="warehouse">⏷</span></th>
-                                <th data-col="cat">品类 <span class="dt-filter-icon" data-col="cat">⏷</span></th>
-                                <th data-col="code">质检码 <span class="dt-filter-icon" data-col="code">⏷</span></th>
-                                <th data-col="level1">一级项 <span class="dt-filter-icon" data-col="level1">⏷</span></th>
-                                <th data-col="level2">二级项 <span class="dt-filter-icon" data-col="level2">⏷</span></th>
-                                <th data-col="level3_orig">原三级项 <span class="dt-filter-icon" data-col="level3_orig">⏷</span></th>
-                                <th data-col="level3">新三级项 <span class="dt-filter-icon" data-col="level3">⏷</span></th>
-                                <th data-col="category">主客观分类 <span class="dt-filter-icon" data-col="category">⏷</span></th>
-                                <th data-col="issueType">问题类型 <span class="dt-filter-icon" data-col="issueType">⏷</span></th>
-                                <th data-col="judgedIssueType">抽检判定类型 <span class="dt-filter-icon" data-col="judgedIssueType">⏷</span></th>
-                                <th data-col="person">质检人员 <span class="dt-filter-icon" data-col="person">⏷</span></th>
-                                <th data-col="qaInspector">QA抽检人 <span class="dt-filter-icon" data-col="qaInspector">⏷</span></th>
-                            </tr>
-                        </thead>
-                        <tbody id="detailTableBody"></tbody>
-                    </table>
-                </div>
-                <div id="dtPagination" class="dt-pagination" style="display:none;">
-                    <div class="dt-page-info" id="dtPageInfo">共 0 条，第 1/1 页</div>
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <span style="font-size:12px;color:var(--text-secondary);">每页</span>
-                        <select class="dt-page-size" id="dtPageSize">
-                            <option value="20">20行</option>
-                            <option value="50">50行</option>
-                            <option value="100">100行</option>
-                        </select>
-                        <div class="dt-page-btns" id="dtPageBtns"></div>
-                    </div>
-                </div>
-            </div>
-            <div style="font-size:11px;text-align:center;opacity:0.7;">※ 点击图表/表格均可下钻查看明细</div>
-            </div><!-- end zb-page detail -->
 
             <!-- ══ 站点详情页 ══ -->
             <div class="zb-page" id="zb-page-site">
@@ -2036,7 +1938,7 @@
             }
 
             function updateAllFilters() {
-                warehouseFilter.innerHTML = '<option value="__ALL__">全部站点</option>' + Array.from(warehouseSet).sort().map(w => `<option value="${w.replace(/"/g,'&quot;')}">${w}</option>`).join('');
+                // warehouseFilter 现在是 hidden input，不需要填充 options
                 updatePersonFilterOptions();
                 issueTypeFilter.innerHTML = '<option value="__ALL__">全部问题类型</option>' + Array.from(allIssueTypes).sort().map(t => `<option value="${t.replace(/"/g,'&quot;')}">${t}</option>`).join('');
                 judgedIssueTypeFilter.innerHTML = '<option value="__ALL__">全部</option>' + Array.from(allJudgedIssueTypes).sort().map(t => `<option value="${t.replace(/"/g,'&quot;')}">${t}</option>`).join('');
@@ -2309,8 +2211,8 @@
                 if (lbl) lbl.textContent = '全部质检人员';
                 updatePersonFilterOptions(); fullRefresh();
             });
-            if (startDateFilter) startDateFilter.addEventListener('change', fullRefresh);
-            if (endDateFilter) endDateFilter.addEventListener('change', fullRefresh);
+            if (startDateFilter) startDateFilter.addEventListener('change', () => { updatePersonFilterOptions(); fullRefresh(); });
+            if (endDateFilter) endDateFilter.addEventListener('change', () => { updatePersonFilterOptions(); fullRefresh(); });
 
             // 自定义质检人员下拉逻辑
             (function initPersonDropdown() {
@@ -2537,38 +2439,58 @@
                 if (!_nationalTrendChart) _nationalTrendChart = echarts.init(el);
 
                 var allDiff = window._allDiffData || [];
-                var baseDiff = allDiff;
-                if (currentSiteType !== 'ALL') {
-                    baseDiff = allDiff.filter(function(d) {
-                        return getSiteType(d.warehouse || '') === currentSiteType;
-                    });
-                }
-
                 var titleEl = document.getElementById('nationalTrendTitle');
-                var typeLabel = currentSiteType === 'DW' ? '大仓' : currentSiteType === 'ZX' ? '中心仓' : '全国';
-                if (titleEl) titleEl.textContent = '📉 差异率趋势 · ' + typeLabel + '总览';
-
                 var isDark = document.body.classList.contains('dark');
                 var textColor = isDark ? '#e2e8f0' : '#1e293b';
                 var axisColor = isDark ? '#475569' : '#cbd5e1';
 
-                var dateMap = {};
-                baseDiff.forEach(function(d) {
-                    if (!d.date) return;
-                    var dt = d.date.split(' ')[0];
-                    if (!dateMap[dt]) dateMap[dt] = new Set();
-                    dateMap[dt].add(d.code);
-                });
-                var xData = Object.keys(dateMap).sort();
-                var yData = xData.map(function(dt){ return dateMap[dt].size; });
+                function buildDateMap(records) {
+                    var m = {};
+                    records.forEach(function(d) {
+                        if (!d.date) return;
+                        var dt = d.date.split(' ')[0];
+                        if (!m[dt]) m[dt] = new Set();
+                        m[dt].add(d.code);
+                    });
+                    return m;
+                }
 
-                _nationalTrendChart.setOption({
-                    tooltip: { trigger:'axis' },
-                    xAxis: { type:'category', data:xData, axisLabel:{ rotate:35, color:textColor }, axisLine:{ lineStyle:{ color:axisColor } } },
-                    yAxis: { type:'value', name:'差异设备数', nameTextStyle:{ color:textColor }, axisLabel:{ color:textColor } },
-                    series: [{ name:typeLabel, type:'line', data:yData, smooth:true, areaStyle:{ opacity:0.08 }, itemStyle:{ color:'#3b82f6' }, lineStyle:{ color:'#3b82f6', width:2 } }],
-                    legend: { show:false }
-                }, true);
+                if (currentSiteType === 'ALL') {
+                    // 全国：大仓一条线 + 中心仓一条线
+                    if (titleEl) titleEl.textContent = '📉 差异率趋势 · 大仓 vs 中心仓';
+                    var dwDiff = allDiff.filter(function(d){ return getSiteType(d.warehouse||'') === 'DW'; });
+                    var zxDiff = allDiff.filter(function(d){ return getSiteType(d.warehouse||'') === 'ZX'; });
+                    var dwMap = buildDateMap(dwDiff);
+                    var zxMap = buildDateMap(zxDiff);
+                    var allDates = new Set(Object.keys(dwMap).concat(Object.keys(zxMap)));
+                    var xData = Array.from(allDates).sort();
+                    _nationalTrendChart.setOption({
+                        tooltip: { trigger:'axis' },
+                        legend: { data:['大仓','中心仓'], textStyle:{ color:textColor }, top:0 },
+                        xAxis: { type:'category', data:xData, axisLabel:{ rotate:35, color:textColor }, axisLine:{ lineStyle:{ color:axisColor } } },
+                        yAxis: { type:'value', name:'差异设备数', nameTextStyle:{ color:textColor }, axisLabel:{ color:textColor } },
+                        series: [
+                            { name:'大仓', type:'line', smooth:true, data:xData.map(function(dt){ return dwMap[dt]?dwMap[dt].size:0; }), itemStyle:{ color:'#3b82f6' }, lineStyle:{ color:'#3b82f6', width:2 }, areaStyle:{ opacity:0.06 } },
+                            { name:'中心仓', type:'line', smooth:true, data:xData.map(function(dt){ return zxMap[dt]?zxMap[dt].size:0; }), itemStyle:{ color:'#10b981' }, lineStyle:{ color:'#10b981', width:2 }, areaStyle:{ opacity:0.06 } }
+                        ]
+                    }, true);
+                } else {
+                    // 单选大仓或中心仓：一条线
+                    var typeLabel = currentSiteType === 'DW' ? '大仓' : '中心仓';
+                    var lineColor = currentSiteType === 'DW' ? '#3b82f6' : '#10b981';
+                    if (titleEl) titleEl.textContent = '📉 差异率趋势 · ' + typeLabel + '总览';
+                    var baseDiff = allDiff.filter(function(d){ return getSiteType(d.warehouse||'') === currentSiteType; });
+                    var dateMap = buildDateMap(baseDiff);
+                    var xData = Object.keys(dateMap).sort();
+                    var yData = xData.map(function(dt){ return dateMap[dt].size; });
+                    _nationalTrendChart.setOption({
+                        tooltip: { trigger:'axis' },
+                        legend: { show:false },
+                        xAxis: { type:'category', data:xData, axisLabel:{ rotate:35, color:textColor }, axisLine:{ lineStyle:{ color:axisColor } } },
+                        yAxis: { type:'value', name:'差异设备数', nameTextStyle:{ color:textColor }, axisLabel:{ color:textColor } },
+                        series: [{ name:typeLabel, type:'line', smooth:true, data:yData, itemStyle:{ color:lineColor }, lineStyle:{ color:lineColor, width:2 }, areaStyle:{ opacity:0.08 } }]
+                    }, true);
+                }
                 _nationalTrendChart.resize();
             }
 
