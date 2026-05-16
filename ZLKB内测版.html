@@ -496,7 +496,7 @@
     <div class="zb-logo">
       <div style="display:flex;align-items:baseline;gap:5px;">
         <div class="zb-brand">培训部数据看板</div>
-        <span style="font-size:10px;color:var(--text-secondary);opacity:0.6;">v1.01</span>
+        <span style="font-size:10px;color:var(--text-secondary);opacity:0.6;">v1.06</span>
       </div>
       <div class="zb-sub">内部数据平台</div>
     </div>
@@ -589,22 +589,7 @@
             </div>
             <!-- 第二行：其他筛选 -->
             <div class="filter-bar" style="margin-bottom:24px;">
-                <div class="filter-group person-search-group" style="position:relative;min-width:160px;flex:1 1 160px;max-width:240px;">
-                    <label>🏚️ 站点（多选）</label>
-                    <div id="warehouseMultiTrigger" class="person-dropdown-trigger" tabindex="0">
-                        <span id="warehouseMultiLabel">全部站点</span>
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="margin-left:auto;flex-shrink:0;opacity:0.5"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </div>
-                    <div id="warehouseMultiPanel" class="person-dropdown-panel" style="display:none;">
-                        <input type="text" id="warehouseMultiSearch" placeholder="搜索站点..." class="person-search-input" autocomplete="off">
-                        <div style="padding:4px 10px;border-bottom:1px solid var(--border-color);display:flex;gap:8px;">
-                            <span id="warehouseMultiSelAll" style="font-size:11px;color:var(--btn-bg);cursor:pointer;font-weight:600;">全选</span>
-                            <span id="warehouseMultiClear" style="font-size:11px;color:var(--text-secondary);cursor:pointer;">清空</span>
-                        </div>
-                        <div id="warehouseMultiList" class="person-dropdown-list"></div>
-                    </div>
-                    <input type="hidden" id="warehouseFilter" value="__ALL__">
-                </div>
+                <input type="hidden" id="warehouseFilter" value="__ALL__">
                 <div class="filter-group person-search-group" style="position:relative; min-width:160px; flex:1 1 160px; max-width:220px;">
                     <label>👤 质检人员</label>
                     <div id="personDropdownTrigger" class="person-dropdown-trigger" tabindex="0">
@@ -657,12 +642,29 @@
 
             <!-- 全国差异率趋势图 -->
             <div class="card" id="nationalTrendCard">
-                <div class="card-header" style="margin-bottom:12px;align-items:flex-start;">
-                    <div class="card-title" id="nationalTrendTitle">📉 差异率趋势 · 全国总览</div>
-                    <div style="font-size:11px;color:var(--text-secondary);margin-left:auto;flex-shrink:0;">数据跟随顶部「站点」筛选变化 · KPI 和排行榜不受影响</div>
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:12px;flex-wrap:wrap;">
+                    <div class="card-title" id="nationalTrendTitle" style="margin:0;">📉 差异率趋势 · 全国总览</div>
+                    <div style="display:flex;align-items:center;gap:10px;flex-shrink:0;">
+                        <!-- 趋势图专属站点多选 -->
+                        <div style="position:relative;">
+                            <div id="trendWhTrigger" class="person-dropdown-trigger" tabindex="0" style="min-width:140px;">
+                                <span id="trendWhLabel">全部站点（总览）</span>
+                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="margin-left:auto;flex-shrink:0;opacity:0.5"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                            </div>
+                            <div id="trendWhPanel" class="person-dropdown-panel" style="display:none;min-width:200px;right:0;left:auto;">
+                                <input type="text" id="trendWhSearch" placeholder="搜索站点..." class="person-search-input" autocomplete="off">
+                                <div style="padding:4px 10px;border-bottom:1px solid var(--border-color);display:flex;gap:8px;">
+                                    <span id="trendWhSelAll" style="font-size:11px;color:var(--btn-bg);cursor:pointer;font-weight:600;">全选</span>
+                                    <span id="trendWhClear" style="font-size:11px;color:var(--text-secondary);cursor:pointer;">清空</span>
+                                </div>
+                                <div id="trendWhList" class="person-dropdown-list"></div>
+                            </div>
+                        </div>
+                        <div style="font-size:11px;color:var(--text-secondary);">数据跟随顶部筛选联动 · KPI和排行榜不受影响</div>
+                    </div>
                 </div>
                 <div id="nationalTrendChart" style="width:100%;height:300px;"></div>
-                <div style="font-size:10px;color:var(--text-secondary);margin-top:6px;">X轴 = 日期 · Y轴 = 差异率% · 可在顶部选择站点查看多站点对比（多条线）</div>
+                <div style="font-size:10px;color:var(--text-secondary);margin-top:6px;">未选站点时显示全国总览 · 选多个站点后显示多条对比线</div>
             </div>
 
             <!-- 问题项分析卡片 -->
@@ -1834,6 +1836,21 @@
                 document.getElementById('rankBoardZX').innerHTML =
                     renderRows(zxDynRows, zxMax) +
                     (zxFixRows.length ? '<div class="rank-fixed-divider">— 后验中心仓 —</div>' + renderRows(zxFixRows, zxMax) : '');
+
+                // 站点类型联动：控制大仓/中心仓区块显隐
+                (function applyRankSiteTypeFilter() {
+                    var siteType = (typeof currentSiteType !== 'undefined') ? currentSiteType : 'ALL';
+                    var dwSection = document.getElementById('rankBoardDW');
+                    var dwLabel   = dwSection ? dwSection.previousElementSibling : null;
+                    var zxSection = document.getElementById('rankBoardZX');
+                    var zxLabel   = zxSection ? zxSection.previousElementSibling : null;
+                    var showDW = siteType === 'ALL' || siteType === 'DW';
+                    var showZX = siteType === 'ALL' || siteType === 'ZX';
+                    if (dwSection) dwSection.style.display = showDW ? '' : 'none';
+                    if (dwLabel)   dwLabel.style.display   = showDW ? '' : 'none';
+                    if (zxSection) zxSection.style.display = showZX ? '' : 'none';
+                    if (zxLabel)   zxLabel.style.display   = showZX ? '' : 'none';
+                })();
             }
 
             function clearAllPanels() {
@@ -2460,29 +2477,33 @@
             var currentSiteType = 'ALL'; // ALL / DW / ZX
             var selectedWarehouses_multi = []; // 趋势图多选站点
 
-            // 判断站点类型
             function getSiteType(name) {
                 return ZB_DW_SITES.indexOf(name) >= 0 ? 'DW' : 'ZX';
             }
 
-            // 站点类型筛选按钮
+            // 站点类型筛选：控制排行榜 + KPI 联动
             document.querySelectorAll('[data-site-type]').forEach(function(el) {
                 el.addEventListener('click', function() {
                     currentSiteType = el.dataset.siteType;
                     document.querySelectorAll('[data-site-type]').forEach(function(b) {
                         b.classList.toggle('active', b.dataset.siteType === currentSiteType);
                     });
-                    // 重建多选列表
-                    zbBuildWarehouseMultiList();
-                    // 清空已选（类型切换后已选可能不合法）
+                    // 重建趋势图站点列表，清空已选
                     selectedWarehouses_multi = [];
-                    zbUpdateWarehouseMultiLabel();
-                    zbRenderNationalTrend();
+                    zbBuildTrendWhList();
+                    zbUpdateTrendWhLabel();
+                    // 触发全页刷新（排行榜/KPI 联动）
+                    fullRefresh();
                 });
             });
 
-            // ── 站点多选 ──
-            function zbGetFilteredSiteList() {
+            // 给 fullRefresh 打补丁：在数据过滤时加入站点类型过滤
+            // 通过拦截 currentFilteredDiff 的计算，在 fullRefresh 之前设置 warehouseFilter
+            // 方案：把站点类型转换成 warehouseFilter 能理解的值
+            var _origApplyFilters = null;
+
+            // ── 趋势图站点多选 ──
+            function zbGetSiteListByType() {
                 var all = Array.from(warehouseSet).sort();
                 if (currentSiteType === 'ALL') return all;
                 return all.filter(function(s) {
@@ -2490,25 +2511,25 @@
                 });
             }
 
-            function zbBuildWarehouseMultiList() {
-                var listEl = document.getElementById('warehouseMultiList');
+            function zbBuildTrendWhList() {
+                var listEl = document.getElementById('trendWhList');
                 if (!listEl) return;
-                var kw = (document.getElementById('warehouseMultiSearch').value || '').trim();
-                var sites = zbGetFilteredSiteList().filter(function(s) {
+                var kw = (document.getElementById('trendWhSearch').value || '').trim();
+                var sites = zbGetSiteListByType().filter(function(s) {
                     return !kw || s.includes(kw);
                 });
                 listEl.innerHTML = sites.map(function(s) {
                     var checked = selectedWarehouses_multi.indexOf(s) >= 0;
                     return '<div class="person-dropdown-item' + (checked ? ' selected' : '') + '" data-wh="' + s.replace(/"/g,'&quot;') + '">'
                         + (checked ? '✓ ' : '') + s + '</div>';
-                }).join('');
+                }).join('') || '<div style="padding:8px 10px;font-size:11px;color:var(--text-secondary);">暂无站点数据</div>';
             }
 
-            function zbUpdateWarehouseMultiLabel() {
-                var lbl = document.getElementById('warehouseMultiLabel');
+            function zbUpdateTrendWhLabel() {
+                var lbl = document.getElementById('trendWhLabel');
                 if (!lbl) return;
                 if (!selectedWarehouses_multi.length) {
-                    lbl.textContent = '全部站点';
+                    lbl.textContent = '全部站点（总览）';
                 } else if (selectedWarehouses_multi.length === 1) {
                     lbl.textContent = selectedWarehouses_multi[0];
                 } else {
@@ -2516,22 +2537,33 @@
                 }
             }
 
-            (function initWarehouseMultiDropdown() {
-                var trigger = document.getElementById('warehouseMultiTrigger');
-                var panel   = document.getElementById('warehouseMultiPanel');
-                var search  = document.getElementById('warehouseMultiSearch');
-                var listEl  = document.getElementById('warehouseMultiList');
-                var selAll  = document.getElementById('warehouseMultiSelAll');
-                var clear   = document.getElementById('warehouseMultiClear');
+            (function initTrendWhDropdown() {
+                var trigger = document.getElementById('trendWhTrigger');
+                var panel   = document.getElementById('trendWhPanel');
+                var search  = document.getElementById('trendWhSearch');
+                var listEl  = document.getElementById('trendWhList');
+                var selAll  = document.getElementById('trendWhSelAll');
+                var clear   = document.getElementById('trendWhClear');
                 if (!trigger || !panel) return;
 
-                function openPanel() { panel.style.display = 'block'; trigger.classList.add('open'); zbBuildWarehouseMultiList(); if(search) { search.value=''; search.focus(); } }
-                function closePanel() { panel.style.display = 'none'; trigger.classList.remove('open'); }
+                function openPanel() {
+                    panel.style.display = 'block';
+                    trigger.classList.add('open');
+                    zbBuildTrendWhList();
+                    if (search) { search.value = ''; search.focus(); }
+                }
+                function closePanel() {
+                    panel.style.display = 'none';
+                    trigger.classList.remove('open');
+                }
 
-                trigger.addEventListener('click', function(e) { e.stopPropagation(); panel.style.display==='none' ? openPanel() : closePanel(); });
+                trigger.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    panel.style.display === 'none' ? openPanel() : closePanel();
+                });
 
                 if (search) {
-                    search.addEventListener('input', function() { zbBuildWarehouseMultiList(); });
+                    search.addEventListener('input', function() { zbBuildTrendWhList(); });
                     search.addEventListener('click', function(e) { e.stopPropagation(); });
                 }
 
@@ -2543,8 +2575,8 @@
                         var idx = selectedWarehouses_multi.indexOf(val);
                         if (idx >= 0) selectedWarehouses_multi.splice(idx, 1);
                         else selectedWarehouses_multi.push(val);
-                        zbBuildWarehouseMultiList();
-                        zbUpdateWarehouseMultiLabel();
+                        zbBuildTrendWhList();
+                        zbUpdateTrendWhLabel();
                         zbRenderNationalTrend();
                     });
                 }
@@ -2552,9 +2584,9 @@
                 if (selAll) {
                     selAll.addEventListener('click', function(e) {
                         e.stopPropagation();
-                        selectedWarehouses_multi = zbGetFilteredSiteList().slice();
-                        zbBuildWarehouseMultiList();
-                        zbUpdateWarehouseMultiLabel();
+                        selectedWarehouses_multi = zbGetSiteListByType().slice();
+                        zbBuildTrendWhList();
+                        zbUpdateTrendWhLabel();
                         zbRenderNationalTrend();
                     });
                 }
@@ -2563,14 +2595,14 @@
                     clear.addEventListener('click', function(e) {
                         e.stopPropagation();
                         selectedWarehouses_multi = [];
-                        zbBuildWarehouseMultiList();
-                        zbUpdateWarehouseMultiLabel();
+                        zbBuildTrendWhList();
+                        zbUpdateTrendWhLabel();
                         zbRenderNationalTrend();
                     });
                 }
 
                 document.addEventListener('click', function(e) {
-                    if (!trigger.contains(e.target) && !panel.contains(e.target)) closePanel();
+                    if (trigger && !trigger.contains(e.target) && panel && !panel.contains(e.target)) closePanel();
                 });
             })();
 
@@ -2579,9 +2611,19 @@
                 var el = document.getElementById('rankBoardPerson');
                 if (!el) return;
                 var allDiff = window._allDiffData || [];
-                if (!allDiff.length) { el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-secondary);font-size:12px;">暂无数据</div>'; return; }
+                // 按站点类型过滤
+                var filtered = allDiff;
+                if (currentSiteType !== 'ALL') {
+                    filtered = allDiff.filter(function(d) {
+                        return getSiteType(d.warehouse || '') === currentSiteType;
+                    });
+                }
+                if (!filtered.length) {
+                    el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-secondary);font-size:12px;">暂无数据</div>';
+                    return;
+                }
                 var map = {};
-                allDiff.forEach(function(d) {
+                filtered.forEach(function(d) {
                     var p = d.person || '未知';
                     map[p] = (map[p] || 0) + 1;
                 });
@@ -2601,7 +2643,7 @@
                 }).join('');
             }
 
-            // 质检人排行榜点击 → 跳质检人详情页（事件委托）
+            // 质检人排行榜点击 → 跳质检人详情页
             var rankBoardPerson = document.getElementById('rankBoardPerson');
             if (rankBoardPerson) {
                 rankBoardPerson.addEventListener('click', function(e) {
@@ -2619,18 +2661,26 @@
                 if (!_nationalTrendChart) _nationalTrendChart = echarts.init(el);
 
                 var allDiff = window._allDiffData || [];
+                // 按站点类型过滤数据源
+                var baseDiff = allDiff;
+                if (currentSiteType !== 'ALL') {
+                    baseDiff = allDiff.filter(function(d) {
+                        return getSiteType(d.warehouse || '') === currentSiteType;
+                    });
+                }
+
                 var titleEl = document.getElementById('nationalTrendTitle');
                 var isDark = document.body.classList.contains('dark');
                 var textColor = isDark ? '#e2e8f0' : '#1e293b';
                 var axisColor = isDark ? '#475569' : '#cbd5e1';
                 var PALETTE = ['#3b82f6','#ef4444','#10b981','#f59e0b','#8b5cf6','#06b6d4','#f97316','#ec4899'];
 
-                // 如果没选站点，显示全国总线
                 if (!selectedWarehouses_multi.length) {
-                    if (titleEl) titleEl.textContent = '📉 差异率趋势 · 全国总览';
-                    // 按日期聚合
+                    // 全国总览（按站点类型过滤后的）
+                    var typeLabel = currentSiteType === 'DW' ? '大仓' : currentSiteType === 'ZX' ? '中心仓' : '全国';
+                    if (titleEl) titleEl.textContent = '📉 差异率趋势 · ' + typeLabel + '总览';
                     var dateMap = {};
-                    allDiff.forEach(function(d) {
+                    baseDiff.forEach(function(d) {
                         if (!d.date) return;
                         var dt = d.date.split(' ')[0];
                         if (!dateMap[dt]) dateMap[dt] = new Set();
@@ -2642,18 +2692,18 @@
                         tooltip: { trigger:'axis' },
                         xAxis: { type:'category', data:xData, axisLabel:{ rotate:35, color:textColor }, axisLine:{ lineStyle:{ color:axisColor } } },
                         yAxis: { type:'value', name:'差异设备数', nameTextStyle:{ color:textColor }, axisLabel:{ color:textColor } },
-                        series: [{ name:'全国', type:'line', data:yData, smooth:true, areaStyle:{ opacity:0.08 }, itemStyle:{ color:'#3b82f6' }, lineStyle:{ color:'#3b82f6', width:2 } }],
+                        series: [{ name:typeLabel, type:'line', data:yData, smooth:true, areaStyle:{ opacity:0.08 }, itemStyle:{ color:'#3b82f6' }, lineStyle:{ color:'#3b82f6', width:2 } }],
                         legend: { show:false }
                     }, true);
                 } else {
-                    // 多站点多条线
+                    // 多站点对比
                     var names = selectedWarehouses_multi;
                     if (titleEl) titleEl.textContent = '📉 差异率趋势 · ' + names.join(' / ');
                     var allDates = new Set();
                     var siteData = {};
                     names.forEach(function(site) {
                         siteData[site] = {};
-                        allDiff.filter(function(d){ return d.warehouse === site; }).forEach(function(d) {
+                        baseDiff.filter(function(d){ return d.warehouse === site; }).forEach(function(d) {
                             if (!d.date) return;
                             var dt = d.date.split(' ')[0];
                             if (!siteData[site][dt]) siteData[site][dt] = new Set();
@@ -2665,8 +2715,7 @@
                     var series = names.map(function(site, idx) {
                         return {
                             name: site,
-                            type: 'line',
-                            smooth: true,
+                            type: 'line', smooth: true,
                             data: xData.map(function(dt){ return siteData[site][dt] ? siteData[site][dt].size : 0; }),
                             itemStyle: { color: PALETTE[idx % PALETTE.length] },
                             lineStyle: { color: PALETTE[idx % PALETTE.length], width:2 },
@@ -2684,14 +2733,14 @@
                 _nationalTrendChart.resize();
             }
 
-            // 在 fullRefresh 后也刷新趋势图和质检人排行
+            // fullRefresh 后同步刷新质检人排行和趋势图
             var _origFullRefresh = fullRefresh;
             fullRefresh = function() {
                 _origFullRefresh.apply(this, arguments);
                 setTimeout(function() {
                     buildPersonRankBoard();
                     zbRenderNationalTrend();
-                    zbBuildWarehouseMultiList();
+                    zbBuildTrendWhList();
                 }, 100);
             };
         }
