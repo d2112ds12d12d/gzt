@@ -496,7 +496,7 @@
     <div class="zb-logo">
       <div style="display:flex;align-items:baseline;gap:5px;">
         <div class="zb-brand">培训部数据看板</div>
-        <span style="font-size:10px;color:var(--text-secondary);opacity:0.6;">v1.09</span>
+        <span style="font-size:10px;color:var(--text-secondary);opacity:0.6;">v1.10</span>
       </div>
       <div class="zb-sub">内部数据平台</div>
     </div>
@@ -580,32 +580,19 @@
                     <span class="cat-tab" id="globalCat-耳机">🎧 耳机</span>
                     <span class="cat-tab" id="globalCat-相机">📷 相机</span>
                     <div class="sticky-divider"></div>
-                    <span style="font-size:11px;font-weight:600;color:var(--text-secondary);flex-shrink:0;">站点类型</span>
+                    <span style="font-size:11px;font-weight:600;color:var(--text-secondary);flex-shrink:0;" id="siteTypeLbl">站点类型</span>
                     <span class="cat-tab active" id="globalSiteType-ALL" data-site-type="ALL">全部</span>
                     <span class="cat-tab" id="globalSiteType-DW" data-site-type="DW">大仓</span>
-                    <span class="cat-tab" id="globalSiteType-ZX" data-site-type="ZX">中心仓</span>
+                    <span class="cat-tab" id="globalSiteType-ZX" data-site-type="ZX" id="siteTypeGroup">中心仓</span>
                 </div>
             </div>
             <!-- 第二行：其他筛选 -->
-            <div class="filter-bar" style="margin-bottom:24px;">
-                <input type="hidden" id="warehouseFilter" value="__ALL__">
-                <div class="filter-group person-search-group" style="position:relative; min-width:160px; flex:1 1 160px; max-width:220px;">
-                    <label>👤 质检人员</label>
-                    <div id="personDropdownTrigger" class="person-dropdown-trigger" tabindex="0">
-                        <span id="personDropdownLabel">全部质检人员</span>
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="margin-left:auto;flex-shrink:0;opacity:0.5"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </div>
-                    <div id="personDropdownPanel" class="person-dropdown-panel" style="display:none;">
-                        <input type="text" id="personKeyword" placeholder="搜索姓名..." class="person-search-input" autocomplete="off">
-                        <div id="personDropdownList" class="person-dropdown-list"></div>
-                    </div>
-                    <input type="hidden" id="personFilter" value="__ALL__">
-                </div>
-                <div class="filter-group"><label>📌 主客观项</label><select id="subjObjFilter"><option value="ALL">全部</option><option value="OBJ">客观</option><option value="SUBJ">主观</option></select></div>
-                <div class="filter-group"><label>⚠️ 问题类型</label><select id="issueTypeFilter"><option value="__ALL__">全部问题类型</option></select></div>
-                <div class="filter-group"><label>🔖 问题责任</label><select id="judgedIssueTypeFilter"><option value="__ALL__">全部</option></select></div>
-                <button id="resetFilter" class="reset-filter-btn">↻ 重置筛选</button>
-            </div>
+            <!-- 筛选器 hidden inputs（JS 依赖，不显示） -->
+            <input type="hidden" id="warehouseFilter" value="__ALL__">
+            <input type="hidden" id="personFilter" value="__ALL__">
+            <input type="hidden" id="subjObjFilter" value="ALL">
+            <input type="hidden" id="issueTypeFilter" value="__ALL__">
+            <input type="hidden" id="judgedIssueTypeFilter" value="__ALL__">
 
             <div class="zb-page active" id="zb-page-overview">
 
@@ -984,10 +971,8 @@
                 function kpiHtml(k) {
                     var tc = k.totalChecks;
                     return mk('total_checks', tc, '总抽检量') +
-                        mk('total_diff',  tc?(k.totalDiff/tc*100).toFixed(2)+'%':'0%',       '主客观差异率',   k.totalDiff) +
                         mk('obj_diff',    tc?(k.uniqueCodesObj/tc*100).toFixed(2)+'%':'0%',  '客观差异率',     k.uniqueCodesObj) +
-                        mk('exec_diff',   tc?(k.execObjTotal/tc*100).toFixed(2)+'%':'0%',    '客观执行差异率', k.execObjTotal) +
-                        mk('exec_count',  k.execObjTotal, '客观执行差异量', k.execObjTotal) +
+                        mk('exec_diff',   tc?(k.execObjTotal/tc*100).toFixed(2)+'%':'0%',    '客观执行差异率（' + k.execObjTotal + '台）', k.execObjTotal) +
                         mk('subj_diff',   tc?(k.uniqueCodesSubj/tc*100).toFixed(2)+'%':'0%', '主观差异率',    k.uniqueCodesSubj);
                 }
 
@@ -1005,8 +990,8 @@
                     var hyK = calcKpi(hyDiff, hySum);
 
                     // 共享列头
-                    var headers = ['总抽检量','主客观差异率','客观差异率','客观执行差异率','客观执行差异量','主观差异率'];
-                    var headerHtml = '<div style="grid-column:1/-1;display:grid;grid-template-columns:100px repeat(6,1fr);gap:6px;margin-bottom:2px;">'
+                    var headers = ['总抽检量','客观差异率','客观执行差异率','主观差异率'];
+                    var headerHtml = '<div style="grid-column:1/-1;display:grid;grid-template-columns:100px repeat(4,1fr);gap:6px;margin-bottom:2px;">'
                         + '<div></div>'
                         + headers.map(h => `<div style="font-size:9px;color:var(--text-secondary);text-align:center;">${h}</div>`).join('')
                         + '</div>';
@@ -1015,13 +1000,11 @@
                         var tc = k.totalChecks;
                         var vals = [
                             tc,
-                            tc?(k.totalDiff/tc*100).toFixed(2)+'%':'0%',
                             tc?(k.uniqueCodesObj/tc*100).toFixed(2)+'%':'0%',
-                            tc?(k.execObjTotal/tc*100).toFixed(2)+'%':'0%',
-                            k.execObjTotal,
+                            (tc?(k.execObjTotal/tc*100).toFixed(2)+'%':'0%') + '<div style="font-size:9px;color:var(--text-secondary);">(' + k.execObjTotal + '台)</div>',
                             tc?(k.uniqueCodesSubj/tc*100).toFixed(2)+'%':'0%'
                         ];
-                        return '<div style="grid-column:1/-1;display:grid;grid-template-columns:100px repeat(6,1fr);gap:6px;margin-bottom:4px;">'
+                        return '<div style="grid-column:1/-1;display:grid;grid-template-columns:100px repeat(4,1fr);gap:6px;margin-bottom:4px;">'
                             + `<div style="display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:11px;font-weight:600;color:var(--text-secondary);">`
                             + `<span style="width:7px;height:7px;border-radius:50%;background:${dotColor};display:inline-block;margin-right:5px;flex-shrink:0;"></span>${label}</div>`
                             + vals.map(v => `<div style="background:var(--kpi-bg);border-radius:7px;padding:8px 6px;text-align:center;font-size:15px;font-weight:600;color:var(--text-primary);">${v}</div>`).join('')
@@ -3445,7 +3428,7 @@ function zbRenderSiteDetail(siteName) {
         }).join('');
     }
 
-    // ── 问题项分析（复用 renderIssueAnalysis 逻辑，数据限定为该站点）──
+    // ── 问题项分析（独立渲染，数据限定为该站点）──
     var siteIssueRoot = document.getElementById('site-issue-analysis-root');
     if (siteIssueRoot) {
         var execDiff = siteDiff.filter(function(d) {
@@ -3454,19 +3437,60 @@ function zbRenderSiteDetail(siteName) {
         if (!execDiff.length) {
             siteIssueRoot.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-secondary);font-size:13px;">该站点暂无客观执行差异数据</div>';
         } else {
-            // 借用全局 renderIssueAnalysis 的逻辑，临时替换 currentFilteredDiff
-            var _orig = window.currentFilteredDiff;
-            window.currentFilteredDiff = siteDiff;
-            // 临时把 root id 指向站点专属容器
-            var _origId = siteIssueRoot.id;
-            siteIssueRoot.id = 'issue-analysis-root';
-            if (typeof renderIssueAnalysis === 'function') {
-                try { renderIssueAnalysis(); } catch(e) { console.error('站点问题项分析渲染失败', e); }
-            }
-            siteIssueRoot.id = _origId;
-            window.currentFilteredDiff = _orig;
+            zbRenderSiteIssueAnalysis(execDiff, siteIssueRoot);
         }
     }
+}
+
+function zbRenderSiteIssueAnalysis(execDiff, rootEl) {
+    var allDates = execDiff.map(function(d){ return d.date||''; }).filter(Boolean).sort();
+    var latestDate = allDates[allDates.length-1];
+    function getMon(ds) { var d=new Date(ds),day=d.getDay(),diff=(day===0)?-6:(1-day); d.setDate(d.getDate()+diff); return d.toISOString().slice(0,10); }
+    function addDays(ds,n) { var d=new Date(ds); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
+    var thisMon=getMon(latestDate), thisSun=addDays(thisMon,6), lastMon=addDays(thisMon,-7), lastSun=addDays(thisMon,-1);
+    var thisWeek=execDiff.filter(function(d){ return d.date>=thisMon&&d.date<=thisSun; });
+    var lastWeek=execDiff.filter(function(d){ return d.date>=lastMon&&d.date<=lastSun; });
+
+    function groupByItem(rows) {
+        var map={};
+        rows.forEach(function(d){
+            var key=(d.level3||'未知')+'||'+(d.level1||'');
+            if(!map[key]) map[key]={level3:d.level3||'未知',level1:d.level1||'',codes:new Set()};
+            if(d.code) map[key].codes.add(d.code);
+        });
+        var result={};
+        Object.keys(map).forEach(function(k){ result[k]=map[k].codes.size; });
+        return result;
+    }
+    var thisMap=groupByItem(thisWeek), lastMap=groupByItem(lastWeek);
+    var allKeys=new Set(Object.keys(thisMap).concat(Object.keys(lastMap)));
+    var rows=[];
+    allKeys.forEach(function(key){
+        var parts=key.split('||');
+        var tw=thisMap[key]||0, lw=lastMap[key]||0;
+        rows.push({key:key,level3:parts[0],level1:parts[1],thisWeek:tw,lastWeek:lw,delta:tw-lw});
+    });
+    rows.sort(function(a,b){ return b.thisWeek!==a.thisWeek?b.thisWeek-a.thisWeek:b.lastWeek-a.lastWeek; });
+
+    function fmtDelta(n) {
+        if(n>0) return '<span style="color:#dc2626;">↑ +'+n+'</span>';
+        if(n<0) return '<span style="color:#16a34a;">↓ '+n+'</span>';
+        return '<span style="color:#94a3b8;">—</span>';
+    }
+
+    var html = '<div style="overflow-x:auto;">'
+        + '<table class="rank-table" style="width:100%;min-width:400px;">'
+        + '<thead><tr><th>三级项</th><th>上周</th><th>本周</th><th>变化</th></tr></thead><tbody>'
+        + rows.map(function(r){
+            return '<tr>'
+                +'<td>'+r.level3+'</td>'
+                +'<td style="text-align:center;">'+(r.lastWeek||'—')+'</td>'
+                +'<td style="text-align:center;font-weight:600;">'+(r.thisWeek||'—')+'</td>'
+                +'<td style="text-align:center;">'+fmtDelta(r.delta)+'</td>'
+                +'</tr>';
+        }).join('')
+        + '</tbody></table></div>';
+    rootEl.innerHTML = html;
 }
 
 function zbNav(name, el) {
@@ -3475,6 +3499,17 @@ function zbNav(name, el) {
     var pg = document.getElementById('zb-page-' + name);
     if (pg) pg.classList.add('active');
     if (el) el.classList.add('active');
+
+    // 站点/质检人详情页时隐藏站点类型筛选
+    var isSiteOrPerson = (name === 'site' || name === 'person');
+    var siteTypeEls = ['siteTypeLbl', 'globalSiteType-ALL', 'globalSiteType-DW', 'globalSiteType-ZX'];
+    siteTypeEls.forEach(function(id) {
+        var el2 = document.getElementById(id);
+        if (el2) el2.style.display = isSiteOrPerson ? 'none' : '';
+    });
+    // 分隔线也一起隐藏
+    var dividers = document.querySelectorAll('.sticky-divider');
+    if (dividers.length >= 2) dividers[1].style.display = isSiteOrPerson ? 'none' : '';
 }
 
 // ── 最近查看记录（内存，不持久化）──
