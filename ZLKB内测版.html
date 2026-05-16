@@ -3743,9 +3743,9 @@ function renderPersonRankList() {
     el.innerHTML = list.map(function(x, i){
         var color = i===0?'#DC2626':i===1?'#D97706':i===2?'#D97706':'var(--sub)';
         var bg = i===0?'#FEF2F2':i===1?'#FFFBEB':i===2?'#FFFBEB':'var(--filter-input)';
-        return '<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;cursor:pointer;transition:background .15s;margin-bottom:3px;" onmouseover="this.style.background='rgba(59,130,246,.05)'" onmouseout="this.style.background=''" onclick="openPerson(''+x[0].replace(/'/g,'\'')+'')">'
+        return '<div class="drill-person" data-person="'+x[0]+'" style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;cursor:pointer;transition:background .15s;margin-bottom:3px;">'
             + '<span style="font-size:10px;color:'+color+';width:18px;text-align:center;font-weight:600;">'+(i+1)+'</span>'
-            + '<span style="flex:1;font-size:12px;color:var(--text);cursor:pointer;" onmouseover="this.style.color='#3B82F6';this.style.textDecoration='underline';" onmouseout="this.style.color='';this.style.textDecoration='';">'+x[0]+'</span>'
+            + '<span class="rank-name" style="flex:1;font-size:12px;color:var(--text);">'+x[0]+'</span>'
             + '<span style="font-size:10px;padding:2px 8px;border-radius:6px;font-weight:500;background:'+bg+';color:'+color+';">'+x[1]+'次</span>'
             + '</div>';
     }).join('');
@@ -3758,22 +3758,31 @@ window.fullRefresh = function() {
     setTimeout(renderPersonRankList, 100);
 };
 
-// ── 排行榜站点名下钻 (MutationObserver) ──
-var _obs = new MutationObserver(function() {
-    document.querySelectorAll('#rankBoardDW .rank-name, #rankBoardZX .rank-name').forEach(function(el) {
-        if (el.dataset.drillbound) return;
-        el.dataset.drillbound = '1';
-        el.style.cursor = 'pointer';
-        el.addEventListener('click', function(e) {
-            e.stopPropagation();
-            var site = el.closest('[data-site]');
-            if (site && site.dataset.site) openStation(site.dataset.site);
-        });
-        el.addEventListener('mouseover', function(){ el.style.color='#3B82F6'; el.style.textDecoration='underline'; });
-        el.addEventListener('mouseout', function(){ el.style.color=''; el.style.textDecoration=''; });
-    });
+// ── 事件委托：排行榜站点下钻 + 质检人下钻 ──
+document.addEventListener('click', function(e) {
+    // 站点排行榜点击
+    var rankRow = e.target.closest('.drill-station[data-site]');
+    if (rankRow) {
+        var site = rankRow.dataset.site;
+        if (site) { openStation(site); return; }
+    }
+    // 质检人排名点击
+    var personRow = e.target.closest('.drill-person[data-person]');
+    if (personRow) {
+        var person = personRow.dataset.person;
+        if (person) { openPerson(person); return; }
+    }
 });
-_obs.observe(document.body, {childList:true, subtree:true});
+
+// 悬停样式
+document.addEventListener('mouseover', function(e) {
+    var r = e.target.closest('.drill-station .rank-name, .drill-person .rank-name');
+    if (r) { r.style.color='#3B82F6'; r.style.textDecoration='underline'; }
+});
+document.addEventListener('mouseout', function(e) {
+    var r = e.target.closest('.drill-station .rank-name, .drill-person .rank-name');
+    if (r) { r.style.color=''; r.style.textDecoration=''; }
+});
 </script>
 
 <!-- 登录弹窗、日志弹窗、上传弹窗（原有） -->
