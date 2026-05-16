@@ -1,688 +1,282 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v2.0</title>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
-    </script>
-    <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        :root {
-            --bg-body: #E8EDF5;
-            --bg-card: #ffffff;
-            --text-primary: #0f172a;
-            --text-secondary: #64748b;
-            --border-color: rgba(0,0,0,0.07);
-            --kpi-bg: #F8FAFC;
-            --header-bg: #ffffff;
-            --btn-bg: #3B82F6;
-            --btn-hover: #2563eb;
-            --shadow: 0 1px 4px rgba(0,0,0,0.05), 0 0 0 0.5px rgba(0,0,0,0.05);
-            --shadow-hover: 0 6px 20px rgba(0,0,0,0.09);
-            --table-header-bg: #F8FAFC;
-            --table-hover: #F0F6FF;
-            --chart-text: #0f172a;
-            --modal-overlay: rgba(0,0,0,0.45);
-            --filter-bar-bg: #ffffff;
-            --filter-input-bg: #F8FAFC;
-            --reset-btn-bg: #F1F5F9;
-            --reset-btn-hover: #E2E8F0;
-            --reset-btn-text: #64748b;
-            --switch-btn-bg: #EFF6FF;
-            --progress-bg: #E2E8F0;
-            --accent: #3B82F6;
-            --accent2: #6366F1;
-            --radius-card: 18px;
-            --radius-btn: 10px;
-        }
-        body.dark {
-            --bg-body: #0f172a;
-            --bg-card: #1e293b;
-            --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
-            --border-color: rgba(255,255,255,0.08);
-            --kpi-bg: #1e293b;
-            --header-bg: #1e293b;
-            --btn-bg: #3B82F6;
-            --btn-hover: #2563eb;
-            --shadow: 0 1px 4px rgba(0,0,0,0.3);
-            --shadow-hover: 0 6px 20px rgba(0,0,0,0.4);
-            --table-header-bg: #1e293b;
-            --table-hover: #1e3a5f;
-            --chart-text: #f1f5f9;
-            --modal-overlay: rgba(0,0,0,0.7);
-            --filter-bar-bg: #1e293b;
-            --filter-input-bg: #0f172a;
-            --reset-btn-bg: #334155;
-            --reset-btn-hover: #475569;
-            --reset-btn-text: #cbd5e1;
-            --switch-btn-bg: #1e3a5f;
-            --progress-bg: #334155;
-        }
-        html, body { height: 100%; margin: 0; }
-        body {
-            font-family: -apple-system, 'SF Pro Display', 'Segoe UI', Roboto, system-ui, sans-serif;
-            background: var(--bg-body);
-            padding: 0;
-            color: var(--text-primary);
-            transition: background 0.2s, color 0.2s;
-        }
-        .loading-bar {
-            position: fixed; top: 0; left: 0; width: 100%; height: 4px; z-index: 10000;
-            background: var(--progress-bg); overflow: hidden; opacity: 0; pointer-events: none;
-            transition: opacity 0.3s;
-        }
-        .loading-bar.active { opacity: 1; pointer-events: auto; }
-        .loading-bar .bar-inner {
-            height: 100%; width: 0; background: linear-gradient(90deg, #3b82f6, #60a5fa);
-            transition: width 0.4s ease;
-            border-radius: 0 2px 2px 0;
-        }
-        .password-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.85); z-index: 9999; display: flex; justify-content: center; align-items: center;
-            backdrop-filter: blur(8px);
-        }
-        .password-box {
-            background: var(--bg-card); border-radius: 24px; padding: 32px; width: 360px;
-            text-align: center; box-shadow: 0 20px 35px rgba(0,0,0,0.3); color: var(--text-primary);
-        }
-        .password-box input { width: 100%; padding: 12px; margin: 15px 0; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); font-size: 16px; }
-        .password-box button { width: 100%; padding: 12px; background: var(--btn-bg); color: white; border: none; border-radius: 12px; font-size: 16px; cursor: pointer; font-weight: 600; }
-        .error-msg { color: #ef4444; margin-top: 10px; font-size: 14px; }
-        .main-content { display: none; }
-        .container { width: 100%; padding: 0; }
-        .top-bar {
-            display: flex; justify-content: space-between; align-items: center;
-            background: var(--header-bg); border-radius: var(--radius-card); padding: 10px 20px; margin-bottom: 14px;
-            box-shadow: var(--shadow); flex-wrap: wrap; gap: 12px;
-            border: 0.5px solid var(--border-color);
-        }
-        .sticky-filter-bar {
-            position: sticky; top: 0; z-index: 100;
-            background: var(--bg-body);
-            padding: 5px 0;
-            border-bottom: 1px solid var(--border-color);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
-        }
-        .sticky-filter-inner {
-            display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; overflow-x: auto;
-            background: var(--bg-card);
-            border-radius: 12px;
-            padding: 5px 12px;
-            border: 1px solid var(--border-color);
-            box-shadow: 0 1px 6px rgba(0,0,0,0.05);
-            scrollbar-width: none;
-        }
-        .sticky-filter-inner::-webkit-scrollbar { display: none; }
-        .sticky-divider {
-            width: 1px; height: 14px; background: var(--border-color); flex-shrink: 0;
-        }
-        /* cat-tab 在吸顶栏里更紧凑 */
-        .sticky-filter-inner .cat-tab {
-            padding: 3px 10px; font-size: 11px; white-space: nowrap; flex-shrink: 0;
-        }
-        .title-area h2 { font-size: 1.5rem; font-weight: 700; color: var(--text-primary); display: flex; align-items: center; gap: 6px; }
-        .title-area p { font-size: 0.75rem; color: var(--text-secondary); margin-top: 6px; }
-        .theme-btn, .mode-btn, .upload-btn, .export-btn {
-            background: var(--kpi-bg); border: 0.5px solid var(--border-color); border-radius: var(--radius-btn);
-            padding: 7px 16px; cursor: pointer; font-size: 12px; font-weight: 500;
-            display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s; color: var(--text-primary);
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04);
-        }
-        .theme-btn:hover { background: var(--reset-btn-hover); }
-        .mode-btn.active { background: var(--btn-bg); color: white; border-color: var(--btn-bg); }
-        .upload-btn { background: linear-gradient(135deg, var(--accent), var(--accent2)); color: white; border: none; box-shadow: 0 4px 12px rgba(59,130,246,0.25); }
-        .upload-btn:hover { opacity: 0.9; transform: translateY(-1px); }
-        .export-btn { background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; box-shadow: 0 4px 12px rgba(16,185,129,0.2); }
-        .export-btn:hover { opacity: 0.9; transform: translateY(-1px); }
-        .right-buttons { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-        .marquee-wrap { flex:1; min-width:0; overflow:hidden; margin:0 12px; background:rgba(59,130,246,0.06); border-radius:20px; border:1px solid rgba(59,130,246,0.15); padding:0 14px; height:30px; display:flex; align-items:center; }
-        .marquee-inner { display:inline-block; white-space:nowrap; animation:mq 32s linear infinite; font-size:12px; color:var(--btn-bg); font-weight:500; }
-        .marquee-inner:hover { animation-play-state:paused; }
-        @keyframes mq { 0%{transform:translateX(100%)} 100%{transform:translateX(-100%)} }
-        .filter-bar, .modal-filter-bar {
-            background: var(--filter-bar-bg); border-radius: var(--radius-card); padding: 12px 18px;
-            display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px 16px;
-            border: 0.5px solid var(--border-color); box-shadow: var(--shadow);
-        }
-        .filter-bar { position: sticky; top: 6px; z-index: 60; margin-bottom: 20px; }
-        .filter-group { display: flex; flex-direction: column; gap: 4px; min-width: 100px; flex: 1 1 130px; max-width: 210px; }
-        .filter-group label { font-weight: 600; font-size: 11px; color: var(--text-secondary); }
-        .filter-group select, .filter-group input {
-            width: 100%; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--border-color);
-            background: var(--filter-input-bg); color: var(--text-primary); font-size: 12px; height: 36px;
-        }
-        .reset-filter-btn {
-            flex: 0 0 auto; padding: 7px 16px; background: var(--reset-btn-bg); color: var(--reset-btn-text);
-            border: 0.5px solid var(--border-color); border-radius: var(--radius-btn); font-size: 12px; font-weight: 500;
-            cursor: pointer; height: 36px; align-self: flex-end; transition: all 0.2s; white-space: nowrap;
-        }
-        .reset-filter-btn:hover { background: var(--reset-btn-hover); }
-        .card {
-            background: var(--bg-card); border-radius: var(--radius-card); box-shadow: var(--shadow);
-            padding: 20px 24px; margin-bottom: 20px; border: 0.5px solid var(--border-color);
-            transition: box-shadow 0.2s;
-        }
-        .card:hover { box-shadow: var(--shadow-hover); }
-        .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
-        .card-title { font-size: 14px; font-weight: 600; border-left: 3px solid var(--accent); padding-left: 12px; color: var(--text-primary); letter-spacing: -0.01em; }
-        .switch-group { display: flex; gap: 12px; margin-bottom: 18px; }
-        .switch-btn {
-            background: var(--switch-btn-bg); border: 0.5px solid var(--border-color); border-radius: 20px;
-            padding: 6px 18px; font-size: 12px; font-weight: 500; cursor: pointer; transition: all 0.2s;
-            color: var(--text-primary);
-        }
-        .switch-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
-        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 10px; margin-bottom: 8px; }
-        .stats-item {
-            background: var(--bg-card); border-radius: var(--radius-card); padding: 18px 14px; text-align: center;
-            border: 0.5px solid var(--border-color); cursor: pointer; transition: all 0.2s;
-            box-shadow: var(--shadow);
-        }
-        .stats-item:hover { transform: translateY(-2px); box-shadow: var(--shadow-hover); border-color: rgba(59,130,246,0.25); }
-        .stats-number { font-size: 26px; font-weight: 500; color: var(--text-primary); line-height: 1.1; letter-spacing: -0.02em; }
-        .stats-sub { font-size: 10px; font-weight: 500; color: var(--text-secondary); margin-top: 2px; }
-        .stats-label { font-size: 10px; color: var(--text-secondary); margin-top: 6px; opacity: 0.8; }
-        .trend-chart-box { width: 100%; height: 380px; margin-top: 12px; }
-        .insight-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; margin-top: 16px; align-items: start; }
-        .obj-rank-wrapper { display: flex; flex-direction: column; min-width: 0; }
-        .obj-rank-scroll { max-height: 440px; overflow-y: auto; overflow-x: auto; border-radius: 16px; border: 1px solid var(--border-color); background: var(--bg-card); }
-        .obj-rank-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 380px; white-space: nowrap; }
-        .obj-rank-table th, .obj-rank-table td { border: 1px solid var(--border-color); padding: 10px 8px; text-align: center; }
-        .obj-rank-table th { background: var(--table-header-bg); position: sticky; top: 0; z-index: 10; }
-        .obj-rank-table tr:hover { background: var(--table-hover); cursor: pointer; }
-        .rank-1 { background-color: #fde8e8 ; } .rank-2 { background-color: #e8f5e9 ; } .rank-3 { background-color: #e6f2ff ; }
-        body.dark .rank-1 { background-color: #7f4a4acc ; } body.dark .rank-2 { background-color: #2d5a2dcc ; } body.dark .rank-3 { background-color: #2c4c6bcc ; }
-        .reset-hint { font-size: 11px; color: var(--text-secondary); margin-top: 14px; text-align: center; cursor: pointer; padding: 6px 16px; border-radius: 40px; background: var(--kpi-bg); width: fit-content; align-self: center; border: 1px solid var(--border-color); transition: 0.2s; }
-        .reset-hint:hover { background: var(--btn-bg); color: white; }
-        .chart-box { width: 100%; height: 360px; }
-        .right-chart-container { width: 100%; height: 360px; }
-        .rank-table, .detail-table, .ranking-table, .modal-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        .rank-table th, .rank-table td, .detail-table th, .detail-table td, .ranking-table th, .ranking-table td, .modal-table th, .modal-table td {
-            border: 1px solid var(--border-color); padding: 8px 6px; text-align: center; white-space: nowrap; color: var(--text-primary);
-        }
-        .rank-table th, .detail-table th, .ranking-table th, .modal-table th { background: var(--table-header-bg); font-weight: 700; }
-        .load-more-btn { text-align: center; margin-top: 18px; padding: 8px; background: var(--kpi-bg); border-radius: 40px; cursor: pointer; font-size: 12px; font-weight: 600; color: #3b82f6; border: 1px solid var(--border-color); transition: 0.2s; width: 140px; margin-left: auto; margin-right: auto; }
-        .two-col { display: flex; gap: 24px; flex-wrap: wrap; } .two-col>div { flex: 1; min-width: 250px; overflow-x: auto; }
-        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--modal-overlay); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
-        .modal.visible { display: flex; }
-        .modal-content { background: var(--bg-card); border-radius: 32px; width: 92%; max-width: 1400px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 25px 40px rgba(0,0,0,0.3); overflow: hidden; padding: 24px; }
-        .modal-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: none; }
-        .close-modal { cursor: pointer; font-size: 32px; font-weight: bold; padding: 0 12px; line-height: 1; }
-        .modal-filter-bar { margin: 0 0 16px 0; padding: 12px 16px; }
-        #modalBody { flex: 1; overflow: hidden; }
-        .virtual-scroll-container { height: 60vh; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 12px; }
-        .toast-msg { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1f2937; color: #fff; padding: 10px 24px; border-radius: 60px; font-size: 13px; z-index: 2000; white-space: nowrap; box-shadow: 0 8px 20px rgba(0,0,0,0.2); font-weight: 500; }
-        @media (max-width: 1000px) { .insight-grid { grid-template-columns: 1fr 1fr; } .right-chart-container { grid-column: span 1; } }
-        @media (max-width: 700px) { .insight-grid { grid-template-columns: 1fr; } body { padding: 12px; } .card { padding: 16px; } }
-        ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-track { background: var(--border-color); border-radius: 10px; } ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>培训部数据看板 v2.0</title>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+:root{
+  --bg-body:#E8EDF5;--bg-card:#ffffff;--text-primary:#0f172a;--text-secondary:#64748b;
+  --border-color:rgba(0,0,0,0.07);--kpi-bg:#F8FAFC;--header-bg:#ffffff;
+  --btn-bg:#3B82F6;--btn-hover:#2563eb;
+  --shadow:0 1px 4px rgba(0,0,0,0.05),0 0 0 0.5px rgba(0,0,0,0.05);
+  --shadow-hover:0 6px 20px rgba(0,0,0,0.09);
+  --table-header-bg:#F8FAFC;--table-hover:#EFF6FF;--chart-text:#0f172a;
+  --modal-overlay:rgba(0,0,0,0.45);--filter-bar-bg:#ffffff;--filter-input-bg:#F8FAFC;
+  --reset-btn-bg:#F1F5F9;--reset-btn-hover:#E2E8F0;--reset-btn-text:#64748b;
+  --switch-btn-bg:#EFF6FF;--progress-bg:#E2E8F0;
+}
+body.dark{
+  --bg-body:#0f172a;--bg-card:#1e293b;--text-primary:#f1f5f9;--text-secondary:#94a3b8;
+  --border-color:rgba(255,255,255,0.08);--kpi-bg:#334155;--header-bg:#1e293b;
+  --btn-bg:#3B82F6;--btn-hover:#2563eb;
+  --shadow:0 1px 4px rgba(0,0,0,0.3);--shadow-hover:0 6px 20px rgba(0,0,0,0.4);
+  --table-header-bg:#334155;--table-hover:#1e3a5f;--chart-text:#f1f5f9;
+  --modal-overlay:rgba(0,0,0,0.7);--filter-bar-bg:#1e293b;--filter-input-bg:#0f172a;
+  --reset-btn-bg:#334155;--reset-btn-hover:#475569;--reset-btn-text:#cbd5e1;
+  --switch-btn-bg:#1e3a5f;--progress-bg:#334155;
+}
+html,body{height:100%;margin:0;}
+body{font-family:-apple-system,'SF Pro Display','Segoe UI',Roboto,system-ui,sans-serif;background:var(--bg-body);color:var(--text-primary);transition:background 0.2s,color 0.2s;}
 
-        /* ── 周度趋势模块 ── */
-        .wt-toolbar {
-            display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-        }
-        .wt-label {
-            font-size: 11px; font-weight: 600; color: var(--text-secondary);
-            white-space: nowrap;
-        }
-        .wt-select {
-            height: 32px; padding: 4px 10px; border-radius: 10px;
-            border: 1px solid var(--border-color);
-            background: var(--filter-input-bg); color: var(--text-primary);
-            font-size: 12px; outline: none; cursor: pointer;
-            transition: border-color 0.15s;
-        }
-        .wt-select:focus { border-color: var(--btn-bg); }
-        .wt-add-btn {
-            height: 32px; padding: 4px 14px; border-radius: 10px;
-            background: var(--btn-bg); color: white; border: none;
-            font-size: 12px; font-weight: 600; cursor: pointer;
-            display: flex; align-items: center; gap: 5px;
-            transition: background 0.15s, transform 0.1s;
-            white-space: nowrap;
-        }
-        .wt-add-btn:hover { background: var(--btn-hover); transform: translateY(-1px); }
-        .wt-clear-btn {
-            height: 32px; padding: 4px 14px; border-radius: 10px;
-            background: var(--kpi-bg); color: var(--text-secondary);
-            border: 1px solid var(--border-color); font-size: 12px; font-weight: 600;
-            cursor: pointer; transition: all 0.15s; white-space: nowrap;
-        }
-        .wt-clear-btn:hover { background: #fee2e2; color: #dc2626; border-color: #fca5a5; }
-        .wt-lines-display {
-            display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; min-height: 0;
-        }
-        .wt-line-tag {
-            display: inline-flex; align-items: center; gap: 5px;
-            padding: 3px 10px 3px 12px; border-radius: 20px;
-            font-size: 11px; font-weight: 600; cursor: default;
-            border: 1.5px solid; transition: all 0.15s;
-        }
-        .wt-line-tag .wt-remove {
-            cursor: pointer; font-size: 13px; line-height: 1;
-            opacity: 0.6; transition: opacity 0.15s;
-        }
-        .wt-line-tag .wt-remove:hover { opacity: 1; }
-        .wt-chart-area { width: 100%; height: 360px; margin-top: 8px; }
-        .wt-data-table-wrap { overflow-x: auto; margin-top: 14px; border-radius: 12px; border: 1px solid var(--border-color); }
-        .wt-data-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 420px; white-space: nowrap; }
-        .wt-data-table th, .wt-data-table td { border: 1px solid var(--border-color); padding: 9px 10px; text-align: center; }
-        .wt-data-table th { background: var(--table-header-bg); font-weight: 700; position: sticky; top: 0; z-index: 5; }
-        .wt-data-table tr:hover td { background: var(--table-hover); }
-        .wt-up   { color: #dc2626; font-weight: 700; }
-        .wt-down { color: #16a34a; font-weight: 700; }
-        .wt-flat { color: var(--text-secondary); }
-        .wt-empty-hint {
-            text-align: center; padding: 48px 20px;
-            font-size: 13px; color: var(--text-secondary);
-        }
-        .wt-footer-note {
-            font-size: 11px; color: var(--text-secondary); margin-top: 10px;
-        }
-        /* 差异明细列筛选 */
-        .dt-filter-icon { font-size:10px; color:#94a3b8; cursor:pointer; margin-left:3px; transition:color .15s; user-select:none; }
-        .dt-filter-icon:hover { color:var(--btn-bg); }
-        .dt-filter-icon.active { color:var(--btn-bg); }
-        /* 单元格编辑 */
-        .dt-cell-editable { cursor:pointer; border-radius:4px; padding:1px 3px; transition:background .15s; display:inline-block; min-width:20px; }
-        .dt-cell-editable:hover { background:rgba(59,130,246,0.08); }
-        .dt-cell-modified { color:#2563eb; font-weight:600; }
-        .dt-cell-modified::after { content:'*'; font-size:9px; vertical-align:super; color:#2563eb; margin-left:1px; }
-        .dt-cell-input { font-size:12px; padding:2px 5px; border:1.5px solid var(--btn-bg); border-radius:4px; outline:none; background:var(--bg-card); color:var(--text-primary); width:120px; }
-        /* 差异明细分页 */
-        .dt-pagination { display:flex; align-items:center; justify-content:space-between; margin-top:12px; flex-wrap:wrap; gap:8px; }
-        .dt-page-info { font-size:12px; color:var(--text-secondary); }
-        .dt-page-btns { display:flex; align-items:center; gap:4px; }
-        .dt-page-btn { min-width:30px; height:30px; padding:0 8px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-primary); font-size:12px; cursor:pointer; transition:all .15s; }
-        .dt-page-btn:hover:not(:disabled) { border-color:var(--btn-bg); color:var(--btn-bg); }
-        .dt-page-btn.active { background:var(--btn-bg); color:white; border-color:var(--btn-bg); }
-        .dt-page-btn:disabled { opacity:0.35; cursor:not-allowed; }
-        .dt-page-size { font-size:12px; padding:4px 8px; border-radius:8px; border:1px solid var(--border-color); background:var(--bg-card); color:var(--text-primary); cursor:pointer; outline:none; }
-        /* 问题项分析 */
-        .ia-stat-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
-        .ia-stat-card { background:var(--kpi-bg); border-radius:10px; padding:10px 14px; }
-        .ia-stat-label { font-size:11px; color:var(--text-secondary); margin-bottom:3px; }
-        .ia-stat-val { font-size:20px; font-weight:700; color:var(--text-primary); }
-        .ia-stat-sub { font-size:11px; color:var(--text-secondary); margin-top:2px; }
-        .ia-table-wrap { border:1px solid var(--border-color); border-radius:10px; overflow:hidden; }
-        .ia-table { width:100%; border-collapse:collapse; font-size:12px; }
-        .ia-table th { background:var(--table-header-bg); padding:9px 12px; font-weight:700; text-align:left; border-bottom:1px solid var(--border-color); }
-        .ia-table th.num { text-align:center; }
-        .ia-table td { padding:9px 12px; border-bottom:1px solid var(--border-color); vertical-align:middle; }
-        .ia-table td.num { text-align:center; }
-        .ia-table tr:last-child td { border-bottom:none; }
-        .ia-table tr:hover td { background:var(--table-hover); }
-        .ia-row-top { background:rgba(239,68,68,0.04); }
-        .ia-badge { display:inline-block; font-size:10px; padding:1px 7px; border-radius:20px; margin-left:5px; }
-        .ia-badge-top { background:rgba(239,68,68,0.12); color:#dc2626; }
-        .ia-badge-good { background:rgba(22,163,74,0.12); color:#16a34a; }
-        .ia-up { color:#dc2626; font-weight:700; }
-        .ia-down { color:#16a34a; font-weight:700; }
-        .ia-flat { color:var(--text-secondary); }
-        .ia-note { font-size:11px; color:var(--text-secondary); margin-top:10px; display:flex; gap:16px; flex-wrap:wrap; }
-        /* 多选仓触发器 */
-        .wt-multi-trigger {
-            min-width: 160px; max-width: 260px; height: 32px; padding: 4px 10px;
-            border-radius: 10px; border: 1px solid var(--border-color);
-            background: var(--filter-input-bg); color: var(--text-primary);
-            font-size: 12px; cursor: pointer; display: flex; align-items: center;
-            justify-content: space-between; user-select: none; position: relative;
-            transition: border-color 0.15s;
-        }
-        .wt-multi-trigger:hover, .wt-multi-trigger.open { border-color: var(--btn-bg); }
-        .wt-multi-panel {
-            position: absolute; top: calc(100% + 4px); left: 0; z-index: 200;
-            background: var(--bg-card); border: 1px solid var(--border-color);
-            border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);
-            width: 220px; overflow: hidden;
-        }
-        .wt-search-input {
-            width: 100%; padding: 8px 12px; border: none; border-bottom: 1px solid var(--border-color);
-            background: var(--filter-input-bg); color: var(--text-primary);
-            font-size: 12px; outline: none;
-        }
-        .wt-multi-list { max-height: 200px; overflow-y: auto; padding: 4px 0; }
-        .wt-multi-item {
-            display: flex; align-items: center; gap: 8px;
-            padding: 7px 14px; font-size: 12px; color: var(--text-primary);
-            cursor: pointer; transition: background 0.1s; user-select: none;
-        }
-        .wt-multi-item:hover { background: rgba(59,130,246,0.06); }
-        .wt-multi-item.checked { color: var(--btn-bg); font-weight: 600; }
-        .wt-multi-item .wt-checkbox {
-            width: 14px; height: 14px; border-radius: 4px; border: 1.5px solid var(--border-color);
-            display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-            transition: all 0.15s;
-        }
-        .wt-multi-item.checked .wt-checkbox {
-            background: var(--btn-bg); border-color: var(--btn-bg);
-        }
-        .wt-multi-item.checked .wt-checkbox::after {
-            content: '✓'; font-size: 9px; color: white; font-weight: 700;
-        }
-        /* 品类勾选 */
-        .wt-cat-checks { display: flex; flex-wrap: wrap; gap: 6px; }
-        .wt-cat-item {
-            display: inline-flex; align-items: center; gap: 5px;
-            padding: 4px 12px; border-radius: 20px; font-size: 12px;
-            border: 1.5px solid var(--border-color); background: var(--kpi-bg);
-            color: var(--text-secondary); cursor: pointer; transition: all 0.15s;
-            user-select: none;
-        }
-        .wt-cat-item input[type=checkbox] { display: none; }
-        .wt-cat-item.active {
-            border-color: var(--btn-bg); background: rgba(59,130,246,0.08);
-            color: var(--btn-bg); font-weight: 600;
-        }
-        /* 站点tag */
-        .wt-wh-tag {
-            display: inline-flex; align-items: center; gap: 5px;
-            padding: 3px 10px 3px 12px; border-radius: 20px;
-            font-size: 11px; font-weight: 600; cursor: default;
-            border: 1.5px solid; transition: all 0.15s; margin-bottom: 4px;
-        }
-        .wt-wh-tag .wt-remove { cursor: pointer; font-size: 13px; opacity: 0.6; transition: opacity 0.15s; }
-        .wt-wh-tag .wt-remove:hover { opacity: 1; }
+/* ── 进度条 ── */
+.loading-bar{position:fixed;top:0;left:0;width:100%;height:3px;z-index:10000;background:var(--progress-bg);overflow:hidden;opacity:0;pointer-events:none;transition:opacity 0.3s;}
+.loading-bar.active{opacity:1;}
+.loading-bar .bar-inner{height:100%;width:0;background:linear-gradient(90deg,#3B82F6,#6366F1);transition:width 0.4s ease;border-radius:0 2px 2px 0;}
 
-        /* ── 自定义质检人员搜索下拉 ── */
-        .person-dropdown-trigger {
-            width: 100%; padding: 4px 7px; border-radius: 7px; border: 1px solid var(--border-color);
-            background: var(--filter-input-bg); color: var(--text-primary); font-size: 11px; height: 26px;
-            cursor: pointer; display: flex; align-items: center; justify-content: space-between;
-            transition: border-color 0.15s; user-select: none;
-        }
-        .person-dropdown-trigger:focus, .person-dropdown-trigger.open { border-color: var(--btn-bg); outline: none; }
-        .person-dropdown-panel {
-            position: absolute; top: calc(100% + 3px); left: 0; right: 0; z-index: 200;
-            background: var(--filter-input-bg); border: 1px solid var(--border-color);
-            border-radius: 8px; box-shadow: var(--shadow-hover); overflow: hidden;
-        }
-        .person-dropdown-list { max-height: 180px; overflow-y: auto; }
-        .person-dropdown-item {
-            padding: 6px 10px; font-size: 11px; color: var(--text-primary);
-            cursor: pointer; transition: background 0.1s;
-        }
-        .person-dropdown-item:hover { background: var(--accent-light, rgba(37,99,235,0.06)); }
-        .person-dropdown-item.selected { background: rgba(37,99,235,0.10); color: var(--btn-bg); font-weight: 600; }
-                /* ── chip loaded ── */
-        #chip-qa.loaded,#chip-diff5.loaded,#chip-sum.loaded,#chip-diff4.loaded {
-            background:rgba(5,150,105,0.08)!important;
-            border-color:rgba(5,150,105,0.3)!important;
-            color:#059669!important;
-        }
-        /* ── 品类按钮 ── */
-        .cat-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
-        .cat-tab {
-            padding:4px 14px; border-radius:20px; font-size:11px; font-weight:600;
-            border:1px solid var(--border-color); background:var(--kpi-bg);
-            color:var(--text-secondary); cursor:pointer; transition:all 0.15s;
-        }
-        .cat-tab:hover { border-color:var(--btn-bg); color:var(--btn-bg); }
-        .cat-tab.active { background:var(--btn-bg); color:white; border-color:var(--btn-bg); }
-        /* ── 新排行榜 ── */
-        .rank-board { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
-        .rank-col-title {
-            font-size:11px; font-weight:700; color:var(--text-secondary);
-            padding:6px 0 8px; border-bottom:2px solid var(--btn-bg);
-            margin-bottom:10px; letter-spacing:0.5px;
-        }
-        .rank-row {
-            display:flex; align-items:center; gap:6px;
-            padding:7px 10px; border-radius:10px;
-            background:var(--kpi-bg); margin-bottom:6px;
-            border:1px solid var(--border-color); cursor:pointer;
-            transition:all 0.15s;
-        }
-        .rank-row:hover { border-color:var(--btn-bg); box-shadow:0 2px 8px rgba(37,99,235,0.10); }
-        .rank-no {
-            width:20px; height:20px; border-radius:6px; flex-shrink:0;
-            display:flex; align-items:center; justify-content:center;
-            font-size:10px; font-weight:800;
-        }
-        .rank-no.top1 { background:rgba(220,38,38,0.12); color:#dc2626; }
-        .rank-no.top2 { background:rgba(217,119,6,0.12); color:#d97706; }
-        .rank-no.top3 { background:rgba(234,179,8,0.12); color:#ca8a04; }
-        .rank-no.normal { background:var(--border-color); color:var(--text-secondary); }
-        .rank-no.fixed { background:rgba(100,116,139,0.12); color:#64748b; }
-        .rank-name { flex:1; font-size:12px; color:var(--text-primary); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-        .rank-bar-wrap { width:80px; height:6px; background:var(--border-color); border-radius:3px; overflow:hidden; flex-shrink:0; }
-        .rank-bar-inner { height:100%; border-radius:3px; transition:width 0.6s ease; }
-        .rank-rate { font-size:12px; font-weight:700; min-width:42px; text-align:right; flex-shrink:0; }
-        .rank-change { font-size:10px; min-width:46px; text-align:right; flex-shrink:0; font-weight:600; }
-        .rank-change.up { color:#dc2626; }
-        .rank-change.down { color:#16a34a; }
-        .rank-change.flat { color:var(--text-secondary); }
-        .rank-fixed-divider {
-            font-size:10px; color:var(--text-muted,#94a3b8); text-align:center;
-            padding:4px 0; border-top:1px dashed var(--border-color);
-            margin:6px 0; letter-spacing:1px;
-        }
-        /* ── 侧边栏 ── */
-        #zb-layout { display: flex; height: 100vh; overflow: hidden; gap: 0; }
-        #zb-sidebar {
-            width: 200px; min-width: 200px; background: var(--bg-card);
-            border-right: 0.5px solid var(--border-color);
-            display: flex; flex-direction: column; overflow-y: auto;
-            transition: background 0.2s;
-        }
-        .zb-logo {
-            padding: 18px 16px 16px;
-            border-bottom: 0.5px solid var(--border-color);
-            display: flex; align-items: center; gap: 10px;
-        }
-        .zb-logo-img {
-            width: 36px; height: 36px; border-radius: 10px; overflow: hidden;
-            flex-shrink: 0; object-fit: cover;
-        }
-        .zb-logo .zb-brand { font-size: 12px; font-weight: 600; color: var(--text-primary); line-height: 1.4; }
-        .zb-logo .zb-sub { font-size: 10px; color: var(--text-secondary); margin-top: 1px; }
-        .zb-nav-lbl {
-            padding: 14px 16px 5px; font-size: 9px; color: #CBD5E1;
-            letter-spacing: .08em; font-weight: 600; text-transform: uppercase;
-        }
-        .zb-nav-item {
-            display: flex; align-items: center; gap: 8px;
-            padding: 9px 10px; margin: 1px 8px; border-radius: 11px;
-            cursor: pointer; font-size: 12px;
-            color: var(--text-secondary); border-left: 2px solid transparent;
-            transition: all 0.15s;
-        }
-        .zb-nav-item:hover { background: rgba(59,130,246,0.06); color: var(--btn-bg); border-left-color: transparent; }
-        .zb-nav-item.active { background: rgba(59,130,246,0.09); color: var(--btn-bg); border-left-color: var(--btn-bg); font-weight: 600; }
-        .zb-sidebar-footer { margin-top: auto; border-top: 0.5px solid var(--border-color); }
-        .zb-user-block { display:flex; align-items:center; gap:10px; padding:12px 14px; cursor:pointer; transition:background 0.15s; }
-        .zb-user-block:hover { background:rgba(59,130,246,0.05); }
-        .zb-avatar { width:34px; height:34px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; flex-shrink:0; background:#dbeafe; color:#1d4ed8; }
-        .zb-avatar.viewer { background:var(--kpi-bg); color:var(--text-secondary); }
-        .zb-uname { font-size:12px; font-weight:600; color:var(--text-primary); line-height:1.3; }
-        .zb-urole { font-size:10px; color:#93c5fd; margin-top:1px; }
-        .zb-login-block { padding:12px 14px; }
-        .zb-login-lbl { font-size:10px; color:var(--text-secondary); margin-bottom:6px; }
-        .zb-login-input { width:100%; height:30px; border:1px solid var(--border-color); border-radius:8px; background:var(--filter-input-bg); color:var(--text-primary); font-size:11px; padding:0 10px; outline:none; box-sizing:border-box; }
-        .zb-login-btn { width:100%; margin-top:6px; height:28px; background:var(--btn-bg); color:#fff; border:none; border-radius:8px; font-size:11px; font-weight:600; cursor:pointer; transition:background 0.15s; }
-        .zb-login-btn:hover { background:var(--btn-hover); }
-        .zb-login-hint { font-size:10px; color:#ef4444; min-height:14px; margin-top:4px; }
-        #zb-main { flex: 1; overflow-y: auto; min-width: 0; padding: 20px 24px; background: var(--bg-body); }
-        /* 页面切换 */
-        .zb-page { display: none; }
-        .zb-page.active { display: block; }
-        /* ── v2.0 强制覆盖 ── */
-        body { background: #E8EDF5 !important; }
-        body.dark { background: #0f172a !important; }
+/* ── 布局 ── */
+#zb-layout{display:flex;height:100vh;overflow:hidden;}
+#zb-sidebar{width:200px;min-width:200px;background:var(--bg-card);border-right:0.5px solid var(--border-color);display:flex;flex-direction:column;overflow-y:auto;transition:background 0.2s;}
+#zb-main{flex:1;overflow-y:auto;min-width:0;background:var(--bg-body);}
 
-        #zb-sidebar {
-            background: #fff !important;
-            border-right: 0.5px solid rgba(0,0,0,0.07) !important;
-            width: 200px !important; min-width: 200px !important;
-        }
-        body.dark #zb-sidebar { background: #1e293b !important; }
+/* ── 侧边栏 ── */
+.zb-logo{padding:18px 16px 16px;border-bottom:0.5px solid var(--border-color);display:flex;align-items:center;gap:10px;}
+.zb-logo-img{width:36px;height:36px;border-radius:10px;object-fit:cover;flex-shrink:0;}
+.zb-brand{font-size:12px;font-weight:600;color:var(--text-primary);line-height:1.4;}
+.zb-sub{font-size:10px;color:var(--text-secondary);margin-top:1px;}
+.zb-nav-lbl{padding:14px 16px 5px;font-size:9px;color:#CBD5E1;letter-spacing:.08em;font-weight:600;text-transform:uppercase;}
+.zb-nav-item{display:flex;align-items:center;gap:8px;padding:9px 10px;margin:1px 8px;border-radius:10px;cursor:pointer;font-size:12px;color:var(--text-secondary);border-left:2px solid transparent;transition:all 0.15s;}
+.zb-nav-item:hover{background:rgba(59,130,246,0.06);color:var(--btn-bg);}
+.zb-nav-item.active{background:rgba(59,130,246,0.09);color:#3B82F6;font-weight:600;border-left-color:#3B82F6;}
+.zb-nav-item.recent{color:var(--text-secondary);opacity:0.75;}
+.zb-nav-item.recent:hover{opacity:1;}
+.recent-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0;}
+.zb-sidebar-footer{margin-top:auto;border-top:0.5px solid var(--border-color);}
+.zb-user-block{display:flex;align-items:center;gap:10px;padding:12px 14px;cursor:pointer;transition:background 0.15s;}
+.zb-user-block:hover{background:rgba(59,130,246,0.05);}
+.zb-avatar{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;background:#dbeafe;color:#1d4ed8;}
+.zb-avatar.viewer{background:var(--kpi-bg);color:var(--text-secondary);}
+.zb-uname{font-size:12px;font-weight:600;color:var(--text-primary);line-height:1.3;}
+.zb-urole{font-size:10px;color:#93c5fd;margin-top:1px;}
+.zb-login-block{padding:12px 14px;}
+.zb-login-lbl{font-size:10px;color:var(--text-secondary);margin-bottom:6px;}
+.zb-login-input{width:100%;height:30px;border:0.5px solid var(--border-color);border-radius:8px;background:var(--filter-input-bg);color:var(--text-primary);font-size:11px;padding:0 10px;outline:none;box-sizing:border-box;}
+.zb-login-btn{width:100%;margin-top:6px;height:28px;background:var(--btn-bg);color:#fff;border:none;border-radius:8px;font-size:11px;font-weight:600;cursor:pointer;}
+.zb-login-hint{font-size:10px;color:#ef4444;min-height:14px;margin-top:4px;}
 
-        .zb-logo {
-            padding: 16px 14px 14px !important;
-            border-bottom: 0.5px solid rgba(0,0,0,0.07) !important;
-            display: flex !important; align-items: center !important; gap: 10px !important;
-        }
-        .zb-logo-img {
-            width: 36px !important; height: 36px !important;
-            border-radius: 10px !important; object-fit: cover !important; flex-shrink: 0 !important;
-        }
-        .zb-logo .zb-brand {
-            font-size: 12px !important; font-weight: 600 !important;
-            color: #0f172a !important; line-height: 1.4 !important;
-        }
-        body.dark .zb-logo .zb-brand { color: #f1f5f9 !important; }
-        .zb-logo .zb-sub { font-size: 10px !important; color: #94a3b8 !important; margin-top: 1px !important; }
+/* ── 页面容器 ── */
+.zb-page{display:none;padding:20px 22px;}
+.zb-page.active{display:block;}
 
-        .zb-nav-lbl {
-            padding: 14px 14px 5px !important; font-size: 9px !important;
-            color: #CBD5E1 !important; letter-spacing: .08em !important;
-            font-weight: 600 !important; text-transform: uppercase !important;
-        }
-        .zb-nav-item {
-            padding: 9px 10px !important; margin: 1px 8px !important;
-            border-radius: 10px !important; font-size: 12px !important;
-            border-left: 2px solid transparent !important;
-        }
-        .zb-nav-item.active {
-            background: rgba(59,130,246,0.09) !important;
-            color: #3B82F6 !important; border-left-color: #3B82F6 !important;
-        }
-        .zb-sidebar-footer { border-top: 0.5px solid rgba(0,0,0,0.07) !important; }
-        .zb-avatar { border-radius: 50% !important; background: #DBEAFE !important; color: #1d4ed8 !important; }
+/* ── 详情页页面 ── */
+#zb-page-station,#zb-page-person{padding:20px 22px;}
 
-        /* 主内容区 */
-        #zb-main { background: #E8EDF5 !important; padding: 20px 22px !important; }
-        body.dark #zb-main { background: #0f172a !important; }
+/* ── 顶部操作栏 ── */
+.top-bar{display:flex;justify-content:space-between;align-items:center;background:var(--bg-card);border-radius:16px;padding:9px 18px;margin-bottom:14px;box-shadow:var(--shadow);flex-wrap:wrap;gap:10px;border:0.5px solid var(--border-color);}
+.marquee-wrap{flex:1;min-width:0;overflow:hidden;margin:0 10px;background:rgba(59,130,246,0.06);border-radius:20px;border:0.5px solid rgba(59,130,246,0.15);padding:0 14px;height:28px;display:flex;align-items:center;}
+.marquee-inner{display:inline-block;white-space:nowrap;animation:mq 32s linear infinite;font-size:12px;color:var(--btn-bg);font-weight:500;}
+@keyframes mq{0%{transform:translateX(100%)}100%{transform:translateX(-100%)}}
+.right-buttons{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+.theme-btn,.mode-btn{background:var(--kpi-bg);border:0.5px solid var(--border-color);border-radius:9px;padding:6px 13px;cursor:pointer;font-size:11px;font-weight:500;display:inline-flex;align-items:center;gap:6px;transition:all 0.2s;color:var(--text-primary);box-shadow:0 1px 3px rgba(0,0,0,0.04);}
+.mode-btn.active{background:var(--btn-bg);color:white;border-color:var(--btn-bg);}
+.upload-btn{background:linear-gradient(135deg,#3B82F6,#6366F1);color:white;border:none;border-radius:9px;padding:6px 13px;cursor:pointer;font-size:11px;font-weight:500;display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(59,130,246,0.25);}
+.export-btn{background:linear-gradient(135deg,#10b981,#059669);color:white;border:none;border-radius:9px;padding:6px 13px;cursor:pointer;font-size:11px;font-weight:500;display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 12px rgba(16,185,129,0.2);}
 
-        /* 顶部操作栏 */
-        .top-bar {
-            border-radius: 16px !important; padding: 9px 18px !important;
-            border: 0.5px solid rgba(0,0,0,0.06) !important;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.05) !important;
-            margin-bottom: 14px !important;
-        }
-        .theme-btn, .mode-btn {
-            border-radius: 9px !important; padding: 6px 14px !important;
-            font-size: 12px !important; font-weight: 500 !important;
-            border: 0.5px solid rgba(0,0,0,0.08) !important;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important;
-        }
-        .upload-btn {
-            border-radius: 9px !important; padding: 6px 14px !important;
-            font-size: 12px !important; font-weight: 500 !important;
-            background: linear-gradient(135deg, #3B82F6, #6366F1) !important;
-            box-shadow: 0 4px 12px rgba(59,130,246,0.25) !important;
-        }
-        .export-btn {
-            border-radius: 9px !important; padding: 6px 14px !important;
-            font-size: 12px !important; font-weight: 500 !important;
-            background: linear-gradient(135deg, #10b981, #059669) !important;
-            box-shadow: 0 4px 12px rgba(16,185,129,0.2) !important;
-        }
+/* ── 吸顶筛选栏 ── */
+.sticky-filter-bar{position:sticky;top:0;z-index:100;background:var(--bg-body);padding:4px 0;border-bottom:0.5px solid var(--border-color);}
+.sticky-filter-inner{display:flex;align-items:center;gap:8px;flex-wrap:nowrap;overflow-x:auto;background:var(--bg-card);border-radius:12px;padding:5px 12px;border:0.5px solid var(--border-color);box-shadow:var(--shadow);scrollbar-width:none;}
+.sticky-filter-inner::-webkit-scrollbar{display:none;}
+.sticky-divider{width:0.5px;height:14px;background:var(--border-color);flex-shrink:0;}
+.cat-tab{padding:3px 11px;border-radius:20px;font-size:11px;font-weight:500;cursor:pointer;border:0.5px solid var(--border-color);color:var(--text-secondary);transition:all 0.15s;white-space:nowrap;flex-shrink:0;}
+.cat-tab.active{background:linear-gradient(135deg,#3B82F6,#6366F1);color:white;border-color:transparent;box-shadow:0 2px 8px rgba(59,130,246,0.3);}
 
-        /* 卡片 */
-        .card {
-            border-radius: 18px !important;
-            border: 0.5px solid rgba(0,0,0,0.06) !important;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.05) !important;
-            margin-bottom: 16px !important;
-            transition: box-shadow 0.2s !important;
-        }
-        .card:hover { box-shadow: 0 6px 20px rgba(0,0,0,0.08) !important; }
-        body.dark .card { border: 0.5px solid rgba(255,255,255,0.07) !important; }
+/* ── 筛选栏 ── */
+.filter-bar,.modal-filter-bar{background:var(--filter-bar-bg);border-radius:16px;padding:12px 16px;display:flex;flex-wrap:wrap;align-items:flex-end;gap:10px 16px;border:0.5px solid var(--border-color);box-shadow:var(--shadow);}
+.filter-bar{position:sticky;top:46px;z-index:60;margin-bottom:16px;}
+.filter-group{display:flex;flex-direction:column;gap:4px;min-width:100px;flex:1 1 130px;max-width:210px;}
+.filter-group label{font-weight:600;font-size:11px;color:var(--text-secondary);}
+.filter-group select,.filter-group input{width:100%;padding:7px 10px;border-radius:9px;border:0.5px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);font-size:12px;height:34px;}
+.reset-filter-btn{flex:0 0 auto;padding:7px 16px;background:var(--reset-btn-bg);color:var(--reset-btn-text);border:0.5px solid var(--border-color);border-radius:9px;font-size:12px;font-weight:500;cursor:pointer;height:34px;align-self:flex-end;transition:all 0.2s;}
+.reset-filter-btn:hover{background:var(--reset-btn-hover);}
 
-        /* 卡片标题 */
-        .card-title {
-            font-size: 14px !important; font-weight: 600 !important;
-            border-left: 3px solid #3B82F6 !important;
-            padding-left: 12px !important; letter-spacing: -0.01em !important;
-        }
+/* ── 카드 ── */
+.card{background:var(--bg-card);border-radius:18px;box-shadow:var(--shadow);padding:20px 22px;margin-bottom:16px;border:0.5px solid var(--border-color);transition:box-shadow 0.2s;}
+.card:hover{box-shadow:var(--shadow-hover);}
+.card-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;}
+.card-title{font-size:14px;font-weight:600;border-left:3px solid #3B82F6;padding-left:12px;color:var(--text-primary);letter-spacing:-0.01em;}
 
-        /* KPI 数字 */
-        .stats-number {
-            font-size: 28px !important; font-weight: 500 !important;
-            color: #0f172a !important; letter-spacing: -0.02em !important;
-        }
-        body.dark .stats-number { color: #f1f5f9 !important; }
-        .stats-item {
-            border-radius: 16px !important;
-            border: 0.5px solid rgba(0,0,0,0.06) !important;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.04) !important;
-            transition: all 0.2s !important;
-            background: #fff !important;
-            padding: 18px 12px !important;
-        }
-        body.dark .stats-item { background: #1e293b !important; border-color: rgba(255,255,255,0.07) !important; }
-        .stats-item:hover {
-            transform: translateY(-2px) !important;
-            box-shadow: 0 6px 20px rgba(0,0,0,0.09) !important;
-            border-color: rgba(59,130,246,0.2) !important;
-        }
-        .stats-label { font-size: 10px !important; color: #94a3b8 !important; margin-top: 6px !important; }
+/* ── KPI ── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px;margin-bottom:8px;}
+.stats-item{background:var(--bg-card);border-radius:16px;padding:18px 14px;text-align:center;border:0.5px solid var(--border-color);cursor:pointer;transition:all 0.2s;box-shadow:var(--shadow);}
+.stats-item:hover{transform:translateY(-2px);box-shadow:var(--shadow-hover);border-color:rgba(59,130,246,0.2);}
+.stats-number{font-size:26px;font-weight:500;color:var(--text-primary);line-height:1.1;letter-spacing:-0.02em;}
+.stats-sub{font-size:10px;font-weight:500;color:var(--text-secondary);margin-top:2px;}
+.stats-label{font-size:10px;color:var(--text-secondary);margin-top:6px;opacity:0.8;}
 
-        /* 筛选栏 */
-        .filter-bar {
-            border-radius: 16px !important;
-            border: 0.5px solid rgba(0,0,0,0.06) !important;
-            box-shadow: 0 1px 4px rgba(0,0,0,0.04) !important;
-            padding: 12px 16px !important;
-        }
-        .filter-group select, .filter-group input[type="date"], .filter-group input[type="text"] {
-            border-radius: 9px !important;
-            border: 0.5px solid rgba(0,0,0,0.1) !important;
-            font-size: 12px !important;
-        }
-        .reset-filter-btn {
-            border-radius: 9px !important; font-weight: 500 !important;
-            border: 0.5px solid rgba(0,0,0,0.08) !important;
-        }
+/* ── 排行榜 ── */
+.rank-board{display:flex;gap:24px;flex-wrap:wrap;}
+.rank-board>div{flex:1;min-width:280px;}
+.rank-col-title{font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:10px;padding-left:2px;}
+.rank-item{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:10px;cursor:pointer;transition:all 0.15s;margin-bottom:4px;}
+.rank-item:hover{background:rgba(59,130,246,0.05);}
+.rank-item:hover .rank-site-name{color:#3B82F6;text-decoration:underline;}
+.rank-num{width:20px;font-size:11px;font-weight:600;color:#CBD5E1;text-align:center;flex-shrink:0;}
+.rank-site-name{flex:1;font-size:12px;color:var(--text-primary);transition:color 0.15s;}
+.rank-bar-wrap{width:80px;height:5px;background:var(--border-color);border-radius:3px;overflow:hidden;flex-shrink:0;}
+.rank-bar-inner{height:100%;border-radius:3px;}
+.rank-rate{font-size:12px;font-weight:600;width:40px;text-align:right;flex-shrink:0;}
+.rank-delta{font-size:10px;width:52px;text-align:right;flex-shrink:0;}
 
-        /* 品类 pill */
-        .cat-tab {
-            border-radius: 20px !important;
-            border: 0.5px solid rgba(0,0,0,0.08) !important;
-            font-size: 11px !important; font-weight: 500 !important;
-            transition: all 0.15s !important;
-        }
-        .cat-tab.active {
-            background: linear-gradient(135deg, #3B82F6, #6366F1) !important;
-            border-color: transparent !important;
-            box-shadow: 0 2px 8px rgba(59,130,246,0.3) !important;
-        }
+/* ── 表格 ── */
+.rank-table,.detail-table,.ranking-table,.modal-table,.obj-rank-table,.wt-data-table{width:100%;border-collapse:collapse;font-size:12px;}
+.rank-table th,.detail-table th,.ranking-table th,.modal-table th,.obj-rank-table th,.wt-data-table th{background:var(--table-header-bg);font-weight:600;font-size:11px;position:sticky;top:0;z-index:10;}
+.rank-table th,.rank-table td,.detail-table th,.detail-table td,.ranking-table th,.ranking-table td,.modal-table th,.modal-table td,.obj-rank-table th,.obj-rank-table td,.wt-data-table th,.wt-data-table td{border:0.5px solid var(--border-color);padding:8px 8px;text-align:center;white-space:nowrap;color:var(--text-primary);}
+.rank-table tr:hover,.obj-rank-table tr:hover,.ranking-table tr:hover{background:var(--table-hover);cursor:pointer;}
+.rank-1{background-color:#fde8e8;}.rank-2{background-color:#e8f5e9;}.rank-3{background-color:#e6f2ff;}
+body.dark .rank-1{background-color:#7f4a4acc;}body.dark .rank-2{background-color:#2d5a2dcc;}body.dark .rank-3{background-color:#2c4c6bcc;}
 
-        /* 표 헤더 */
-        .rank-table th, .detail-table th, .ranking-table th, .obj-rank-table th {
-            font-size: 11px !important; font-weight: 600 !important; letter-spacing: .02em !important;
-        }
+/* ── 图表 ── */
+.trend-chart-box{width:100%;height:360px;margin-top:12px;}
+.chart-box{width:100%;height:320px;}
+.right-chart-container{width:100%;height:320px;}
+.insight-grid{display:grid;grid-template-columns:1.4fr 1fr;gap:20px;margin-top:16px;align-items:start;}
+.obj-rank-wrapper{display:flex;flex-direction:column;min-width:0;}
+.obj-rank-scroll{max-height:400px;overflow-y:auto;overflow-x:auto;border-radius:12px;border:0.5px solid var(--border-color);background:var(--bg-card);}
+.two-col{display:flex;gap:20px;flex-wrap:wrap;}.two-col>div{flex:1;min-width:250px;overflow-x:auto;}
 
-        /* switch 버튼 */
-        .switch-btn {
-            border-radius: 20px !important; font-size: 12px !important;
-            font-weight: 500 !important; padding: 5px 16px !important;
-            border: 0.5px solid rgba(0,0,0,0.08) !important;
-        }
-        .switch-btn.active {
-            background: linear-gradient(135deg, #3B82F6, #6366F1) !important;
-            border-color: transparent !important;
-        }
+/* ── switch ── */
+.switch-group{display:flex;gap:10px;margin-bottom:16px;}
+.switch-btn{background:var(--switch-btn-bg);border:0.5px solid var(--border-color);border-radius:20px;padding:5px 16px;font-size:12px;font-weight:500;cursor:pointer;transition:all 0.2s;color:var(--text-primary);}
+.switch-btn.active{background:linear-gradient(135deg,#3B82F6,#6366F1);color:white;border-color:transparent;}
 
-        /* modal */
-        .modal-content {
-            border-radius: 20px !important;
-            box-shadow: 0 25px 50px rgba(0,0,0,0.2) !important;
-        }
+/* ── modal ── */
+.modal{display:none;position:fixed;top:0;left:0;width:100%;height:100%;background-color:var(--modal-overlay);z-index:1000;justify-content:center;align-items:center;backdrop-filter:blur(3px);}
+.modal.visible{display:flex;}
+.modal-content{background:var(--bg-card);border-radius:20px;width:92%;max-width:1400px;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 25px 50px rgba(0,0,0,0.2);overflow:hidden;padding:22px;border:0.5px solid var(--border-color);}
+.modal-header{display:flex;justify-content:space-between;align-items:center;padding-bottom:12px;}
+.close-modal{cursor:pointer;font-size:28px;font-weight:bold;padding:0 8px;line-height:1;color:var(--text-secondary);}
+.virtual-scroll-container{height:60vh;overflow-y:auto;border:0.5px solid var(--border-color);border-radius:10px;}
 
-        /* scrollbar */
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(59,130,246,0.3); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(59,130,246,0.5); }
-    </style>
+/* ── toast ── */
+.toast-msg{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#1f2937;color:#fff;padding:10px 22px;border-radius:50px;font-size:13px;z-index:2000;white-space:nowrap;box-shadow:0 8px 20px rgba(0,0,0,0.2);font-weight:500;}
+
+/* ── 周度趋势 ── */
+.wt-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.wt-label{font-size:11px;font-weight:600;color:var(--text-secondary);white-space:nowrap;}
+.wt-select{height:32px;padding:4px 10px;border-radius:9px;border:0.5px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);font-size:12px;outline:none;cursor:pointer;}
+.wt-add-btn{height:32px;padding:4px 14px;border-radius:9px;background:var(--btn-bg);color:white;border:none;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;}
+.wt-clear-btn{height:32px;padding:4px 14px;border-radius:9px;background:var(--kpi-bg);color:var(--text-secondary);border:0.5px solid var(--border-color);font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;}
+.wt-clear-btn:hover{background:#fee2e2;color:#dc2626;border-color:#fca5a5;}
+.wt-lines-display{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px;}
+.wt-line-tag{display:inline-flex;align-items:center;gap:5px;padding:3px 10px 3px 12px;border-radius:20px;font-size:11px;font-weight:600;cursor:default;border:1.5px solid;}
+.wt-chart-area{width:100%;height:340px;margin-top:8px;}
+.wt-data-table-wrap{overflow-x:auto;margin-top:14px;border-radius:10px;border:0.5px solid var(--border-color);}
+.wt-up{color:#dc2626;font-weight:700;}.wt-down{color:#16a34a;font-weight:700;}.wt-flat{color:var(--text-secondary);}
+.wt-empty-hint{text-align:center;padding:48px 20px;font-size:13px;color:var(--text-secondary);}
+.wt-footer-note{font-size:11px;color:var(--text-secondary);margin-top:10px;}
+.wt-multi-item{display:flex;align-items:center;gap:8px;padding:8px 12px;cursor:pointer;font-size:12px;color:var(--text-primary);transition:background 0.1s;}
+.wt-multi-item:hover,.wt-multi-item.checked{background:var(--table-hover);}
+.wt-checkbox{width:14px;height:14px;border-radius:4px;border:1.5px solid #3b82f6;flex-shrink:0;background:white;}
+.wt-multi-item.checked .wt-checkbox{background:#3b82f6;}
+.wt-wh-tag{display:inline-flex;align-items:center;gap:5px;padding:3px 10px 3px 8px;border-radius:20px;font-size:11px;font-weight:600;border:1.5px solid;}
+.wt-cat-item{display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:20px;font-size:11px;border:0.5px solid var(--border-color);cursor:pointer;font-weight:500;color:var(--text-secondary);}
+.wt-cat-item.active{background:var(--btn-bg);color:white;border-color:var(--btn-bg);}
+
+/* ── 列筛选 ── */
+.dt-filter-icon{font-size:10px;color:#94a3b8;cursor:pointer;margin-left:3px;transition:color .15s;user-select:none;}
+.dt-filter-icon:hover,.dt-filter-icon.active{color:var(--btn-bg);}
+.dt-cell-editable{cursor:pointer;border-radius:4px;padding:1px 3px;transition:background .15s;display:inline-block;min-width:20px;}
+.dt-cell-editable:hover{background:rgba(59,130,246,0.08);}
+.dt-cell-modified{color:#2563eb;font-weight:600;}
+.dt-cell-modified::after{content:'*';font-size:9px;vertical-align:super;color:#2563eb;margin-left:1px;}
+.dt-cell-input{font-size:12px;padding:2px 5px;border:1.5px solid var(--btn-bg);border-radius:4px;outline:none;background:var(--bg-card);color:var(--text-primary);width:120px;}
+.dt-pagination{display:flex;align-items:center;justify-content:space-between;margin-top:12px;flex-wrap:wrap;gap:8px;}
+.dt-page-info{font-size:12px;color:var(--text-secondary);}
+.dt-page-btns{display:flex;align-items:center;gap:4px;}
+.dt-page-btn{min-width:30px;height:30px;padding:0 8px;border-radius:8px;border:0.5px solid var(--border-color);background:var(--bg-card);color:var(--text-primary);font-size:12px;cursor:pointer;transition:all .15s;}
+.dt-page-btn:hover:not(:disabled){border-color:var(--btn-bg);color:var(--btn-bg);}
+.dt-page-btn.active{background:var(--btn-bg);color:white;border-color:var(--btn-bg);}
+.dt-page-btn:disabled{opacity:0.35;cursor:not-allowed;}
+.dt-page-size{font-size:12px;padding:4px 8px;border-radius:8px;border:0.5px solid var(--border-color);background:var(--bg-card);color:var(--text-primary);cursor:pointer;outline:none;}
+.load-more-btn{text-align:center;margin-top:16px;padding:8px;background:var(--kpi-bg);border-radius:20px;cursor:pointer;font-size:12px;font-weight:500;color:#3b82f6;border:0.5px solid var(--border-color);width:140px;margin-left:auto;margin-right:auto;}
+.reset-hint{font-size:11px;color:var(--text-secondary);margin-top:12px;text-align:center;cursor:pointer;padding:6px 14px;border-radius:20px;background:var(--kpi-bg);width:fit-content;align-self:center;border:0.5px solid var(--border-color);}
+.reset-hint:hover{background:var(--btn-bg);color:white;}
+
+/* ── 问题项分析 ── */
+.ia-stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;}
+.ia-stat-card{background:var(--kpi-bg);border-radius:10px;padding:10px 14px;}
+.ia-stat-label{font-size:11px;color:var(--text-secondary);margin-bottom:3px;}
+.ia-stat-val{font-size:20px;font-weight:500;color:var(--text-primary);}
+.ia-stat-sub{font-size:11px;color:var(--text-secondary);margin-top:2px;}
+.ia-table-wrap{border:0.5px solid var(--border-color);border-radius:10px;overflow:hidden;}
+
+/* ── 人员下拉 ── */
+.person-search-group{position:relative;}
+.person-dropdown-trigger{width:100%;height:34px;border:0.5px solid var(--border-color);border-radius:9px;background:var(--filter-input-bg);color:var(--text-primary);font-size:12px;padding:0 10px;cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:6px;transition:border-color 0.15s;}
+.person-dropdown-trigger:hover{border-color:var(--btn-bg);}
+.person-dropdown-trigger.open{border-color:var(--btn-bg);}
+.person-dropdown-panel{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--bg-card);border:0.5px solid var(--border-color);border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,0.12);z-index:200;overflow:hidden;}
+.person-dropdown-panel input{width:100%;padding:8px 12px;border:none;border-bottom:0.5px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);font-size:12px;outline:none;}
+.person-dropdown-list{max-height:180px;overflow-y:auto;}
+.person-dropdown-item{padding:7px 12px;font-size:12px;cursor:pointer;color:var(--text-primary);}
+.person-dropdown-item:hover,.person-dropdown-item.selected{background:var(--table-hover);}
+
+/* ── 详情页专用样式 ── */
+.detail-page-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px;}
+.back-btn{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#3B82F6;cursor:pointer;padding:6px 14px;border:0.5px solid rgba(59,130,246,0.3);border-radius:20px;background:rgba(59,130,246,0.06);transition:all 0.15s;}
+.back-btn:hover{background:rgba(59,130,246,0.12);}
+.detail-page-title{font-size:18px;font-weight:600;color:var(--text-primary);letter-spacing:-0.01em;}
+.detail-page-subtitle{font-size:12px;color:var(--text-secondary);margin-top:3px;}
+.detail-badge{font-size:12px;padding:4px 12px;border-radius:8px;font-weight:500;}
+.detail-kpi-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin-bottom:16px;}
+.detail-kpi{background:var(--bg-card);border:0.5px solid var(--border-color);border-radius:16px;padding:18px 16px;box-shadow:var(--shadow);}
+.detail-kpi-label{font-size:10px;color:var(--text-secondary);margin-bottom:10px;}
+.detail-kpi-num{font-size:26px;font-weight:500;color:var(--text-primary);letter-spacing:-0.02em;line-height:1;}
+.detail-kpi-delta{font-size:10px;color:var(--text-secondary);margin-top:8px;}
+.detail-kpi-delta.up{color:#EF4444;}
+.detail-kpi-delta.dn{color:#10B981;}
+.detail-two-col{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px;}
+.issue-bar-row{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:0.5px solid var(--border-color);}
+.issue-bar-row:last-child{border-bottom:none;}
+.issue-bar-name{font-size:12px;color:var(--text-primary);flex:1;}
+.issue-bar-wrap{width:80px;height:4px;background:var(--border-color);border-radius:2px;overflow:hidden;flex-shrink:0;}
+.issue-bar-inner{height:100%;border-radius:2px;background:#EF9F27;}
+.issue-bar-val{font-size:11px;font-weight:500;width:30px;text-align:right;flex-shrink:0;color:var(--text-secondary);}
+.timeline-item{display:flex;gap:10px;padding:8px 0;border-bottom:0.5px solid var(--border-color);}
+.timeline-item:last-child{border-bottom:none;}
+.tl-dot{width:8px;height:8px;border-radius:50%;background:#E24B4A;flex-shrink:0;margin-top:4px;}
+.tl-date{font-size:10px;color:var(--text-secondary);min-width:36px;flex-shrink:0;padding-top:2px;}
+.tl-content{flex:1;}
+.tl-title{font-size:12px;color:var(--text-primary);font-weight:500;}
+.tl-sub{font-size:10px;color:var(--text-secondary);margin-top:2px;}
+.badge-subj{font-size:9px;padding:1px 6px;border-radius:4px;background:#FCEBEB;color:#A32D2D;font-weight:500;margin-left:6px;}
+.badge-obj{font-size:9px;padding:1px 6px;border-radius:4px;background:#FAEEDA;color:#854F0B;font-weight:500;margin-left:6px;}
+.detail-table-wrap{border-radius:12px;border:0.5px solid var(--border-color);overflow:hidden;}
+.clickable-name{color:#3B82F6;cursor:pointer;text-decoration:underline;}
+.clickable-name:hover{color:#2563eb;}
+
+/* ── scrollbar ── */
+::-webkit-scrollbar{width:5px;height:5px;}
+::-webkit-scrollbar-track{background:transparent;}
+::-webkit-scrollbar-thumb{background:rgba(59,130,246,0.3);border-radius:10px;}
+::-webkit-scrollbar-thumb:hover{background:rgba(59,130,246,0.5);}
+
+/* ── 人员下拉弹出面板列筛选 ── */
+.dt-col-popup{position:absolute;background:var(--bg-card);border:0.5px solid var(--border-color);border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,0.12);z-index:500;min-width:160px;overflow:hidden;}
+
+/* ── 周度仓库选择触发器 ── */
+.wt-wh-trigger{height:32px;padding:4px 12px;border-radius:9px;border:0.5px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);font-size:12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:border-color 0.15s;white-space:nowrap;}
+.wt-wh-trigger.open{border-color:var(--btn-bg);}
+.wt-wh-panel{position:absolute;top:calc(100% + 6px);left:0;background:var(--bg-card);border:0.5px solid var(--border-color);border-radius:12px;box-shadow:0 8px 20px rgba(0,0,0,0.12);z-index:300;min-width:200px;overflow:hidden;display:none;}
+.wt-wh-panel input{width:100%;padding:8px 12px;border:none;border-bottom:0.5px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);font-size:12px;outline:none;}
+.wt-wh-list{max-height:200px;overflow-y:auto;}
+
+@media(max-width:1000px){.insight-grid{grid-template-columns:1fr 1fr;}.right-chart-container{grid-column:span 1;}}
+@media(max-width:700px){.insight-grid{grid-template-columns:1fr;}.zb-page{padding:12px;}}
+</style>
 </head>
 <body>
 <div id="zb-layout">
@@ -692,317 +286,370 @@
       <img class="zb-logo-img" src="data:image/png;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDAAUDBAQEAwUEBAQFBQUGBwwIBwcHBw8LCwkMEQ8SEhEPERETFhwXExQaFRERGCEYGh0dHx8fExciJCIeJBweHx7/2wBDAQUFBQcGBw4ICA4eFBEUHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCANwA+oDASIAAhEBAxEB/8QAHQABAAIBBQEAAAAAAAAAAAAAAAcIBgEDBAUJAv/EAEwQAQABAwICBQcIBwYDCAMBAAABAgMEBQYHERIhMUFRCBMyYXGBsRQiQlJicpGhMzQ3dKKzwRUWI4KSskNE0SQlY3OjwtLwU2Thw//EABwBAQACAgMBAAAAAAAAAAAAAAAFBwQGAgMIAf/EAEURAQABAgMDCAYIBAQGAwEAAAABAgMEBREGITEHEkFRYXGBoRMikbHB0TIzQlJygrLwFCM1whVikqIXJDRD4eIWU9JU/9oADAMBAAIRAxEAPwC5YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA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AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB/9k=" alt="转转"/>
       <div>
         <div class="zb-brand">培训部看板</div>
-        <div class="zb-sub">转转内部数据平台</div>
+        <div class="zb-sub">转转内部数据平台 v2.0</div>
       </div>
     </div>
     <div class="zb-nav-lbl">数据模块</div>
     <div class="zb-nav-item active" onclick="zbNav('overview',this)">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
       数据总览
     </div>
-    <div class="zb-nav-item" onclick="zbNav('detail',this)">
-      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-      差异明细
+    <div class="zb-nav-lbl" style="margin-top:8px">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-1px;margin-right:3px;opacity:0.6"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      最近查看
     </div>
-    <div class="zb-nav-lbl" style="margin-top:8px">最近查看</div>
+    <div id="recentNav" style="font-size:11px;color:var(--text-secondary);padding:4px 18px;opacity:0.6;">暂无记录</div>
     <div class="zb-sidebar-footer" id="zbSidebarFooter">
-      <!-- 未登录：显示登录框 -->
       <div id="zbLoginBlock" class="zb-login-block">
         <div class="zb-login-lbl">登录 ID</div>
-        <input type="password" id="zbSidebarPwd" class="zb-login-input" placeholder="输入 ID…" onkeydown="if(event.key==='Enter')zbSidebarLogin()">
+        <input type="password" id="zbSidebarPwd" class="zb-login-input" placeholder="输入密码…" onkeydown="if(event.key==='Enter')zbSidebarLogin()">
         <button class="zb-login-btn" onclick="zbSidebarLogin()">确认登录</button>
         <div id="zbSidebarHint" class="zb-login-hint"></div>
       </div>
-      <!-- 已登录：显示用户信息 -->
       <div id="zbUserBlock" class="zb-user-block" style="display:none;" onclick="zbSidebarUserClick()">
         <div id="zbSidebarAvatar" class="zb-avatar viewer">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </div>
         <div style="flex:1;min-width:0;">
           <div id="zbSidebarName" class="zb-uname">访客</div>
           <div id="zbSidebarRole" class="zb-urole" style="display:none;">管理</div>
         </div>
-        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
-  
     </div>
   </nav>
-  <!-- 右侧主内容（原封不动） -->
+
+  <!-- 主内容 -->
   <div id="zb-main">
     <div id="loadingBar" class="loading-bar"><div class="bar-inner"></div></div>
 
-    <div id="passwordOverlay" class="password-overlay" style="display:none!important;">
-        <div class="password-box">
-            <h3>🔐 访问验证</h3>
-            <p>请输入访问密码</p>
-            <input type="password" id="passwordInput" placeholder="密码" autofocus>
-            <button id="submitPassword">确认</button>
-            <div id="passwordError" class="error-msg"></div>
+    <!-- ══ 总览页 ══ -->
+    <div class="zb-page active" id="zb-page-overview" style="padding:20px 22px;">
+      <div class="top-bar">
+        <div class="marquee-wrap"><span class="marquee-inner">欢迎使用培训部数据看板 · 数据驱动，精益求精</span></div>
+        <div class="right-buttons">
+          <span id="zbCloudStatus" class="theme-btn" style="font-size:12px;font-weight:600;cursor:default;">⏳ 连接中</span>
+          <button id="zbRefreshBtn" onclick="zbRefreshCloudManual()" class="theme-btn">🔄 刷新云端</button>
+          <button id="themeToggleBtn" class="theme-btn">🌙 夜间</button>
+          <label id="zbUploadBtnLabel" for="combinedFileInput" class="upload-btn" style="cursor:pointer;display:none;">📁 上传文件</label>
+          <button onclick="zbOpenLog()" class="theme-btn">📋 日志</button>
+          <button id="exportDataBtn" class="export-btn" title="导出当前筛选明细" style="display:none;">📤 导出Excel</button>
         </div>
-    </div>
+        <input type="file" id="combinedFileInput" style="display:none;" accept=".xlsx,.xls" multiple>
+        <input type="file" id="phoneFileInput" style="display:none;" accept=".xlsx,.xls" multiple>
+        <input type="file" id="fiveCatFileInput" style="display:none;" accept=".xlsx,.xls" multiple>
+      </div>
 
-    <div id="mainContent" class="main-content">
-        <div class="container">
-            <div class="top-bar">
-                <div class="marquee-wrap">
-                    <span class="marquee-inner">欢迎使用培训部数据看板 · 数据驱动，精益求精</span>
-                </div>
-                <!-- 云端状态 + 刷新按钮 -->
-                <div class="right-buttons">
-                    <span id="zbCloudStatus" class="theme-btn" style="font-size:13px;font-weight:600;cursor:default;">⏳ 连接中</span>
-                    <button id="zbRefreshBtn" onclick="zbRefreshCloudManual()" class="theme-btn" title="点击从GitHub拉取最新数据">🔄 刷新云端</button>
-                    <button id="themeToggleBtn" class="theme-btn">🌙 夜间模式</button>
-                    <label id="zbUploadBtnLabel" for="combinedFileInput" class="upload-btn" style="cursor:pointer;display:none;">📁 上传文件</label>
-                    <button onclick="zbOpenLog()" class="theme-btn">📋 日志</button>
-                    <button id="exportDataBtn" class="export-btn" title="导出当前筛选明细" style="display:none;">📤 导出Excel</button>
-                </div>
-                <input type="file" id="combinedFileInput" style="display:none;" accept=".xlsx,.xls" multiple>
-                <input type="file" id="phoneFileInput" style="display:none;" accept=".xlsx,.xls" multiple>
-                <input type="file" id="fiveCatFileInput" style="display:none;" accept=".xlsx,.xls" multiple>
-            </div>
-
-            <!-- 品类切换（全局联动）· 吸顶 -->
-            <div class="sticky-filter-bar">
-                <div class="sticky-filter-inner">
-                    <span style="font-size:11px;font-weight:600;color:var(--text-secondary);flex-shrink:0;">📅</span>
-                    <input type="date" id="startDateFilter" style="height:28px;font-size:11px;padding:3px 6px;border-radius:7px;border:1px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);outline:none;">
-                    <span style="font-size:11px;color:var(--text-secondary);flex-shrink:0;">至</span>
-                    <input type="date" id="endDateFilter" style="height:28px;font-size:11px;padding:3px 6px;border-radius:7px;border:1px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);outline:none;">
-                    <div class="sticky-divider"></div>
-                    <span style="font-size:11px;font-weight:600;color:var(--text-secondary);flex-shrink:0;">品类</span>
-                    <span class="cat-tab active" id="globalCat-手机">📱 手机</span>
-                    <span class="cat-tab" id="globalCat-笔记本">💻 笔记本</span>
-                    <span class="cat-tab" id="globalCat-平板">📟 平板</span>
-                    <span class="cat-tab" id="globalCat-手表">⌚ 手表</span>
-                    <span class="cat-tab" id="globalCat-耳机">🎧 耳机</span>
-                    <span class="cat-tab" id="globalCat-相机">📷 相机</span>
-                </div>
-            </div>
-            <!-- 第二行：其他筛选 -->
-            <div class="filter-bar" style="margin-bottom:24px;">
-                <div class="filter-group"><label>🏚️ 站点</label><select id="warehouseFilter"><option value="__ALL__">全部站点</option></select></div>
-                <div class="filter-group person-search-group" style="position:relative; min-width:160px; flex:1 1 160px; max-width:220px;">
-                    <label>👤 质检人员</label>
-                    <div id="personDropdownTrigger" class="person-dropdown-trigger" tabindex="0">
-                        <span id="personDropdownLabel">全部质检人员</span>
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="margin-left:auto;flex-shrink:0;opacity:0.5"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    </div>
-                    <div id="personDropdownPanel" class="person-dropdown-panel" style="display:none;">
-                        <input type="text" id="personKeyword" placeholder="搜索姓名..." class="person-search-input" autocomplete="off">
-                        <div id="personDropdownList" class="person-dropdown-list"></div>
-                    </div>
-                    <input type="hidden" id="personFilter" value="__ALL__">
-                </div>
-                <div class="filter-group"><label>📌 主客观项</label><select id="subjObjFilter"><option value="ALL">全部</option><option value="OBJ">客观</option><option value="SUBJ">主观</option></select></div>
-                <div class="filter-group"><label>⚠️ 问题类型</label><select id="issueTypeFilter"><option value="__ALL__">全部问题类型</option></select></div>
-                <div class="filter-group"><label>🔖 问题责任</label><select id="judgedIssueTypeFilter"><option value="__ALL__">全部</option></select></div>
-                <button id="resetFilter" class="reset-filter-btn">↻ 重置筛选</button>
-            </div>
-
-            <div class="zb-page active" id="zb-page-overview">
-
-            <!-- KPI -->
-            <div class="card">
-                <div class="card-title">📈 核心质量指标（点击卡片查看明细）</div>
-                <div class="stats-grid" id="statsArea"></div>
-                <div style="font-size:11px;margin-top:10px;color:var(--text-secondary);">※ 客观执行差异率 = 客观+执行问题设备占比；差异率越低越好，排行榜从低到高排列</div>
-            </div>
-
-            <!-- 新排行榜 -->
-            <div class="card">
-                <div class="card-header" style="margin-bottom:10px;">
-                    <div class="card-title">🏆 站点客观执行差异率排行 <span style="font-size:11px;font-weight:400;color:var(--text-secondary);margin-left:6px;">差异率=筛选期间累计 · ↑↓=较前日变化</span></div>
-                    
-                </div>
-                <div class="rank-board">
-                    <div>
-                        <div class="rank-col-title">🏭 大仓（智能验机中心 + 后验中心仓）</div>
-                        <div id="rankBoardDW"></div>
-                    </div>
-                    <div>
-                        <div class="rank-col-title">🏪 中心仓</div>
-                        <div id="rankBoardZX"></div>
-                    </div>
-                </div>
-                <div style="font-size:10px;color:var(--text-secondary);margin-top:8px;">
-                    ↑红色=较昨日上升（变差）· ↓绿色=较昨日下降（改善）· —=暂无昨日数据
-                </div>
-            </div>
-
-            <!-- ── 周度差异率趋势（T-4周）新增模块 ── -->
-            <div class="card" id="weeklyTrendCard">
-                <div class="card-header" style="margin-bottom:12px;align-items:flex-start;">
-                    <div class="card-title">📈 周度质量趋势图（客观执行）</div>
-                    <div class="wt-toolbar" style="align-items:flex-start;gap:14px;">
-                        <!-- 仓多选 -->
-                        <div style="display:flex;flex-direction:column;gap:4px;">
-                            <span class="wt-label">仓（可多选）</span>
-                            <div id="wt-wh-trigger" class="wt-multi-trigger">
-                                <span id="wt-wh-placeholder">— 选择站点 —</span>
-                                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" style="flex-shrink:0;opacity:0.5;margin-left:6px;"><path d="M2 4l4 4 4-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                                <div id="wt-wh-panel" class="wt-multi-panel" style="display:none;">
-                                    <input id="wt-wh-search" type="text" placeholder="搜索站点..." class="wt-search-input">
-                                    <div id="wt-wh-list" class="wt-multi-list"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <!-- 品类多选勾选 -->
-                        <div style="display:flex;flex-direction:column;gap:6px;">
-                            <span class="wt-label">品类</span>
-                            <div id="wt-cat-checks" class="wt-cat-checks">
-                                <label class="wt-cat-item"><input type="checkbox" value="手机"> 手机</label>
-                                <label class="wt-cat-item"><input type="checkbox" value="笔记本"> 笔记本</label>
-                                <label class="wt-cat-item"><input type="checkbox" value="平板"> 平板</label>
-                                <label class="wt-cat-item"><input type="checkbox" value="手表"> 手表</label>
-                                <label class="wt-cat-item"><input type="checkbox" value="耳机"> 耳机</label>
-                                <label class="wt-cat-item"><input type="checkbox" value="相机"> 相机</label>
-                            </div>
-                        </div>
-                        <button class="wt-clear-btn" id="wt-clear-btn" style="align-self:flex-end;">清空</button>
-                    </div>
-                </div>
-                <!-- 已选站点tags -->
-                <div class="wt-lines-display" id="wt-wh-tags"></div>
-                <div id="wt-chart-area" class="wt-chart-area"></div>
-                <div id="wt-table-wrap" class="wt-data-table-wrap" style="display:none;">
-                    <table class="wt-data-table" id="wt-data-table">
-                        <thead id="wt-table-head"></thead>
-                        <tbody id="wt-table-body"></tbody>
-                    </table>
-                </div>
-                <div class="wt-footer-note">
-                    ↑红=上升（变差）· ↓绿=下降（改善）· 周环比=(本周−上周)/上周×100% · 本周未结束显示「进行中」
-                </div>
-            </div>
-
-            <!-- 问题项分析卡片 -->
-            <div class="card" id="issueAnalysisCard">
-                <div class="card-header" style="margin-bottom:14px;">
-                    <div class="card-title">🔎 问题项分析（客观执行 · 本周 vs 上周）</div>
-                </div>
-                <div id="issue-analysis-root">
-                    <div style="text-align:center;padding:32px;color:var(--text-secondary);font-size:13px;">上传数据后自动显示</div>
-                </div>
-            </div>
-
-            <!-- 人员洞察&问题分类（已移除站点排行榜） -->
-            <div class="card">
-                <div class="card-header"><div class="card-title">📊 人员洞察 & 问题分类</div></div>
-                <div class="insight-grid">
-                    <div id="personStackChart" class="chart-box"></div>
-                    <div id="issueTypeChart" class="right-chart-container"></div>
-                </div>
-            </div>
-
-            </div><!-- end zb-page overview -->
-            <div class="zb-page" id="zb-page-detail">
-            <div class="card">
-                <div class="card-title">📅 每日抽检差异趋势（设备去重）· 点击柱体查看当日明细</div>
-                <div id="trendChart" class="trend-chart-box"></div>
-            </div>
-            <div class="card">
-                <div class="card-header"><div class="card-title">🏆 问题深度排行（TOP8 客观/主观切换）</div></div>
-                <div class="switch-group" id="problemTypeSwitch">
-                    <button class="switch-btn active" data-type="OBJ">📊 客观问题 TOP8</button>
-                    <button class="switch-btn" data-type="SUBJ">📊 主观问题 TOP8</button>
-                </div>
-                <div class="two-col">
-                    <div>
-                        <h4 style="margin-bottom:8px;">📱 高差异型号 · 点击行查看明细</h4>
-                        <table class="ranking-table" id="modelRankTable"><thead><tr><th>排名</th><th>型号名称</th><th>差异次数</th></tr></thead><tbody id="modelRankBody"></tbody></table>
-                    </div>
-                    <div>
-                        <h4 style="margin-bottom:8px;">⚠️ 高频三级项 · 点击行查看明细</h4>
-                        <table class="ranking-table" id="issueRankTable"><thead><tr><th>排名</th><th>三级项名称</th><th>差异次数</th></tr></thead><tbody id="issueRankBody"></tbody></table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-title">👤 质检人员差异排名（点击查看明细）</div>
-                <div style="overflow-x:auto;">
-                    <table class="rank-table" id="personTable">
-                        <thead><tr><th>排名</th><th>质检人员</th><th>总差异次数</th><th>客观次数</th><th>主观次数</th><th>所属中心仓</th></tr></thead>
-                        <tbody id="personTableBody"></tbody>
-                    </table>
-                </div>
-                <div id="personLoadMoreBtn" class="load-more-btn" style="display:none;">显示更多</div>
-            </div>
-
-            <!-- 列筛选浮层 -->
-            <div id="dtColPopup" style="display:none;position:fixed;z-index:9999;background:var(--bg-card);border:1px solid var(--border-color);border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,0.15);width:200px;flex-direction:column;overflow:hidden;">
-                <input id="dtColSearch" placeholder="搜索..." style="padding:8px 12px;border:none;border-bottom:1px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);font-size:12px;outline:none;width:100%;box-sizing:border-box;">
-                <div style="padding:4px 0;display:flex;gap:6px;border-bottom:1px solid var(--border-color);padding:6px 10px;">
-                    <span id="dtColSelAll" style="font-size:11px;color:var(--btn-bg);cursor:pointer;font-weight:600;">全选</span>
-                    <span style="color:var(--border-color);">|</span>
-                    <span id="dtColClearSel" style="font-size:11px;color:var(--text-secondary);cursor:pointer;">清空</span>
-                </div>
-                <div id="dtColList" style="max-height:220px;overflow-y:auto;padding:4px 0;"></div>
-                <div style="padding:8px 10px;border-top:1px solid var(--border-color);display:flex;gap:6px;">
-                    <button id="dtColConfirm" style="flex:1;padding:5px;background:var(--btn-bg);color:white;border:none;border-radius:8px;font-size:12px;cursor:pointer;font-weight:600;">确定</button>
-                    <button id="dtColCancel" style="flex:1;padding:5px;background:var(--kpi-bg);color:var(--text-secondary);border:1px solid var(--border-color);border-radius:8px;font-size:12px;cursor:pointer;">取消</button>
-                </div>
-            </div>
-
-            <div class="card">
-                <div class="card-title">📋 差异明细（三级项 + QA抽检人）</div>
-                <div style="overflow-x:auto;">
-                    <table class="detail-table" id="detailTable">
-                        <thead id="detailTableHead">
-                            <tr>
-                                <th data-col="date">日期 <span class="dt-filter-icon" data-col="date">⏷</span></th>
-                                <th data-col="warehouse">站点名称 <span class="dt-filter-icon" data-col="warehouse">⏷</span></th>
-                                <th data-col="cat">品类 <span class="dt-filter-icon" data-col="cat">⏷</span></th>
-                                <th data-col="code">质检码 <span class="dt-filter-icon" data-col="code">⏷</span></th>
-                                <th data-col="level1">一级项 <span class="dt-filter-icon" data-col="level1">⏷</span></th>
-                                <th data-col="level2">二级项 <span class="dt-filter-icon" data-col="level2">⏷</span></th>
-                                <th data-col="level3_orig">原三级项 <span class="dt-filter-icon" data-col="level3_orig">⏷</span></th>
-                                <th data-col="level3">新三级项 <span class="dt-filter-icon" data-col="level3">⏷</span></th>
-                                <th data-col="category">主客观分类 <span class="dt-filter-icon" data-col="category">⏷</span></th>
-                                <th data-col="issueType">问题类型 <span class="dt-filter-icon" data-col="issueType">⏷</span></th>
-                                <th data-col="judgedIssueType">抽检判定类型 <span class="dt-filter-icon" data-col="judgedIssueType">⏷</span></th>
-                                <th data-col="person">质检人员 <span class="dt-filter-icon" data-col="person">⏷</span></th>
-                                <th data-col="qaInspector">QA抽检人 <span class="dt-filter-icon" data-col="qaInspector">⏷</span></th>
-                            </tr>
-                        </thead>
-                        <tbody id="detailTableBody"></tbody>
-                    </table>
-                </div>
-                <div id="dtPagination" class="dt-pagination" style="display:none;">
-                    <div class="dt-page-info" id="dtPageInfo">共 0 条，第 1/1 页</div>
-                    <div style="display:flex;align-items:center;gap:8px;">
-                        <span style="font-size:12px;color:var(--text-secondary);">每页</span>
-                        <select class="dt-page-size" id="dtPageSize">
-                            <option value="20">20行</option>
-                            <option value="50">50行</option>
-                            <option value="100">100行</option>
-                        </select>
-                        <div class="dt-page-btns" id="dtPageBtns"></div>
-                    </div>
-                </div>
-            </div>
-            <div style="font-size:11px;text-align:center;opacity:0.7;">※ 点击图表/表格均可下钻查看明细</div>
-            </div><!-- end zb-page detail -->
+      <!-- 品类 + 日期吸顶 -->
+      <div class="sticky-filter-bar">
+        <div class="sticky-filter-inner">
+          <span style="font-size:11px;font-weight:600;color:var(--text-secondary);flex-shrink:0;">📅</span>
+          <input type="date" id="startDateFilter" style="height:26px;font-size:11px;padding:2px 6px;border-radius:7px;border:0.5px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);outline:none;">
+          <span style="font-size:11px;color:var(--text-secondary);flex-shrink:0;">至</span>
+          <input type="date" id="endDateFilter" style="height:26px;font-size:11px;padding:2px 6px;border-radius:7px;border:0.5px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);outline:none;">
+          <div class="sticky-divider"></div>
+          <span style="font-size:11px;font-weight:600;color:var(--text-secondary);flex-shrink:0;">品类</span>
+          <span class="cat-tab active" id="globalCat-手机">📱 手机</span>
+          <span class="cat-tab" id="globalCat-笔记本">💻 笔记本</span>
+          <span class="cat-tab" id="globalCat-平板">📟 平板</span>
+          <span class="cat-tab" id="globalCat-手表">⌚ 手表</span>
+          <span class="cat-tab" id="globalCat-耳机">🎧 耳机</span>
+          <span class="cat-tab" id="globalCat-相机">📷 相机</span>
         </div>
-    </div>
+      </div>
 
+      <!-- 筛选栏 -->
+      <div class="filter-bar" style="margin-bottom:16px;">
+        <div class="filter-group"><label>🏚️ 站点</label><select id="warehouseFilter"><option value="__ALL__">全部站点</option></select></div>
+        <div class="filter-group person-search-group" style="position:relative;min-width:160px;flex:1 1 160px;max-width:220px;">
+          <label>👤 质检人员</label>
+          <div id="personDropdownTrigger" class="person-dropdown-trigger">
+            <span id="personDropdownLabel">全部质检人员</span>
+            <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="2 4 6 8 10 4"/></svg>
+          </div>
+          <div id="personDropdownPanel" class="person-dropdown-panel" style="display:none;">
+            <input type="text" id="personKeyword" placeholder="搜索姓名..." style="width:100%;padding:7px 12px;border:none;border-bottom:0.5px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);font-size:12px;outline:none;">
+            <div id="personDropdownList" class="person-dropdown-list"></div>
+          </div>
+          <input type="hidden" id="personFilter" value="__ALL__">
+        </div>
+        <div class="filter-group"><label>📌 主客观项</label><select id="subjObjFilter"><option value="ALL">全部</option><option value="OBJ">客观</option><option value="SUBJ">主观</option></select></div>
+        <div class="filter-group"><label>⚠️ 问题类型</label><select id="issueTypeFilter"><option value="__ALL__">全部问题类型</option></select></div>
+        <div class="filter-group"><label>🔖 问题责任</label><select id="judgedIssueTypeFilter"><option value="__ALL__">全部</option></select></div>
+        <button id="resetFilter" class="reset-filter-btn">↻ 重置筛选</button>
+      </div>
+
+      <!-- KPI -->
+      <div class="card">
+        <div class="card-title">📈 核心质量指标（点击卡片查看明细）</div>
+        <div class="stats-grid" id="statsArea"></div>
+        <div style="font-size:11px;margin-top:10px;color:var(--text-secondary);">※ 客观执行差异率 = 客观+执行问题设备占比；差异率越低越好，排行榜从低到高排列</div>
+      </div>
+
+      <!-- 站点排行榜 -->
+      <div class="card">
+        <div class="card-header" style="margin-bottom:10px;">
+          <div class="card-title">🏆 站点客观执行差异率排行 <span style="font-size:11px;font-weight:400;color:var(--text-secondary);margin-left:6px;">差异率=筛选期间累计 · ↑↓=较前日变化</span></div>
+        </div>
+        <div id="rankBoardContainer" style="display:flex;gap:24px;flex-wrap:wrap;">
+          <div style="flex:1;min-width:280px;">
+            <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:10px;">🏭 大仓（智能验机中心 + 后验中心仓）</div>
+            <div id="rankBoardDW"></div>
+          </div>
+          <div style="flex:1;min-width:280px;">
+            <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:10px;">🏢 中心仓</div>
+            <div id="rankBoardZX"></div>
+          </div>
+        </div>
+        <div style="font-size:11px;color:var(--text-secondary);margin-top:10px;">↑红色=较昨日上升（变差）·↓绿色=较昨日下降（改善）·—=无当日数据</div>
+      </div>
+
+      <!-- 全国趋势 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📉 全国差异率趋势（日维度）</div>
+        </div>
+        <div class="trend-chart-box" id="trendChart"></div>
+      </div>
+
+      <!-- 周度趋势 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">📅 周度质量趋势图（客观执行）</div>
+        </div>
+        <div class="wt-toolbar">
+          <div style="position:relative;display:inline-block;">
+            <div id="wt-wh-trigger" class="wt-wh-trigger">选择站点 <svg width="10" height="10" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="2 4 6 8 10 4"/></svg></div>
+            <div id="wt-wh-panel" class="wt-wh-panel">
+              <input id="wt-wh-search" placeholder="搜索站点…">
+              <div id="wt-wh-list" class="wt-wh-list"></div>
+            </div>
+          </div>
+          <div id="wt-cat-checks" style="display:flex;flex-wrap:wrap;gap:6px;">
+            <label class="wt-cat-item"><input type="checkbox" value="手机" checked style="display:none;"> 📱 手机</label>
+            <label class="wt-cat-item"><input type="checkbox" value="笔记本" style="display:none;"> 💻 笔记本</label>
+            <label class="wt-cat-item"><input type="checkbox" value="平板" style="display:none;"> 📟 平板</label>
+            <label class="wt-cat-item"><input type="checkbox" value="手表" style="display:none;"> ⌚ 手表</label>
+            <label class="wt-cat-item"><input type="checkbox" value="耳机" style="display:none;"> 🎧 耳机</label>
+            <label class="wt-cat-item"><input type="checkbox" value="相机" style="display:none;"> 📷 相机</label>
+          </div>
+          <button id="wt-clear-btn" class="wt-clear-btn">清空</button>
+        </div>
+        <div id="wt-wh-tags" class="wt-lines-display"></div>
+        <div id="wt-chart-area" class="wt-chart-area"></div>
+        <div id="wt-table-wrap" class="wt-data-table-wrap" style="display:none;">
+          <table class="wt-data-table"><thead id="wt-table-head"></thead><tbody id="wt-table-body"></tbody></table>
+        </div>
+        <div class="wt-footer-note">↑红=上升（变差）·↓绿=下降（改善）·周环比=(本周-上周)/上周×100%·本周未结束显示「进行中」</div>
+      </div>
+
+      <!-- 问题项分析 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔍 问题项分析（客观执行·本周 vs 上周）</div>
+        </div>
+        <div id="issue-analysis-root"></div>
+      </div>
+
+      <!-- 人员洞察 -->
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">👤 人员洞察 & 问题分类</div>
+          <div id="problemTypeSwitch" class="switch-group" style="margin-bottom:0;">
+            <button class="switch-btn active" data-type="OBJ">客观差异</button>
+            <button class="switch-btn" data-type="SUBJ">主观差异</button>
+          </div>
+        </div>
+        <div class="insight-grid">
+          <div class="obj-rank-wrapper">
+            <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;">质检人员差异次数 TOP8 <span style="font-size:10px;font-weight:400;">（点击查看明细 → 进入人员详情）</span></div>
+            <div class="obj-rank-scroll">
+              <table class="ranking-table" id="personTable">
+                <thead><tr><th>排名</th><th>质检人员</th><th>差异总数</th><th>客观</th><th>主观</th><th>站点</th></tr></thead>
+                <tbody id="personTableBody"></tbody>
+              </table>
+            </div>
+            <button id="personLoadMoreBtn" class="load-more-btn" style="display:none;">加载更多</button>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;">合内问题类型分布</div>
+            <div class="right-chart-container" id="issueTypeChart"></div>
+          </div>
+        </div>
+        <div class="insight-grid" style="margin-top:16px;">
+          <div>
+            <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;">质检人员差异次数图（客观/主观）</div>
+            <div class="chart-box" id="personStackChart"></div>
+          </div>
+          <div class="obj-rank-wrapper">
+            <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin-bottom:8px;">型号排名 TOP8</div>
+            <div class="obj-rank-scroll">
+              <table class="ranking-table" id="modelRankTable">
+                <thead><tr><th>排名</th><th>型号</th><th>次数</th></tr></thead>
+                <tbody id="modelRankBody"></tbody>
+              </table>
+            </div>
+            <div style="font-size:12px;font-weight:600;color:var(--text-secondary);margin:16px 0 8px;">问题项排名 TOP8</div>
+            <div class="obj-rank-scroll">
+              <table class="ranking-table" id="issueRankTable">
+                <thead><tr><th>排名</th><th>问题项</th><th>次数</th></tr></thead>
+                <tbody id="issueRankBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+        <div id="resetViewHint" class="reset-hint" style="display:none;">↻ 点此恢复全局视图</div>
+      </div>
+    </div><!-- end overview page -->
+
+    <!-- ══ 差异明细页 ══ -->
+    <div class="zb-page" id="zb-page-detail" style="padding:20px 22px;">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔍 差异明细</div>
+          <button id="exportDataBtn2" class="export-btn" style="display:none;" onclick="document.getElementById('exportDataBtn').click()">📤 导出Excel</button>
+        </div>
+        <!-- 列筛选弹窗 -->
+        <div id="dtColPopup" class="dt-col-popup" style="display:none;position:absolute;">
+          <input id="dtColSearch" placeholder="搜索…" style="padding:7px 12px;border:none;border-bottom:0.5px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);font-size:12px;outline:none;width:100%;box-sizing:border-box;">
+          <div id="dtColList" class="person-dropdown-list"></div>
+          <div style="display:flex;gap:6px;padding:8px 10px;border-top:0.5px solid var(--border-color);">
+            <button id="dtColSelAll" style="flex:1;padding:5px;border-radius:7px;border:0.5px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);font-size:11px;cursor:pointer;">全选</button>
+            <button id="dtColClearSel" style="flex:1;padding:5px;border-radius:7px;border:0.5px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);font-size:11px;cursor:pointer;">清空</button>
+            <button id="dtColConfirm" style="flex:1;padding:5px;border-radius:7px;border:none;background:var(--btn-bg);color:white;font-size:11px;cursor:pointer;font-weight:600;">确定</button>
+            <button id="dtColCancel" style="flex:1;padding:5px;border-radius:7px;border:0.5px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);font-size:11px;cursor:pointer;">取消</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto;border-radius:10px;border:0.5px solid var(--border-color);">
+          <table class="detail-table" style="min-width:1000px;">
+            <thead id="detailTableHead">
+              <tr>
+                <th data-col="date">日期 <span class="dt-filter-icon" data-col="date">⏷</span></th>
+                <th data-col="warehouse">站点名称 <span class="dt-filter-icon" data-col="warehouse">⏷</span></th>
+                <th data-col="cat">品类 <span class="dt-filter-icon" data-col="cat">⏷</span></th>
+                <th data-col="code">质检码 <span class="dt-filter-icon" data-col="code">⏷</span></th>
+                <th data-col="level1">一级项 <span class="dt-filter-icon" data-col="level1">⏷</span></th>
+                <th data-col="level2">二级项 <span class="dt-filter-icon" data-col="level2">⏷</span></th>
+                <th data-col="level3_orig">原三级项 <span class="dt-filter-icon" data-col="level3_orig">⏷</span></th>
+                <th data-col="level3">新三级项 <span class="dt-filter-icon" data-col="level3">⏷</span></th>
+                <th data-col="category">主客观分类 <span class="dt-filter-icon" data-col="category">⏷</span></th>
+                <th data-col="issueType">问题类型 <span class="dt-filter-icon" data-col="issueType">⏷</span></th>
+                <th data-col="judgedIssueType">抽检判定类型 <span class="dt-filter-icon" data-col="judgedIssueType">⏷</span></th>
+                <th data-col="person">质检人员 <span class="dt-filter-icon" data-col="person">⏷</span></th>
+                <th data-col="qaInspector">QA抽检人 <span class="dt-filter-icon" data-col="qaInspector">⏷</span></th>
+              </tr>
+            </thead>
+            <tbody id="detailTableBody"></tbody>
+          </table>
+        </div>
+        <div class="dt-pagination">
+          <div class="dt-page-info" id="dtPageInfo"></div>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <select class="dt-page-size" id="dtPageSize"><option value="20">20条/页</option><option value="50">50条/页</option><option value="100">100条/页</option></select>
+            <div class="dt-page-btns" id="dtPageBtns"></div>
+          </div>
+        </div>
+      </div>
+    </div><!-- end detail page -->
+
+    <!-- ══ 站点详情页 ══ -->
+    <div class="zb-page" id="zb-page-station" style="padding:20px 22px;">
+      <div class="detail-page-header">
+        <div>
+          <button class="back-btn" onclick="zbNav('overview',document.querySelector('.zb-nav-item'))">← 返回总览</button>
+        </div>
+        <div style="flex:1;margin-left:16px;">
+          <div class="detail-page-title" id="stationPageTitle">站点详情</div>
+          <div class="detail-page-subtitle" id="stationPageSubtitle">数据周期载入中…</div>
+        </div>
+        <div id="stationPageBadge" class="detail-badge" style="background:#FEF2F2;color:#DC2626;"></div>
+      </div>
+      <div class="detail-kpi-grid" id="stationKpiGrid"></div>
+      <div class="card">
+        <div class="card-title" style="margin-bottom:14px;">差异率趋势</div>
+        <div style="height:180px;" id="stationTrendChart"></div>
+      </div>
+      <div class="detail-two-col">
+        <div class="card" style="margin-bottom:0;">
+          <div class="card-title" style="margin-bottom:12px;">问题类型分布</div>
+          <div id="stationIssueList"></div>
+        </div>
+        <div class="card" style="margin-bottom:0;">
+          <div class="card-title" style="margin-bottom:12px;">涉及质检人 <span style="font-size:10px;font-weight:400;color:var(--text-secondary);">点击进入人员详情</span></div>
+          <div id="stationPersonList"></div>
+        </div>
+      </div>
+      <div style="height:12px;"></div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">差异明细记录</div>
+          <span id="stationDetailCount" style="font-size:11px;color:var(--text-secondary);"></span>
+        </div>
+        <div class="detail-table-wrap" style="overflow-x:auto;">
+          <table class="detail-table" style="min-width:600px;">
+            <thead><tr><th>日期</th><th>质检码</th><th>主客观</th><th>问题类型</th><th>三级项</th><th>质检人</th></tr></thead>
+            <tbody id="stationDetailBody"></tbody>
+          </table>
+        </div>
+        <div id="stationLoadMore" style="text-align:center;padding:10px 0;font-size:12px;color:#3B82F6;cursor:pointer;display:none;" onclick="loadMoreStationDetail()">展开更多 ↓</div>
+      </div>
+    </div><!-- end station page -->
+
+    <!-- ══ 质检人详情页 ══ -->
+    <div class="zb-page" id="zb-page-person" style="padding:20px 22px;">
+      <div class="detail-page-header">
+        <div>
+          <button class="back-btn" onclick="zbNav('overview',document.querySelector('.zb-nav-item'))">← 返回总览</button>
+        </div>
+        <div style="flex:1;margin-left:16px;">
+          <div class="detail-page-title" id="personPageTitle">质检人详情</div>
+          <div class="detail-page-subtitle" id="personPageSubtitle">数据周期载入中…</div>
+        </div>
+        <div id="personPageBadge" class="detail-badge" style="background:#FEF2F2;color:#DC2626;"></div>
+      </div>
+      <div class="detail-kpi-grid" id="personKpiGrid"></div>
+      <div class="detail-two-col">
+        <div class="card" style="margin-bottom:0;">
+          <div class="card-title" style="margin-bottom:12px;">触发问题类型</div>
+          <div id="personIssueList"></div>
+        </div>
+        <div class="card" style="margin-bottom:0;">
+          <div class="card-title" style="margin-bottom:12px;">涉及站点分布 <span style="font-size:10px;font-weight:400;color:var(--text-secondary);">点击进入站点详情</span></div>
+          <div id="personStationList"></div>
+        </div>
+      </div>
+      <div style="height:12px;"></div>
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">差异触发时间线</div>
+          <span id="personDetailCount" style="font-size:11px;color:var(--text-secondary);"></span>
+        </div>
+        <div id="personTimeline"></div>
+        <div id="personLoadMore" style="text-align:center;padding:10px 0;font-size:12px;color:#3B82F6;cursor:pointer;display:none;" onclick="loadMorePersonDetail()">展开更多 ↓</div>
+      </div>
+    </div><!-- end person page -->
+
+    <!-- 差异明细弹窗 -->
     <div id="detailModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modalTitle">差异明细</h3><span class="close-modal">&times;</span>
-            </div>
-            <div class="modal-filter-bar">
-                <div class="filter-group"><label>📌 主客观项</label><select id="modalSubjObjFilter"><option value="ALL">全部</option><option value="OBJ">客观</option><option value="SUBJ">主观</option></select></div>
-                <div class="filter-group"><label>⚠️ 问题类型</label><select id="modalIssueTypeFilter"><option value="__ALL__">全部</option></select></div>
-                <div class="filter-group"><label>🔖 抽检判定类型</label><select id="modalJudgedIssueTypeFilter"><option value="__ALL__">全部</option></select></div>
-                <button id="modalResetFilter" class="reset-filter-btn">↻ 重置筛选</button>
-            </div>
-            <div id="modalBody">
-                <div class="virtual-scroll-container" id="virtualScrollContainer"></div>
-            </div>
+      <div class="modal-content">
+        <div class="modal-header">
+          <span id="modalTitle" style="font-size:15px;font-weight:600;color:var(--text-primary);"></span>
+          <span class="close-modal">×</span>
         </div>
+        <div class="modal-filter-bar" style="margin:0 0 12px;padding:10px 14px;">
+          <select id="modalSubjObjFilter" style="padding:6px 10px;border-radius:9px;border:0.5px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);font-size:12px;"><option value="ALL">全部</option><option value="OBJ">客观</option><option value="SUBJ">主观</option></select>
+          <select id="modalIssueTypeFilter" style="padding:6px 10px;border-radius:9px;border:0.5px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);font-size:12px;"><option value="__ALL__">全部问题类型</option></select>
+          <select id="modalJudgedIssueTypeFilter" style="padding:6px 10px;border-radius:9px;border:0.5px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);font-size:12px;"><option value="__ALL__">全部责任类型</option></select>
+          <button id="modalResetFilter" style="padding:6px 14px;border-radius:9px;border:0.5px solid var(--border-color);background:var(--reset-btn-bg);color:var(--reset-btn-text);font-size:12px;cursor:pointer;">重置</button>
+        </div>
+        <div id="modalBody">
+          <div class="virtual-scroll-container" id="virtualScrollContainer"></div>
+        </div>
+      </div>
     </div>
 
+  </div><!-- end zb-main -->
+</div><!-- end zb-layout -->
     <script>
     (function() {
         // 进度条
@@ -1965,7 +1612,7 @@
                             : '';
                         return `<div class="rank-row" data-site="${r.site}" onclick="zbClickRankSite(this)" style="cursor:pointer;">
                             <div class="rank-no ${noCls}">${noTxt}</div>
-                            <div class="rank-name" title="${r.site}">${r.site}</div>
+                            <div class="rank-name" title="${r.site}" data-drilldown-station="${r.site.replace(/"/g,'&quot;')}" style="color:var(--text-primary);transition:color 0.15s;" onmouseover="this.style.color='#3B82F6';this.style.textDecoration='underline';" onmouseout="this.style.color='';this.style.textDecoration='';">${r.site}</div>
                             <div class="rank-bar-wrap"><div class="rank-bar-inner" style="width:${pct}%;background:${color}"></div></div>
                             <div class="rank-rate" style="color:${color}">${r.rate !== null ? r.rate.toFixed(2)+'%' : '—'}</div>
                             ${metaHtml}
@@ -2155,23 +1802,24 @@
                 if (!diffData.length && !summaryData.length) { clearAllPanels(); return; }
                 showLoading();
                 setTimeout(function() {
-                    currentFilteredDiff = filterDiffData(diffData).slice().sort((a,b) => (a.date||'').localeCompare(b.date||''));
-                    detailCurrentOffset = 0;
-                    safeRender(updateStatsBoard, 'statsArea');
-                    safeRender(renderTrendChart, 'trendChart');
-                    safeRender(renderPersonStackChart, 'personStackChart');
-                    safeRender(renderIssueTypeChart, 'issueTypeChart');
-                    safeRender(renderObjWarehouseRanking, 'objRankBody');
-                    safeRender(buildPersonList, 'personTableBody');
-                    safeRender(renderObjectiveRankings);
-                    safeRender(renderDetailTable, 'detailTableBody');
-                    renderNewRankBoard();
-                    if (trendChart) trendChart.resize();
-                    if (personStackChart) personStackChart.resize();
-                    if (issueTypeChart) issueTypeChart.resize();
-                    if (typeof window._wtRefresh === 'function') setTimeout(window._wtRefresh, 0);
-                    safeRender(renderIssueAnalysis, 'issue-analysis-root');
-                    hideLoading();
+                currentFilteredDiff = filterDiffData(diffData).slice().sort((a,b) => (a.date||'').localeCompare(b.date||''));
+                detailCurrentOffset = 0;
+                safeRender(updateStatsBoard, 'statsArea');
+                safeRender(renderTrendChart, 'trendChart');
+                safeRender(renderPersonStackChart, 'personStackChart');
+                safeRender(renderIssueTypeChart, 'issueTypeChart');
+                safeRender(renderObjWarehouseRanking, 'objRankBody');
+                safeRender(buildPersonList, 'personTableBody');
+                safeRender(renderObjectiveRankings);
+                safeRender(renderDetailTable, 'detailTableBody');
+                renderNewRankBoard();
+                if (trendChart) trendChart.resize();
+                if (personStackChart) personStackChart.resize();
+                if (issueTypeChart) issueTypeChart.resize();
+                if (typeof window._wtRefresh === 'function') setTimeout(window._wtRefresh, 0);
+                // 问题项分析常驻总览页，每次 fullRefresh 同步刷新
+                safeRender(renderIssueAnalysis, 'issue-analysis-root');
+                hideLoading();
                 }, 0);
             }
 
@@ -3360,7 +3008,254 @@ function zbNav(name, el) {
     var pg = document.getElementById('zb-page-' + name);
     if (pg) pg.classList.add('active');
     if (el) el.classList.add('active');
+    // 滚动到顶部
+    var main = document.getElementById('zb-main');
+    if (main) main.scrollTop = 0;
 }
+
+// ── 最近查看记录 ──
+var _recentViews = [];
+function addRecentView(type, name) {
+    _recentViews = _recentViews.filter(function(r){ return !(r.type===type && r.name===name); });
+    _recentViews.unshift({ type: type, name: name });
+    if (_recentViews.length > 4) _recentViews = _recentViews.slice(0, 4);
+    renderRecentNav();
+}
+function renderRecentNav() {
+    var el = document.getElementById('recentNav');
+    if (!el) return;
+    if (!_recentViews.length) { el.innerHTML = '<span style="font-size:11px;color:var(--text-secondary);padding:0 10px;opacity:0.6;">暂无记录</span>'; return; }
+    el.innerHTML = _recentViews.map(function(r) {
+        var icon = r.type === 'station' ? '🏭' : '👤';
+        var page = r.type === 'station' ? 'station' : 'person';
+        var fn = r.type === 'station' ? 'openStationDetail' : 'openPersonDetail';
+        return '<div class="zb-nav-item recent" onclick="' + fn + '(\'' + r.name.replace(/'/g, "\\'") + '\')" style="padding:7px 10px;font-size:11px;">'
+            + '<span style="width:6px;height:6px;border-radius:50%;background:' + (r.type==='station'?'#FCA5A5':'#93C5FD') + ';flex-shrink:0;display:inline-block;"></span>'
+            + icon + ' ' + r.name + '</div>';
+    }).join('');
+}
+
+// ── 站点详情页 ──
+var _stationAllRecords = [];
+var _stationShownCount = 0;
+var _stationChartInstance = null;
+
+function openStationDetail(siteName) {
+    zbNav('station', null);
+    addRecentView('station', siteName);
+
+    var data = window.currentFilteredDiff || [];
+    var records = data.filter(function(d){ return d.warehouse === siteName; });
+    _stationAllRecords = records;
+    _stationShownCount = 0;
+
+    // 标题
+    document.getElementById('stationPageTitle').textContent = siteName;
+    var dateRange = '';
+    var sd = document.getElementById('startDateFilter');
+    var ed = document.getElementById('endDateFilter');
+    if (sd && ed) dateRange = sd.value + ' – ' + ed.value;
+    document.getElementById('stationPageSubtitle').textContent = '数据周期 ' + dateRange;
+
+    // KPI
+    var total = records.length;
+    var objCount = records.filter(function(d){ return d.category && d.category.includes('客观') && !d.category.includes('主观'); }).length;
+    var subjCount = records.filter(function(d){ return d.category && d.category.includes('主观'); }).length;
+    var execCount = records.filter(function(d){ return d.judgedIssueType === '执行问题' && d.category && d.category.includes('客观') && !d.category.includes('主观'); }).length;
+    var badge = document.getElementById('stationPageBadge');
+    badge.textContent = '差异总次数 ' + total;
+    badge.style.background = total > 10 ? '#FEF2F2' : total > 5 ? '#FFFBEB' : '#F0FDF4';
+    badge.style.color = total > 10 ? '#DC2626' : total > 5 ? '#D97706' : '#059669';
+
+    document.getElementById('stationKpiGrid').innerHTML = [
+        { label:'差异总次数', val: total, delta:'' },
+        { label:'客观差异', val: objCount, delta:'' },
+        { label:'主观差异', val: subjCount, delta:'' },
+        { label:'执行问题', val: execCount, delta:'' }
+    ].map(function(k){
+        return '<div class="detail-kpi"><div class="detail-kpi-label">' + k.label + '</div>'
+            + '<div class="detail-kpi-num">' + k.val + '</div></div>';
+    }).join('');
+
+    // 趋势图
+    renderStationTrendChart(records);
+
+    // 问题类型
+    var issueMap = {};
+    records.forEach(function(d){ if(d.issueType) issueMap[d.issueType] = (issueMap[d.issueType]||0) + 1; });
+    var issueList = Object.entries(issueMap).sort(function(a,b){ return b[1]-a[1]; }).slice(0,6);
+    var maxIssue = issueList[0] ? issueList[0][1] : 1;
+    document.getElementById('stationIssueList').innerHTML = issueList.map(function(item){
+        return '<div class="issue-bar-row"><span class="issue-bar-name">' + item[0] + '</span>'
+            + '<div class="issue-bar-wrap"><div class="issue-bar-inner" style="width:' + Math.round(item[1]/maxIssue*100) + '%;"></div></div>'
+            + '<span class="issue-bar-val">' + item[1] + '次</span></div>';
+    }).join('') || '<div style="color:var(--text-secondary);font-size:12px;padding:8px 0;">暂无数据</div>';
+
+    // 涉及质检人（可点击跳人员详情）
+    var personMap = {};
+    records.forEach(function(d){ if(d.person) personMap[d.person] = (personMap[d.person]||0) + 1; });
+    var personList = Object.entries(personMap).sort(function(a,b){ return b[1]-a[1]; });
+    var maxPerson = personList[0] ? personList[0][1] : 1;
+    var colors = ['#FCA5A5','#FDE68A','#6EE7B7','#93C5FD','#C4B5FD','#FCA5A5'];
+    document.getElementById('stationPersonList').innerHTML = personList.map(function(item, i){
+        return '<div class="issue-bar-row" style="cursor:pointer;" onclick="openPersonDetail(\'' + item[0].replace(/'/g,"\\'") + '\')">'
+            + '<span class="issue-bar-name clickable-name">' + item[0] + '</span>'
+            + '<div class="issue-bar-wrap"><div class="issue-bar-inner" style="width:' + Math.round(item[1]/maxPerson*100) + '%;background:' + (colors[i%colors.length]) + ';"></div></div>'
+            + '<span class="issue-bar-val">' + item[1] + '次</span></div>';
+    }).join('') || '<div style="color:var(--text-secondary);font-size:12px;padding:8px 0;">暂无数据</div>';
+
+    // 明细
+    document.getElementById('stationDetailCount').textContent = '共 ' + total + ' 条';
+    renderStationDetail(20);
+}
+
+function renderStationDetail(limit) {
+    var slice = _stationAllRecords.slice(_stationShownCount, _stationShownCount + limit);
+    var tbody = document.getElementById('stationDetailBody');
+    var html = slice.map(function(d){
+        var badgeCls = (d.category && d.category.includes('主观')) ? 'badge-subj' : 'badge-obj';
+        var badgeText = (d.category && d.category.includes('主观')) ? '主观' : '客观';
+        return '<tr><td>' + (d.date||'-') + '</td><td style="font-family:monospace;font-size:11px;">' + (d.code||'-') + '</td>'
+            + '<td><span class="' + badgeCls + '">' + badgeText + '</span></td>'
+            + '<td>' + (d.issueType||'-') + '</td><td>' + (d.level3||d.level3_orig||'-') + '</td><td>' + (d.person||'-') + '</td></tr>';
+    }).join('');
+    if (_stationShownCount === 0) { tbody.innerHTML = html; } else { tbody.innerHTML += html; }
+    _stationShownCount += slice.length;
+    var loadMore = document.getElementById('stationLoadMore');
+    loadMore.style.display = _stationShownCount < _stationAllRecords.length ? '' : 'none';
+}
+
+function loadMoreStationDetail() { renderStationDetail(20); }
+
+function renderStationTrendChart(records) {
+    var el = document.getElementById('stationTrendChart');
+    if (!el || typeof echarts === 'undefined') return;
+    if (_stationChartInstance) { _stationChartInstance.dispose(); }
+    _stationChartInstance = echarts.init(el);
+
+    var dateMap = {};
+    records.forEach(function(d){ if(d.date) dateMap[d.date] = (dateMap[d.date]||0) + 1; });
+    var dates = Object.keys(dateMap).sort();
+    var vals = dates.map(function(d){ return dateMap[d]; });
+
+    var isDark = document.body.classList.contains('dark');
+    var axisColor = isDark ? '#94a3b8' : '#64748b';
+    var gridColor = isDark ? '#334155' : '#e2e8f0';
+
+    _stationChartInstance.setOption({
+        backgroundColor: 'transparent',
+        tooltip: { trigger: 'axis' },
+        grid: { top: 20, left: 50, right: 20, bottom: 30 },
+        xAxis: { type: 'category', data: dates, axisLabel: { color: axisColor, fontSize: 10 }, axisLine: { lineStyle: { color: gridColor } }, splitLine: { show: false } },
+        yAxis: { type: 'value', minInterval: 1, axisLabel: { color: axisColor, fontSize: 10 }, splitLine: { lineStyle: { color: gridColor, type: 'dashed' } } },
+        series: [{ type: 'bar', data: vals, itemStyle: { color: '#3B82F6', borderRadius: [3,3,0,0] }, barMaxWidth: 30 }]
+    });
+    window.addEventListener('resize', function(){ if(_stationChartInstance) _stationChartInstance.resize(); });
+}
+
+// ── 质检人详情页 ──
+var _personAllRecords = [];
+var _personShownCount = 0;
+
+function openPersonDetail(personName) {
+    zbNav('person', null);
+    addRecentView('person', personName);
+
+    var data = window.currentFilteredDiff || [];
+    var records = data.filter(function(d){ return d.person === personName; });
+    _personAllRecords = records.slice().sort(function(a,b){ return (b.date||'').localeCompare(a.date||''); });
+    _personShownCount = 0;
+
+    // 标题
+    document.getElementById('personPageTitle').textContent = personName;
+    var dateRange = '';
+    var sd = document.getElementById('startDateFilter');
+    var ed = document.getElementById('endDateFilter');
+    if (sd && ed) dateRange = sd.value + ' – ' + ed.value;
+    document.getElementById('personPageSubtitle').textContent = '数据周期 ' + dateRange;
+
+    // KPI
+    var total = records.length;
+    var objCount = records.filter(function(d){ return d.category && d.category.includes('客观') && !d.category.includes('主观'); }).length;
+    var subjCount = records.filter(function(d){ return d.category && d.category.includes('主观'); }).length;
+    var stationSet = new Set(records.map(function(d){ return d.warehouse; }));
+
+    var badge = document.getElementById('personPageBadge');
+    badge.textContent = '累计差异 ' + total + ' 次';
+    badge.style.background = total > 10 ? '#FEF2F2' : total > 5 ? '#FFFBEB' : '#F0FDF4';
+    badge.style.color = total > 10 ? '#DC2626' : total > 5 ? '#D97706' : '#059669';
+
+    document.getElementById('personKpiGrid').innerHTML = [
+        { label:'累计差异次数', val: total },
+        { label:'涉及站点数', val: stationSet.size },
+        { label:'客观问题', val: objCount },
+        { label:'主观问题', val: subjCount }
+    ].map(function(k){
+        return '<div class="detail-kpi"><div class="detail-kpi-label">' + k.label + '</div>'
+            + '<div class="detail-kpi-num">' + k.val + '</div></div>';
+    }).join('');
+
+    // 问题类型
+    var issueMap = {};
+    records.forEach(function(d){ if(d.issueType) issueMap[d.issueType] = (issueMap[d.issueType]||0)+1; });
+    var issueList = Object.entries(issueMap).sort(function(a,b){ return b[1]-a[1]; }).slice(0,5);
+    var maxIssue = issueList[0] ? issueList[0][1] : 1;
+    document.getElementById('personIssueList').innerHTML = issueList.map(function(item){
+        return '<div class="issue-bar-row"><span class="issue-bar-name">' + item[0] + '</span>'
+            + '<div class="issue-bar-wrap"><div class="issue-bar-inner" style="width:' + Math.round(item[1]/maxIssue*100) + '%;"></div></div>'
+            + '<span class="issue-bar-val">' + item[1] + '次</span></div>';
+    }).join('') || '<div style="color:var(--text-secondary);font-size:12px;padding:8px 0;">暂无数据</div>';
+
+    // 涉及站点（可点击跳站点详情）
+    var stationMap = {};
+    records.forEach(function(d){ if(d.warehouse) stationMap[d.warehouse] = (stationMap[d.warehouse]||0)+1; });
+    var stationList = Object.entries(stationMap).sort(function(a,b){ return b[1]-a[1]; });
+    var maxStation = stationList[0] ? stationList[0][1] : 1;
+    var colors = ['#FCA5A5','#FDE68A','#6EE7B7','#93C5FD','#C4B5FD'];
+    document.getElementById('personStationList').innerHTML = stationList.map(function(item, i){
+        return '<div class="issue-bar-row" style="cursor:pointer;" onclick="openStationDetail(\'' + item[0].replace(/'/g,"\\'") + '\')">'
+            + '<span class="issue-bar-name clickable-name">' + item[0] + '</span>'
+            + '<div class="issue-bar-wrap"><div class="issue-bar-inner" style="width:' + Math.round(item[1]/maxStation*100) + '%;background:' + (colors[i%colors.length]) + ';"></div></div>'
+            + '<span class="issue-bar-val">' + item[1] + '次</span></div>';
+    }).join('') || '<div style="color:var(--text-secondary);font-size:12px;padding:8px 0;">暂无数据</div>';
+
+    // 时间线
+    document.getElementById('personDetailCount').textContent = '共 ' + total + ' 条';
+    renderPersonTimeline(15);
+}
+
+function renderPersonTimeline(limit) {
+    var slice = _personAllRecords.slice(_personShownCount, _personShownCount + limit);
+    var el = document.getElementById('personTimeline');
+    var html = slice.map(function(d){
+        var isSubj = d.category && d.category.includes('主观');
+        var badgeHtml = '<span class="' + (isSubj?'badge-subj':'badge-obj') + '">' + (isSubj?'主观':'客观') + '</span>';
+        return '<div class="timeline-item">'
+            + '<div class="tl-dot" style="background:' + (isSubj?'#EF9F27':'#E24B4A') + ';"></div>'
+            + '<span class="tl-date">' + (d.date||'-') + '</span>'
+            + '<div class="tl-content"><div class="tl-title">' + (d.issueType||'') + (d.level3?' · '+d.level3:'') + badgeHtml + '</div>'
+            + '<div class="tl-sub">' + (d.warehouse||'-') + ' · 质检码 ' + (d.code||'-') + '</div></div></div>';
+    }).join('');
+    if (_personShownCount === 0) { el.innerHTML = html; } else { el.innerHTML += html; }
+    _personShownCount += slice.length;
+    var loadMore = document.getElementById('personLoadMore');
+    loadMore.style.display = _personShownCount < _personAllRecords.length ? '' : 'none';
+}
+
+function loadMorePersonDetail() { renderPersonTimeline(15); }
+
+// ── 站点排行榜点击下钻 ──
+document.addEventListener('click', function(e) {
+    // 站点名点击 → 站点详情
+    var stationEl = e.target.closest('[data-drilldown-station]');
+    if (stationEl) { openStationDetail(stationEl.dataset.drilldownStation); return; }
+    // 人员名点击 → 人员详情
+    var personEl = e.target.closest('[data-drilldown-person]');
+    if (personEl) { openPersonDetail(personEl.dataset.drilldownPerson); return; }
+    // personTable行点击
+    var tr = e.target.closest('#personTable tr[data-person]');
+    if (tr) { openPersonDetail(tr.dataset.person); return; }
+});
 </script>
 
 <!-- 登录弹窗 -->
