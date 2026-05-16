@@ -496,7 +496,7 @@
     <div class="zb-logo">
       <div style="display:flex;align-items:baseline;gap:5px;">
         <div class="zb-brand">培训部数据看板</div>
-        <span style="font-size:10px;color:var(--text-secondary);opacity:0.6;">v1.08d</span>
+        <span style="font-size:10px;color:var(--text-secondary);opacity:0.6;">v1.09</span>
       </div>
       <div class="zb-sub">内部数据平台</div>
     </div>
@@ -685,6 +685,13 @@
                       <tbody id="sitePersonBody"></tbody>
                     </table>
                   </div>
+                </div>
+              </div>
+              <!-- 问题项分析 -->
+              <div class="card">
+                <div class="card-title" style="margin-bottom:14px;">🔎 问题项分析（客观执行 · 本周 vs 上周）</div>
+                <div id="site-issue-analysis-root">
+                  <div style="text-align:center;padding:24px;color:var(--text-secondary);font-size:13px;">点击排行榜站点后自动显示</div>
                 </div>
               </div>
             </div><!-- end zb-page site -->
@@ -952,25 +959,93 @@
             }
 
             function updateStatsBoard() {
-                const hash = getFilterHash();
+                if (!statsArea) return;
+                const hash = getFilterHash() + '|' + (typeof currentSiteType !== 'undefined' ? currentSiteType : 'ALL');
                 if (cache.stats && cache.filterHash === hash) { statsArea.innerHTML = cache.stats; return; }
                 if (!summaryData.length) { statsArea.innerHTML = '<div class="stats-item">⚠️ 请加载数据</div>'; return; }
-                const filteredSummary = filterSummaryData(summaryData);
-                let totalChecks = filteredSummary.reduce((acc, r) => acc + (r.totalChecks || 0), 0);
-                const uniqueCodesObj = new Set(currentFilteredDiff.filter(d => isObjective(d.category)).map(d => d.code)).size;
-                const uniqueCodesSubj = new Set(currentFilteredDiff.filter(d => isSubjective(d.category)).map(d => d.code)).size;
-                const totalDiff = uniqueCodesObj + uniqueCodesSubj;
-                const execCodeSet = new Set();
-                currentFilteredDiff.forEach(d => { if (isObjective(d.category) && isExecutionIssue(d.judgedIssueType) && d.code) execCodeSet.add(d.code); });
-                const execObjTotal = execCodeSet.size;
-                const mk = (type, val, label, deviceCount) => `<div class="stats-item" data-type="${type}" data-count="${deviceCount||''}"><div class="stats-number">${val}</div><div class="stats-label">${label}</div></div>`;
-                const html =
-                    mk('total_checks', totalChecks,    '总抽检量') +
-                    mk('total_diff',   totalChecks?(totalDiff/totalChecks*100).toFixed(2)+'%':'0%',       '主客观差异率',    totalDiff) +
-                    mk('obj_diff',     totalChecks?(uniqueCodesObj/totalChecks*100).toFixed(2)+'%':'0%',  '客观差异率',      uniqueCodesObj) +
-                    mk('exec_diff',    totalChecks?(execObjTotal/totalChecks*100).toFixed(2)+'%':'0%',    '客观执行差异率',  execObjTotal) +
-                    mk('exec_count',   execObjTotal,   '客观执行差异量', execObjTotal) +
-                    mk('subj_diff',    totalChecks?(uniqueCodesSubj/totalChecks*100).toFixed(2)+'%':'0%', '主观差异率',      uniqueCodesSubj);
+
+                var siteType = (typeof currentSiteType !== 'undefined') ? currentSiteType : 'ALL';
+
+                function calcKpi(diffRows, summaryRows) {
+                    var filteredSum = filterSummaryData(summaryRows);
+                    var totalChecks = filteredSum.reduce((acc, r) => acc + (r.totalChecks || 0), 0);
+                    var uniqueCodesObj  = new Set(diffRows.filter(d => isObjective(d.category)).map(d => d.code)).size;
+                    var uniqueCodesSubj = new Set(diffRows.filter(d => isSubjective(d.category)).map(d => d.code)).size;
+                    var totalDiff = uniqueCodesObj + uniqueCodesSubj;
+                    var execCodeSet = new Set();
+                    diffRows.forEach(d => { if (isObjective(d.category) && isExecutionIssue(d.judgedIssueType) && d.code) execCodeSet.add(d.code); });
+                    var execObjTotal = execCodeSet.size;
+                    return { totalChecks, uniqueCodesObj, uniqueCodesSubj, totalDiff, execObjTotal };
+                }
+
+                const mk = (type, val, label, deviceCount) =>
+                    `<div class="stats-item" data-type="${type}" data-count="${deviceCount||''}"><div class="stats-number">${val}</div><div class="stats-label">${label}</div></div>`;
+
+                function kpiHtml(k) {
+                    var tc = k.totalChecks;
+                    return mk('total_checks', tc, '总抽检量') +
+                        mk('total_diff',  tc?(k.totalDiff/tc*100).toFixed(2)+'%':'0%',       '主客观差异率',   k.totalDiff) +
+                        mk('obj_diff',    tc?(k.uniqueCodesObj/tc*100).toFixed(2)+'%':'0%',  '客观差异率',     k.uniqueCodesObj) +
+                        mk('exec_diff',   tc?(k.execObjTotal/tc*100).toFixed(2)+'%':'0%',    '客观执行差异率', k.execObjTotal) +
+                        mk('exec_count',  k.execObjTotal, '客观执行差异量', k.execObjTotal) +
+                        mk('subj_diff',   tc?(k.uniqueCodesSubj/tc*100).toFixed(2)+'%':'0%', '主观差异率',    k.uniqueCodesSubj);
+                }
+
+                var html = '';
+                if (siteType === 'DW') {
+                    // 大仓：智能验机中心 + 后验中心仓分两行
+                    var ZB_DW = typeof ZB_DW_SITES !== 'undefined' ? ZB_DW_SITES : [];
+                    var isJY  = function(s){ return s && (s.includes('智能验机') || s.includes('转转-')); };
+                    var isHY  = function(s){ return s && (s.includes('后验')); };
+                    var jyDiff = currentFilteredDiff.filter(d => isJY(d.warehouse));
+                    var hyDiff = currentFilteredDiff.filter(d => isHY(d.warehouse));
+                    var jySum  = summaryData.filter(s => isJY(s.siteName));
+                    var hySum  = summaryData.filter(s => isHY(s.siteName));
+                    var jyK = calcKpi(jyDiff, jySum);
+                    var hyK = calcKpi(hyDiff, hySum);
+
+                    // 共享列头
+                    var headers = ['总抽检量','主客观差异率','客观差异率','客观执行差异率','客观执行差异量','主观差异率'];
+                    var headerHtml = '<div style="grid-column:1/-1;display:grid;grid-template-columns:100px repeat(6,1fr);gap:6px;margin-bottom:2px;">'
+                        + '<div></div>'
+                        + headers.map(h => `<div style="font-size:9px;color:var(--text-secondary);text-align:center;">${h}</div>`).join('')
+                        + '</div>';
+
+                    function rowHtml(label, dotColor, k) {
+                        var tc = k.totalChecks;
+                        var vals = [
+                            tc,
+                            tc?(k.totalDiff/tc*100).toFixed(2)+'%':'0%',
+                            tc?(k.uniqueCodesObj/tc*100).toFixed(2)+'%':'0%',
+                            tc?(k.execObjTotal/tc*100).toFixed(2)+'%':'0%',
+                            k.execObjTotal,
+                            tc?(k.uniqueCodesSubj/tc*100).toFixed(2)+'%':'0%'
+                        ];
+                        return '<div style="grid-column:1/-1;display:grid;grid-template-columns:100px repeat(6,1fr);gap:6px;margin-bottom:4px;">'
+                            + `<div style="display:flex;align-items:center;justify-content:flex-end;padding-right:8px;font-size:11px;font-weight:600;color:var(--text-secondary);">`
+                            + `<span style="width:7px;height:7px;border-radius:50%;background:${dotColor};display:inline-block;margin-right:5px;flex-shrink:0;"></span>${label}</div>`
+                            + vals.map(v => `<div style="background:var(--kpi-bg);border-radius:7px;padding:8px 6px;text-align:center;font-size:15px;font-weight:600;color:var(--text-primary);">${v}</div>`).join('')
+                            + '</div>';
+                    }
+
+                    html = '<div style="display:grid;gap:4px;">'
+                        + headerHtml
+                        + rowHtml('智能验机中心', '#3b82f6', jyK)
+                        + '<div style="border-top:0.5px dashed var(--border-color);margin:2px 0 2px 108px;"></div>'
+                        + rowHtml('后验中心仓', '#f59e0b', hyK)
+                        + '</div>';
+                } else {
+                    // 全部 / 中心仓：原来的一行逻辑
+                    var diffRows = siteType === 'ZX'
+                        ? currentFilteredDiff.filter(d => typeof getSiteType === 'function' && getSiteType(d.warehouse||'') === 'ZX')
+                        : currentFilteredDiff;
+                    var sumRows = siteType === 'ZX'
+                        ? summaryData.filter(s => typeof getSiteType === 'function' && getSiteType(s.siteName||'') === 'ZX')
+                        : summaryData;
+                    var k = calcKpi(diffRows, sumRows);
+                    html = kpiHtml(k);
+                }
+
                 statsArea.innerHTML = html;
                 cache.stats = html;
                 cache.filterHash = hash;
@@ -3368,6 +3443,29 @@ function zbRenderSiteDetail(siteName) {
                 + '<td>' + p.subj + '</td>'
                 + '</tr>';
         }).join('');
+    }
+
+    // ── 问题项分析（复用 renderIssueAnalysis 逻辑，数据限定为该站点）──
+    var siteIssueRoot = document.getElementById('site-issue-analysis-root');
+    if (siteIssueRoot) {
+        var execDiff = siteDiff.filter(function(d) {
+            return d.category && d.category.includes('客观') && d.judgedIssueType === '执行问题';
+        });
+        if (!execDiff.length) {
+            siteIssueRoot.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-secondary);font-size:13px;">该站点暂无客观执行差异数据</div>';
+        } else {
+            // 借用全局 renderIssueAnalysis 的逻辑，临时替换 currentFilteredDiff
+            var _orig = window.currentFilteredDiff;
+            window.currentFilteredDiff = siteDiff;
+            // 临时把 root id 指向站点专属容器
+            var _origId = siteIssueRoot.id;
+            siteIssueRoot.id = 'issue-analysis-root';
+            if (typeof renderIssueAnalysis === 'function') {
+                try { renderIssueAnalysis(); } catch(e) { console.error('站点问题项分析渲染失败', e); }
+            }
+            siteIssueRoot.id = _origId;
+            window.currentFilteredDiff = _orig;
+        }
     }
 }
 
