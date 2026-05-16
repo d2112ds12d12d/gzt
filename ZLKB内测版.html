@@ -785,7 +785,6 @@
                 judgedIssueTypeFilter = document.getElementById('judgedIssueTypeFilter'),
                 resetBtn = document.getElementById('resetFilter'),
                 loadMoreBtn = document.getElementById('loadMoreBtn'),
-                detailTableBody = document.getElementById('detailTableBody'),
                 statsArea = document.getElementById('statsArea'),
                 combinedFileInput = document.getElementById('combinedFileInput'),
                 uploadCombinedBtn = document.getElementById('uploadCombinedBtn'),
@@ -798,12 +797,15 @@
                 modalJudgedIssueTypeFilter = document.getElementById('modalJudgedIssueTypeFilter'),
                 modalResetFilter = document.getElementById('modalResetFilter'),
                 themeBtn = document.getElementById('themeToggleBtn'),
-                personLoadMoreBtn = document.getElementById('personLoadMoreBtn'),
-                problemTypeSwitch = document.getElementById('problemTypeSwitch'),
                 loadWeeklyBtn = document.getElementById('loadWeeklyBtn'),
                 loadMonthlyBtn = document.getElementById('loadMonthlyBtn'),
                 exportDataBtn = document.getElementById('exportDataBtn'),
                 virtualScrollContainer = document.getElementById('virtualScrollContainer');
+
+            // 已删除 DOM 的安全占位（防止 null 引用报错）
+            var detailTableBody = { innerHTML: '' };
+            var personLoadMoreBtn = { style: { display: 'none' }, addEventListener: function(){} };
+            var problemTypeSwitch = null;
 
             let currentModalRecords = [];
             let virtualScroll = null;
@@ -1339,8 +1341,9 @@
                 dtOpenColFilter(icon.dataset.col, icon);
             });
 
-            // 单元格编辑：事件委托（不用内联onclick，避免闭包访问问题）
-            document.getElementById('detailTableBody').addEventListener('click', function(e) {
+            // 单元格编辑：事件委托
+            var _dtBody = document.getElementById('detailTableBody');
+            if (_dtBody) _dtBody.addEventListener('click', function(e) {
                 const span = e.target.closest('.dt-cell-editable');
                 if (!span) return;
                 dtStartEdit(span);
