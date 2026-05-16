@@ -785,14 +785,37 @@
 
             <!-- ══ 站点详情页 ══ -->
             <div class="zb-page" id="zb-page-site">
+              <!-- 顶部面包屑 -->
               <div class="card" style="margin-bottom:16px;">
                 <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
                   <button id="siteBackBtn" style="display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:20px;border:1px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;">← 返回总览</button>
                   <div id="siteDetailTitle" style="font-size:1.1rem;font-weight:700;color:var(--text-primary);">站点详情</div>
                 </div>
               </div>
-              <div class="card" id="siteDetailBody" style="min-height:200px;display:flex;align-items:center;justify-content:center;">
-                <div style="text-align:center;color:var(--text-secondary);font-size:13px;">请点击排行榜中的站点进入详情</div>
+              <!-- KPI 小卡片行 -->
+              <div class="card" style="margin-bottom:16px;">
+                <div id="siteKpiRow" class="stats-grid"></div>
+              </div>
+              <!-- 趋势图 -->
+              <div class="card" style="margin-bottom:16px;">
+                <div class="card-title" style="margin-bottom:14px;">📉 差异率每日趋势（点击柱体查看当日明细）</div>
+                <div id="siteTrendChart" style="width:100%;height:320px;"></div>
+              </div>
+              <!-- 问题类型分布 + 质检人列表 两列 -->
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px;">
+                <div class="card">
+                  <div class="card-title" style="margin-bottom:14px;">🔎 问题类型分布（点击查看明细）</div>
+                  <div id="siteIssueChart" style="width:100%;height:280px;"></div>
+                </div>
+                <div class="card">
+                  <div class="card-title" style="margin-bottom:14px;">👤 涉及质检人（点击查看明细）</div>
+                  <div style="overflow-x:auto;">
+                    <table class="rank-table" id="sitePersonTable">
+                      <thead><tr><th>排名</th><th>质检人员</th><th>差异次数</th><th>客观</th><th>主观</th></tr></thead>
+                      <tbody id="sitePersonBody"></tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
             </div><!-- end zb-page site -->
         </div>
@@ -3157,6 +3180,9 @@ function zbClickRankSite(el) {
 }
 
 // 跳转到站点详情页
+var _siteChart_trend = null;
+var _siteChart_issue = null;
+
 function zbNavToSite(siteName) {
     // 显示侧边栏导航项
     var navItem = document.getElementById('zb-nav-site');
@@ -3169,19 +3195,120 @@ function zbNavToSite(siteName) {
     var titleEl = document.getElementById('siteDetailTitle');
     if (titleEl) titleEl.textContent = '🏢 ' + siteName + ' · 站点详情';
 
-    // 渲染占位内容（Step 2 填充真实图表）
-    var bodyEl = document.getElementById('siteDetailBody');
-    if (bodyEl) {
-        bodyEl.innerHTML = '<div style="padding:32px;text-align:center;">'
-            + '<div style="font-size:2rem;margin-bottom:12px;">🏢</div>'
-            + '<div style="font-size:1rem;font-weight:700;color:var(--text-primary);margin-bottom:8px;">' + siteName + '</div>'
-            + '<div style="font-size:13px;color:var(--text-secondary);">站点详情图表将在 Step 2 填充</div>'
-            + '</div>';
-    }
-
-    // 切换到站点详情页
+    // 切换页面
     var siteNavEl = document.getElementById('zb-nav-site');
     zbNav('site', siteNavEl);
+
+    // 渲染站点数据
+    zbRenderSiteDetail(siteName);
+}
+
+function zbRenderSiteDetail(siteName) {
+    // 取全量 diffData（闭包内）
+    var allDiff = window._allDiffData || [];
+    if (!allDiff.length && typeof diffData !== 'undefined') allDiff = diffData;
+
+    // 按站点过滤
+    var siteDiff = allDiff.filter(function(d) { return d.warehouse === siteName; });
+
+    // ── KPI 小卡片 ──
+    var kpiEl = document.getElementById('siteKpiRow');
+    if (kpiEl) {
+        if (!siteDiff.length) {
+            kpiEl.innerHTML = '<div class="stats-item" style="grid-column:1/-1;text-align:center;color:var(--text-secondary);">暂无数据</div>';
+        } else {
+            var totalDiff = new Set(siteDiff.map(function(d){return d.code;})).size;
+            var objDiff   = new Set(siteDiff.filter(function(d){return d.category&&d.category.includes('客观');}).map(function(d){return d.code;})).size;
+            var subjDiff  = new Set(siteDiff.filter(function(d){return d.category&&d.category.includes('主观');}).map(function(d){return d.code;})).size;
+            var personCnt = new Set(siteDiff.map(function(d){return d.person;})).size;
+            var mk = function(num, label) {
+                return '<div class="stats-item"><div class="stats-number">' + num + '</div><div class="stats-label">' + label + '</div></div>';
+            };
+            kpiEl.innerHTML = mk(totalDiff,'总差异量') + mk(objDiff,'客观差异量') + mk(subjDiff,'主观差异量') + mk(personCnt,'涉及质检人数');
+        }
+    }
+
+    // ── 趋势图 ──
+    var trendEl = document.getElementById('siteTrendChart');
+    if (trendEl && typeof echarts !== 'undefined') {
+        if (!_siteChart_trend) _siteChart_trend = echarts.init(trendEl);
+        var dateMap = {};
+        siteDiff.forEach(function(d) {
+            if (!d.date || !d.code) return;
+            var dt = d.date.split(' ')[0];
+            if (!dateMap[dt]) dateMap[dt] = new Set();
+            dateMap[dt].add(d.code);
+        });
+        var sorted = Object.keys(dateMap).sort();
+        var xData = sorted;
+        var yData = sorted.map(function(dt){ return dateMap[dt].size; });
+        var textColor = document.body.classList.contains('dark') ? '#e2e8f0' : '#1e293b';
+        _siteChart_trend.setOption({
+            tooltip: { trigger: 'axis' },
+            xAxis: { type:'category', data:xData, axisLabel:{ rotate:35, color:textColor }, axisLine:{ lineStyle:{ color: document.body.classList.contains('dark') ? '#475569' : '#cbd5e1' } } },
+            yAxis: { type:'value', name:'差异设备数', nameTextStyle:{ color:textColor }, axisLabel:{ color:textColor } },
+            series: [{ type:'bar', data:yData, itemStyle:{ borderRadius:[6,6,0,0], color: new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'#4f9eff'},{offset:1,color:'#1e6df2'}]) }, label:{ show:true, position:'top', color:textColor } }]
+        }, true);
+        _siteChart_trend.off('click');
+        _siteChart_trend.on('click', function(params) {
+            if (params.componentType !== 'series') return;
+            var date = xData[params.dataIndex];
+            var filtered = siteDiff.filter(function(d){ return d.date && d.date.split(' ')[0] === date; });
+            if (typeof openDetailWithData === 'function') openDetailWithData(filtered, '📅 ' + siteName + ' · ' + date + '（' + filtered.length + '条）');
+        });
+        _siteChart_trend.resize();
+    }
+
+    // ── 问题类型分布饼图 ──
+    var issueEl = document.getElementById('siteIssueChart');
+    if (issueEl && typeof echarts !== 'undefined') {
+        if (!_siteChart_issue) _siteChart_issue = echarts.init(issueEl);
+        var typeMap = {};
+        siteDiff.forEach(function(d) {
+            var t = (d.issueType||'').trim() || '未知';
+            typeMap[t] = (typeMap[t]||0) + 1;
+        });
+        var pieData = Object.keys(typeMap).map(function(k){ return { name:k, value:typeMap[k] }; }).sort(function(a,b){ return b.value-a.value; });
+        var textColor2 = document.body.classList.contains('dark') ? '#e2e8f0' : '#1e293b';
+        _siteChart_issue.setOption({
+            tooltip: { trigger:'item', formatter:'{b}: {d}% ({c}次)' },
+            legend: { textStyle:{ color:textColor2 }, top:0, left:'center', type:'scroll' },
+            series: [{ type:'pie', radius:'52%', center:['50%','60%'], data:pieData, label:{ show:true, formatter:'{b}: {d}%', color:textColor2 }, emphasis:{ itemStyle:{ shadowBlur:8, shadowColor:'rgba(0,0,0,0.2)' } } }]
+        }, true);
+        _siteChart_issue.off('click');
+        _siteChart_issue.on('click', function(params) {
+            var typeName = params.name;
+            var filtered = siteDiff.filter(function(d){ return (d.issueType||'未知') === typeName; });
+            if (typeof openDetailWithData === 'function') openDetailWithData(filtered, '🔎 ' + siteName + ' · ' + typeName + '（' + filtered.length + '条）');
+        });
+        _siteChart_issue.resize();
+    }
+
+    // ── 质检人列表 ──
+    var personBodyEl = document.getElementById('sitePersonBody');
+    if (personBodyEl) {
+        var personMap = {};
+        siteDiff.forEach(function(d) {
+            var p = d.person || '未知';
+            if (!personMap[p]) personMap[p] = { total:0, obj:0, subj:0 };
+            personMap[p].total++;
+            if (d.category && d.category.includes('客观')) personMap[p].obj++;
+            if (d.category && d.category.includes('主观')) personMap[p].subj++;
+        });
+        var personList = Object.keys(personMap).map(function(name){
+            return { name:name, total:personMap[name].total, obj:personMap[name].obj, subj:personMap[name].subj };
+        }).sort(function(a,b){ return b.total-a.total; });
+
+        personBodyEl.innerHTML = personList.map(function(p, idx) {
+            return '<tr style="cursor:pointer;" data-person="' + p.name.replace(/"/g,'&quot;') + '" data-site="' + siteName.replace(/"/g,'&quot;') + '">'
+                + '<td>' + (idx+1) + '</td>'
+                + '<td>' + p.name + '</td>'
+                + '<td>' + p.total + '</td>'
+                + '<td>' + p.obj + '</td>'
+                + '<td>' + p.subj + '</td>'
+                + '</tr>';
+        }).join('');
+    }
 }
 
 function zbNav(name, el) {
@@ -3199,6 +3326,24 @@ document.addEventListener('DOMContentLoaded', function() {
         backBtn.addEventListener('click', function() {
             var overviewNavEl = document.querySelector('.zb-nav-item[onclick*="overview"]');
             zbNav('overview', overviewNavEl);
+        });
+    }
+
+    // 质检人列表：事件委托，点击行查看该站点×该质检人的明细
+    var sitePersonTable = document.getElementById('sitePersonTable');
+    if (sitePersonTable) {
+        sitePersonTable.addEventListener('click', function(e) {
+            var tr = e.target.closest('tr[data-person]');
+            if (!tr) return;
+            var personName = tr.dataset.person;
+            var siteName   = tr.dataset.site;
+            var allDiff = window._allDiffData || [];
+            var filtered = allDiff.filter(function(d) {
+                return d.warehouse === siteName && d.person === personName;
+            });
+            if (typeof openDetailWithData === 'function') {
+                openDetailWithData(filtered, '👤 ' + personName + ' · ' + siteName + '（' + filtered.length + '条）');
+            }
         });
     }
 });
