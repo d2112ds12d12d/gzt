@@ -327,6 +327,67 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 .capture-time-unit{font-size:11px;color:var(--text3)}
 .task-time-badge{font-size:11px;color:var(--text3);display:inline-flex;align-items:center;gap:2px}
 .task-time-badge.has-time{color:var(--accent);font-weight:500}
+
+/* ── SPLIT DUAL-DAY VIEW ── */
+.layout-toggle{display:flex;gap:3px;background:rgba(118,118,128,.1);border-radius:8px;padding:3px;margin-left:auto}
+.layout-toggle-btn{height:26px;padding:0 12px;border-radius:6px;font-size:11.5px;font-weight:500;border:none;cursor:pointer;font-family:inherit;color:var(--text3);background:transparent;transition:background .15s,color .15s}
+.layout-toggle-btn.active{background:#fff;color:var(--text1);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.split-view{display:flex;gap:0;margin:0 -4px}
+@media(max-width:767px){
+  .split-view{flex-direction:column;gap:12px}
+  .day-divider{width:auto;height:1px;margin:0;flex-shrink:0}
+  .layout-toggle{display:none}
+  #split-day-view{display:none!important}
+  #tri-day-view{display:none!important}
+}
+/* ── YESTERDAY PANEL (only in tri-day) ── */
+.day-panel-prev .day-section-label{color:var(--text3)}
+.day-panel-prev .day-section-label::after{background:rgba(142,142,147,.2)}
+.day-count-badge.prev{background:var(--text4);color:#fff}
+.prev-task-item{position:relative}
+.prev-task-actions{display:flex;gap:4px;margin-top:6px;padding-top:5px;border-top:1px solid var(--border)}
+.prev-task-btn{height:22px;padding:0 10px;border-radius:11px;border:none;font-size:11px;font-weight:500;cursor:pointer;font-family:inherit;transition:opacity .12s}
+.prev-task-btn:hover{opacity:.78}
+.prev-task-btn.copy{background:var(--accent-light);color:var(--accent);border:1px solid var(--accent-border)}
+.prev-task-btn.move{background:rgba(52,199,89,.1);color:#34c759;border:1px solid rgba(52,199,89,.25)}
+/* tri-day view: prev panel has slightly muted style */
+#panel-prev .task-item{opacity:.72;transition:opacity .18s}
+#panel-prev .task-item:hover{opacity:1}
+.day-panel{flex:1;min-width:0;padding:0 4px}
+.day-panel-today{padding-left:0}
+.day-panel-next{padding-right:0}
+.day-greeting{font-family:'DM Serif Display',serif;font-size:22px;font-weight:400;margin-bottom:2px;color:var(--text1)}
+.day-greeting-sub{font-size:12px;color:var(--text3);margin-bottom:14px}
+.split-capture-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:4px;margin-bottom:12px;transition:box-shadow .2s,border-color .2s}
+.split-capture-box:focus-within{box-shadow:0 0 0 3px var(--accent-light);border-color:var(--accent-border)}
+.split-capture-box.next-day{border-color:rgba(52,199,89,.25)}
+.split-capture-box.next-day:focus-within{box-shadow:0 0 0 3px rgba(52,199,89,.15);border-color:rgba(52,199,89,.4)}
+.split-capture-input{width:100%;border:none;outline:none;background:transparent;font-family:inherit;font-size:14px;color:var(--text1);padding:8px 10px 4px;resize:none;line-height:1.5;min-height:36px;max-height:96px;display:block}
+.split-capture-input::placeholder{color:var(--text4)}
+.split-capture-footer{display:flex;align-items:center;justify-content:space-between;padding:2px 8px 5px;gap:6px}
+.split-capture-tags{display:flex;gap:4px;flex-wrap:wrap;flex:1}
+.split-capture-tag{height:20px;padding:0 9px;border-radius:10px;border:1px solid var(--border2);background:rgba(118,118,128,.06);font-size:10.5px;color:var(--text2);cursor:pointer;font-family:inherit;transition:background .12s,color .12s}
+.split-capture-tag:hover,.split-capture-tag.selected{background:var(--accent-light);border-color:var(--accent-border);color:var(--accent);font-weight:500}
+.split-capture-tag.next-day-tag.selected{background:rgba(52,199,89,.12);border-color:rgba(52,199,89,.3);color:#34c759}
+.split-capture-submit{height:28px;padding:0 14px;background:var(--accent);color:#fff;border:none;border-radius:14px;font-size:12px;font-weight:500;font-family:inherit;cursor:pointer;flex-shrink:0;transition:opacity .12s,transform .1s}
+.split-capture-submit:hover{opacity:.88}
+.split-capture-submit:active{transform:scale(.97)}
+.split-capture-submit.next-day-submit{background:#34c759}
+.day-divider{width:1px;background:var(--border);margin:20px 6px 0;flex-shrink:0}
+.day-section-label{font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--text3);margin-bottom:8px;padding:0 4px;display:flex;align-items:center;gap:5px}
+.day-section-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.day-section-label.next-label{color:#34c759}
+.day-section-label.next-label::after{background:rgba(52,199,89,.2)}
+.day-count-badge{display:inline-flex;align-items:center;justify-content:center;min-width:17px;height:17px;border-radius:9px;font-size:10px;font-weight:700;padding:0 4px}
+.day-count-badge.today{background:var(--accent);color:#fff}
+.day-count-badge.next{background:#34c759;color:#fff}
+.day-hint{font-size:10.5px;color:var(--text4);margin-bottom:8px;padding:0 4px}
+.day-hint.next-hint{color:#34c759}
+.next-day-pill{display:inline-flex;align-items:center;gap:3px;height:18px;padding:0 7px;border-radius:9px;background:rgba(52,199,89,.1);color:#34c759;font-size:10px;font-weight:500;margin-left:6px}
+.split-time-row{display:flex;align-items:center;gap:4px;padding:0 10px 6px}
+.split-time-label{font-size:10.5px;color:var(--text3);flex-shrink:0}
+.split-time-input{width:64px;height:22px;border:1px solid var(--border2);border-radius:7px;background:rgba(118,118,128,.06);padding:0 7px;font-family:inherit;font-size:11.5px;color:var(--text1);outline:none;text-align:center}
+.split-time-unit{font-size:10.5px;color:var(--text3)}
 </style>
 </head>
 <body>
@@ -393,26 +454,153 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
 
   <!-- TODAY -->
   <div class="page active" id="page-today">
-    <div class="wrap">
-      <div style="margin-bottom:24px">
-        <h2 style="font-family:'DM Serif Display',serif;font-size:26px;font-weight:400;margin-bottom:4px" id="greeting-text">今天做什么？</h2>
+    <div class="wrap" id="today-wrap">
+      <!-- greeting + toggle -->
+      <div style="margin-bottom:16px" id="today-greeting-area">
+        <div style="display:flex;align-items:center;margin-bottom:4px">
+          <h2 style="font-family:'DM Serif Display',serif;font-size:26px;font-weight:400" id="greeting-text">今天做什么？</h2>
+          <div class="layout-toggle" id="layout-toggle">
+            <button class="layout-toggle-btn" id="btn-tri-view" onclick="setTodayLayout('tri')">三日</button>
+            <button class="layout-toggle-btn" id="btn-split-view" onclick="setTodayLayout('split')">双日</button>
+            <button class="layout-toggle-btn active" id="btn-single-view" onclick="setTodayLayout('single')">单日</button>
+          </div>
+        </div>
         <p style="font-size:13px;color:var(--text3)" id="greeting-sub"></p>
       </div>
-      <div class="capture-box">
-        <textarea class="capture-input" id="capture-input" placeholder="记一件事… 支持"明天""后天""下周一"等" rows="1" oninput="onCaptureInput(this)"></textarea>
-        <div id="date-preview" style="padding:0 12px 4px"></div>
-        <div class="capture-footer">
-          <div class="capture-tags" id="capture-tags"></div>
-          <button class="capture-submit" onclick="submitCapture()">添加</button>
+
+      <!-- tri-day view: prev | today | next (hidden by default) -->
+      <div id="tri-day-view" class="split-view" style="display:none">
+
+        <!-- LEFT: previous workday (read-only) -->
+        <div class="day-panel day-panel-prev" id="panel-prev">
+          <div class="day-section-label">
+            <span id="prev-day-label">昨日工作日</span>
+            <span class="day-count-badge prev" id="prev-count-badge" style="display:none">0</span>
+          </div>
+          <div class="day-hint" id="prev-hint" style="margin-bottom:10px;color:var(--text4)"></div>
+          <div id="prev-tasks-list"></div>
         </div>
-        <div class="capture-time-row">
-          <span class="capture-time-label">⏱ 预计</span>
-          <input class="capture-time-input" id="capture-time" type="number" min="1" placeholder="/" title="预估耗时（分钟）" />
-          <span class="capture-time-unit">分钟</span>
+
+        <div class="day-divider"></div>
+
+        <!-- CENTER: today -->
+        <div class="day-panel day-panel-today" id="panel-today-tri">
+          <div class="day-section-label">
+            <span>今天</span>
+            <span class="day-count-badge today" id="today-count-badge-tri">0</span>
+            <span class="day-hint" id="today-hint-tri" style="margin-left:4px"></span>
+          </div>
+          <div class="split-capture-box" id="split-capture-today-tri">
+            <textarea class="split-capture-input" id="capture-input-today-tri" placeholder="今天记一件事…" rows="1" oninput="onSplitCaptureInput(this,'today-tri')"></textarea>
+            <div class="split-capture-footer">
+              <div class="split-capture-tags" id="split-tags-today-tri"></div>
+              <button class="split-capture-submit" onclick="submitCaptureForDay('today-tri')">添加</button>
+            </div>
+            <div class="split-time-row">
+              <span class="split-time-label">⏱</span>
+              <input class="split-time-input" id="capture-time-today-tri" type="number" min="1" placeholder="/" />
+              <span class="split-time-unit">分钟</span>
+            </div>
+          </div>
+          <div id="today-tasks-list-tri"></div>
+        </div>
+
+        <div class="day-divider"></div>
+
+        <!-- RIGHT: next workday -->
+        <div class="day-panel day-panel-next" id="panel-next-tri">
+          <div class="day-section-label next-label">
+            <span id="next-day-label-tri">下一工作日</span>
+            <span class="day-count-badge next" id="next-count-badge-tri">0</span>
+            <span id="next-day-pill-tri" class="next-day-pill"></span>
+          </div>
+          <div class="day-hint next-hint" id="next-hint-tri" style="margin-bottom:10px"></div>
+          <div class="split-capture-box next-day" id="split-capture-next-tri">
+            <textarea class="split-capture-input" id="capture-input-next-tri" placeholder="提前规划下一工作日…" rows="1" oninput="onSplitCaptureInput(this,'next-tri')"></textarea>
+            <div class="split-capture-footer">
+              <div class="split-capture-tags" id="split-tags-next-tri"></div>
+              <button class="split-capture-submit next-day-submit" onclick="submitCaptureForDay('next-tri')">添加</button>
+            </div>
+            <div class="split-time-row">
+              <span class="split-time-label">⏱</span>
+              <input class="split-time-input" id="capture-time-next-tri" type="number" min="1" placeholder="/" />
+              <span class="split-time-unit">分钟</span>
+            </div>
+          </div>
+          <div id="next-tasks-list-tri"></div>
         </div>
       </div>
-      <div class="section-label" style="margin-bottom:12px">今日待办</div>
-      <div id="today-tasks-list"></div>
+
+      <!-- split dual-day view (hidden by default) -->
+      <div id="split-day-view" class="split-view" style="display:none">
+
+        <!-- LEFT: today -->
+        <div class="day-panel day-panel-today" id="panel-today">
+          <div class="day-section-label">
+            <span>今天</span>
+            <span class="day-count-badge today" id="today-count-badge">0</span>
+            <span class="day-hint" id="today-hint" style="margin-left:4px"></span>
+          </div>
+          <div class="split-capture-box" id="split-capture-today">
+            <textarea class="split-capture-input" id="capture-input-today" placeholder="今天记一件事…" rows="1" oninput="onSplitCaptureInput(this,'today')"></textarea>
+            <div class="split-capture-footer">
+              <div class="split-capture-tags" id="split-tags-today"></div>
+              <button class="split-capture-submit" onclick="submitCaptureForDay('today')">添加</button>
+            </div>
+            <div class="split-time-row">
+              <span class="split-time-label">⏱</span>
+              <input class="split-time-input" id="capture-time-today" type="number" min="1" placeholder="/" />
+              <span class="split-time-unit">分钟</span>
+            </div>
+          </div>
+          <div id="today-tasks-list"></div>
+        </div>
+
+        <div class="day-divider"></div>
+
+        <!-- RIGHT: next workday -->
+        <div class="day-panel day-panel-next" id="panel-next">
+          <div class="day-section-label next-label">
+            <span id="next-day-label">下一工作日</span>
+            <span class="day-count-badge next" id="next-count-badge">0</span>
+            <span id="next-day-pill" class="next-day-pill"></span>
+          </div>
+          <div class="day-hint next-hint" id="next-hint" style="margin-bottom:10px"></div>
+          <div class="split-capture-box next-day" id="split-capture-next">
+            <textarea class="split-capture-input" id="capture-input-next" placeholder="提前规划下一工作日…" rows="1" oninput="onSplitCaptureInput(this,'next')"></textarea>
+            <div class="split-capture-footer">
+              <div class="split-capture-tags" id="split-tags-next"></div>
+              <button class="split-capture-submit next-day-submit" onclick="submitCaptureForDay('next')">添加</button>
+            </div>
+            <div class="split-time-row">
+              <span class="split-time-label">⏱</span>
+              <input class="split-time-input" id="capture-time-next" type="number" min="1" placeholder="/" />
+              <span class="split-time-unit">分钟</span>
+            </div>
+          </div>
+          <div id="next-tasks-list"></div>
+        </div>
+      </div>
+
+      <!-- single-day view (default) -->
+      <div id="single-day-view">
+        <div class="capture-box">
+          <textarea class="capture-input" id="capture-input" placeholder="记一件事… 支持"明天""后天""下周一"等" rows="1" oninput="onCaptureInput(this)"></textarea>
+          <div id="date-preview" style="padding:0 12px 4px"></div>
+          <div class="capture-footer">
+            <div class="capture-tags" id="capture-tags"></div>
+            <button class="capture-submit" onclick="submitCapture()">添加</button>
+          </div>
+          <div class="capture-time-row">
+            <span class="capture-time-label">⏱ 预计</span>
+            <input class="capture-time-input" id="capture-time" type="number" min="1" placeholder="/" title="预估耗时（分钟）" />
+            <span class="capture-time-unit">分钟</span>
+          </div>
+        </div>
+        <div class="section-label" style="margin-bottom:12px" id="single-section-label">今日待办</div>
+        <div id="today-tasks-list-single"></div>
+      </div>
+
     </div>
   </div>
 
@@ -566,6 +754,28 @@ body::before{content:'';position:fixed;inset:0;background:radial-gradient(ellips
           <button class="settings-btn danger" onclick="clearLocalData()">清除本地缓存</button>
         </div>
       </div>
+      <div class="settings-section">
+        <div class="settings-section-head">
+          <span class="settings-section-icon">🏖️</span>
+          <span class="settings-section-title">节假日设置</span>
+          <span class="settings-section-desc">影响「下一工作日」计算</span>
+        </div>
+        <div class="settings-field">
+          <div class="settings-label">法定节假日 <span class="settings-label-hint">MM/DD 格式，逗号分隔</span></div>
+          <input class="settings-input" id="cfg-holidays" style="font-size:12px" placeholder="1/1, 5/1, 10/1..." />
+        </div>
+        <div class="settings-field">
+          <div class="settings-label">调休工作日 <span class="settings-label-hint">原本周末但需上班</span></div>
+          <input class="settings-input" id="cfg-workends" style="font-size:12px" placeholder="2/8, 9/28..." />
+        </div>
+        <div class="settings-btn-row">
+          <button class="settings-btn primary" onclick="saveHolidayConfig()">保存节假日</button>
+          <button class="settings-btn ghost" onclick="resetHolidayConfig()">恢复默认</button>
+        </div>
+        <div class="settings-info">
+          节假日用于智能计算「下一工作日」。法定节假日默认内置，调休日（如国庆调休上班的周末）需手动添加。
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -583,6 +793,80 @@ var NOTE_CATS=[
   {id:'followup',label:'跟进'},{id:'other',label:'其他'}
 ];
 var SPINE_COLORS=['#eff6ff','#fef9c3','#f0fdf4','#fdf4ff','#fff7ed','#f0f9ff'];
+
+/* ── NEXT WORKDAY LOGIC ── */
+var HOLIDAYS=[];
+var WORK_WEEKENDS=[]; // 调休日：原本周末但需上班
+function loadHolidays(){
+  try{
+    var cfg=JSON.parse(localStorage.getItem('ws_holidays')||'null');
+    if(cfg){HOLIDAYS=cfg.holidays||[];WORK_WEEKENDS=cfg.workWeekends||[];}
+    else HOLIDAYS=[
+      '1/1','1/2','1/3','2/16','2/17','2/18','2/19','2/20','2/21','2/22','2/23','2/24',
+      '4/4','4/5','4/6','5/1','5/2','5/3','5/4','5/5','6/1','6/2','6/3',
+      '10/1','10/2','10/3','10/4','10/5','10/6','10/7','10/8'
+    ];
+  }catch(e){HOLIDAYS=[];}
+}
+loadHolidays();
+
+function dateKey(d){
+  return(d.getMonth()+1)+'/'+d.getDate();
+}
+function dateLabel(d){
+  var weekdays=['周日','周一','周二','周三','周四','周五','周六'];
+  return(d.getMonth()+1)+'/'+d.getDate()+' '+weekdays[d.getDay()];
+}
+function isHoliday(d){
+  return HOLIDAYS.indexOf(dateKey(d))!==-1;
+}
+function isWorkday(d){
+  return WORK_WEEKENDS.indexOf(dateKey(d))!==-1;
+}
+function isWeekend(d){
+  var wd=d.getDay();return wd===0||wd===6;
+}
+function isWorkdayOrWeekend(d){
+  // 调休的周末 = 工作日
+  return isWorkday(d)||(!isWeekend(d)&&!isHoliday(d));
+}
+function getNextWorkday(fromDate){
+  // fromDate: Date对象
+  var d=new Date(fromDate);
+  d.setDate(d.getDate()+1);
+  for(var i=0;i<90;i++){
+    if(isWorkdayOrWeekend(d))return new Date(d);
+    d.setDate(d.getDate()+1);
+  }
+  return new Date(d); // fallback
+}
+function getNextWorkdayLabel(){
+  var today=new Date();
+  var nwd=getNextWorkday(today);
+  var daysDiff=Math.round((nwd-today)/(1000*60*60*24));
+  if(daysDiff===1)return{label:'明天',date:dateLabel(nwd),dateStr:dateKey(nwd),hint:'明天'};
+  if(daysDiff>1){
+    return{label:'下一工作日',date:dateLabel(nwd),dateStr:dateKey(nwd),hint:'跳过'+daysDiff+'天'};
+  }
+  return null;
+}
+
+function getPrevWorkday(fromDate){
+  var d=new Date(fromDate);
+  d.setDate(d.getDate()-1);
+  for(var i=0;i<90;i++){
+    if(isWorkdayOrWeekend(d))return new Date(d);
+    d.setDate(d.getDate()-1);
+  }
+  return new Date(d);
+}
+function getPrevWorkdayLabel(){
+  var today=new Date();
+  var pwd=getPrevWorkday(today);
+  var daysDiff=Math.round((today-pwd)/(1000*60*60*24));
+  if(daysDiff===1)return{label:'昨天',date:dateLabel(pwd),dateStr:dateKey(pwd),hint:''};
+  return{label:'上一工作日',date:dateLabel(pwd),dateStr:dateKey(pwd),hint:'上 '+daysDiff+' 天前'};
+}
 
 /* ── STORAGE ── */
 function getCfg(){try{return JSON.parse(localStorage.getItem('ws_cfg')||'{}');}catch(e){return {};}}
@@ -684,7 +968,7 @@ function todayStr(){var n=new Date();return pad(n.getMonth()+1)+'/'+pad(n.getDat
 function nowStr(){var n=new Date();return pad(n.getMonth()+1)+'/'+pad(n.getDate())+' '+pad(n.getHours())+':'+pad(n.getMinutes());}
 function toast(msg,dur){var t=eid('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show');},dur||1800);}
 function autoResize(el){el.style.height='auto';el.style.height=Math.min(el.scrollHeight,120)+'px';}
-function renderAll(){renderGreeting();renderCaptureTags();renderTodayTasks();renderAllTasks();renderNotes();renderReviewPage();renderBooks();updateBadge();}
+function renderAll(){renderGreeting();renderCaptureTags();renderTodayTasks();renderAllTasks();renderNotes();renderReviewPage();renderBooks();renderSplitDayTasks();renderTriDayTasks();updateBadge();}
 
 /* ── TIME PARSING ── */
 function parseNaturalDate(text){
@@ -721,9 +1005,278 @@ function init(){
 
 function renderGreeting(){
   var h=new Date().getHours();
-  eid('greeting-text').textContent=h<12?'早上好，今天做什么？':h<18?'下午好，继续加油':h<22?'晚上好，今日复盘了吗？':'夜深了，别忘休息';
+  var greeting=h<12?'早上好，今天做什么？':h<18?'下午好，继续加油':h<22?'晚上好，今日复盘了吗？':'夜深了，别忘休息';
+  eid('greeting-text').textContent=greeting;
   var n=S.tasks.filter(function(t){return t.date===todayStr()&&!t.done;});
   eid('greeting-sub').textContent=n.length?'今日还有 '+n.length+' 件待办':'今日暂无待办，放空一下 ☁️';
+}
+
+/* ── SPLIT DUAL-DAY VIEW ── */
+var _splitLayout='single'; // 'single' | 'split' | 'tri'
+var _splitSelectedTag={today:null,next:null,'today-tri':null,'next-tri':null};
+var _splitParsedDate={today:null,next:null,'today-tri':null,'next-tri':null};
+
+function setTodayLayout(layout){
+  _splitLayout=layout;
+  var triEl=eid('tri-day-view');
+  var splitEl=eid('split-day-view');
+  var singleEl=eid('single-day-view');
+  var btnTri=eid('btn-tri-view');
+  var btnSplit=eid('btn-split-view');
+  var btnSingle=eid('btn-single-view');
+  // hide all first
+  if(triEl)triEl.style.display='none';
+  if(splitEl)splitEl.style.display='none';
+  if(singleEl)singleEl.style.display='none';
+  [btnTri,btnSplit,btnSingle].forEach(function(b){if(b)b.classList.remove('active');});
+  if(layout==='tri'){
+    if(triEl)triEl.style.display='flex';
+    if(btnTri)btnTri.classList.add('active');
+    initTriDayView();
+  } else if(layout==='split'){
+    if(splitEl)splitEl.style.display='flex';
+    if(btnSplit)btnSplit.classList.add('active');
+    initSplitDayView();
+  } else {
+    if(singleEl)singleEl.style.display='block';
+    if(btnSingle)btnSingle.classList.add('active');
+    renderSingleDayView();
+  }
+}
+
+function initSplitDayView(){
+  var nwl=getNextWorkdayLabel();
+  if(nwl){
+    var labelEl=eid('next-day-label');
+    if(labelEl)labelEl.textContent=nwl.label;
+    var pillEl=eid('next-day-pill');
+    if(pillEl)pillEl.textContent=nwl.date;
+    var hintEl=eid('next-hint');
+    if(hintEl){
+      var nwd=getNextWorkday(new Date());
+      var diff=Math.round((nwd-new Date())/(1000*60*60*24));
+      hintEl.textContent=diff>1?'跳过了 '+diff+' 天':'';
+    }
+    _nextDayDate=nwl.dateStr;
+  }
+  var inp=eid('capture-input-next');
+  if(inp&&nwl)inp.placeholder='提前规划 '+nwl.date+' …';
+  renderSplitTags();
+  renderSplitDayTasks();
+}
+
+function initTriDayView(){
+  var nwl=getNextWorkdayLabel();
+  var pwl=getPrevWorkdayLabel();
+  // Prev
+  if(pwl){
+    var prevLabel=eid('prev-day-label');
+    if(prevLabel)prevLabel.textContent=pwl.label;
+    var prevHint=eid('prev-hint');
+    if(prevHint)prevHint.textContent=pwl.date+(pwl.hint?' · '+pwl.hint:'');
+  }
+  // Next
+  if(nwl){
+    var nextLabel=eid('next-day-label-tri');
+    if(nextLabel)nextLabel.textContent=nwl.label;
+    var nextPill=eid('next-day-pill-tri');
+    if(nextPill)nextPill.textContent=nwl.date;
+    var nextHint=eid('next-hint-tri');
+    if(nextHint){
+      var nwd=getNextWorkday(new Date());
+      var diff=Math.round((nwd-new Date())/(1000*60*60*24));
+      nextHint.textContent=diff>1?'跳过了 '+diff+' 天':'';
+    }
+  }
+  var inp=eid('capture-input-next-tri');
+  if(inp&&nwl)inp.placeholder='提前规划 '+nwl.date+' …';
+  renderTriTags();
+  renderTriDayTasks();
+}
+
+function renderSplitTags(){
+  ['today','next'].forEach(function(day){
+    var el=eid('split-tags-'+day);
+    if(!el)return;
+    el.innerHTML=TAGS.map(function(t){
+      return'<button class="split-capture-tag'+(day==='next'?' next-day-tag':'')+' '+(_splitSelectedTag[day]===t?'selected':'')+'" onclick="selectSplitTag(\''+day+'\',\''+t+'\')">'+t+'</button>';
+    }).join('');
+  });
+}
+function renderTriTags(){
+  ['today-tri','next-tri'].forEach(function(day){
+    var el=eid('split-tags-'+day);
+    if(!el)return;
+    el.innerHTML=TAGS.map(function(t){
+      return'<button class="split-capture-tag'+(day==='next-tri'?' next-day-tag':'')+' '+(_splitSelectedTag[day]===t?'selected':'')+'" onclick="selectSplitTag(\''+day+'\',\''+t+'\')">'+t+'</button>';
+    }).join('');
+  });
+}
+
+function selectSplitTag(day,tag){
+  _splitSelectedTag[day]=_splitSelectedTag[day]===tag?null:tag;
+  if(_splitLayout==='tri')renderTriTags(); else renderSplitTags();
+}
+
+function onSplitCaptureInput(el,day){
+  el.style.height='auto';
+  el.style.height=Math.min(el.scrollHeight,96)+'px';
+  if(day==='today'||day==='today-tri'){
+    _splitParsedDate[day]=parseNaturalDate(el.value);
+  } else {
+    _splitParsedDate[day]=null;
+  }
+}
+
+function submitCaptureForDay(day){
+  var inp=eid('capture-input-'+day);
+  if(!inp)return;
+  var raw=inp.value.trim();
+  if(!raw)return;
+
+  var date, title;
+  var isToday=(day==='today'||day==='today-tri');
+  var isNext=(day==='next'||day==='next-tri');
+  if(isToday){
+    date=_splitParsedDate[day]||todayStr();
+    title=_splitParsedDate[day]?stripDateKW(raw)||raw:raw;
+  } else {
+    var nwl=getNextWorkdayLabel();
+    date=nwl?nwl.dateStr:todayStr();
+    title=stripDateKW(raw)||raw;
+  }
+
+  var urls=title.match(URL_RE)||[];
+  var cleanTitle=urls.length?title.replace(URL_RE,'').trim():title;
+  var links=urls.map(function(u){return{url:u,text:u};});
+  var timeInp=eid('capture-time-'+day);
+  var estMin=timeInp&&timeInp.value.trim()!==''?parseInt(timeInp.value):null;
+  var task={id:uid(),title:cleanTitle||title,tag:_splitSelectedTag[day],date:date,done:false,created:Date.now()};
+  if(estMin&&estMin>0)task.estMin=estMin;
+  if(links.length)task.links=links;
+  S.tasks.unshift(task);
+  save();
+
+  inp.value='';inp.style.height='auto';
+  if(timeInp)timeInp.value='';
+  _splitSelectedTag[day]=null;_splitParsedDate[day]=null;
+
+  if(_splitLayout==='tri'){renderTriTags();renderTriDayTasks();}
+  else{renderSplitTags();renderSplitDayTasks();}
+  updateBadge();
+  toast(date===todayStr()?'已添加 ✓':'已添加到 '+date+' ✓');
+}
+
+var _nextDayDate=null;
+
+function renderSplitDayTasks(){
+  var todayDate=todayStr();
+  var nwl=getNextWorkdayLabel();
+  var nextDate=nwl?nwl.dateStr:null;
+  _nextDayDate=nextDate;
+
+  var todayTasks=sortTasks(S.tasks.filter(function(t){return t.date===todayDate;}),true);
+  var nextTasks=nextDate?sortTasks(S.tasks.filter(function(t){return t.date===nextDate;}),false):[];
+
+  var todayUndone=todayTasks.filter(function(t){return !t.done;}).length;
+  var todayBadge=eid('today-count-badge');
+  if(todayBadge){todayBadge.textContent=todayUndone;todayBadge.style.display=todayUndone>0?'inline-flex':'none';}
+  var todayHint=eid('today-hint');
+  if(todayHint){todayHint.textContent=todayTasks.filter(function(t){return t.done;}).length>0?'· '+todayTasks.filter(function(t){return t.done;}).length+' 已完成':'';}
+
+  var nextBadge=eid('next-count-badge');
+  if(nextBadge){nextBadge.textContent=nextTasks.filter(function(t){return !t.done;}).length;nextBadge.style.display=nextTasks.length>0?'inline-flex':'none';}
+
+  var todayEl=eid('today-tasks-list');
+  if(todayEl)todayEl.innerHTML=todayTasks.length?todayTasks.map(taskHtml).join(''):'<div class="empty-state" style="padding:24px 12px"><div class="empty-icon">🌿</div><p style="font-size:12px">今天还没有待办</p></div>';
+
+  var nextEl=eid('next-tasks-list');
+  if(nextEl)nextEl.innerHTML=nextTasks.length?nextTasks.map(taskHtml).join(''):'<div class="empty-state" style="padding:24px 12px"><div class="empty-icon" style="font-size:28px">🌱</div><p style="font-size:12px">下一工作日暂无待办<br><span style="color:var(--text4)">可以提前规划～</span></p></div>';
+}
+
+function renderTriDayTasks(){
+  var todayDate=todayStr();
+  var nwl=getNextWorkdayLabel();
+  var pwl=getPrevWorkdayLabel();
+  var nextDate=nwl?nwl.dateStr:null;
+  var prevDate=pwl?pwl.dateStr:null;
+
+  var todayTasks=sortTasks(S.tasks.filter(function(t){return t.date===todayDate;}),true);
+  var nextTasks=nextDate?sortTasks(S.tasks.filter(function(t){return t.date===nextDate;}),false):[];
+  var prevTasks=prevDate?sortTasks(S.tasks.filter(function(t){return t.date===prevDate;}),false):[];
+
+  // Prev
+  var prevBadge=eid('prev-count-badge');
+  if(prevBadge){prevBadge.textContent=prevTasks.length;prevBadge.style.display=prevTasks.length>0?'inline-flex':'none';}
+  var prevEl=eid('prev-tasks-list');
+  if(prevEl)prevEl.innerHTML=prevTasks.length?prevTasks.map(function(t){return prevTaskHtml(t);}).join(''):'<div class="empty-state" style="padding:20px 8px"><div class="empty-icon" style="font-size:24px">☁️</div><p style="font-size:12px">昨日无记录</p></div>';
+
+  // Today (tri)
+  var todayUndone=todayTasks.filter(function(t){return !t.done;}).length;
+  var todayBadgeTri=eid('today-count-badge-tri');
+  if(todayBadgeTri){todayBadgeTri.textContent=todayUndone;todayBadgeTri.style.display=todayUndone>0?'inline-flex':'none';}
+  var todayHintTri=eid('today-hint-tri');
+  if(todayHintTri)todayHintTri.textContent=todayTasks.filter(function(t){return t.done;}).length>0?'· '+todayTasks.filter(function(t){return t.done;}).length+' 已完成':'';
+  var todayElTri=eid('today-tasks-list-tri');
+  if(todayElTri)todayElTri.innerHTML=todayTasks.length?todayTasks.map(taskHtml).join(''):'<div class="empty-state" style="padding:24px 12px"><div class="empty-icon">🌿</div><p style="font-size:12px">今天还没有待办</p></div>';
+
+  // Next (tri)
+  var nextBadgeTri=eid('next-count-badge-tri');
+  if(nextBadgeTri){nextBadgeTri.textContent=nextTasks.filter(function(t){return !t.done;}).length;nextBadgeTri.style.display=nextTasks.length>0?'inline-flex':'none';}
+  var nextElTri=eid('next-tasks-list-tri');
+  if(nextElTri)nextElTri.innerHTML=nextTasks.length?nextTasks.map(taskHtml).join(''):'<div class="empty-state" style="padding:24px 12px"><div class="empty-icon" style="font-size:28px">🌱</div><p style="font-size:12px">下一工作日暂无待办</p></div>';
+}
+
+function prevTaskHtml(t){
+  var doneClass=t.done?' done':'';
+  var tagHtml=t.tag?'<span class="task-tag">'+esc(t.tag)+'</span>':'';
+  var timeHtml=t.estMin?'<span class="task-time-badge has-time">⏱ '+t.estMin+'min</span>':'';
+  return'<div class="task-item'+doneClass+' prev-task-item" style="animation-delay:.02s">'+
+    '<div class="task-check" onclick="toggleTask(\''+t.id+'\')">'+
+      '<svg width="11" height="9" viewBox="0 0 11 9" fill="none"><path d="M1 4L4 7.5L10 1" stroke="white" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
+    '</div>'+
+    '<div class="task-body">'+
+      '<span class="task-title">'+esc(t.title)+'</span>'+
+      '<div class="task-meta">'+tagHtml+timeHtml+'</div>'+
+      '<div class="prev-task-actions">'+
+        '<button class="prev-task-btn copy" onclick="prevTaskCopyToday(\''+t.id+'\')">📋 复制</button>'+
+        '<button class="prev-task-btn move" onclick="prevTaskMoveToday(\''+t.id+'\')">→ 移至今天</button>'+
+      '</div>'+
+    '</div>'+
+  '</div>';
+}
+
+function prevTaskCopyToday(id){
+  var src=S.tasks.find(function(t){return t.id===id;});
+  if(!src)return;
+  var copy={id:uid(),title:src.title,tag:src.tag,date:todayStr(),done:false,created:Date.now()};
+  if(src.estMin)copy.estMin=src.estMin;
+  if(src.links)copy.links=src.links;
+  S.tasks.unshift(copy);
+  save();
+  renderTriDayTasks();
+  renderAllTasks();
+  updateBadge();
+  toast('已复制到今天 ✓');
+}
+
+function prevTaskMoveToday(id){
+  var idx=S.tasks.findIndex(function(t){return t.id===id;});
+  if(idx===-1)return;
+  S.tasks[idx].date=todayStr();
+  S.tasks[idx].done=false;
+  save();
+  renderTriDayTasks();
+  renderAllTasks();
+  updateBadge();
+  toast('已移动到今天 ✓');
+}
+
+function renderSingleDayView(){
+  renderCaptureTags();
+  var tasks=sortTasks(S.tasks.filter(function(t){return t.date===todayStr();}),true);
+  var el=eid('today-tasks-list-single');
+  if(el)el.innerHTML=tasks.length?tasks.map(taskHtml).join(''):'<div class="empty-state"><div class="empty-icon">🌿</div><p>今天还没有待办<br>用上面的输入框快速添加</p></div>';
 }
 
 /* ── TAGS ── */
@@ -748,7 +1301,7 @@ function submitCapture(){
   S.tasks.unshift(task);
   save();inp.value='';inp.style.height='auto';eid('date-preview').innerHTML='';_parsedDate=null;S.selectedTag=null;
   if(timeInp)timeInp.value='';
-  renderCaptureTags();renderTodayTasks();renderAllTasks();renderGreeting();updateBadge();
+  renderCaptureTags();renderTodayTasks();renderAllTasks();renderGreeting();renderSplitDayTasks();renderTriDayTasks();updateBadge();
   if(links.length)toast('已添加，检测到链接，可进编辑页修改显示文字');
   else toast(date===todayStr()?'已添加到今日 ✓':'已添加到 '+date+' ✓');
 }
@@ -1510,11 +2063,44 @@ function goToTask(id){closeSearch();switchTab('tasks');setTimeout(function(){var
 function goToNote(id){closeSearch();switchTab('notes');setTimeout(function(){openNoteDetail(id);},200);}
 function goToBook(id){closeSearch();switchTab('books');setTimeout(function(){openBook(id);},200);}
 
+/* ── HOLIDAY CONFIG ── */
+function saveHolidayConfig(){
+  var hStr=(eid('cfg-holidays')||{}).value||'';
+  var wStr=(eid('cfg-workends')||{}).value||'';
+  var holidays=hStr.split(',').map(function(s){return s.trim();}).filter(function(s){return s;});
+  var workEnds=wStr.split(',').map(function(s){return s.trim();}).filter(function(s){return s;});
+  localStorage.setItem('ws_holidays',JSON.stringify({holidays:holidays,workWeekends:workEnds}));
+  HOLIDAYS=holidays;WORK_WEEKENDS=workEnds;
+  // Refresh active layout
+  if(_splitLayout==='tri')initTriDayView();
+  else if(_splitLayout==='split')initSplitDayView();
+  toast('节假日配置已保存 ✓');
+}
+function resetHolidayConfig(){
+  localStorage.removeItem('ws_holidays');
+  loadHolidays();
+  var defHolidays=HOLIDAYS.join(', ');
+  var inp=eid('cfg-holidays');
+  var inp2=eid('cfg-workends');
+  if(inp)inp.value=defHolidays;
+  if(inp2)inp2.value='';
+  if(_splitLayout==='tri')initTriDayView();
+  else if(_splitLayout==='split')initSplitDayView();
+  toast('已恢复默认节假日 ✓');
+}
+
 /* ── SETTINGS ── */
 function openSettings(){
   var c=getCfg();
   eid('cfg-owner').value=c.owner||'';eid('cfg-repo').value=c.repo||'';eid('cfg-token').value=c.token||'';
   if(isConfigured())setSyncStatus('','已配置');else setSyncStatus('','尚未配置 GitHub 同步');
+  // Load holiday config
+  var hStr=HOLIDAYS.join(', ');
+  var wStr=WORK_WEEKENDS.join(', ');
+  var hInp=eid('cfg-holidays');
+  var wInp=eid('cfg-workends');
+  if(hInp)hInp.value=hStr;
+  if(wInp)wInp.value=wStr;
   eid('settings-overlay').style.display='flex';
 }
 function closeSettings(){eid('settings-overlay').style.display='none';}
@@ -1567,7 +2153,13 @@ function switchTab(tab){
   var sb=eid('sidebar-'+tab);if(sb)sb.classList.add('active');
   var dt=eid('desktop-page-title');if(dt)dt.textContent=PAGE_TITLES[tab]||'';
   S.currentTab=tab;
-  if(tab==='today'){renderTodayTasks();renderGreeting();}
+  if(tab==='today'){
+    renderGreeting();
+    // Refresh whichever layout is currently active
+    if(_splitLayout==='tri')renderTriDayTasks();
+    else if(_splitLayout==='split')renderSplitDayTasks();
+    else renderSingleDayView();
+  }
   if(tab==='tasks')renderAllTasks();
   if(tab==='notes')renderNotes();
   if(tab==='review')renderReviewPage();
