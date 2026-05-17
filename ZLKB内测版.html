@@ -59,8 +59,6 @@
             --reset-btn-text: #cbd5e1;
             --switch-btn-bg: #2d3a5e;
             --progress-bg: #334155;
-            --sidebar-width: 210px;
-            --card-radius: 18px;
         }
         html, body { height: 100%; margin: 0; }
         body {
@@ -98,8 +96,7 @@
         .top-bar {
             display: flex; justify-content: space-between; align-items: center;
             background: var(--header-bg); border-radius: 14px; padding: 9px 18px; margin-bottom: 10px;
-            box-shadow: var(--shadow); flex-wrap: wrap; gap: 10px;
-            border: 1px solid var(--border-color);
+            box-shadow: var(--shadow); flex-wrap: wrap; gap: 10px; border: 1px solid var(--border-color);
         }
         .sticky-filter-bar {
             position: sticky; top: 0; z-index: 100;
@@ -112,10 +109,10 @@
         .sticky-filter-inner {
             display: flex; align-items: center; gap: 8px; flex-wrap: nowrap; overflow-x: auto;
             background: var(--bg-card);
-            border-radius: 11px;
-            padding: 6px 14px;
+            border-radius: 12px;
+            padding: 5px 12px;
             border: 1px solid var(--border-color);
-            box-shadow: 0 1px 8px rgba(30,58,120,0.06);
+            box-shadow: 0 1px 6px rgba(0,0,0,0.05);
             scrollbar-width: none;
         }
         .sticky-filter-inner::-webkit-scrollbar { display: none; }
@@ -131,13 +128,11 @@
         .theme-btn, .mode-btn, .upload-btn, .export-btn {
             background: var(--kpi-bg); border: 1px solid var(--border-color); border-radius: 9px;
             padding: 6px 13px; cursor: pointer; font-size: 12px; font-weight: 500;
-            display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s; color: var(--text-primary);
-            white-space: nowrap;
+            display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s; color: var(--text-primary); white-space: nowrap;
         }
-        .theme-btn:hover { background: var(--reset-btn-hover); }
         .mode-btn.active { background: var(--btn-bg); color: white; border-color: var(--btn-bg); }
-        .upload-btn { background: var(--btn-bg); color: white; border: none; box-shadow: 0 2px 8px rgba(59,130,246,0.25); }
-        .upload-btn:hover { background: var(--btn-hover); transform: translateY(-1px); }
+        .upload-btn { background: var(--btn-bg); color: white; border: none; box-shadow: 0 2px 6px rgba(59,130,246,0.2); }
+        .upload-btn:hover { background: var(--btn-hover); transform: translateY(-2px); }
         .export-btn { background: #10b981; color: white; border: none; }
         .export-btn:hover { background: #059669; }
         .right-buttons { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
@@ -165,33 +160,27 @@
         .reset-filter-btn:hover { background: var(--reset-btn-hover); transform: scale(0.97); }
         .card {
             background: var(--bg-card); border-radius: var(--card-radius); box-shadow: var(--shadow);
-            padding: 20px 24px; margin-bottom: 18px; border: 1px solid var(--border-color);
-            transition: box-shadow 0.2s;
+            padding: 20px 24px; margin-bottom: 18px; border: 1px solid var(--border-color); transition: box-shadow 0.2s;
         }
-        .card:hover { box-shadow: var(--shadow-card); }
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
-        .card-title { font-size: 1.05rem; font-weight: 700; border-left: 4px solid #3b82f6; border-radius: 0; padding-left: 13px; color: var(--text-primary); letter-spacing: -0.01em; }
+        .card-title { font-size: 1.05rem; font-weight: 700; border-left: 4px solid #3b82f6; border-radius: 0; padding-left: 13px; color: var(--text-primary); }
         .switch-group { display: flex; gap: 12px; margin-bottom: 18px; }
         .switch-btn {
             background: var(--switch-btn-bg); border: 1px solid var(--border-color); border-radius: 40px;
-            padding: 6px 18px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+            padding: 6px 20px; font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
             color: var(--text-primary);
         }
-        .switch-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; box-shadow:0 2px 8px rgba(59,130,246,0.2); }
+        .switch-btn.active { background: #3b82f6; color: white; border-color: #3b82f6; }
         .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 12px; margin-bottom: 8px; }
         .stats-item {
             background: var(--kpi-bg); border-radius: 15px; padding: 16px 14px 14px; text-align: left;
-            border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s;
-            position: relative; overflow: hidden;
+            border: 1px solid var(--border-color); cursor: pointer; transition: all 0.2s; position: relative; overflow: hidden;
         }
-        .stats-item::before {
-            content: ''; position: absolute; top: 0; left: 0;
-            width: 3px; height: 100%; background: #3b82f6; opacity: 0.5;
-        }
+        .stats-item::before { content:""; position:absolute; top:0; left:0; width:3px; height:100%; background:#3b82f6; opacity:0.5; }
         .stats-item:hover { transform: translateY(-3px); border-color: #3b82f6; box-shadow: 0 8px 24px rgba(59,130,246,0.13); }
-        .stats-item:hover::before { opacity: 1; }
+        .stats-item:hover::before { opacity:1; }
         .stats-number { font-size: 24px; font-weight: 800; color: #3b82f6; line-height: 1.15; margin: 5px 0 6px; }
-        .stats-sub { font-size: 11px; font-weight: 500; color: var(--text-secondary); }
+        .stats-sub { font-size: 10px; font-weight: 600; color: var(--text-secondary); margin-top: 2px; }
         .stats-label { font-size: 11px; color: var(--text-secondary); font-weight: 500; margin-bottom: 1px; }
         .trend-chart-box { width: 100%; height: 380px; margin-top: 12px; }
         .insight-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; margin-top: 16px; align-items: start; }
@@ -423,27 +412,27 @@
         /* ── 品类按钮 ── */
         .cat-tabs { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px; }
         .cat-tab {
-            padding:4px 13px; border-radius:20px; font-size:11px; font-weight:600;
+            padding:4px 14px; border-radius:20px; font-size:11px; font-weight:600;
             border:1px solid var(--border-color); background:var(--kpi-bg);
-            color:var(--text-secondary); cursor:pointer; transition:all 0.15s; white-space:nowrap;
+            color:var(--text-secondary); cursor:pointer; transition:all 0.15s;
         }
-        .cat-tab:hover { border-color:var(--btn-bg); color:var(--btn-bg); background:#eff6ff; }
+        .cat-tab:hover { border-color:var(--btn-bg); color:var(--btn-bg); }
         .cat-tab.active { background:var(--btn-bg); color:white; border-color:var(--btn-bg); box-shadow:0 2px 6px rgba(59,130,246,0.25); }
         /* ── 新排行榜 ── */
         .rank-board { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
         .rank-col-title {
             font-size:11px; font-weight:700; color:var(--text-secondary);
-            padding:4px 0 9px; border-bottom:2px solid var(--btn-bg);
+            padding:6px 0 8px; border-bottom:2px solid var(--btn-bg);
             margin-bottom:10px; letter-spacing:0.5px;
         }
         .rank-row {
-            display:flex; align-items:center; gap:8px;
+            display:flex; align-items:center; gap:6px;
             padding:8px 12px; border-radius:10px;
             background:var(--kpi-bg); margin-bottom:6px;
             border:1px solid var(--border-color); cursor:pointer;
             transition:all 0.15s;
         }
-        .rank-row:hover { border-color:var(--btn-bg); box-shadow:0 3px 10px rgba(37,99,235,0.12); background:#f0f6ff; }
+        .rank-row:hover { border-color:var(--btn-bg); box-shadow:0 2px 8px rgba(37,99,235,0.10); }
         .rank-no {
             width:20px; height:20px; border-radius:6px; flex-shrink:0;
             display:flex; align-items:center; justify-content:center;
@@ -477,24 +466,16 @@
         }
         .zb-logo { padding: 17px 16px 13px; border-bottom: 1px solid var(--border-color); }
         .zb-logo .zb-brand { font-size: 14px; font-weight: 800; color: var(--btn-bg); }
-        .zb-logo .zb-sub { font-size: 10.5px; color: var(--text-secondary); margin-top: 3px; }
-        .zb-nav-lbl {
-            padding: 14px 16px 4px; font-size: 10px; color: var(--text-secondary);
-            letter-spacing: 1.2px; font-weight: 700; text-transform: uppercase;
-        }
+        .zb-logo .zb-sub { font-size: 10px; color: var(--text-secondary); margin-top: 2px; }
+        .zb-nav-lbl { padding: 14px 16px 4px; font-size: 10px; color: var(--text-secondary); letter-spacing: 1.2px; font-weight: 700; text-transform: uppercase; }
         .zb-nav-item {
-            display: flex; align-items: center; gap: 9px;
-            padding: 9px 12px; margin: 1px 7px; border-radius: 10px;
-            cursor: pointer; font-size: 13px;
+            display: flex; align-items: center; gap: 8px;
+            padding: 9px 12px; margin: 1px 7px; border-radius: 10px; cursor: pointer; font-size: 13px;
             color: var(--text-secondary); border-left: 3px solid transparent;
             transition: all 0.15s;
         }
-        .zb-nav-item:hover { background: rgba(59,130,246,0.07); color: var(--btn-bg); }
-        .zb-nav-item.active {
-            background: rgba(59,130,246,0.1); color: var(--btn-bg);
-            border-left-color: var(--btn-bg); font-weight: 700;
-            box-shadow: 0 2px 8px rgba(59,130,246,0.08);
-        }
+        .zb-nav-item:hover { background: rgba(59,130,246,0.06); color: var(--btn-bg); }
+        .zb-nav-item.active { background: rgba(59,130,246,0.1); color: var(--btn-bg); border-left-color: var(--btn-bg); font-weight: 700; box-shadow: 0 2px 8px rgba(59,130,246,0.08); }
         .zb-sidebar-footer { margin-top: auto; border-top: 1px solid var(--border-color); }
         .zb-user-block { display:flex; align-items:center; gap:10px; padding:12px 14px; cursor:pointer; transition:background 0.15s; }
         .zb-user-block:hover { background:rgba(59,130,246,0.05); }
@@ -508,32 +489,21 @@
         .zb-login-btn { width:100%; margin-top:6px; height:28px; background:var(--btn-bg); color:#fff; border:none; border-radius:8px; font-size:11px; font-weight:600; cursor:pointer; transition:background 0.15s; }
         .zb-login-btn:hover { background:var(--btn-hover); }
         .zb-login-hint { font-size:10px; color:#ef4444; min-height:14px; margin-top:4px; }
-        #zb-main { flex: 1; overflow-y: auto; min-width: 0; padding: 18px 22px; }
+        #zb-main { flex: 1; overflow-y: auto; min-width: 0; padding: 20px 24px; }
         /* 页面切换 */
         .zb-page { display: none; }
         .zb-page.active { display: block; }
     
-        /* ── 页面大标题行 ── */
-        .zb-page-header {
-            display: flex; align-items: flex-end; justify-content: space-between;
-            margin-bottom: 10px; padding: 2px 4px;
-        }
-        .zb-page-header-left h1 {
-            font-size: 1.6rem; font-weight: 800; color: var(--text-primary);
-            letter-spacing: -0.03em; line-height: 1.15;
-        }
-        .zb-page-header-sub {
-            font-size: 12px; color: var(--text-secondary); margin-top: 4px;
-        }
-        .zb-page-header-sub .hl { color: var(--btn-bg); font-weight: 600; }
-        
-        /* ── KPI 较昨日标注 ── */
-        .stats-yest {
-            font-size: 11px; font-weight: 600; margin-top: 5px;
-        }
-        .stats-yest.up   { color: #dc2626; }
-        .stats-yest.dn   { color: #16a34a; }
-        .stats-yest.flat { color: var(--text-secondary); font-weight: 400; }
+        /* ── KPI 较昨日 ── */
+        .stats-yest { font-size:11px; font-weight:600; margin-top:4px; }
+        .stats-yest.up { color:#dc2626; }
+        .stats-yest.dn { color:#16a34a; }
+        .stats-yest.flat { color:var(--text-secondary); font-weight:400; }
+        /* ── 页面大标题 ── */
+        .zb-page-header { margin-bottom:10px; padding:4px 2px; }
+        .zb-page-header h1 { font-size:1.7rem; font-weight:800; color:var(--text-primary); letter-spacing:-0.03em; }
+        .zb-page-header-sub { font-size:12px; color:var(--text-secondary); margin-top:4px; }
+        .zb-page-header-sub .hl { color:var(--btn-bg); font-weight:600; }
         </style>
 </head>
 <body>
@@ -598,14 +568,9 @@
 
     <div id="mainContent" class="main-content">
         <div class="container">
-            <!-- 页面大标题行 -->
             <div class="zb-page-header">
-                <div class="zb-page-header-left">
-                    <h1 id="zbPageTitle">质量数据总览</h1>
-                    <div class="zb-page-header-sub" id="zbPageSubTitle">
-                        <span class="hl">-- 请选择日期和品类 --</span>
-                    </div>
-                </div>
+                <h1 id="zbPageTitle">质量数据总览</h1>
+                <div class="zb-page-header-sub" id="zbPageSubTitle">-- 请选择日期和品类 --</div>
             </div>
             <div class="top-bar">
                 <div class="marquee-wrap">
@@ -989,26 +954,18 @@
                 return true;
             }
 
-            // ── 页面大标题行更新 ──
+            function zbOpenSettings(){ zbShowToast('⚙️ 设置页面开发中，敬请期待'); }
             function updatePageHeader() {
-                var titleEl = document.getElementById('zbPageTitle');
-                var subEl   = document.getElementById('zbPageSubTitle');
-                if (!titleEl || !subEl) return;
-                // 当前页名
-                var pageNames = { overview:'质量数据总览', site:'站点详情', person:'质检人详情' };
-                var curPage   = typeof zbCurrentPage !== 'undefined' ? zbCurrentPage : 'overview';
-                titleEl.textContent = pageNames[curPage] || '质量数据总览';
-                // 副标题：日期 + 品类 + 站点类型
-                var startEl = document.getElementById('startDateFilter');
-                var endEl   = document.getElementById('endDateFilter');
-                var startStr = startEl && startEl.value ? startEl.value.replace(/^\d{4}-/, '').replace('-', '/') : '--';
-                var endStr   = endEl   && endEl.value   ? endEl.value.replace(/^\d{4}-/, '').replace('-', '/') : '--';
-                var catStr  = typeof currentCat !== 'undefined' ? currentCat : '--';
-                var siteMap = { ALL:'全部站点', DW:'大仓', ZX:'中心仓' };
-                var siteStr = siteMap[typeof currentSiteType !== 'undefined' ? currentSiteType : 'ALL'] || '全部站点';
-                subEl.innerHTML = startStr + ' — ' + endStr
-                    + ' &nbsp;·&nbsp; 品类：<span class="hl">' + catStr + '</span>'
-                    + ' &nbsp;·&nbsp; 站点：<span class="hl">' + siteStr + '</span>';
+                var el1=document.getElementById('zbPageTitle'), el2=document.getElementById('zbPageSubTitle');
+                if(!el1||!el2) return;
+                var names={overview:'质量数据总览',site:'站点详情',person:'质检人详情'};
+                el1.textContent=names[typeof zbCurrentPage!=='undefined'?zbCurrentPage:'overview']||'质量数据总览';
+                var s1=startDateFilter&&startDateFilter.value?startDateFilter.value.replace(/^\d{4}-/,'').replace('-','/') :'--';
+                var s2=endDateFilter&&endDateFilter.value?endDateFilter.value.replace(/^\d{4}-/,'').replace('-','/') :'--';
+                var cat=typeof currentCat!=='undefined'?currentCat:'--';
+                var siteMap={ALL:'全部站点',DW:'大仓',ZX:'中心仓'};
+                var site=siteMap[typeof currentSiteType!=='undefined'?currentSiteType:'ALL']||'全部站点';
+                el2.innerHTML=s1+' — '+s2+' &nbsp;·&nbsp; 品类：<span class="hl">'+cat+'</span> &nbsp;·&nbsp; 站点：<span class="hl">'+site+'</span>';
             }
             function getFilterHash() {
                 const pkw = document.getElementById('personKeyword') ? document.getElementById('personKeyword').value : '';
@@ -1078,11 +1035,10 @@
                     return { totalChecks, uniqueCodesObj, uniqueCodesSubj, totalDiff, execObjTotal };
                 }
 
-                // 计算「较昨日」：取筛选上限日的前一天数据
-                function calcYesterdayKpi(allDiff, allSum) {
+                // 计算「较昨日」
+                function calcYestKpi(allDiff, allSum) {
                     var endVal = endDateFilter && endDateFilter.value ? endDateFilter.value : '';
                     if (!endVal) return null;
-                    // 前一天
                     var d = new Date(endVal); d.setDate(d.getDate() - 1);
                     var yDate = d.toISOString().slice(0,10);
                     var yDiff = allDiff.filter(function(r){ return r.date === yDate; });
@@ -1091,34 +1047,29 @@
                     var tc = ySum.reduce(function(a,r){ return a+(r.totalChecks||0); }, 0);
                     var obj  = new Set(yDiff.filter(function(d){ return isObjective(d.category); }).map(function(d){ return d.code; })).size;
                     var subj = new Set(yDiff.filter(function(d){ return isSubjective(d.category); }).map(function(d){ return d.code; })).size;
-                    var execSet = new Set(); yDiff.forEach(function(d){ if(isObjective(d.category)&&isExecutionIssue(d.judgedIssueType)&&d.code) execSet.add(d.code); });
-                    var exec = execSet.size;
-                    return { totalChecks:tc, objRate:tc?obj/tc:0, subjRate:tc?subj/tc:0, execRate:tc?exec/tc:0, totalChecksRaw:tc };
+                    var execSet = new Set();
+                    yDiff.forEach(function(d){ if(isObjective(d.category)&&isExecutionIssue(d.judgedIssueType)&&d.code) execSet.add(d.code); });
+                    return { tc:tc, oR:tc?obj/tc:0, sR:tc?subj/tc:0, eR:tc?execSet.size/tc:0 };
                 }
-                function fmtYest(cur, yest, isCount) {
-                    if (yest === null || yest === undefined) return '<div class="stats-yest flat">较昨日 —</div>';
-                    var diff = cur - yest;
-                    if (Math.abs(diff) < (isCount ? 0.5 : 0.00005)) return '<div class="stats-yest flat">较昨日 持平</div>';
-                    var up = diff > 0;
-                    var sign = up ? '↑' : '↓';
-                    var cls = up ? 'up' : 'dn';
-                    var txt = isCount ? (up?'+':'')+Math.round(diff) : (up?'+':'')+( diff*100).toFixed(2)+'%';
-                    return '<div class="stats-yest ' + cls + '">' + sign + ' 较昨日 ' + txt + '</div>';
+                function fmtY(cur, yv, isCnt) {
+                    if (yv===null||yv===undefined) return '<div class="stats-yest flat">较昨日 —</div>';
+                    var diff=cur-yv;
+                    if (Math.abs(diff)<(isCnt?0.5:0.00005)) return '<div class="stats-yest flat">较昨日 持平</div>';
+                    var up=diff>0;
+                    var txt=isCnt?(up?'+':'')+Math.round(diff):(up?'+':'')+(diff*100).toFixed(2)+'%';
+                    return '<div class="stats-yest '+(up?'up':'dn')+'">'+(up?'↑':'↓')+' 较昨日 '+txt+'</div>';
                 }
-                const mk = (type, val, label, deviceCount, yesterdayHtml) =>
-                    `<div class="stats-item" data-type="${type}" data-count="${deviceCount||''}"><div class="stats-label">${label}</div><div class="stats-number">${val}</div>${yesterdayHtml||''}</div>`;
+                const mk = (type, val, label, dc, yh) =>
+                    `<div class="stats-item" data-type="${type}" data-count="${dc||''}"><div class="stats-label">${label}</div><div class="stats-number">${val}</div>${yh||''}</div>`;
 
                 function kpiHtml(k, yk) {
-                    var tc = k.totalChecks;
-                    var objRate  = tc ? k.uniqueCodesObj/tc  : 0;
-                    var subjRate = tc ? k.uniqueCodesSubj/tc : 0;
-                    var execRate = tc ? k.execObjTotal/tc    : 0;
-                    return mk('total_checks', tc, '总抽检量', '', fmtYest(tc, yk?yk.totalChecksRaw:null, true)) +
-                        mk('subj_diff',   tc?(subjRate*100).toFixed(2)+'%':'0%', '主观差异率（'+k.uniqueCodesSubj+'台）', k.uniqueCodesSubj, fmtYest(subjRate, yk?yk.subjRate:null, false)) +
-                        mk('obj_diff',    tc?(objRate*100).toFixed(2)+'%':'0%',  '客观差异率（'+k.uniqueCodesObj+'台）',  k.uniqueCodesObj,  fmtYest(objRate,  yk?yk.objRate:null,  false)) +
-                        mk('exec_diff',   tc?(execRate*100).toFixed(2)+'%':'0%', '客观执行差异率（'+k.execObjTotal+'台）', k.execObjTotal, fmtYest(execRate, yk?yk.execRate:null, false));
+                    var tc=k.totalChecks;
+                    var oR=tc?k.uniqueCodesObj/tc:0, sR=tc?k.uniqueCodesSubj/tc:0, eR=tc?k.execObjTotal/tc:0;
+                    return mk('total_checks',tc,'总抽检量','',fmtY(tc,yk?yk.tc:null,true))
+                        +mk('subj_diff',tc?(sR*100).toFixed(2)+'%':'0%','主观差异率（'+k.uniqueCodesSubj+'台）',k.uniqueCodesSubj,fmtY(sR,yk?yk.sR:null,false))
+                        +mk('obj_diff',tc?(oR*100).toFixed(2)+'%':'0%','客观差异率（'+k.uniqueCodesObj+'台）',k.uniqueCodesObj,fmtY(oR,yk?yk.oR:null,false))
+                        +mk('exec_diff',tc?(eR*100).toFixed(2)+'%':'0%','客观执行差异率（'+k.execObjTotal+'台）',k.execObjTotal,fmtY(eR,yk?yk.eR:null,false));
                 }
-
 
                 var html = '';
                 if (siteType === 'DW') {
@@ -1170,9 +1121,9 @@
                         ? summaryData.filter(s => typeof getSiteType === 'function' && getSiteType(s.siteName||'') === 'ZX')
                         : summaryData;
                     var k = calcKpi(diffRows, sumRows);
-                    var yk = calcYesterdayKpi(
-                        siteType === 'ZX' ? diffData.filter(function(d){ return typeof getSiteType==='function'&&getSiteType(d.warehouse||'')==='ZX'; }) : diffData,
-                        siteType === 'ZX' ? summaryData.filter(function(s){ return typeof getSiteType==='function'&&getSiteType(s.siteName||'')==='ZX'; }) : summaryData
+                    var yk = calcYestKpi(
+                        siteType==='ZX' ? diffData.filter(function(d){ return getSiteType(d.warehouse||'')==='ZX'; }) : diffData,
+                        siteType==='ZX' ? summaryData.filter(function(s){ return getSiteType(s.siteName||'')==='ZX'; }) : summaryData
                     );
                     html = kpiHtml(k, yk);
                 }
@@ -2617,6 +2568,7 @@
                         + '<span class="rank-rate" style="color:' + cntColor + ';font-weight:700;min-width:40px;text-align:right;">' + p.total + '次</span>'
                         + '</div>';
                 }).join('');
+            }
 
             // 质检人排行榜点击 → 跳质检人详情页
             var rankBoardPerson = document.getElementById('rankBoardPerson');
@@ -4373,9 +4325,6 @@ document.addEventListener('DOMContentLoaded', function() {
 var _zbLog = JSON.parse(localStorage.getItem('zb_upload_log')||'[]');
 var _zbCurrentLogTab = 'log';
 
-function zbOpenSettings(){
-    zbShowToast('⚙️ 设置页面开发中，敬请期待');
-}
 function zbOpenLog(){
   var m=document.getElementById('zbLogModal');
   if(m){ m.style.display='flex'; zbSwitchLogTab(_zbCurrentLogTab); }
