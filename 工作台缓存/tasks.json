@@ -296,7 +296,7 @@
     "id": 58,
     "title": "争议问题评审会16:00",
     "desc": "",
-    "status": "todo",
+    "status": "done",
     "tag": "每周待办",
     "tagType": "purple",
     "pri": "q4",
@@ -308,7 +308,7 @@
     "loc": "date",
     "order": 0,
     "parentId": 41,
-    "prog": 0,
+    "prog": 100,
     "repeatWeekdays": [],
     "repeatMonthday": null
   },
