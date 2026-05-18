@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板</title>
+    <title>培训部数据看板 v1.20OA</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -5024,9 +5024,10 @@ function zbSetQuickDate(mode) {
     window._quickDateMode = mode;
     zbUpdateQuickBtnStyle();
 
-    // 触发刷新
-    if (typeof updatePersonFilterOptions === 'function') updatePersonFilterOptions();
-    if (typeof fullRefresh === 'function') fullRefresh();
+    // 触发刷新（使用 window 挂载版本，确保闭包外也能访问完整刷新链）
+    if (typeof window.bridgeData === 'function') window.bridgeData();
+    if (typeof window.fullRefresh === 'function') window.fullRefresh();
+    if (typeof window._wtRefresh === 'function') setTimeout(window._wtRefresh, 0);
 }
 
 function zbClearQuickDate() {
