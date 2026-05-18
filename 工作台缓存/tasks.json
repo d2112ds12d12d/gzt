@@ -36,26 +36,6 @@
     "order": 0
   },
   {
-    "id": 15,
-    "title": "拆修专项开始时间确认",
-    "desc": "月考后的刷题任务啥时候开始，怎样的规则\n\n\n组长群日强做公式",
-    "status": "todo",
-    "tag": "日常待办",
-    "tagType": "green",
-    "pri": "q4",
-    "prog": 0,
-    "repeat": "none",
-    "hours": 0,
-    "ds": "2026-05-18",
-    "links": [],
-    "imgs": [],
-    "loc": "date",
-    "order": 5,
-    "repeatWeekdays": [],
-    "repeatMonthday": null,
-    "timerMs": 1831
-  },
-  {
     "id": 16,
     "title": "月度标准变更评审会回放查看+备课",
     "desc": "GYZM",
@@ -661,25 +641,6 @@
     "imgs": [],
     "loc": "inbox",
     "order": 39
-  },
-  {
-    "id": 97,
-    "title": "探索ai授课大纲自更新储备",
-    "desc": "",
-    "status": "todo",
-    "tag": "日常待办",
-    "tagType": "green",
-    "pri": "q4",
-    "prog": 0,
-    "repeat": "none",
-    "repeatWeekdays": [],
-    "repeatMonthday": null,
-    "hours": 0,
-    "ds": "2026-05-18",
-    "links": [],
-    "imgs": [],
-    "loc": "date",
-    "order": 40
   },
   {
     "id": 101,
