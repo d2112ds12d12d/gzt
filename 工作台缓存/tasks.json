@@ -280,7 +280,7 @@
     "pri": "q4",
     "repeat": "monthly",
     "hours": 0,
-    "ds": "2026-05-18",
+    "ds": "2026-05-19",
     "links": [
       "https://doc.weixin.qq.com/doc/w3_AVMAlwa8AKsCN1d70EnvOT0Sxyyto?scode=AJ4AfQfgAAw0xhRd3qAVMAlwa8AKs&isEnterEdit=1"
     ],
@@ -693,7 +693,7 @@
     "id": 125,
     "title": "2 位新人实操数据拉取&考试推送&公表更新&结业通知",
     "desc": "",
-    "status": "todo",
+    "status": "inprogress",
     "tag": "日常待办",
     "tagType": "green",
     "pri": "q4",
@@ -733,7 +733,7 @@
     "id": 127,
     "title": "周度 kappa 考试进度提醒&成绩公布&任务推送",
     "desc": "",
-    "status": "todo",
+    "status": "inprogress",
     "tag": "日常待办",
     "tagType": "green",
     "pri": "q4",
@@ -744,6 +744,27 @@
     "hours": 0,
     "ds": "2026-05-18",
     "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 9
+  },
+  {
+    "id": 128,
+    "title": "培训答疑问题收集（下班前完成）",
+    "desc": "",
+    "status": "todo",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "none",
+    "repeatWeekdays": [],
+    "repeatMonthday": null,
+    "hours": 0,
+    "ds": "2026-05-18",
+    "links": [
+      "https://doc.weixin.qq.com/doc/w3_AV4AgwbwAJICNG5NPX22WR5y5ELC2?scode=AJ4AfQfgAAw9TyNznpAfcAPQYFANg"
+    ],
     "imgs": [],
     "loc": "date",
     "order": 9
