@@ -583,7 +583,7 @@
   <nav id="zb-sidebar">
     <div class="zb-logo">
       <div class="zb-brand">培训部数据看板</div>
-      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.20N</span></div>
+      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.20O</span></div>
     </div>
     <div class="zb-nav-lbl">数据模块</div>
     <div class="zb-nav-item active" onclick="zbNav('overview',this)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 10 10 7 13 10 17 7"/></svg> 数据总览</div>
@@ -662,10 +662,20 @@
             <!-- 品类切换（全局联动）· 吸顶 -->
             <div class="sticky-filter-bar">
                 <div class="sticky-filter-inner">
-                    
-                    <input type="date" id="startDateFilter" style="height:28px;font-size:11px;padding:3px 6px;border-radius:7px;border:1px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);outline:none;">
+                    <!-- 快捷时间按钮 -->
+                    <span style="font-size:11px;font-weight:600;color:var(--text-secondary);flex-shrink:0;">时间</span>
+                    <div id="quickDateBtnDay" onclick="zbSetQuickDate('day')" style="position:relative;padding:5px 14px 5px 10px;border-radius:9px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.6);cursor:pointer;flex-shrink:0;font-size:12px;font-weight:600;color:#334155;transition:all .15s;margin-top:3px;">
+                        日度
+                        <span style="position:absolute;top:-7px;right:-6px;font-size:8.5px;padding:1px 5px;border-radius:8px;background:#94a3b8;color:#fff;white-space:nowrap;font-weight:500;line-height:1.4;">近15天</span>
+                    </div>
+                    <div id="quickDateBtnWeek" onclick="zbSetQuickDate('week')" style="position:relative;padding:5px 14px 5px 10px;border-radius:9px;border:1px solid rgba(200,210,230,0.8);background:rgba(255,255,255,0.6);cursor:pointer;flex-shrink:0;font-size:12px;font-weight:600;color:#334155;transition:all .15s;margin-top:3px;">
+                        周度
+                        <span style="position:absolute;top:-7px;right:-6px;font-size:8.5px;padding:1px 5px;border-radius:8px;background:#94a3b8;color:#fff;white-space:nowrap;font-weight:500;line-height:1.4;">近4周</span>
+                    </div>
+                    <div class="sticky-divider"></div>
+                    <input type="date" id="startDateFilter" style="height:28px;font-size:11px;padding:3px 6px;border-radius:7px;border:1px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);outline:none;" onfocus="zbClearQuickDate()">
                     <span style="font-size:11px;color:var(--text-secondary);flex-shrink:0;">至</span>
-                    <input type="date" id="endDateFilter" style="height:28px;font-size:11px;padding:3px 6px;border-radius:7px;border:1px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);outline:none;">
+                    <input type="date" id="endDateFilter" style="height:28px;font-size:11px;padding:3px 6px;border-radius:7px;border:1px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);outline:none;" onfocus="zbClearQuickDate()">
                     <div class="sticky-divider"></div>
                     <span style="font-size:11px;font-weight:600;color:var(--text-secondary);flex-shrink:0;">品类</span>
                     <span class="cat-tab active" id="globalCat-手机">手机</span>
@@ -2855,8 +2865,8 @@
                 if (lbl) lbl.textContent = '全部质检人员';
                 updatePersonFilterOptions(); fullRefresh();
             });
-            if (startDateFilter) startDateFilter.addEventListener('change', () => { updatePersonFilterOptions(); fullRefresh(); });
-            if (endDateFilter) endDateFilter.addEventListener('change', () => { updatePersonFilterOptions(); fullRefresh(); });
+            if (startDateFilter) startDateFilter.addEventListener('change', () => { zbClearQuickDate(); updatePersonFilterOptions(); fullRefresh(); });
+            if (endDateFilter) endDateFilter.addEventListener('change', () => { zbClearQuickDate(); updatePersonFilterOptions(); fullRefresh(); });
 
             // 自定义质检人员下拉逻辑
             (function initPersonDropdown() {
@@ -4978,6 +4988,78 @@ function zbNavToHotspotDetail(level3, level1, deltaInfo) {
     // 显示 Modal
     var m = document.getElementById('hotspotDetailModal');
     m.style.display = 'flex';
+}
+
+// ── 快捷时间按钮：日度(近15天) / 周度(近4周) ──
+window._quickDateMode = ''; // 'day' | 'week' | ''
+
+function zbSetQuickDate(mode) {
+    // T = 昨天
+    var today = new Date();
+    var T = new Date(today); T.setDate(today.getDate() - 1);
+    var fmt = function(d) {
+        var y = d.getFullYear(), m = String(d.getMonth()+1).padStart(2,'0'), dd = String(d.getDate()).padStart(2,'0');
+        return y + '-' + m + '-' + dd;
+    };
+
+    var start, end = fmt(T);
+
+    if (mode === 'day') {
+        // 近15天：T-14 到 T
+        var s = new Date(T); s.setDate(T.getDate() - 14);
+        start = fmt(s);
+    } else if (mode === 'week') {
+        // 近4周：T所在周的周一往前推3周（共4周）到 T
+        var dow = T.getDay() || 7;
+        var mon = new Date(T); mon.setDate(T.getDate() - (dow - 1));
+        var s4 = new Date(mon); s4.setDate(mon.getDate() - 21);
+        start = fmt(s4);
+    }
+
+    var startEl = document.getElementById('startDateFilter');
+    var endEl   = document.getElementById('endDateFilter');
+    if (startEl) { startEl.value = start; startEl.style.color = '#94a3b8'; }
+    if (endEl)   { endEl.value   = end;   endEl.style.color   = '#94a3b8'; }
+
+    window._quickDateMode = mode;
+    zbUpdateQuickBtnStyle();
+
+    // 触发刷新
+    if (typeof updatePersonFilterOptions === 'function') updatePersonFilterOptions();
+    if (typeof fullRefresh === 'function') fullRefresh();
+}
+
+function zbClearQuickDate() {
+    if (!window._quickDateMode) return;
+    window._quickDateMode = '';
+    zbUpdateQuickBtnStyle();
+    // 日期框恢复正常颜色
+    var startEl = document.getElementById('startDateFilter');
+    var endEl   = document.getElementById('endDateFilter');
+    if (startEl) startEl.style.color = '';
+    if (endEl)   endEl.style.color   = '';
+}
+
+function zbUpdateQuickBtnStyle() {
+    var dayBtn  = document.getElementById('quickDateBtnDay');
+    var weekBtn = document.getElementById('quickDateBtnWeek');
+    if (!dayBtn || !weekBtn) return;
+
+    var mode = window._quickDateMode;
+
+    // 日度按钮
+    dayBtn.style.background    = mode === 'day' ? '#2563eb' : 'rgba(255,255,255,0.6)';
+    dayBtn.style.color         = mode === 'day' ? '#fff'    : '#334155';
+    dayBtn.style.borderColor   = mode === 'day' ? '#2563eb' : 'rgba(200,210,230,0.8)';
+    dayBtn.querySelector('span').style.background = mode === 'day' ? 'rgba(255,255,255,0.3)' : '#94a3b8';
+    dayBtn.querySelector('span').style.color      = '#fff';
+
+    // 周度按钮
+    weekBtn.style.background   = mode === 'week' ? '#2563eb' : 'rgba(255,255,255,0.6)';
+    weekBtn.style.color        = mode === 'week' ? '#fff'    : '#334155';
+    weekBtn.style.borderColor  = mode === 'week' ? '#2563eb' : 'rgba(200,210,230,0.8)';
+    weekBtn.querySelector('span').style.background = mode === 'week' ? 'rgba(255,255,255,0.3)' : '#94a3b8';
+    weekBtn.querySelector('span').style.color      = '#fff';
 }
 
 function zbAddLog(entry) {
