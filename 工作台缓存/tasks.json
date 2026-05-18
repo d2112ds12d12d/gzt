@@ -114,44 +114,6 @@
     "order": 1
   },
   {
-    "id": 21,
-    "title": "培训师授课认证填写",
-    "desc": "",
-    "status": "todo",
-    "tag": "",
-    "tagType": "green",
-    "pri": "q4",
-    "prog": 0,
-    "repeat": "none",
-    "hours": 0,
-    "ds": "2026-05-18",
-    "links": [
-      "https://doc.weixin.qq.com/sheet/e3_AcwATQYlALMCNk1Y9Qq5TTcq1r1Ys?scode=AJ4AfQfgAAwDMkyRKuAcwATQYlALM&tab=88dyzd"
-    ],
-    "imgs": [],
-    "loc": "date",
-    "order": 1
-  },
-  {
-    "id": 22,
-    "title": "固定任务盘点",
-    "desc": "",
-    "status": "todo",
-    "tag": "工作提效",
-    "tagType": "green",
-    "pri": "q4",
-    "prog": 0,
-    "repeat": "none",
-    "hours": 0,
-    "ds": "2026-05-18",
-    "links": [],
-    "imgs": [],
-    "loc": "date",
-    "order": 7,
-    "repeatWeekdays": [],
-    "repeatMonthday": null
-  },
-  {
     "id": 24,
     "title": "预约会议室，思考一下，月度标准变更和答疑案例是否可以一起培？",
     "desc": "",
@@ -329,7 +291,7 @@
   },
   {
     "id": 58,
-    "title": "争议问题评审会",
+    "title": "争议问题评审会16:00",
     "desc": "",
     "status": "todo",
     "tag": "每周待办",
@@ -342,7 +304,10 @@
     "imgs": [],
     "loc": "date",
     "order": 0,
-    "parentId": 41
+    "parentId": 41,
+    "prog": 0,
+    "repeatWeekdays": [],
+    "repeatMonthday": null
   },
   {
     "id": 60,
