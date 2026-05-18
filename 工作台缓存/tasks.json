@@ -725,5 +725,24 @@
     "imgs": [],
     "loc": "date",
     "order": 8
+  },
+  {
+    "id": 127,
+    "title": "周度 kappa 考试进度提醒&成绩公布&任务推送",
+    "desc": "",
+    "status": "todo",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "none",
+    "repeatWeekdays": [],
+    "repeatMonthday": null,
+    "hours": 0,
+    "ds": "2026-05-18",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 9
   }
 ]
