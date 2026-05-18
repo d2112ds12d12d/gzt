@@ -719,7 +719,9 @@
     "repeatMonthday": null,
     "hours": 0,
     "ds": "2026-05-18",
-    "links": [],
+    "links": [
+      "https://doc.weixin.qq.com/doc/w3_AcwATQYlALMCNi7BDoATjS8iIIxZl?scode=AJ4AfQfgAAwZ03eO4XAcwATQYlALM"
+    ],
     "imgs": [],
     "loc": "date",
     "order": 8
