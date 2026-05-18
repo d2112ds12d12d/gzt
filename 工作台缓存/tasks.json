@@ -739,25 +739,6 @@
     "order": 46
   },
   {
-    "id": 107,
-    "title": "撰写日报",
-    "desc": "",
-    "status": "todo",
-    "tag": "日常待办",
-    "tagType": "green",
-    "pri": "q4",
-    "prog": 0,
-    "repeat": "none",
-    "repeatWeekdays": [],
-    "repeatMonthday": null,
-    "hours": 0,
-    "ds": "2026-05-18",
-    "links": [],
-    "imgs": [],
-    "loc": "date",
-    "order": 47
-  },
-  {
     "id": 117,
     "title": "借助 ai 实现试题制作，做到差异日维度考试推送",
     "desc": "",
@@ -794,5 +775,24 @@
     "imgs": [],
     "loc": "date",
     "order": 9
+  },
+  {
+    "id": 125,
+    "title": "2 位新人实操数据拉取&考试推送&公表更新&结业通知",
+    "desc": "",
+    "status": "todo",
+    "tag": "日常待办",
+    "tagType": "green",
+    "pri": "q4",
+    "prog": 0,
+    "repeat": "none",
+    "repeatWeekdays": [],
+    "repeatMonthday": null,
+    "hours": 0,
+    "ds": "2026-05-18",
+    "links": [],
+    "imgs": [],
+    "loc": "date",
+    "order": 2
   }
 ]
