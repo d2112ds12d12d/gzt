@@ -2865,8 +2865,8 @@
                 if (lbl) lbl.textContent = '全部质检人员';
                 updatePersonFilterOptions(); fullRefresh();
             });
-            if (startDateFilter) startDateFilter.addEventListener('change', () => { zbClearQuickDate(); updatePersonFilterOptions(); fullRefresh(); });
-            if (endDateFilter) endDateFilter.addEventListener('change', () => { zbClearQuickDate(); updatePersonFilterOptions(); fullRefresh(); });
+            if (startDateFilter) startDateFilter.addEventListener('change', () => { zbClearQuickDate(); updatePersonFilterOptions(); fullRefresh(); _zbRefreshSitePageIfActive(); });
+            if (endDateFilter) endDateFilter.addEventListener('change', () => { zbClearQuickDate(); updatePersonFilterOptions(); fullRefresh(); _zbRefreshSitePageIfActive(); });
 
             // 自定义质检人员下拉逻辑
             (function initPersonDropdown() {
@@ -4012,8 +4012,18 @@ function zbRenderSiteDetail(siteName) {
     var allDiff = window._allDiffData || [];
     if (!allDiff.length && typeof diffData !== 'undefined') allDiff = diffData;
 
-    // 按站点过滤
-    var siteDiff = allDiff.filter(function(d) { return d.warehouse === siteName; });
+    // 读顶部日期筛选框
+    var startD = document.getElementById('startDateFilter') ? document.getElementById('startDateFilter').value : '';
+    var endD   = document.getElementById('endDateFilter')   ? document.getElementById('endDateFilter').value   : '';
+
+    // 按站点 + 日期过滤
+    var siteDiff = allDiff.filter(function(d) {
+        if (d.warehouse !== siteName) return false;
+        if (!d.date) return true;
+        if (startD && d.date < startD) return false;
+        if (endD   && d.date > endD)   return false;
+        return true;
+    });
 
     // 按口径再过滤
     var scope = window._siteDataScope || 'exec';
@@ -5028,6 +5038,8 @@ function zbSetQuickDate(mode) {
     if (typeof window.bridgeData === 'function') window.bridgeData();
     if (typeof window.fullRefresh === 'function') window.fullRefresh();
     if (typeof window._wtRefresh === 'function') setTimeout(window._wtRefresh, 0);
+    // 站点详情页：日期变化后重新渲染
+    _zbRefreshSitePageIfActive();
 }
 
 function zbClearQuickDate() {
@@ -5061,6 +5073,16 @@ function zbUpdateQuickBtnStyle() {
     weekBtn.style.borderColor  = mode === 'week' ? '#2563eb' : 'rgba(200,210,230,0.8)';
     weekBtn.querySelector('span').style.background = mode === 'week' ? 'rgba(255,255,255,0.3)' : '#94a3b8';
     weekBtn.querySelector('span').style.color      = '#fff';
+}
+
+// 若当前处于站点详情页，重新渲染该站点（让日期筛选生效）
+function _zbRefreshSitePageIfActive() {
+    var sitePage = document.getElementById('zb-page-site');
+    if (!sitePage || !sitePage.classList.contains('active')) return;
+    var titleEl = document.getElementById('siteDetailTitle');
+    if (!titleEl) return;
+    var siteName = titleEl.textContent.replace(' · 站点详情', '').trim();
+    if (siteName) setTimeout(function() { zbRenderSiteDetail(siteName); }, 50);
 }
 
 function zbAddLog(entry) {
