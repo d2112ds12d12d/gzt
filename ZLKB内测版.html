@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.25A</title>
+    <title>培训部数据看板 v1.25B</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -583,7 +583,7 @@
   <nav id="zb-sidebar">
     <div class="zb-logo">
       <div class="zb-brand">培训部数据看板</div>
-      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.25A</span></div>
+      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.25B</span></div>
     </div>
     <div class="zb-nav-lbl">数据模块</div>
     <div class="zb-nav-item active" onclick="zbNav('overview',this)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 10 10 7 13 10 17 7"/></svg> 数据总览</div>
@@ -4147,19 +4147,6 @@ function zbRenderSiteDetail(siteName) {
             return d.warehouse === siteName && d.category && d.category.includes('客观') && d.judgedIssueType && d.judgedIssueType.includes('执行');
         });
         var execDiff4 = execDiff4all; // 趋势图用全品类
-        var qaData4 = (window._DATA && window._DATA.qa) ? window._DATA.qa : [];
-        // 按站点+品类过滤（有品类筛选时只看该品类）
-        var siteQA4 = qaData4.filter(function(r){
-            return r.site === siteName && (!activeCat || r.cat === activeCat);
-        });
-        var qaCatSet4 = {};
-        siteQA4.forEach(function(r){ if(r.cat) qaCatSet4[r.cat]=1; });
-        var catList4 = Object.keys(qaCatSet4).filter(function(c){ return c && c!=='undefined'; });
-        var allDiff4 = window._allDiffData || [];
-        var execDiff4 = allDiff4.filter(function(d){
-            return d.warehouse === siteName && d.category && d.category.includes('客观') && d.judgedIssueType && d.judgedIssueType.includes('执行')
-                && (!activeCat || d.cat === activeCat);
-        });
 
         var VIS_KEY4 = 'site4w_cat_vis';
         var savedVis4 = {};
