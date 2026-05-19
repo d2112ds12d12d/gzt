@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.22</title>
+    <title>培训部数据看板 v1.23</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -583,7 +583,7 @@
   <nav id="zb-sidebar">
     <div class="zb-logo">
       <div class="zb-brand">培训部数据看板</div>
-      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.22</span></div>
+      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.23</span></div>
     </div>
     <div class="zb-nav-lbl">数据模块</div>
     <div class="zb-nav-item active" onclick="zbNav('overview',this)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 10 10 7 13 10 17 7"/></svg> 数据总览</div>
@@ -4084,14 +4084,17 @@ function zbRenderSiteDetail(siteName) {
         // 趋势图独立范围（近15天/近4周/全部），不影响顶部日期框
         var trendRange = window._siteTrendRange || '15d';
         var today = new Date();
+        var yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
         var trendStart = '', trendEnd = '';
         function _fmtD(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
         if (trendRange === '15d') {
-            var s15 = new Date(today); s15.setDate(today.getDate() - 14);
-            trendStart = _fmtD(s15); trendEnd = _fmtD(today);
+            var s15 = new Date(yesterday); s15.setDate(yesterday.getDate() - 14);
+            trendStart = _fmtD(s15); trendEnd = _fmtD(yesterday);
         } else if (trendRange === '4w') {
-            var s4w = new Date(today); s4w.setDate(today.getDate() - 27);
-            trendStart = _fmtD(s4w); trendEnd = _fmtD(today);
+            var dow = yesterday.getDay();
+            var lastSun = new Date(yesterday); lastSun.setDate(yesterday.getDate() - dow);
+            var s4w = new Date(lastSun); s4w.setDate(lastSun.getDate() - 27);
+            trendStart = _fmtD(s4w); trendEnd = _fmtD(lastSun);
         }
         function inTrendRange(dt) {
             if (!dt) return false;
@@ -4172,6 +4175,134 @@ function zbRenderSiteDetail(siteName) {
             };
         });
 
+        // ── 近4周多品类折线图分支 ──
+        if (trendRange === '4w') {
+            var CAT_COLORS = { '手机':'#2563eb','笔记本':'#f59e0b','平板':'#10b981','手表':'#8b5cf6','耳机':'#ef4444','相机':'#06b6d4' };
+            var DEFAULT_COLORS = ['#2563eb','#f59e0b','#10b981','#8b5cf6','#ef4444','#06b6d4'];
+            var dow2 = yesterday.getDay();
+            var wkEnd = new Date(yesterday); wkEnd.setDate(yesterday.getDate() - dow2);
+            var weeks4 = [];
+            for (var wi = 3; wi >= 0; wi--) {
+                var w4e = new Date(wkEnd); w4e.setDate(wkEnd.getDate() - wi * 7);
+                var w4s = new Date(w4e); w4s.setDate(w4e.getDate() - 6);
+                weeks4.push({ label:(w4s.getMonth()+1)+'.'+(w4s.getDate())+'-'+(w4e.getMonth()+1)+'.'+(w4e.getDate()), start:_fmtD(w4s), end:_fmtD(w4e) });
+            }
+            var qaData4 = (window._DATA && window._DATA.qa) ? window._DATA.qa : [];
+            var siteQA4 = qaData4.filter(function(r){ return r.site === siteName; });
+            var qaCatSet4 = {};
+            siteQA4.forEach(function(r){ if(r.cat) qaCatSet4[r.cat]=1; });
+            var catList4 = Object.keys(qaCatSet4).filter(function(c){ return c && c!=='undefined'; });
+            var VIS_KEY4 = 'site4w_cat_vis';
+            var savedVis4 = {};
+            try { var sv4=localStorage.getItem(VIS_KEY4); savedVis4=sv4?JSON.parse(sv4):{}; } catch(e4){}
+            catList4.forEach(function(c){ if(savedVis4[c]===undefined) savedVis4[c]=true; });
+            var allDiff4 = window._allDiffData || [];
+            var execDiff4 = allDiff4.filter(function(d){
+                return d.warehouse === siteName && d.category && d.category.includes('客观') && d.judgedIssueType && d.judgedIssueType.includes('执行');
+            });
+
+            var catPillsEl4 = document.getElementById('siteTrendCatPills');
+            if (!catPillsEl4) {
+                catPillsEl4 = document.createElement('div');
+                catPillsEl4.id = 'siteTrendCatPills';
+                catPillsEl4.style.cssText = 'display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:10px;';
+                trendEl.parentNode.insertBefore(catPillsEl4, trendEl);
+            }
+            catPillsEl4.style.display = 'flex';
+
+            function renderCatPills4() {
+                catPillsEl4.innerHTML = '';
+                catList4.forEach(function(c, ci) {
+                    var color4 = CAT_COLORS[c] || DEFAULT_COLORS[ci % DEFAULT_COLORS.length];
+                    var on4 = savedVis4[c] !== false;
+                    var pill4 = document.createElement('button');
+                    pill4.style.cssText = 'display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;cursor:pointer;border:0.5px solid '+(on4?color4:'var(--border-color)')+';background:'+(on4?color4+'22':'transparent')+';color:'+(on4?color4:'var(--text-secondary)')+';transition:all .15s;';
+                    pill4.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:'+(on4?color4:'var(--border-color)')+';display:inline-block;flex-shrink:0;"></span>'+c;
+                    pill4.addEventListener('click', (function(cat4, col4){
+                        return function(){
+                            savedVis4[cat4] = !savedVis4[cat4];
+                            try { localStorage.setItem(VIS_KEY4, JSON.stringify(savedVis4)); } catch(e4){}
+                            renderCatPills4();
+                            render4wChart4();
+                        };
+                    })(c, color4));
+                    catPillsEl4.appendChild(pill4);
+                });
+            }
+
+            function render4wChart4() {
+                var visCats4 = catList4.filter(function(c){ return savedVis4[c]!==false; });
+                var series4 = visCats4.map(function(c, ci) {
+                    var color4 = CAT_COLORS[c] || DEFAULT_COLORS[ci % DEFAULT_COLORS.length];
+                    var wkData4 = weeks4.map(function(wk) {
+                        var diffCodes4 = new Set();
+                        execDiff4.forEach(function(d) {
+                            if (!d.date || !d.code) return;
+                            var dt4 = d.date.split(' ')[0];
+                            if (dt4 < wk.start || dt4 > wk.end) return;
+                            if ((d.cat||'') !== c) return;
+                            diffCodes4.add(d.code);
+                        });
+                        var checks4 = 0;
+                        siteQA4.forEach(function(r) {
+                            if (!r.date || r.cat !== c) return;
+                            var dt4 = r.date.split(' ')[0];
+                            if (dt4 < wk.start || dt4 > wk.end) return;
+                            checks4 += (r.checks || 0);
+                        });
+                        if (!checks4) return null;
+                        return parseFloat((diffCodes4.size / checks4 * 100).toFixed(2));
+                    });
+                    return { name:c, type:'line', data:wkData4, smooth:false, connectNulls:false, symbol:'circle', symbolSize:7, lineStyle:{ color:color4, width:2 }, itemStyle:{ color:color4 }, label:{ show:true, position:'top', color:color4, fontSize:10, formatter:function(p){ return p.value===null?'':p.value+'%'; } } };
+                });
+
+                _siteChart_trend.setOption({
+                    legend:{ show:false },
+                    tooltip:{ trigger:'axis', formatter:function(params4){ return params4[0].axisValue+'<br/>'+params4.filter(function(p){return p.value!==null;}).map(function(p){ return p.marker+p.seriesName+': '+p.value+'%'; }).join('<br/>'); } },
+                    xAxis:{ type:'category', data:weeks4.map(function(w){ return w.label; }), axisLabel:{ color:textColor, fontSize:10 }, axisLine:{ lineStyle:{ color:axisColor } } },
+                    yAxis:{ type:'value', name:'差异率(%)', nameTextStyle:{ color:textColor }, axisLabel:{ color:textColor, formatter:'{value}%' }, min:0 },
+                    grid:{ top:30, right:16, bottom:50, left:56 },
+                    series: series4
+                }, true);
+
+                var tbl4el = document.getElementById('site4wTable');
+                if (!tbl4el) {
+                    tbl4el = document.createElement('div');
+                    tbl4el.id = 'site4wTable';
+                    tbl4el.style.cssText = 'border:0.5px solid var(--border-color);border-radius:8px;overflow:hidden;margin-top:12px;';
+                    trendEl.parentNode.appendChild(tbl4el);
+                }
+                tbl4el.style.display = '';
+                var head4 = '<tr style="background:var(--kpi-bg);">'
+                    + '<th style="padding:6px 10px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);">品类</th>'
+                    + weeks4.map(function(w,i){ return '<th style="padding:6px 10px;text-align:center;font-size:11px;font-weight:500;color:'+(i===3?'#2563eb':'var(--text-secondary)')+';">'+w.label+(i===3?' ↓':'')+'</th>'; }).join('')
+                    + '<th style="padding:6px 10px;text-align:center;font-size:11px;font-weight:500;color:var(--text-secondary);">环比</th></tr>';
+                var rows4 = visCats4.map(function(c, ci) {
+                    var color4 = CAT_COLORS[c] || DEFAULT_COLORS[ci % DEFAULT_COLORS.length];
+                    var s4 = series4.find(function(s){ return s.name===c; });
+                    if (!s4) return '';
+                    var d4 = s4.data;
+                    var last4 = d4[3], prev4 = d4[2];
+                    var delta4 = (last4!==null && prev4!==null) ? parseFloat((last4-prev4).toFixed(2)) : null;
+                    var dStr4 = delta4===null?'<span style="color:#94a3b8;">—</span>':delta4>0?'<span style="color:#dc2626;">↑+'+delta4+'%</span>':delta4<0?'<span style="color:#16a34a;">↓'+delta4+'%</span>':'<span style="color:#94a3b8;">—</span>';
+                    return '<tr style="border-top:0.5px solid var(--border-color);">'
+                        +'<td style="padding:6px 10px;font-size:11px;"><span style="width:7px;height:7px;border-radius:50%;background:'+color4+';display:inline-block;margin-right:5px;vertical-align:middle;"></span>'+c+'</td>'
+                        + d4.map(function(v,i){ return '<td style="padding:6px 10px;text-align:center;font-size:11px;'+(i===3?'font-weight:500;color:#2563eb;':'')+'">'+(v!==null?v+'%':'—')+'</td>'; }).join('')
+                        +'<td style="padding:6px 10px;text-align:center;font-size:11px;">'+dStr4+'</td></tr>';
+                }).join('');
+                tbl4el.innerHTML = '<table style="width:100%;border-collapse:collapse;table-layout:fixed;">'+head4+rows4+'</table>';
+            }
+
+            renderCatPills4();
+            render4wChart4();
+            _siteChart_trend.resize();
+
+        } else {
+            var cp4 = document.getElementById('siteTrendCatPills');
+            if (cp4) cp4.style.display = 'none';
+            var tb4 = document.getElementById('site4wTable');
+            if (tb4) tb4.style.display = 'none';
+
         _siteChart_trend.setOption({
             tooltip: {
                 trigger: 'axis',
@@ -4212,6 +4343,7 @@ function zbRenderSiteDetail(siteName) {
             if (typeof openDetailWithData === 'function') openDetailWithData(filtered, '📅 ' + siteName + ' · ' + date + ' 客观执行（' + filtered.length + '条）');
         });
         _siteChart_trend.resize();
+        } // end else 15d/all
     }
 
     // ── 问题类型分布饼图 ──
