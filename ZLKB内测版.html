@@ -4255,15 +4255,18 @@ function zbRenderSiteDetail(siteName) {
         var execDiff4 = execDiff4all; // 趋势图用全品类
 
         // 固定5品类顺序，与顶部筛选栏一致
-        // 大仓站点：手机拆成「手机-线体」和「手机-后验」
-        // 条件：站点名含「验机中心」或「后验中心」
-        var _isDW4 = siteName.includes('验机中心') || siteName.includes('后验中心');
-        var _cityKey4 = '';
-        if (_isDW4) {
-            // 从站点名提取城市：取「转转-」后第一个2字以上汉字词
-            var _cityMatch = siteName.replace('转转-','').match(/^([\u4e00-\u9fa5]{2,4})/);
-            _cityKey4 = _cityMatch ? _cityMatch[1] : '';
-        }
+        // 验机中心 / 后验中心仓配对映射表
+        var _DW_PAIR_MAP = [
+            { line: '转转-深圳智能验机中心', post: '深圳后验中心仓' },
+            { line: '转转-青岛智能验机中心', post: '青岛后验中心仓' },
+            { line: '转转-成都智能验机中心', post: '成都后验中心仓' }
+        ];
+        // 找到当前站点所属配对
+        var _dwPair4 = null;
+        _DW_PAIR_MAP.forEach(function(p) {
+            if (siteName === p.line || siteName === p.post) _dwPair4 = p;
+        });
+        var _isDW4 = !!_dwPair4;
         var FIXED_CATS = _isDW4
             ? ['手机-线体','手机-后验','笔记本','平板','手表','耳机']
             : ['手机','笔记本','平板','手表','耳机'];
@@ -4274,24 +4277,32 @@ function zbRenderSiteDetail(siteName) {
         // 新品类默认全选
         FIXED_CATS.forEach(function(c){ if(savedVis4[c]===undefined) savedVis4[c]=true; });
 
-        // 判断某个虚拟品类是否有数据
+        // 判断某个虚拟品类是否有数据（不限当前站点，跨站点取配对数据）
         function _hasCatData4(c) {
-            if (c === '手机-线体') return (window._allDiffData||[]).some(function(d){ return d.cat==='手机' && d.warehouse && _cityKey4 && d.warehouse.includes(_cityKey4) && d.warehouse.includes('验机'); });
-            if (c === '手机-后验') return (window._allDiffData||[]).some(function(d){ return d.cat==='手机' && d.warehouse && _cityKey4 && d.warehouse.includes(_cityKey4) && d.warehouse.includes('后验'); });
+            if (!_dwPair4) return catList4.indexOf(c) !== -1;
+            var allDiff = window._allDiffData || [];
+            if (c === '手机-线体') return allDiff.some(function(d){ return d.cat==='手机' && d.warehouse===_dwPair4.line; });
+            if (c === '手机-后验') return allDiff.some(function(d){ return d.cat==='手机' && d.warehouse===_dwPair4.post; });
             return catList4.indexOf(c) !== -1;
         }
 
-        // 按虚拟品类过滤差异数据
+        // 按虚拟品类过滤差异数据（从全量数据取，不受当前站点过滤）
         function _filterExecDiffByCat4(diff, c) {
-            if (c === '手机-线体') return diff.filter(function(d){ return d.cat==='手机' && d.warehouse && _cityKey4 && d.warehouse.includes(_cityKey4) && d.warehouse.includes('验机'); });
-            if (c === '手机-后验') return diff.filter(function(d){ return d.cat==='手机' && d.warehouse && _cityKey4 && d.warehouse.includes(_cityKey4) && d.warehouse.includes('后验'); });
+            if (!_dwPair4) return diff.filter(function(d){ return (d.cat||'')===c; });
+            var allExec = (window._allDiffData||[]).filter(function(d){
+                return d.category && d.category.includes('客观') && d.judgedIssueType && d.judgedIssueType.includes('执行');
+            });
+            if (c === '手机-线体') return allExec.filter(function(d){ return d.cat==='手机' && d.warehouse===_dwPair4.line; });
+            if (c === '手机-后验') return allExec.filter(function(d){ return d.cat==='手机' && d.warehouse===_dwPair4.post; });
             return diff.filter(function(d){ return (d.cat||'')===c; });
         }
 
-        // 按虚拟品类过滤QA数据
+        // 按虚拟品类过滤QA数据（从全量qa取配对站点）
         function _filterQAByCat4(qa, c) {
-            if (c === '手机-线体') return qa.filter(function(r){ return r.cat==='手机' && r.site && _cityKey4 && r.site.includes(_cityKey4) && r.site.includes('验机'); });
-            if (c === '手机-后验') return qa.filter(function(r){ return r.cat==='手机' && r.site && _cityKey4 && r.site.includes(_cityKey4) && r.site.includes('后验'); });
+            if (!_dwPair4) return qa.filter(function(r){ return r.cat===c; });
+            var allQA = (window._DATA && window._DATA.qa) ? window._DATA.qa : [];
+            if (c === '手机-线体') return allQA.filter(function(r){ return r.cat==='手机' && r.site===_dwPair4.line; });
+            if (c === '手机-后验') return allQA.filter(function(r){ return r.cat==='手机' && r.site===_dwPair4.post; });
             return qa.filter(function(r){ return r.cat===c; });
         }
 
@@ -4333,7 +4344,7 @@ function zbRenderSiteDetail(siteName) {
         }
 
         function renderTrendChart() {
-            var visCats4 = FIXED_CATS.filter(function(c){ return catList4.indexOf(c)!==-1 && savedVis4[c]!==false; });
+            var visCats4 = FIXED_CATS.filter(function(c){ return _hasCatData4(c) && savedVis4[c]!==false; });
 
             if (trendRange === '4w') {
                 // ── 近4周：周维度多品类 ──
