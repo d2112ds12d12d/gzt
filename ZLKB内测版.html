@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.24C</title>
+    <title>培训部数据看板 v1.25</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -259,7 +259,7 @@
         .zb-nav-item:hover:not(.active) { background: rgba(37,99,235,0.07); color: #1e40af; padding-left: 20px; }
         .rank-col-box { transition: box-shadow 0.18s; }
         .rank-col-box:hover { box-shadow: 0 4px 16px rgba(100,120,180,0.12); }
-        ::-webkit-scrollbar { width: 6px; height: 6px; } ::-webkit-scrollbar-track { background: var(--border-color); border-radius: 10px; } ::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
+        ::-webkit-scrollbar { width: 4px; height: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: transparent; border-radius: 4px; transition: background .2s; } *:hover::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.5); } ::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,0.8) !important; }
 
         /* ── 周度趋势模块 ── */
         .wt-toolbar {
@@ -583,7 +583,7 @@
   <nav id="zb-sidebar">
     <div class="zb-logo">
       <div class="zb-brand">培训部数据看板</div>
-      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.24C</span></div>
+      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.25</span></div>
     </div>
     <div class="zb-nav-lbl">数据模块</div>
     <div class="zb-nav-item active" onclick="zbNav('overview',this)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 10 10 7 13 10 17 7"/></svg> 数据总览</div>
@@ -672,7 +672,6 @@
                     <span class="cat-tab" id="globalCat-平板">平板</span>
                     <span class="cat-tab" id="globalCat-手表">手表</span>
                     <span class="cat-tab" id="globalCat-耳机">耳机</span>
-                    <span class="cat-tab" id="globalCat-相机">相机</span>
                     <div class="sticky-divider"></div>
                     <span style="font-size:11px;font-weight:600;color:var(--text-secondary);flex-shrink:0;" id="siteTypeLbl">站点类型</span>
                     <span class="cat-tab active" id="globalSiteType-ALL" data-site-type="ALL">全部</span>
@@ -2959,7 +2958,7 @@
                 currentCat = cat;
                 currentRankCat = cat;
                 // 更新按钮高亮
-                ['手机','笔记本','平板','手表','耳机','相机'].forEach(function(c) {
+                ['手机','笔记本','平板','手表','耳机'].forEach(function(c) {
                     var el = document.getElementById('globalCat-' + c);
                     if (el) el.classList.toggle('active', c === cat);
                     // 同步排行榜品类tab
@@ -4125,9 +4124,21 @@ function zbRenderSiteDetail(siteName) {
         var axisColor = isDark ? '#475569' : '#cbd5e1';
 
         // ── 品类配置 ──
-        var CAT_COLORS = { '手机':'#2563eb','笔记本':'#f59e0b','平板':'#10b981','手表':'#8b5cf6','耳机':'#ef4444','相机':'#06b6d4' };
-        var DEFAULT_COLORS = ['#2563eb','#f59e0b','#10b981','#8b5cf6','#ef4444','#06b6d4'];
+        var CAT_COLORS = { '手机':'#2563eb','笔记本':'#f59e0b','平板':'#10b981','手表':'#8b5cf6','耳机':'#ef4444' };
+        var DEFAULT_COLORS = ['#2563eb','#f59e0b','#10b981','#8b5cf6','#ef4444'];
         // activeCat 已在函数顶部定义
+        // 趋势图品类胶囊独立：不受顶部品类筛选限制，显示该站点所有品类
+        var qaData4 = (window._DATA && window._DATA.qa) ? window._DATA.qa : [];
+        var siteQA4all = qaData4.filter(function(r){ return r.site === siteName; });
+        var siteQA4 = siteQA4all; // 趋势图用全品类
+        var qaCatSet4 = {};
+        siteQA4.forEach(function(r){ if(r.cat) qaCatSet4[r.cat]=1; });
+        var catList4 = Object.keys(qaCatSet4).filter(function(c){ return c && c!=='undefined' && c!=='相机'; });
+        var allDiff4 = window._allDiffData || [];
+        var execDiff4all = allDiff4.filter(function(d){
+            return d.warehouse === siteName && d.category && d.category.includes('客观') && d.judgedIssueType && d.judgedIssueType.includes('执行');
+        });
+        var execDiff4 = execDiff4all; // 趋势图用全品类
         var qaData4 = (window._DATA && window._DATA.qa) ? window._DATA.qa : [];
         // 按站点+品类过滤（有品类筛选时只看该品类）
         var siteQA4 = qaData4.filter(function(r){
