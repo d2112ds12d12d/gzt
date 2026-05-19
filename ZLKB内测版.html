@@ -584,7 +584,7 @@
   <nav id="zb-sidebar">
     <div class="zb-logo">
       <div class="zb-brand">培训部数据看板</div>
-      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.29</span></div>
+      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.30</span></div>
     </div>
     <div class="zb-nav-lbl">数据模块</div>
     <div class="zb-nav-item active" onclick="zbNav('overview',this)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 10 10 7 13 10 17 7"/></svg> 数据总览</div>
@@ -853,12 +853,13 @@
               <!-- 趋势图 -->
               <div class="card" style="margin-bottom:16px;">
                 <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
-                  <div style="display:flex;align-items:center;gap:8px;">
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
                     <div style="display:flex;align-items:center;gap:0;background:var(--kpi-bg);border-radius:20px;border:1px solid var(--border-color);overflow:hidden;" id="siteTrendRangeBtns">
                       <button onclick="zbSiteTrendRange('15d',this)" style="font-size:11px;padding:4px 13px;border:none;background:#2563eb;color:#fff;cursor:pointer;font-weight:500;transition:all .15s;">近15天</button>
                       <button onclick="zbSiteTrendRange('4w',this)" style="font-size:11px;padding:4px 13px;border:none;background:transparent;cursor:pointer;color:var(--text-secondary);transition:all .15s;">近4周</button>
-                      <button onclick="zbSiteTrendRange('all',this)" style="font-size:11px;padding:4px 13px;border:none;background:transparent;cursor:pointer;color:var(--text-secondary);transition:all .15s;">全部</button>
+                      <button onclick="zbSiteTrendRange('1y',this)" style="font-size:11px;padding:4px 13px;border:none;background:transparent;cursor:pointer;color:var(--text-secondary);transition:all .15s;">近一年</button>
                     </div>
+                    <span id="siteTrendFollowHint" style="display:none;font-size:11px;color:#64748b;background:var(--kpi-bg);border-radius:6px;padding:3px 9px;border:1px dashed var(--border-color);">跟随顶部日期</span>
                     <div class="card-title" style="margin:0;"><div class="card-title-bar" style="background:#10b981;"></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>客观执行差异率趋势<span style="font-size:11px;color:var(--text-secondary);font-weight:400;margin-left:4px;">点击节点查看当日明细</span></div>
                   </div>
                 </div>
@@ -3017,7 +3018,7 @@
             });
 
             // ── 站点类型定义 ──
-            var ZB_DW_SITES = [
+            var ZB_DW_SITES = window.ZB_DW_SITES = [
                 '转转-青岛智能验机中心','转转-成都智能验机中心','转转-深圳智能验机中心',
                 '成都后验中心仓','深圳后验中心仓','青岛后验中心仓'
             ];
@@ -4201,7 +4202,7 @@ function zbRenderSiteDetail(siteName) {
     if (trendEl && typeof echarts !== 'undefined') {
         if (!_siteChart_trend) _siteChart_trend = echarts.init(trendEl);
 
-        var trendRange = window._siteTrendRange || '15d';
+        var trendRange = window._siteTrendRange; // null = 跟顶部日期
         var today = new Date();
         var yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
         function _fmtD(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -4216,8 +4217,11 @@ function zbRenderSiteDetail(siteName) {
             var lastSun4 = new Date(yesterday); lastSun4.setDate(yesterday.getDate() - dow4);
             var s4w = new Date(lastSun4); s4w.setDate(lastSun4.getDate() - 27);
             trendStart = _fmtD(s4w); trendEnd = _fmtD(lastSun4);
+        } else if (trendRange === '1y') {
+            var s1y = new Date(yesterday); s1y.setFullYear(yesterday.getFullYear() - 1);
+            trendStart = _fmtD(s1y); trendEnd = _fmtD(yesterday);
         } else {
-            // 全部：跟顶部日期框
+            // null：跟顶部日期框
             trendStart = startD; trendEnd = endD;
         }
         function inTrendRange(dt) {
@@ -4252,18 +4256,13 @@ function zbRenderSiteDetail(siteName) {
 
         // 固定5品类顺序，与顶部筛选栏一致
         // 大仓站点：手机拆成「手机-线体」和「手机-后验」
-        var _isDW4 = (typeof ZB_DW_SITES !== 'undefined') && ZB_DW_SITES.indexOf(siteName) >= 0;
+        // 条件：站点名含「验机中心」或「后验中心」
+        var _isDW4 = siteName.includes('验机中心') || siteName.includes('后验中心');
         var _cityKey4 = '';
         if (_isDW4) {
-            // 从站点名提取城市：取第一个中文城市关键词（深圳/青岛/成都等）
-            var _cityMatch = siteName.match(/[\u4e00-\u9fa5]{2,3}(?=(?:智能验机|后验|库))/);
-            if (!_cityMatch) {
-                // fallback: 取「转转-」后第一个2字以上汉字词
-                var _m2 = siteName.replace('转转-','').match(/^([\u4e00-\u9fa5]{2,4})/);
-                _cityKey4 = _m2 ? _m2[1] : '';
-            } else {
-                _cityKey4 = _cityMatch[0];
-            }
+            // 从站点名提取城市：取「转转-」后第一个2字以上汉字词
+            var _cityMatch = siteName.replace('转转-','').match(/^([\u4e00-\u9fa5]{2,4})/);
+            _cityKey4 = _cityMatch ? _cityMatch[1] : '';
         }
         var FIXED_CATS = _isDW4
             ? ['手机-线体','手机-后验','笔记本','平板','手表','耳机']
@@ -4445,15 +4444,15 @@ function zbRenderSiteDetail(siteName) {
                         if(!chks) return null;
                         return parseFloat((diffs.size/chks*100).toFixed(2));
                     });
-                    return { name:c, type:'line', data:data, smooth:false, connectNulls:false, symbol:'circle', symbolSize:6, lineStyle:{color:col4,width:2}, itemStyle:{color:col4}, label:{show:xDates.length<=20,position:'top',color:col4,fontSize:9,formatter:function(p){return p.value===null?'':p.value+'%';}} };
+                    return { name:c, type:'line', data:data, smooth:false, connectNulls:false, symbol:'circle', symbolSize:xDates.length>100?3:6, lineStyle:{color:col4,width:2}, itemStyle:{color:col4}, label:{show:xDates.length<=20,position:'top',color:col4,fontSize:9,formatter:function(p){return p.value===null?'':p.value+'%';}} };
                 });
 
                 _siteChart_trend.setOption({
                     legend:{show:false},
                     tooltip:{trigger:'axis',formatter:function(params){return params[0].axisValue+'<br/>'+params.filter(function(p){return p.value!==null;}).map(function(p){return p.marker+p.seriesName+': '+p.value+'%';}).join('<br/>');}},
-                    xAxis:{type:'category',data:xDates,axisLabel:{rotate:35,color:textColor,fontSize:9},axisLine:{lineStyle:{color:axisColor}}},
+                    xAxis:{type:'category',data:xDates,axisLabel:{rotate:xDates.length>60?55:35,color:textColor,fontSize:9,interval:xDates.length>60?Math.floor(xDates.length/24):0},axisLine:{lineStyle:{color:axisColor}}},
                     yAxis:{type:'value',name:'差异率(%)',nameTextStyle:{color:textColor},axisLabel:{color:textColor,formatter:'{value}%'},min:0},
-                    grid:{top:30,right:16,bottom:60,left:56},
+                    grid:{top:30,right:16,bottom:xDates.length>60?80:60,left:56},
                     series:seriesD
                 }, true);
             }
@@ -5243,17 +5242,44 @@ function zbDoQuery() {
 // 站点趋势图范围切换（近15天/近4周/全部）
 window._siteTrendRange = '15d';
 function zbSiteTrendRange(range, btn) {
-    window._siteTrendRange = range;
+    // 再点当前已选中的按钮 → 取消，跟顶部日期
+    var isCancel = (window._siteTrendRange === range);
+    window._siteTrendRange = isCancel ? null : range;
+
     // 更新按钮样式
     var btns = document.getElementById('siteTrendRangeBtns');
     if (btns) {
         btns.querySelectorAll('button').forEach(function(b) {
-            var isActive = b === btn;
+            var isActive = !isCancel && (b === btn);
             b.style.background = isActive ? '#2563eb' : 'transparent';
             b.style.color      = isActive ? '#fff'    : 'var(--text-secondary)';
             b.style.fontWeight = isActive ? '500'     : '400';
+            // 取消态：被取消的按钮变虚线灰框
+            if (isCancel && b === btn) {
+                b.style.background = 'transparent';
+                b.style.color = '#94a3b8';
+                b.style.outline = '1.5px dashed #94a3b8';
+                b.style.outlineOffset = '-2px';
+            } else {
+                b.style.outline = 'none';
+            }
         });
     }
+
+    // 跟随提示标签
+    var hint = document.getElementById('siteTrendFollowHint');
+    if (hint) {
+        if (window._siteTrendRange === null) {
+            var s = (document.getElementById('startDateFilter')||{}).value || '';
+            var e = (document.getElementById('endDateFilter')||{}).value || '';
+            var fmt = function(d){ return d ? d.replace(/^(\d{4})-(\d{2})-(\d{2})$/, '$2/$3') : ''; };
+            hint.textContent = '跟随顶部日期 ' + fmt(s) + '—' + fmt(e);
+            hint.style.display = '';
+        } else {
+            hint.style.display = 'none';
+        }
+    }
+
     // 重新渲染站点详情
     var titleEl = document.getElementById('siteDetailTitle');
     if (!titleEl) return;
