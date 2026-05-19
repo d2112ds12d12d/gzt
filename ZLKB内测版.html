@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.25B</title>
+    <title>培训部数据看板 v1.26</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -583,7 +583,7 @@
   <nav id="zb-sidebar">
     <div class="zb-logo">
       <div class="zb-brand">培训部数据看板</div>
-      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.25B</span></div>
+      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.26</span></div>
     </div>
     <div class="zb-nav-lbl">数据模块</div>
     <div class="zb-nav-item active" onclick="zbNav('overview',this)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 10 10 7 13 10 17 7"/></svg> 数据总览</div>
@@ -4148,12 +4148,15 @@ function zbRenderSiteDetail(siteName) {
         });
         var execDiff4 = execDiff4all; // 趋势图用全品类
 
+        // 固定5品类顺序，与顶部筛选栏一致
+        var FIXED_CATS = ['手机','笔记本','平板','手表','耳机'];
         var VIS_KEY4 = 'site4w_cat_vis';
         var savedVis4 = {};
         try { var sv4=localStorage.getItem(VIS_KEY4); savedVis4=sv4?JSON.parse(sv4):{}; } catch(e4){}
-        catList4.forEach(function(c){ if(savedVis4[c]===undefined) savedVis4[c]=true; });
+        // 新品类默认全选
+        FIXED_CATS.forEach(function(c){ if(savedVis4[c]===undefined) savedVis4[c]=true; });
 
-        // ── 品类胶囊（三个模式共用）──
+        // ── 品类胶囊（固定5个，三个模式共用）──
         var catPillsEl4 = document.getElementById('siteTrendCatPills');
         if (!catPillsEl4) {
             catPillsEl4 = document.createElement('div');
@@ -4161,28 +4164,37 @@ function zbRenderSiteDetail(siteName) {
             catPillsEl4.style.cssText = 'display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:10px;';
             trendEl.parentNode.insertBefore(catPillsEl4, trendEl);
         }
-        catPillsEl4.style.display = catList4.length ? 'flex' : 'none';
+        catPillsEl4.style.display = 'flex';
 
         function renderCatPills4() {
             catPillsEl4.innerHTML = '';
-            catList4.forEach(function(c, ci) {
+            FIXED_CATS.forEach(function(c, ci) {
                 var col4 = CAT_COLORS[c] || DEFAULT_COLORS[ci % DEFAULT_COLORS.length];
-                var on4 = savedVis4[c] !== false;
+                var hasData = catList4.indexOf(c) !== -1;
+                var on4 = hasData && savedVis4[c] !== false;
                 var pill4 = document.createElement('button');
-                pill4.style.cssText = 'display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;cursor:pointer;border:0.5px solid '+(on4?col4:'var(--border-color)')+';background:'+(on4?col4+'22':'transparent')+';color:'+(on4?col4:'var(--text-secondary)')+';transition:all .15s;';
-                pill4.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:'+(on4?col4:'var(--border-color)')+';display:inline-block;flex-shrink:0;"></span>'+c;
-                pill4.addEventListener('click', (function(cat4){ return function(){
-                    savedVis4[cat4] = !savedVis4[cat4];
-                    try { localStorage.setItem(VIS_KEY4, JSON.stringify(savedVis4)); } catch(e){}
-                    renderCatPills4();
-                    renderTrendChart();
-                }; })(c));
+                // 无数据品类：灰色空心，不可点击选中
+                var borderCol = on4 ? col4 : (hasData ? col4 : 'var(--border-color)');
+                var bgCol = on4 ? col4+'22' : 'transparent';
+                var txtCol = on4 ? col4 : (hasData ? col4 : 'var(--text-secondary)');
+                var dotCol = on4 ? col4 : 'var(--border-color)';
+                var opacity = hasData ? '1' : '0.4';
+                pill4.style.cssText = 'display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;cursor:'+(hasData?'pointer':'default')+';border:0.5px solid '+borderCol+';background:'+bgCol+';color:'+txtCol+';transition:all .15s;opacity:'+opacity+';';
+                pill4.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:'+dotCol+';display:inline-block;flex-shrink:0;"></span>'+c;
+                if (hasData) {
+                    pill4.addEventListener('click', (function(cat4){ return function(){
+                        savedVis4[cat4] = !savedVis4[cat4];
+                        try { localStorage.setItem(VIS_KEY4, JSON.stringify(savedVis4)); } catch(e){}
+                        renderCatPills4();
+                        renderTrendChart();
+                    }; })(c));
+                }
                 catPillsEl4.appendChild(pill4);
             });
         }
 
         function renderTrendChart() {
-            var visCats4 = catList4.filter(function(c){ return savedVis4[c]!==false; });
+            var visCats4 = FIXED_CATS.filter(function(c){ return catList4.indexOf(c)!==-1 && savedVis4[c]!==false; });
 
             if (trendRange === '4w') {
                 // ── 近4周：周维度多品类 ──
@@ -4416,8 +4428,8 @@ function zbRenderSitePersonList() {
     var curEnd    = (document.getElementById('siteWeekCurEnd')    || {}).value || '';
 
     function fmtShort(s){ if(!s) return ''; var p=s.split('-'); return (p[1]|0)+'/'+(p[2]|0); }
-    var pillTextA = lastStart ? '上周 '+fmtShort(lastStart)+'–'+fmtShort(lastEnd) : '上周';
-    var pillTextB = curStart  ? '本周 '+fmtShort(curStart) +'–'+fmtShort(curEnd)  : '本周';
+    var pillTextA = lastStart ? fmtShort(lastStart)+'–'+fmtShort(lastEnd) : '上期';
+    var pillTextB = curStart  ? fmtShort(curStart) +'–'+fmtShort(curEnd)  : '本期';
 
     function inPeriod(date, s, e) { if(!s||!e) return false; return date >= s && date <= e; }
 
@@ -4477,8 +4489,8 @@ function zbRenderSiteIssueAnalysis(execDiff, rootEl) {
     var curEnd    = (document.getElementById('siteWeekCurEnd')    || {}).value || '';
 
     function fmtShort(s){ if(!s) return ''; var p=s.split('-'); return (p[1]|0)+'/'+(p[2]|0); }
-    var labelA = lastStart ? '上周 '+fmtShort(lastStart)+'–'+fmtShort(lastEnd) : '上周';
-    var labelB = curStart  ? '本周 '+fmtShort(curStart) +'–'+fmtShort(curEnd)  : '本周';
+    var labelA = lastStart ? fmtShort(lastStart)+'–'+fmtShort(lastEnd) : '上期';
+    var labelB = curStart  ? fmtShort(curStart) +'–'+fmtShort(curEnd)  : '本期';
 
     function inPeriod(date, s, e) { if(!s||!e) return false; return date >= s && date <= e; }
     var diffA = execDiff.filter(function(d){ return d.date && inPeriod(d.date.split(' ')[0], lastStart, lastEnd); });
