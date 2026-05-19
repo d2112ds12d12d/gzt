@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.26A</title>
+    <title>培训部数据看板 v1.27</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -260,6 +260,7 @@
         .rank-col-box { transition: box-shadow 0.18s; }
         .rank-col-box:hover { box-shadow: 0 4px 16px rgba(100,120,180,0.12); }
         ::-webkit-scrollbar { width: 4px; height: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: transparent; border-radius: 4px; transition: background .2s; } *:hover::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.5); } ::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,0.8) !important; }
+        @keyframes zbSpin { to { transform: rotate(360deg); } }
 
         /* ── 周度趋势模块 ── */
         .wt-toolbar {
@@ -583,7 +584,7 @@
   <nav id="zb-sidebar">
     <div class="zb-logo">
       <div class="zb-brand">培训部数据看板</div>
-      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.26A</span></div>
+      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.27</span></div>
     </div>
     <div class="zb-nav-lbl">数据模块</div>
     <div class="zb-nav-item active" onclick="zbNav('overview',this)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 10 10 7 13 10 17 7"/></svg> 数据总览</div>
@@ -2769,22 +2770,12 @@
                         const _dMin = _parsedDates.length ? _parsedDates.reduce((a,b)=>a<b?a:b) : '—';
                         const _dMax = _parsedDates.length ? _parsedDates.reduce((a,b)=>a>b?a:b) : '—';
                         zbAddLog({ type: tableType, tableName: tableName, rows: parsed.length, dateMin: _dMin, dateMax: _dMax, dates: [...new Set(_parsedDates)] });
-                        // 管理员及以上：自动推送到GitHub云端
-                        if (typeof zbPushToGitHub === 'function' && (zbRole === 'admin' || zbRole === 'super')) {
-                            zbPushToGitHub(tableType).then(ok => {
-                                if (ok) showToast('☁️ 已同步到云端');
-                                else showToast('⚠️ 云端同步失败，数据已本地加载');
-                            });
-                            // 同步推送日志
-                            setTimeout(() => { if (typeof zbPushLog === 'function') zbPushLog(); }, 1500);
-                        }
                     } catch(e) {
                         console.error('解析失败:', file.name, e);
                         showToast('✗ 解析失败: ' + file.name + '（' + (e.message||'格式错误') + '）');
                     }
                 }
                 combinedFileInput.value = '';
-                // 桥接到小田的渲染逻辑，只要有任何数据就渲染
                 bridgeData();
                 if (diffData.length || summaryData.length) {
                     if (warehouseSet.size === 0) {
@@ -2796,6 +2787,12 @@
                     fullRefresh();
                 }
                 hideLoading();
+
+                // 管理员及以上：带进度条推送到云端
+                if (typeof zbPushToGitHub === 'function' && (zbRole === 'admin' || zbRole === 'super')) {
+                    await zbPushAllWithProgress();
+                    setTimeout(() => { if (typeof zbPushLog === 'function') zbPushLog(); }, 800);
+                }
             }
 
             // 事件绑定
@@ -3895,6 +3892,97 @@ async function zbLoadCloudData(useApi) {
 }
 
 // ── 推送到GitHub ──
+// ── 带进度遮罩的批量云端推送 ──
+async function zbPushAllWithProgress() {
+    var tasks = [
+        { key: 'qa',    label: 'QA差异率' },
+        { key: 'diff5', label: '手机差异明细' },
+        { key: 'sum',   label: '日汇总' },
+        { key: 'diff4', label: '五品类差异明细' }
+    ];
+    // 过滤掉无数据的任务
+    tasks = tasks.filter(function(t) { return window._DATA && (window._DATA[t.key]||[]).length > 0; });
+    var total = tasks.length;
+    if (!total) return;
+
+    // 创建遮罩
+    var overlay = document.createElement('div');
+    overlay.id = 'zbUploadOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:9999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);';
+    overlay.innerHTML = '<div style="background:var(--bg-card,#fff);border-radius:16px;padding:24px 28px;width:420px;max-width:90vw;box-shadow:0 8px 32px rgba(0,0,0,0.18);">'
+        + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;">'
+        + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>'
+        + '<span style="font-size:14px;font-weight:500;color:var(--text-primary,#1e293b);">正在同步到云端</span>'
+        + '<span id="zbProgPct" style="margin-left:auto;font-size:12px;color:#2563eb;font-weight:500;">0%</span>'
+        + '</div>'
+        + '<div style="background:var(--kpi-bg,#f1f5f9);border-radius:100px;height:6px;overflow:hidden;margin-bottom:10px;">'
+        + '<div id="zbProgBar" style="height:100%;width:0%;background:#2563eb;border-radius:100px;transition:width .35s ease;"></div>'
+        + '</div>'
+        + '<div id="zbProgSub" style="font-size:12px;color:var(--text-secondary,#64748b);margin-bottom:16px;">准备中…</div>'
+        + '<div id="zbProgList" style="display:flex;flex-direction:column;gap:6px;"></div>'
+        + '<div style="margin-top:14px;padding:9px 12px;background:var(--kpi-bg,#f1f5f9);border-radius:8px;font-size:12px;color:var(--text-secondary,#64748b);display:flex;align-items:center;gap:7px;">'
+        + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>'
+        + '上传完成前请勿关闭或操作看板'
+        + '</div>'
+        + '</div>';
+    document.body.appendChild(overlay);
+
+    function renderList(done, current) {
+        var listEl = document.getElementById('zbProgList');
+        if (!listEl) return;
+        listEl.innerHTML = tasks.map(function(t, i) {
+            var isDone = i < done;
+            var isActive = i === done && current;
+            var isPending = i > done || (i === done && !current);
+            var icon = isDone
+                ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#16a34a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+                : isActive
+                ? '<div style="width:14px;height:14px;border-radius:50%;border:1.5px solid #2563eb;border-top-color:transparent;animation:zbSpin .8s linear infinite;flex-shrink:0;"></div>'
+                : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/></svg>';
+            var nameColor = isActive ? 'var(--text-primary,#1e293b)' : 'var(--text-secondary,#64748b)';
+            var statusText = isDone ? '<span style="color:#16a34a;font-size:11px;">完成</span>' : isActive ? '<span style="color:#2563eb;font-size:11px;">上传中…</span>' : '<span style="color:#94a3b8;font-size:11px;">等待中</span>';
+            return '<div style="display:flex;align-items:center;gap:8px;font-size:12px;opacity:'+(isPending?'0.5':'1')+';">'
+                + '<div style="flex-shrink:0;">'+icon+'</div>'
+                + '<span style="color:'+nameColor+';font-weight:'+(isActive?'500':'400')+';">'+t.label+'</span>'
+                + '<span style="margin-left:auto;">'+statusText+'</span>'
+                + '</div>';
+        }).join('');
+    }
+
+    function setProgress(done, isActive, label) {
+        var pct = Math.round(done / total * 100);
+        var bar = document.getElementById('zbProgBar');
+        var pctEl = document.getElementById('zbProgPct');
+        var sub = document.getElementById('zbProgSub');
+        if (bar) bar.style.width = pct + '%';
+        if (pctEl) pctEl.textContent = pct + '%';
+        if (sub) sub.textContent = label || '';
+        renderList(done, isActive);
+    }
+
+    var failed = [];
+    for (var i = 0; i < tasks.length; i++) {
+        setProgress(i, true, tasks[i].label + ' · ' + (i+1) + ' / ' + total + ' 文件');
+        var ok = await zbPushToGitHub(tasks[i].key);
+        if (!ok) failed.push(tasks[i].label);
+    }
+
+    // 完成状态
+    var bar = document.getElementById('zbProgBar');
+    if (bar) { bar.style.background = failed.length ? '#dc2626' : '#16a34a'; bar.style.width = '100%'; }
+    var pctEl = document.getElementById('zbProgPct');
+    if (pctEl) { pctEl.textContent = '100%'; pctEl.style.color = failed.length ? '#dc2626' : '#16a34a'; }
+    var sub = document.getElementById('zbProgSub');
+    if (sub) sub.textContent = failed.length ? '部分失败：' + failed.join('、') : '全部文件已同步到云端 ✓';
+    renderList(tasks.length, false);
+
+    // 2秒后自动关闭
+    await new Promise(function(r){ setTimeout(r, 2000); });
+    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+    if (!failed.length) showToast('☁️ 数据已同步到云端');
+    else showToast('⚠️ 部分文件同步失败，请重试：' + failed.join('、'));
+}
+
 async function zbPushToGitHub(tableType, force) {
     if (zbRole !== 'admin' && zbRole !== 'super') return false;
     const token = zbGetToken();
