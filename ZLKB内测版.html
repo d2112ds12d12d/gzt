@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.27</title>
+    <title>培训部数据看板 v1.28</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -584,7 +584,7 @@
   <nav id="zb-sidebar">
     <div class="zb-logo">
       <div class="zb-brand">培训部数据看板</div>
-      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.27</span></div>
+      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.28</span></div>
     </div>
     <div class="zb-nav-lbl">数据模块</div>
     <div class="zb-nav-item active" onclick="zbNav('overview',this)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 10 10 7 13 10 17 7"/></svg> 数据总览</div>
@@ -2769,7 +2769,7 @@
                         const _parsedDates = parsed.map(r=>r.date).filter(Boolean);
                         const _dMin = _parsedDates.length ? _parsedDates.reduce((a,b)=>a<b?a:b) : '—';
                         const _dMax = _parsedDates.length ? _parsedDates.reduce((a,b)=>a>b?a:b) : '—';
-                        zbAddLog({ type: tableType, tableName: tableName, rows: parsed.length, dateMin: _dMin, dateMax: _dMax, dates: [...new Set(_parsedDates)] });
+                        var _logRecord = zbAddLog({ type: tableType, tableName: tableName, rows: parsed.length, dateMin: _dMin, dateMax: _dMax, dates: [...new Set(_parsedDates)] });
                     } catch(e) {
                         console.error('解析失败:', file.name, e);
                         showToast('✗ 解析失败: ' + file.name + '（' + (e.message||'格式错误') + '）');
@@ -2861,8 +2861,8 @@
                 if (lbl) lbl.textContent = '全部质检人员';
                 updatePersonFilterOptions(); fullRefresh();
             });
-            if (startDateFilter) startDateFilter.addEventListener('change', () => { zbClearQuickDate(); updatePersonFilterOptions(); fullRefresh(); _zbRefreshSitePageIfActive(); });
-            if (endDateFilter) endDateFilter.addEventListener('change', () => { zbClearQuickDate(); updatePersonFilterOptions(); fullRefresh(); _zbRefreshSitePageIfActive(); });
+            if (startDateFilter) startDateFilter.addEventListener('change', () => { zbClearQuickDate(); updatePersonFilterOptions(); fullRefresh(); });
+            if (endDateFilter) endDateFilter.addEventListener('change', () => { zbClearQuickDate(); updatePersonFilterOptions(); fullRefresh(); });
 
             // 自定义质检人员下拉逻辑
             (function initPersonDropdown() {
@@ -3965,6 +3965,9 @@ async function zbPushAllWithProgress() {
         setProgress(i, true, tasks[i].label + ' · ' + (i+1) + ' / ' + total + ' 文件');
         var ok = await zbPushToGitHub(tasks[i].key);
         if (!ok) failed.push(tasks[i].label);
+        // 回写推送结果到对应日志条目
+        var matchLog = _zbLog.find(function(l){ return l.type === tasks[i].key && !l.syncTs; });
+        if (matchLog && typeof zbUpdateLogSync === 'function') zbUpdateLogSync(matchLog, ok);
     }
 
     // 完成状态
@@ -5146,9 +5149,18 @@ function zbSiteTrendRange(range, btn) {
 
 function zbAddLog(entry) {
     if (!entry) return;
-    var record = Object.assign({ ts: new Date().toISOString() }, entry);
+    var record = Object.assign({ ts: new Date().toISOString(), ok: null }, entry);
     _zbLog.unshift(record);
     if (_zbLog.length > 200) _zbLog = _zbLog.slice(0, 200);
+    try { localStorage.setItem('zb_upload_log', JSON.stringify(_zbLog)); } catch(e) {}
+    return record; // 返回引用，方便后续回写
+}
+
+// 回写推送结果到对应日志条目
+function zbUpdateLogSync(record, ok) {
+    if (!record) return;
+    record.ok = ok;
+    record.syncTs = new Date().toISOString();
     try { localStorage.setItem('zb_upload_log', JSON.stringify(_zbLog)); } catch(e) {}
 }
 
@@ -5194,30 +5206,33 @@ function _zbRenderLog(){
     return;
   }
 
-  // 按数据日期分组，统计每天哪些表上传了
-  var dateTableMap = {};
-  var phoneTypes = ['qa','diff5'];
-  var fiveTypes = ['sum','diff4'];
-  _zbLog.forEach(function(log){
-    if(!log.dates || !log.type) return;
-    log.dates.forEach(function(d){
-      if(!d || d==='—') return;
-      if(!dateTableMap[d]) dateTableMap[d] = {};
-      dateTableMap[d][log.type] = true;
-    });
-  });
-
   var names={qa:'QA差异率',diff5:'手机差异明细',sum:'日汇总',diff4:'五品类明细'};
+  var typeColors={qa:'#2563eb',diff5:'#7c3aed',sum:'#059669',diff4:'#d97706'};
 
-  // 统计数字
+  // 统计数字（本月）
   var thisMonth = new Date().toISOString().slice(0,7);
   var uploadCount=0, okCount=0, failCount=0;
-
-  // 按日期分组渲染
-  var grouped = {}; // dateStr(YYYY-MM-DD) -> entries[]
   _zbLog.forEach(function(log){
-    var t = new Date(log.time);
-    var dateKey = t.toISOString().slice(0,10);
+    var ts = log.ts || log.time || '';
+    if(!ts) return;
+    if(ts.startsWith(thisMonth)) uploadCount++;
+    if(log.ok===false) failCount++; else okCount++;
+  });
+  var statsEl = document.getElementById('zbLogStats');
+  if(statsEl){
+    statsEl.innerHTML = '<span style="color:#2563eb;font-size:22px;font-weight:500;">'+uploadCount+'</span><div style="font-size:12px;color:var(--text-secondary);">本月上传</div>';
+  }
+  var okEl = document.getElementById('zbLogOk');
+  if(okEl) okEl.innerHTML = '<span style="color:#059669;font-size:22px;font-weight:500;">'+okCount+'</span><div style="font-size:12px;color:var(--text-secondary);">读取成功</div>';
+  var failEl = document.getElementById('zbLogFail');
+  if(failEl) failEl.innerHTML = '<span style="color:#dc2626;font-size:22px;font-weight:500;">'+failCount+'</span><div style="font-size:12px;color:var(--text-secondary);">读取失败</div>';
+
+  // 按操作时间分组
+  var grouped = {};
+  _zbLog.forEach(function(log){
+    var ts = log.ts || log.time || '';
+    var t = ts ? new Date(ts) : new Date();
+    var dateKey = isNaN(t.getTime()) ? '未知日期' : t.toISOString().slice(0,10);
     if(!grouped[dateKey]) grouped[dateKey]=[];
     grouped[dateKey].push(log);
   });
@@ -5232,101 +5247,71 @@ function _zbRenderLog(){
     return d;
   }
 
-  function indPill(ok, label) {
-    return '<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 7px 2px 5px;border-radius:6px;font-size:11px;background:'+(ok?'#d1fae5':'#fee2e2')+';color:'+(ok?'#065f46':'#991b1b')+';margin-right:4px;">'
-      +'<span style="width:5px;height:5px;border-radius:50%;background:'+(ok?'#10b981':'#ef4444')+';flex-shrink:0;display:inline-block;"></span>'
-      +label+' · '+(ok?'成功':'失败')
-      +'</span>';
-  }
-
   var html = '';
   sortedDates.forEach(function(dateKey){
     html += '<div style="padding:6px 20px;font-size:11px;color:var(--text-secondary);background:var(--kpi-bg);border-bottom:0.5px solid var(--border-color);font-weight:500;letter-spacing:0.3px;">'
       + dateLabel(dateKey) + '</div>';
 
     grouped[dateKey].forEach(function(log){
-      var t=new Date(log.time);
-      var ts=('0'+t.getHours()).slice(-2)+':'+('0'+t.getMinutes()).slice(-2);
-      var isPhone = phoneTypes.indexOf(log.type) >= 0;
-      var isFive  = fiveTypes.indexOf(log.type) >= 0;
-      var isUpload = isPhone || isFive;
+      var ts = log.ts || log.time || '';
+      var t = ts ? new Date(ts) : null;
+      var timeStr = (t && !isNaN(t.getTime())) ? ('0'+t.getHours()).slice(-2)+':'+('0'+t.getMinutes()).slice(-2) : '--:--';
+      var typeName = names[log.type] || log.tableName || log.type || '未知';
+      var typeColor = typeColors[log.type] || '#64748b';
+      var isOk = log.ok !== false;
+
+      // 数据摘要：行数、日期范围
+      var summaryParts = [];
+      if(log.rows) summaryParts.push('共 '+log.rows+' 条');
+      if(log.dateMin && log.dateMax) {
+        summaryParts.push(log.dateMin === log.dateMax ? log.dateMin : log.dateMin + ' — ' + log.dateMax);
+      }
+
+      // 同步状态标注
+      var syncBadge = '';
+      if (log.ok === true) {
+          syncBadge = '<span style="font-size:11px;padding:1px 7px;border-radius:6px;background:#d1fae5;color:#065f46;border:0.5px solid #6ee7b7;margin-left:4px;">☁️ 已同步</span>';
+      } else if (log.ok === false) {
+          syncBadge = '<span style="font-size:11px;padding:1px 7px;border-radius:6px;background:#fee2e2;color:#991b1b;border:0.5px solid #fca5a5;margin-left:4px;">⚠️ 同步失败</span>';
+      } else if (log.ok === null || log.ok === undefined) {
+          syncBadge = '<span style="font-size:11px;padding:1px 7px;border-radius:6px;background:var(--kpi-bg);color:var(--text-secondary);border:0.5px solid var(--border-color);margin-left:4px;">待同步</span>';
+      }
+
+      // 数据质量提示
+      var qualityHint = '';
+      if(log.rows === 0) qualityHint = '<span style="color:#dc2626;font-size:11px;margin-left:6px;">⚠ 数据为空</span>';
 
       if(log.type==='delete'){
         html += '<div style="display:flex;align-items:flex-start;gap:10px;padding:11px 20px;border-bottom:0.5px solid var(--border-color);">'
           +'<span style="width:8px;height:8px;border-radius:50%;background:#94a3b8;flex-shrink:0;margin-top:4px;"></span>'
           +'<div style="flex:1;">'
-            +'<div style="font-size:13px;font-weight:500;color:var(--text-primary);margin-bottom:2px;">删除云端文件 <span style="font-size:10px;padding:1px 7px;border-radius:8px;background:var(--kpi-bg);color:var(--text-secondary);border:0.5px solid var(--border-color);">删除</span></div>'
+            +'<div style="font-size:13px;font-weight:500;color:var(--text-primary);margin-bottom:2px;">删除云端文件</div>'
             +'<div style="font-size:11px;color:var(--text-secondary);">'+(log.desc||'')+'</div>'
           +'</div>'
-          +'<span style="font-size:11px;color:var(--text-secondary);flex-shrink:0;margin-top:2px;">'+ts+'</span>'
+          +'<span style="font-size:11px;color:var(--text-secondary);flex-shrink:0;">'+timeStr+'</span>'
           +'</div>';
         return;
       }
-
-      if(log.type==='edit'){
-        html += '<div style="display:flex;align-items:flex-start;gap:10px;padding:11px 20px;border-bottom:0.5px solid var(--border-color);">'
-          +'<span style="width:8px;height:8px;border-radius:50%;background:#a78bfa;flex-shrink:0;margin-top:4px;"></span>'
-          +'<div style="flex:1;">'
-            +'<div style="font-size:13px;font-weight:500;color:var(--text-primary);margin-bottom:2px;">数据修改 <span style="font-size:10px;padding:1px 7px;border-radius:8px;background:#ede9fe;color:#6d28d9;">修改</span></div>'
-            +'<div style="font-size:11px;color:var(--text-secondary);">质检码 '+log.code+'「'+log.col+'」: '+log.from+' → '+log.to+'</div>'
-          +'</div>'
-          +'<span style="font-size:11px;color:var(--text-secondary);flex-shrink:0;margin-top:2px;">'+ts+'</span>'
-          +'</div>';
-        return;
-      }
-
-      // 上传记录：判断灯状态
-      var allOk = false, hasAny = false;
-      var lampsHtml = '';
-      if(isPhone){
-        var repDate = (log.dates&&log.dates.length)?log.dates[log.dates.length-1]:(log.dateMax||'');
-        var dm = dateTableMap[repDate]||{};
-        var qaOk = !!dm.qa, diffOk = !!dm.diff5;
-        allOk = qaOk && diffOk; hasAny = true;
-        lampsHtml = indPill(qaOk,'QA差异率') + indPill(diffOk,'手机差异明细');
-      } else if(isFive){
-        var repDate2 = (log.dates&&log.dates.length)?log.dates[log.dates.length-1]:(log.dateMax||'');
-        var dm2 = dateTableMap[repDate2]||{};
-        var sumOk = !!dm2.sum, d4Ok = !!dm2.diff4;
-        allOk = sumOk && d4Ok; hasAny = true;
-        lampsHtml = indPill(sumOk,'日汇总') + indPill(d4Ok,'五品类明细');
-      }
-
-      if(isUpload && log.time.slice(0,7)===thisMonth) uploadCount++;
-      if(isUpload && hasAny) { if(allOk) okCount++; else failCount++; }
-
-      var dotColor = allOk ? '#3b82f6' : '#ef4444';
-      var badgeStyle = allOk
-        ? 'background:#dbeafe;color:#1d4ed8;'
-        : 'background:#fee2e2;color:#991b1b;';
-      var badgeText = allOk ? '上传成功' : '读取失败';
-      var dateRange = (log.dateMin||'—') + (log.dateMin!==log.dateMax?' ~ '+(log.dateMax||'—'):'');
-      var typeName = names[log.type]||log.type;
 
       html += '<div style="display:flex;align-items:flex-start;gap:10px;padding:11px 20px;border-bottom:0.5px solid var(--border-color);">'
-        +'<span style="width:8px;height:8px;border-radius:50%;background:'+dotColor+';flex-shrink:0;margin-top:4px;"></span>'
+        +'<span style="width:8px;height:8px;border-radius:50%;background:'+(isOk?'#10b981':'#ef4444')+';flex-shrink:0;margin-top:5px;"></span>'
         +'<div style="flex:1;min-width:0;">'
-          +'<div style="font-size:13px;font-weight:500;color:var(--text-primary);margin-bottom:3px;">上传 '+dateRange+' '+typeName+' <span style="font-size:10px;padding:1px 7px;border-radius:8px;'+badgeStyle+'">'+badgeText+'</span></div>'
-          +'<div style="display:flex;flex-wrap:wrap;gap:4px;margin-bottom:3px;">'+ lampsHtml +'</div>'
-          +'<div style="font-size:11px;color:var(--text-secondary);">共 '+log.rows+' 条记录</div>'
+          +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap;">'
+            +'<span style="font-size:13px;font-weight:500;color:var(--text-primary);">'+typeName+'</span>'
+            +'<span style="font-size:11px;padding:1px 7px;border-radius:6px;background:'+typeColor+'18;color:'+typeColor+';border:0.5px solid '+typeColor+'44;">'+( isOk?'成功':'失败')+'</span>'
+            + syncBadge
+            + qualityHint
+          +'</div>'
+          +(summaryParts.length ? '<div style="font-size:11px;color:var(--text-secondary);">'+summaryParts.join(' · ')+'</div>' : '')
         +'</div>'
-        +'<span style="font-size:11px;color:var(--text-secondary);flex-shrink:0;margin-top:2px;">'+ts+'</span>'
+        +'<span style="font-size:11px;color:var(--text-secondary);flex-shrink:0;">'+timeStr+'</span>'
         +'</div>';
     });
   });
 
-  el.innerHTML = html;
+  el.innerHTML = html || '<div style="text-align:center;padding:32px;color:var(--text-secondary);font-size:13px;">暂无上传记录</div>';
 
-  // 更新统计
-  var statUpload = document.getElementById('zbLogStatUpload');
-  var statOk = document.getElementById('zbLogStatOk');
-  var statFail = document.getElementById('zbLogStatFail');
-  if(statUpload) statUpload.textContent = uploadCount;
-  if(statOk) statOk.textContent = okCount;
-  if(statFail) statFail.textContent = failCount;
-
-  // 更新底部
-  var footerTxt = document.getElementById('zbLogFooterTxt');
+  var footerTxt = document.getElementById('zbLogFooter');
   if(footerTxt) footerTxt.textContent = '共 ' + _zbLog.length + ' 条记录';
 }
 
