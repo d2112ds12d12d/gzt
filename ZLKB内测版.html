@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.23</title>
+    <title>培训部数据看板 v1.24</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -583,7 +583,7 @@
   <nav id="zb-sidebar">
     <div class="zb-logo">
       <div class="zb-brand">培训部数据看板</div>
-      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.23</span></div>
+      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.24</span></div>
     </div>
     <div class="zb-nav-lbl">数据模块</div>
     <div class="zb-nav-item active" onclick="zbNav('overview',this)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 10 10 7 13 10 17 7"/></svg> 数据总览</div>
@@ -4081,20 +4081,24 @@ function zbRenderSiteDetail(siteName) {
     if (trendEl && typeof echarts !== 'undefined') {
         if (!_siteChart_trend) _siteChart_trend = echarts.init(trendEl);
 
-        // 趋势图独立范围（近15天/近4周/全部），不影响顶部日期框
         var trendRange = window._siteTrendRange || '15d';
         var today = new Date();
         var yesterday = new Date(today); yesterday.setDate(today.getDate() - 1);
-        var trendStart = '', trendEnd = '';
         function _fmtD(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+
+        // 计算趋势图独立日期范围
+        var trendStart = '', trendEnd = '';
         if (trendRange === '15d') {
             var s15 = new Date(yesterday); s15.setDate(yesterday.getDate() - 14);
             trendStart = _fmtD(s15); trendEnd = _fmtD(yesterday);
         } else if (trendRange === '4w') {
-            var dow = yesterday.getDay();
-            var lastSun = new Date(yesterday); lastSun.setDate(yesterday.getDate() - dow);
-            var s4w = new Date(lastSun); s4w.setDate(lastSun.getDate() - 27);
-            trendStart = _fmtD(s4w); trendEnd = _fmtD(lastSun);
+            var dow4 = yesterday.getDay();
+            var lastSun4 = new Date(yesterday); lastSun4.setDate(yesterday.getDate() - dow4);
+            var s4w = new Date(lastSun4); s4w.setDate(lastSun4.getDate() - 27);
+            trendStart = _fmtD(s4w); trendEnd = _fmtD(lastSun4);
+        } else {
+            // 全部：跟顶部日期框
+            trendStart = startD; trendEnd = endD;
         }
         function inTrendRange(dt) {
             if (!dt) return false;
@@ -4103,248 +4107,180 @@ function zbRenderSiteDetail(siteName) {
             return true;
         }
 
-        // 按日期聚合：根据当前口径的差异台数（叠加趋势图范围过滤）
-        var execDateMap = {};
-        scopedDiff.forEach(function(d) {
-            if (!d.date || !d.code) return;
-            var dt = d.date.split(' ')[0];
-            if (!inTrendRange(dt)) return;
-            if (!execDateMap[dt]) execDateMap[dt] = new Set();
-            execDateMap[dt].add(d.code);
-        });
-
-        // 从 summaryData 取该站点每日抽检量（跟随顶部日期筛选 + 趋势图范围）
-        var qaChecksMap = {};
-        var _sumForTrend = window._getSummaryData ? window._getSummaryData() : [];
-        _sumForTrend.forEach(function(r) {
-            if (r.siteName === siteName && r.date) {
-                var dt = r.date.split(' ')[0];
-                if (startD && dt < startD) return;
-                if (endD   && dt > endD)   return;
-                if (!inTrendRange(dt)) return;
-                qaChecksMap[dt] = (qaChecksMap[dt] || 0) + (r.totalChecks || 0);
-            }
-        });
-
-        // 合并日期，算每日差异率
-        var allDates = new Set(Object.keys(execDateMap).concat(Object.keys(qaChecksMap)));
-        var xData = Array.from(allDates).sort();
-        var yData = xData.map(function(dt) {
-            var checks = qaChecksMap[dt] || 0;
-            var execDiff = execDateMap[dt] ? execDateMap[dt].size : 0;
-            if (!checks) return null;
-            return parseFloat((execDiff / checks * 100).toFixed(2));
-        });
-
-        // 找最高/最低
-        var validY = yData.filter(function(v){ return v !== null; });
-        var maxVal = Math.max.apply(null, validY);
-        var minVal = Math.min.apply(null, validY);
-
         var isDark = document.body.classList.contains('dark');
         var textColor = isDark ? '#e2e8f0' : '#1e293b';
         var axisColor = isDark ? '#475569' : '#cbd5e1';
 
-        var seriesData = yData.map(function(v, i) {
-            if (v === null) return { value: null };
-            var isMax = v === maxVal;
-            var isMin = v === minVal && maxVal !== minVal;
-            return {
-                value: v,
-                itemStyle: {
-                    color: isMax ? '#ef4444' : isMin ? '#10b981' : '#3b82f6',
-                    borderColor: isMax ? '#ef4444' : isMin ? '#10b981' : '#3b82f6',
-                    borderWidth: (isMax || isMin) ? 2.5 : 2
-                },
-                symbolSize: (isMax || isMin) ? 10 : 7,
-                label: {
-                    show: true,
-                    position: 'top',
-                    formatter: function(p) {
-                        var val = p.value + '%';
-                        if (p.value === maxVal) return '{red|' + val + '\n↑最高}';
-                        if (p.value === minVal && maxVal !== minVal) return '{green|' + val + '\n↓最低}';
-                        return '{normal|' + val + '}';
-                    },
-                    rich: {
-                        red:    { color:'#ef4444', fontSize:10, fontWeight:'bold', lineHeight:16 },
-                        green:  { color:'#10b981', fontSize:10, fontWeight:'bold', lineHeight:16 },
-                        normal: { color:textColor, fontSize:10 }
-                    }
-                }
-            };
+        // ── 品类配置 ──
+        var CAT_COLORS = { '手机':'#2563eb','笔记本':'#f59e0b','平板':'#10b981','手表':'#8b5cf6','耳机':'#ef4444','相机':'#06b6d4' };
+        var DEFAULT_COLORS = ['#2563eb','#f59e0b','#10b981','#8b5cf6','#ef4444','#06b6d4'];
+        var qaData4 = (window._DATA && window._DATA.qa) ? window._DATA.qa : [];
+        var siteQA4 = qaData4.filter(function(r){ return r.site === siteName; });
+        var qaCatSet4 = {};
+        siteQA4.forEach(function(r){ if(r.cat) qaCatSet4[r.cat]=1; });
+        var catList4 = Object.keys(qaCatSet4).filter(function(c){ return c && c!=='undefined'; });
+        var allDiff4 = window._allDiffData || [];
+        var execDiff4 = allDiff4.filter(function(d){
+            return d.warehouse === siteName && d.category && d.category.includes('客观') && d.judgedIssueType && d.judgedIssueType.includes('执行');
         });
 
-        // ── 近4周多品类折线图分支 ──
-        if (trendRange === '4w') {
-            var CAT_COLORS = { '手机':'#2563eb','笔记本':'#f59e0b','平板':'#10b981','手表':'#8b5cf6','耳机':'#ef4444','相机':'#06b6d4' };
-            var DEFAULT_COLORS = ['#2563eb','#f59e0b','#10b981','#8b5cf6','#ef4444','#06b6d4'];
-            var dow2 = yesterday.getDay();
-            var wkEnd = new Date(yesterday); wkEnd.setDate(yesterday.getDate() - dow2);
-            var weeks4 = [];
-            for (var wi = 3; wi >= 0; wi--) {
-                var w4e = new Date(wkEnd); w4e.setDate(wkEnd.getDate() - wi * 7);
-                var w4s = new Date(w4e); w4s.setDate(w4e.getDate() - 6);
-                weeks4.push({ label:(w4s.getMonth()+1)+'.'+(w4s.getDate())+'-'+(w4e.getMonth()+1)+'.'+(w4e.getDate()), start:_fmtD(w4s), end:_fmtD(w4e) });
-            }
-            var qaData4 = (window._DATA && window._DATA.qa) ? window._DATA.qa : [];
-            var siteQA4 = qaData4.filter(function(r){ return r.site === siteName; });
-            var qaCatSet4 = {};
-            siteQA4.forEach(function(r){ if(r.cat) qaCatSet4[r.cat]=1; });
-            var catList4 = Object.keys(qaCatSet4).filter(function(c){ return c && c!=='undefined'; });
-            var VIS_KEY4 = 'site4w_cat_vis';
-            var savedVis4 = {};
-            try { var sv4=localStorage.getItem(VIS_KEY4); savedVis4=sv4?JSON.parse(sv4):{}; } catch(e4){}
-            catList4.forEach(function(c){ if(savedVis4[c]===undefined) savedVis4[c]=true; });
-            var allDiff4 = window._allDiffData || [];
-            var execDiff4 = allDiff4.filter(function(d){
-                return d.warehouse === siteName && d.category && d.category.includes('客观') && d.judgedIssueType && d.judgedIssueType.includes('执行');
+        var VIS_KEY4 = 'site4w_cat_vis';
+        var savedVis4 = {};
+        try { var sv4=localStorage.getItem(VIS_KEY4); savedVis4=sv4?JSON.parse(sv4):{}; } catch(e4){}
+        catList4.forEach(function(c){ if(savedVis4[c]===undefined) savedVis4[c]=true; });
+
+        // ── 品类胶囊（三个模式共用）──
+        var catPillsEl4 = document.getElementById('siteTrendCatPills');
+        if (!catPillsEl4) {
+            catPillsEl4 = document.createElement('div');
+            catPillsEl4.id = 'siteTrendCatPills';
+            catPillsEl4.style.cssText = 'display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:10px;';
+            trendEl.parentNode.insertBefore(catPillsEl4, trendEl);
+        }
+        catPillsEl4.style.display = catList4.length ? 'flex' : 'none';
+
+        function renderCatPills4() {
+            catPillsEl4.innerHTML = '';
+            catList4.forEach(function(c, ci) {
+                var col4 = CAT_COLORS[c] || DEFAULT_COLORS[ci % DEFAULT_COLORS.length];
+                var on4 = savedVis4[c] !== false;
+                var pill4 = document.createElement('button');
+                pill4.style.cssText = 'display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;cursor:pointer;border:0.5px solid '+(on4?col4:'var(--border-color)')+';background:'+(on4?col4+'22':'transparent')+';color:'+(on4?col4:'var(--text-secondary)')+';transition:all .15s;';
+                pill4.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:'+(on4?col4:'var(--border-color)')+';display:inline-block;flex-shrink:0;"></span>'+c;
+                pill4.addEventListener('click', (function(cat4){ return function(){
+                    savedVis4[cat4] = !savedVis4[cat4];
+                    try { localStorage.setItem(VIS_KEY4, JSON.stringify(savedVis4)); } catch(e){}
+                    renderCatPills4();
+                    renderTrendChart();
+                }; })(c));
+                catPillsEl4.appendChild(pill4);
             });
+        }
 
-            var catPillsEl4 = document.getElementById('siteTrendCatPills');
-            if (!catPillsEl4) {
-                catPillsEl4 = document.createElement('div');
-                catPillsEl4.id = 'siteTrendCatPills';
-                catPillsEl4.style.cssText = 'display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:10px;';
-                trendEl.parentNode.insertBefore(catPillsEl4, trendEl);
-            }
-            catPillsEl4.style.display = 'flex';
+        function renderTrendChart() {
+            var visCats4 = catList4.filter(function(c){ return savedVis4[c]!==false; });
 
-            function renderCatPills4() {
-                catPillsEl4.innerHTML = '';
-                catList4.forEach(function(c, ci) {
-                    var color4 = CAT_COLORS[c] || DEFAULT_COLORS[ci % DEFAULT_COLORS.length];
-                    var on4 = savedVis4[c] !== false;
-                    var pill4 = document.createElement('button');
-                    pill4.style.cssText = 'display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;cursor:pointer;border:0.5px solid '+(on4?color4:'var(--border-color)')+';background:'+(on4?color4+'22':'transparent')+';color:'+(on4?color4:'var(--text-secondary)')+';transition:all .15s;';
-                    pill4.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:'+(on4?color4:'var(--border-color)')+';display:inline-block;flex-shrink:0;"></span>'+c;
-                    pill4.addEventListener('click', (function(cat4, col4){
-                        return function(){
-                            savedVis4[cat4] = !savedVis4[cat4];
-                            try { localStorage.setItem(VIS_KEY4, JSON.stringify(savedVis4)); } catch(e4){}
-                            renderCatPills4();
-                            render4wChart4();
-                        };
-                    })(c, color4));
-                    catPillsEl4.appendChild(pill4);
-                });
-            }
-
-            function render4wChart4() {
-                var visCats4 = catList4.filter(function(c){ return savedVis4[c]!==false; });
+            if (trendRange === '4w') {
+                // ── 近4周：周维度多品类 ──
+                var dow2 = yesterday.getDay();
+                var wkEnd4 = new Date(yesterday); wkEnd4.setDate(yesterday.getDate() - dow2);
+                var weeks4 = [];
+                for (var wi=3; wi>=0; wi--) {
+                    var w4e = new Date(wkEnd4); w4e.setDate(wkEnd4.getDate() - wi*7);
+                    var w4s = new Date(w4e); w4s.setDate(w4e.getDate() - 6);
+                    weeks4.push({ label:(w4s.getMonth()+1)+'.'+(w4s.getDate())+'-'+(w4e.getMonth()+1)+'.'+(w4e.getDate()), start:_fmtD(w4s), end:_fmtD(w4e) });
+                }
                 var series4 = visCats4.map(function(c, ci) {
-                    var color4 = CAT_COLORS[c] || DEFAULT_COLORS[ci % DEFAULT_COLORS.length];
-                    var wkData4 = weeks4.map(function(wk) {
-                        var diffCodes4 = new Set();
-                        execDiff4.forEach(function(d) {
-                            if (!d.date || !d.code) return;
-                            var dt4 = d.date.split(' ')[0];
-                            if (dt4 < wk.start || dt4 > wk.end) return;
-                            if ((d.cat||'') !== c) return;
-                            diffCodes4.add(d.code);
+                    var col4 = CAT_COLORS[c] || DEFAULT_COLORS[ci%DEFAULT_COLORS.length];
+                    var wkData = weeks4.map(function(wk) {
+                        var diffs4 = new Set();
+                        execDiff4.forEach(function(d){
+                            if(!d.date||!d.code) return;
+                            var dt=d.date.split(' ')[0];
+                            if(dt<wk.start||dt>wk.end) return;
+                            if((d.cat||'')!==c) return;
+                            diffs4.add(d.code);
                         });
-                        var checks4 = 0;
-                        siteQA4.forEach(function(r) {
-                            if (!r.date || r.cat !== c) return;
-                            var dt4 = r.date.split(' ')[0];
-                            if (dt4 < wk.start || dt4 > wk.end) return;
-                            checks4 += (r.checks || 0);
+                        var chks4=0;
+                        siteQA4.forEach(function(r){
+                            if(!r.date||r.cat!==c) return;
+                            var dt=r.date.split(' ')[0];
+                            if(dt<wk.start||dt>wk.end) return;
+                            chks4+=(r.checks||0);
                         });
-                        if (!checks4) return null;
-                        return parseFloat((diffCodes4.size / checks4 * 100).toFixed(2));
+                        if(!chks4) return null;
+                        return parseFloat((diffs4.size/chks4*100).toFixed(2));
                     });
-                    return { name:c, type:'line', data:wkData4, smooth:false, connectNulls:false, symbol:'circle', symbolSize:7, lineStyle:{ color:color4, width:2 }, itemStyle:{ color:color4 }, label:{ show:true, position:'top', color:color4, fontSize:10, formatter:function(p){ return p.value===null?'':p.value+'%'; } } };
+                    return { name:c, type:'line', data:wkData, smooth:false, connectNulls:false, symbol:'circle', symbolSize:7, lineStyle:{color:col4,width:2}, itemStyle:{color:col4}, label:{show:true,position:'top',color:col4,fontSize:10,formatter:function(p){return p.value===null?'':p.value+'%';}} };
+                });
+                _siteChart_trend.setOption({
+                    legend:{show:false},
+                    tooltip:{trigger:'axis',formatter:function(params){return params[0].axisValue+'<br/>'+params.filter(function(p){return p.value!==null;}).map(function(p){return p.marker+p.seriesName+': '+p.value+'%';}).join('<br/>');}},
+                    xAxis:{type:'category',data:weeks4.map(function(w){return w.label;}),axisLabel:{color:textColor,fontSize:10},axisLine:{lineStyle:{color:axisColor}}},
+                    yAxis:{type:'value',name:'差异率(%)',nameTextStyle:{color:textColor},axisLabel:{color:textColor,formatter:'{value}%'},min:0},
+                    grid:{top:30,right:16,bottom:50,left:56},
+                    series:series4
+                }, true);
+
+                // 明细表
+                var tbl4el = document.getElementById('site4wTable');
+                if (!tbl4el) { tbl4el=document.createElement('div'); tbl4el.id='site4wTable'; tbl4el.style.cssText='border:0.5px solid var(--border-color);border-radius:8px;overflow:hidden;margin-top:12px;'; trendEl.parentNode.appendChild(tbl4el); }
+                tbl4el.style.display='';
+                var head4='<tr style="background:var(--kpi-bg);"><th style="padding:6px 10px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);">品类</th>'+weeks4.map(function(w,i){return '<th style="padding:6px 10px;text-align:center;font-size:11px;font-weight:500;color:'+(i===3?'#2563eb':'var(--text-secondary)')+';">'+w.label+(i===3?' ↓':'')+'</th>';}).join('')+'<th style="padding:6px 10px;text-align:center;font-size:11px;font-weight:500;color:var(--text-secondary);">环比</th></tr>';
+                var rows4=visCats4.map(function(c,ci){
+                    var col4=CAT_COLORS[c]||DEFAULT_COLORS[ci%DEFAULT_COLORS.length];
+                    var s4=series4.find(function(s){return s.name===c;});
+                    if(!s4) return '';
+                    var d4=s4.data, last4=d4[3], prev4=d4[2];
+                    var delta4=(last4!==null&&prev4!==null)?parseFloat((last4-prev4).toFixed(2)):null;
+                    var dStr4=delta4===null?'<span style="color:#94a3b8;">—</span>':delta4>0?'<span style="color:#dc2626;">↑+'+delta4+'%</span>':delta4<0?'<span style="color:#16a34a;">↓'+delta4+'%</span>':'<span style="color:#94a3b8;">—</span>';
+                    return '<tr style="border-top:0.5px solid var(--border-color);"><td style="padding:6px 10px;font-size:11px;"><span style="width:7px;height:7px;border-radius:50%;background:'+col4+';display:inline-block;margin-right:5px;vertical-align:middle;"></span>'+c+'</td>'+d4.map(function(v,i){return '<td style="padding:6px 10px;text-align:center;font-size:11px;'+(i===3?'font-weight:500;color:#2563eb;':'')+'">'+(v!==null?v+'%':'—')+'</td>';}).join('')+'<td style="padding:6px 10px;text-align:center;font-size:11px;">'+dStr4+'</td></tr>';
+                }).join('');
+                tbl4el.innerHTML='<table style="width:100%;border-collapse:collapse;table-layout:fixed;">'+head4+rows4+'</table>';
+
+            } else {
+                // ── 近15天 / 全部：日维度多品类 ──
+                var tbl4el2 = document.getElementById('site4wTable');
+                if (tbl4el2) tbl4el2.style.display='none';
+
+                // 收集所有日期
+                var dateSet = new Set();
+                execDiff4.forEach(function(d){ if(d.date&&inTrendRange(d.date.split(' ')[0])) dateSet.add(d.date.split(' ')[0]); });
+                siteQA4.forEach(function(r){ if(r.date&&inTrendRange(r.date.split(' ')[0])) dateSet.add(r.date.split(' ')[0]); });
+                var xDates = Array.from(dateSet).sort();
+
+                var seriesD = visCats4.map(function(c, ci) {
+                    var col4 = CAT_COLORS[c] || DEFAULT_COLORS[ci%DEFAULT_COLORS.length];
+                    var data = xDates.map(function(dt) {
+                        var diffs = new Set();
+                        execDiff4.forEach(function(d){
+                            if(!d.date||!d.code) return;
+                            if(d.date.split(' ')[0]!==dt) return;
+                            if((d.cat||'')!==c) return;
+                            diffs.add(d.code);
+                        });
+                        var chks=0;
+                        siteQA4.forEach(function(r){
+                            if(!r.date||r.cat!==c) return;
+                            if(r.date.split(' ')[0]!==dt) return;
+                            chks+=(r.checks||0);
+                        });
+                        if(!chks) return null;
+                        return parseFloat((diffs.size/chks*100).toFixed(2));
+                    });
+                    return { name:c, type:'line', data:data, smooth:false, connectNulls:false, symbol:'circle', symbolSize:6, lineStyle:{color:col4,width:2}, itemStyle:{color:col4}, label:{show:xDates.length<=20,position:'top',color:col4,fontSize:9,formatter:function(p){return p.value===null?'':p.value+'%';}} };
                 });
 
                 _siteChart_trend.setOption({
-                    legend:{ show:false },
-                    tooltip:{ trigger:'axis', formatter:function(params4){ return params4[0].axisValue+'<br/>'+params4.filter(function(p){return p.value!==null;}).map(function(p){ return p.marker+p.seriesName+': '+p.value+'%'; }).join('<br/>'); } },
-                    xAxis:{ type:'category', data:weeks4.map(function(w){ return w.label; }), axisLabel:{ color:textColor, fontSize:10 }, axisLine:{ lineStyle:{ color:axisColor } } },
-                    yAxis:{ type:'value', name:'差异率(%)', nameTextStyle:{ color:textColor }, axisLabel:{ color:textColor, formatter:'{value}%' }, min:0 },
-                    grid:{ top:30, right:16, bottom:50, left:56 },
-                    series: series4
+                    legend:{show:false},
+                    tooltip:{trigger:'axis',formatter:function(params){return params[0].axisValue+'<br/>'+params.filter(function(p){return p.value!==null;}).map(function(p){return p.marker+p.seriesName+': '+p.value+'%';}).join('<br/>');}},
+                    xAxis:{type:'category',data:xDates,axisLabel:{rotate:35,color:textColor,fontSize:9},axisLine:{lineStyle:{color:axisColor}}},
+                    yAxis:{type:'value',name:'差异率(%)',nameTextStyle:{color:textColor},axisLabel:{color:textColor,formatter:'{value}%'},min:0},
+                    grid:{top:30,right:16,bottom:60,left:56},
+                    series:seriesD
                 }, true);
-
-                var tbl4el = document.getElementById('site4wTable');
-                if (!tbl4el) {
-                    tbl4el = document.createElement('div');
-                    tbl4el.id = 'site4wTable';
-                    tbl4el.style.cssText = 'border:0.5px solid var(--border-color);border-radius:8px;overflow:hidden;margin-top:12px;';
-                    trendEl.parentNode.appendChild(tbl4el);
-                }
-                tbl4el.style.display = '';
-                var head4 = '<tr style="background:var(--kpi-bg);">'
-                    + '<th style="padding:6px 10px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);">品类</th>'
-                    + weeks4.map(function(w,i){ return '<th style="padding:6px 10px;text-align:center;font-size:11px;font-weight:500;color:'+(i===3?'#2563eb':'var(--text-secondary)')+';">'+w.label+(i===3?' ↓':'')+'</th>'; }).join('')
-                    + '<th style="padding:6px 10px;text-align:center;font-size:11px;font-weight:500;color:var(--text-secondary);">环比</th></tr>';
-                var rows4 = visCats4.map(function(c, ci) {
-                    var color4 = CAT_COLORS[c] || DEFAULT_COLORS[ci % DEFAULT_COLORS.length];
-                    var s4 = series4.find(function(s){ return s.name===c; });
-                    if (!s4) return '';
-                    var d4 = s4.data;
-                    var last4 = d4[3], prev4 = d4[2];
-                    var delta4 = (last4!==null && prev4!==null) ? parseFloat((last4-prev4).toFixed(2)) : null;
-                    var dStr4 = delta4===null?'<span style="color:#94a3b8;">—</span>':delta4>0?'<span style="color:#dc2626;">↑+'+delta4+'%</span>':delta4<0?'<span style="color:#16a34a;">↓'+delta4+'%</span>':'<span style="color:#94a3b8;">—</span>';
-                    return '<tr style="border-top:0.5px solid var(--border-color);">'
-                        +'<td style="padding:6px 10px;font-size:11px;"><span style="width:7px;height:7px;border-radius:50%;background:'+color4+';display:inline-block;margin-right:5px;vertical-align:middle;"></span>'+c+'</td>'
-                        + d4.map(function(v,i){ return '<td style="padding:6px 10px;text-align:center;font-size:11px;'+(i===3?'font-weight:500;color:#2563eb;':'')+'">'+(v!==null?v+'%':'—')+'</td>'; }).join('')
-                        +'<td style="padding:6px 10px;text-align:center;font-size:11px;">'+dStr4+'</td></tr>';
-                }).join('');
-                tbl4el.innerHTML = '<table style="width:100%;border-collapse:collapse;table-layout:fixed;">'+head4+rows4+'</table>';
             }
-
-            renderCatPills4();
-            render4wChart4();
             _siteChart_trend.resize();
+        }
 
-        } else {
-            var cp4 = document.getElementById('siteTrendCatPills');
-            if (cp4) cp4.style.display = 'none';
-            var tb4 = document.getElementById('site4wTable');
-            if (tb4) tb4.style.display = 'none';
-
-        _siteChart_trend.setOption({
-            tooltip: {
-                trigger: 'axis',
-                formatter: function(params) {
-                    var p = params[0];
-                    if (p.value === null) return p.axisValue + ': 无数据';
-                    var dt = xData[p.dataIndex];
-                    var checks = qaChecksMap[dt] || 0;
-                    var exec = execDateMap[dt] ? execDateMap[dt].size : 0;
-                    return p.axisValue + '<br/>客观执行差异率：' + p.value + '%<br/>差异台数：' + exec + '台 / 抽检：' + checks + '台';
-                }
-            },
-            xAxis: { type:'category', data:xData, axisLabel:{ rotate:35, color:textColor }, axisLine:{ lineStyle:{ color:axisColor } } },
-            yAxis: { type:'value', name:'差异率(%)', nameTextStyle:{ color:textColor }, axisLabel:{ color:textColor, formatter:'{value}%' }, min:0 },
-            series: [{
-                type: 'line',
-                data: seriesData,
-                smooth: false,
-                connectNulls: false,
-                symbol: 'circle',
-                lineStyle: { color:'#3b82f6', width:2 },
-                areaStyle: { color: new echarts.graphic.LinearGradient(0,0,0,1,[{offset:0,color:'rgba(59,130,246,0.12)'},{offset:1,color:'rgba(59,130,246,0)'}]) }
-            }]
-        }, true);
+        renderCatPills4();
+        renderTrendChart();
 
         _siteChart_trend.off('click');
         _siteChart_trend.on('click', function(params) {
-            if (params.componentType !== 'series') return;
-            var date = xData[params.dataIndex];
-            // 联动顶部日期和品类筛选
-            var startDate = document.getElementById('startDateFilter') ? document.getElementById('startDateFilter').value : '';
-            var endDate = document.getElementById('endDateFilter') ? document.getElementById('endDateFilter').value : '';
-            var filtered = siteDiff.filter(function(d) {
-                if (!d.date) return false;
-                var dt = d.date.split(' ')[0];
-                return dt === date;
-            });
+            if (params.componentType !== 'series' || trendRange === '4w') return;
+            var xDatesAll = [];
+            var dateSetAll = new Set();
+            execDiff4.forEach(function(d){ if(d.date&&inTrendRange(d.date.split(' ')[0])) dateSetAll.add(d.date.split(' ')[0]); });
+            siteQA4.forEach(function(r){ if(r.date&&inTrendRange(r.date.split(' ')[0])) dateSetAll.add(r.date.split(' ')[0]); });
+            xDatesAll = Array.from(dateSetAll).sort();
+            var date = xDatesAll[params.dataIndex];
+            if (!date) return;
+            var filtered = siteDiff.filter(function(d){ return d.date && d.date.split(' ')[0] === date; });
             if (typeof openDetailWithData === 'function') openDetailWithData(filtered, '📅 ' + siteName + ' · ' + date + ' 客观执行（' + filtered.length + '条）');
         });
-        _siteChart_trend.resize();
-        } // end else 15d/all
     }
+
 
     // ── 问题类型分布饼图 ──
     var issueEl = document.getElementById('siteIssueChart');
@@ -5394,6 +5330,7 @@ function zbRefreshCloud() {
 
 // ── 云端管理：多选批量删除 ──
 var _zbSelected = { phone: new Set(), five: new Set() };
+var _zbCloudTab = 'phone'; // 当前tab
 
 function zbRenderCloudManager() {
   var el = document.getElementById('zbCloudContent');
@@ -5402,92 +5339,105 @@ function zbRenderCloudManager() {
   if (!DATA) { el.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-secondary);font-size:13px;">暂无云端数据</div>'; return; }
   var canEdit = (typeof zbRole !== 'undefined') && (zbRole === 'admin' || zbRole === 'super');
 
-  // 重置选中状态
   _zbSelected.phone.clear();
   _zbSelected.five.clear();
 
-  // 手机组
   var phoneDates = new Set();
   (DATA.qa||[]).forEach(function(r){ if(r.date) phoneDates.add(r.date); });
   (DATA.diff5||[]).forEach(function(r){ if(r.date) phoneDates.add(r.date); });
   var phoneDateList = Array.from(phoneDates).sort().reverse();
 
-  // 五品类组
   var fiveCatMap = {};
   (DATA.sum||[]).forEach(function(r){ if(r.date&&r.cat) fiveCatMap[r.date+'||'+r.cat]=true; });
   (DATA.diff4||[]).forEach(function(r){ if(r.date&&r.cat) fiveCatMap[r.date+'||'+r.cat]=true; });
   var fiveList = Object.keys(fiveCatMap).sort().reverse();
-
   var catColors = { '笔记本':'#7c3aed','平板':'#059669','手表':'#d97706','耳机':'#db2777','相机':'#0284c7' };
 
-  var html = '';
+  var alertHtml = !canEdit
+    ? '<div style="background:#fef9c3;border:0.5px solid #fde047;border-radius:8px;padding:8px 12px;font-size:12px;color:#854d0e;margin-bottom:12px;">⚠️ 仅管理员及以上可删除数据</div>'
+    : '<div style="background:#fef2f2;border:0.5px solid #fca5a5;border-radius:8px;padding:8px 12px;font-size:12px;color:#dc2626;margin-bottom:12px;">⚠️ 删除操作不可撤销，将同步更新云端文件</div>';
 
-  // 权限提示
-  if (!canEdit) {
-    html += '<div style="background:#fef9c3;border:1px solid #fde047;border-radius:10px;padding:10px 14px;font-size:12px;color:#854d0e;margin-bottom:14px;">⚠️ 仅管理员及以上可删除数据</div>';
-  } else {
-    html += '<div style="background:#fef2f2;border:1px solid #fca5a5;border-radius:10px;padding:10px 14px;font-size:12px;color:#dc2626;margin-bottom:14px;">⚠️ 删除操作不可撤销，将同步更新云端文件</div>';
+  var toolbarHtml = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">'
+    + '<div style="display:flex;align-items:center;gap:0;background:var(--kpi-bg);border-radius:20px;border:0.5px solid var(--border-color);overflow:hidden;flex-shrink:0;">'
+    + '<button id="zbCloudTabPhone" onclick="zbSwitchCloudTab(&quot;phone&quot;)" style="font-size:12px;padding:5px 16px;border:none;background:'+((_zbCloudTab==='phone')?'#2563eb':'transparent')+';color:'+((_zbCloudTab==='phone')?'#fff':'var(--text-secondary)')+';cursor:pointer;font-weight:'+((_zbCloudTab==='phone')?'500':'400')+';">手机</button>'
+    + '<button id="zbCloudTabFive" onclick="zbSwitchCloudTab(&quot;five&quot;)" style="font-size:12px;padding:5px 16px;border:none;background:'+((_zbCloudTab==='five')?'#2563eb':'transparent')+';color:'+((_zbCloudTab==='five')?'#fff':'var(--text-secondary)')+';cursor:pointer;font-weight:'+((_zbCloudTab==='five')?'500':'400')+';">五品类</button>'
+    + '</div>'
+    + '<div style="flex:1;min-width:140px;position:relative;">'
+    + '<input type="text" id="zbCloudSearch" oninput="zbFilterCloudList()" placeholder="搜索日期，如 2026-05" style="width:100%;height:30px;padding:0 8px 0 30px;border-radius:8px;border:0.5px solid var(--border-color);background:var(--filter-input-bg);font-size:12px;color:var(--text-primary);box-sizing:border-box;outline:none;">'
+    + '<svg style="position:absolute;left:8px;top:50%;transform:translateY(-50%);width:13px;height:13px;color:var(--text-secondary);" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>'
+    + '</div>';
+  if (canEdit) {
+    toolbarHtml += '<button onclick="zbSelectAll(_zbCloudTab)" style="font-size:11px;padding:4px 10px;border-radius:7px;border:0.5px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);cursor:pointer;flex-shrink:0;">全选</button>'
+      + '<button onclick="zbSelectNone(_zbCloudTab)" style="font-size:11px;padding:4px 10px;border-radius:7px;border:0.5px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);cursor:pointer;flex-shrink:0;">取消</button>'
+      + '<button id="zbBatchDeleteBtn" onclick="zbBatchDelete(_zbCloudTab)" style="font-size:11px;padding:4px 10px;border-radius:7px;border:0.5px solid #fca5a5;background:#fef2f2;color:#dc2626;cursor:pointer;font-weight:600;display:none;flex-shrink:0;">删除所选</button>';
   }
+  toolbarHtml += '</div>';
 
-  // ── 手机组 ──
-  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">'
-    + '<div style="font-size:13px;font-weight:700;color:var(--text-primary);">手机（QA差异率 + 手机差异明细）</div>';
-  if (canEdit && phoneDateList.length) {
-    html += '<div style="display:flex;gap:6px;">'
-      + '<button onclick="zbSelectAll(\'phone\')" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);cursor:pointer;">全选</button>'
-      + '<button onclick="zbSelectNone(\'phone\')" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);cursor:pointer;">取消</button>'
-      + '<button id="zbPhoneBatchBtn" onclick="zbBatchDelete(\'phone\')" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid #fca5a5;background:#fef2f2;color:#dc2626;cursor:pointer;font-weight:600;display:none;">🗑 批量删除</button>'
-      + '</div>';
-  }
-  html += '</div>';
-
+  // 手机列表
+  var phoneHtml = '<div id="zbCloudPhoneList" style="'+((_zbCloudTab!=='phone')?'display:none;':'')+'border:0.5px solid var(--border-color);border-radius:8px;overflow:hidden;">';
   if (!phoneDateList.length) {
-    html += '<div style="font-size:12px;color:var(--text-secondary);padding:8px 0 14px;">暂无数据</div>';
+    phoneHtml += '<div style="font-size:12px;color:var(--text-secondary);padding:16px;text-align:center;">暂无数据</div>';
   } else {
-    html += '<div style="border:1px solid var(--border-color);border-radius:10px;overflow:hidden;margin-bottom:16px;">';
     phoneDateList.forEach(function(date, i) {
-      var bg = i % 2 === 0 ? 'var(--kpi-bg)' : 'var(--bg-card)';
-      html += '<div id="zb-phone-row-'+i+'" style="display:flex;align-items:center;padding:9px 14px;background:'+bg+';border-bottom:1px solid var(--border-color);cursor:'+(canEdit?'pointer':'default')+'" '
-        + (canEdit ? 'onclick="zbToggleSelect(\'phone\',\''+date+'\','+i+')"' : '') + '>'
-        + (canEdit ? '<input type="checkbox" id="zb-phone-cb-'+i+'" data-key="'+date+'" style="margin-right:10px;width:15px;height:15px;cursor:pointer;accent-color:#dc2626;" onclick="event.stopPropagation();zbToggleSelect(\'phone\',\''+date+'\','+i+')">' : '')
-        + '<span style="font-size:12px;color:var(--text-primary);flex:1;">'+date+'</span>'
+      phoneHtml += '<div id="zb-phone-row-'+i+'" data-date="'+date+'" style="display:flex;align-items:center;padding:9px 14px;border-bottom:0.5px solid var(--border-color);cursor:'+(canEdit?'pointer':'default')+'" '
+        + (canEdit?'onclick="zbToggleSelect(\'phone\',\''+date+'\','+i+')"':'')+' >'
+        + (canEdit?'<input type="checkbox" id="zb-phone-cb-'+i+'" data-key="'+date+'" style="margin-right:10px;width:14px;height:14px;cursor:pointer;accent-color:#dc2626;" onclick="event.stopPropagation();zbToggleSelect(\'phone\',\''+date+'\','+i+')">':'')
+        + '<span class="zb-date-label" style="font-size:12px;color:var(--text-primary);flex:1;">'+date+'</span>'
         + '<span style="font-size:11px;color:#2563eb;background:#2563eb18;padding:2px 8px;border-radius:6px;">手机</span>'
         + '</div>';
     });
-    html += '</div>';
   }
+  phoneHtml += '</div>';
 
-  // ── 五品类组 ──
-  html += '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">'
-    + '<div style="font-size:13px;font-weight:700;color:var(--text-primary);">📦 五品类（日汇总 + 五品类差异明细）</div>';
-  if (canEdit && fiveList.length) {
-    html += '<div style="display:flex;gap:6px;">'
-      + '<button onclick="zbSelectAll(\'five\')" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);cursor:pointer;">全选</button>'
-      + '<button onclick="zbSelectNone(\'five\')" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);cursor:pointer;">取消</button>'
-      + '<button id="zbFiveBatchBtn" onclick="zbBatchDelete(\'five\')" style="font-size:11px;padding:3px 10px;border-radius:6px;border:1px solid #fca5a5;background:#fef2f2;color:#dc2626;cursor:pointer;font-weight:600;display:none;">🗑 批量删除</button>'
-      + '</div>';
-  }
-  html += '</div>';
-
+  // 五品类列表
+  var fiveHtml = '<div id="zbCloudFiveList" style="'+((_zbCloudTab!=='five')?'display:none;':'')+'border:0.5px solid var(--border-color);border-radius:8px;overflow:hidden;">';
   if (!fiveList.length) {
-    html += '<div style="font-size:12px;color:var(--text-secondary);padding:8px 0;">暂无数据</div>';
+    fiveHtml += '<div style="font-size:12px;color:var(--text-secondary);padding:16px;text-align:center;">暂无数据</div>';
   } else {
-    html += '<div style="border:1px solid var(--border-color);border-radius:10px;overflow:hidden;">';
     fiveList.forEach(function(key, i) {
       var parts = key.split('||'), date = parts[0], cat = parts[1];
       var cc = catColors[cat] || '#64748b';
-      var bg = i % 2 === 0 ? 'var(--kpi-bg)' : 'var(--bg-card)';
-      html += '<div id="zb-five-row-'+i+'" style="display:flex;align-items:center;padding:9px 14px;background:'+bg+';border-bottom:1px solid var(--border-color);cursor:'+(canEdit?'pointer':'default')+'" '
-        + (canEdit ? 'onclick="zbToggleSelect(\'five\',\''+key+'\','+i+')"' : '') + '>'
-        + (canEdit ? '<input type="checkbox" id="zb-five-cb-'+i+'" data-key="'+key+'" style="margin-right:10px;width:15px;height:15px;cursor:pointer;accent-color:#dc2626;" onclick="event.stopPropagation();zbToggleSelect(\'five\',\''+key+'\','+i+')">' : '')
-        + '<span style="font-size:12px;color:var(--text-primary);flex:1;">'+date+'</span>'
+      fiveHtml += '<div id="zb-five-row-'+i+'" data-date="'+date+'" style="display:flex;align-items:center;padding:9px 14px;border-bottom:0.5px solid var(--border-color);cursor:'+(canEdit?'pointer':'default')+'" '
+        + (canEdit?'onclick="zbToggleSelect(\'five\',\''+key+'\','+i+')"':'')+' >'
+        + (canEdit?'<input type="checkbox" id="zb-five-cb-'+i+'" data-key="'+key+'" style="margin-right:10px;width:14px;height:14px;cursor:pointer;accent-color:#dc2626;" onclick="event.stopPropagation();zbToggleSelect(\'five\',\''+key+'\','+i+')">':'')
+        + '<span class="zb-date-label" style="font-size:12px;color:var(--text-primary);flex:1;">'+date+'</span>'
         + '<span style="font-size:11px;color:'+cc+';background:'+cc+'18;padding:2px 8px;border-radius:6px;">'+cat+'</span>'
         + '</div>';
     });
-    html += '</div>';
   }
+  fiveHtml += '</div>';
 
-  el.innerHTML = html;
+  var totalCount = _zbCloudTab === 'phone' ? phoneDateList.length : fiveList.length;
+  var footerHtml = '<div style="margin-top:8px;font-size:11px;color:var(--text-secondary);">共 '+totalCount+' 条 · 已选 <span id="zbCloudSelCount">0</span> 条</div>';
+
+  el.innerHTML = alertHtml + toolbarHtml + phoneHtml + fiveHtml + footerHtml;
+}
+
+function zbSwitchCloudTab(tab) {
+  _zbCloudTab = tab;
+  _zbSelected.phone.clear();
+  _zbSelected.five.clear();
+  zbRenderCloudManager();
+}
+
+function zbFilterCloudList() {
+  var q = (document.getElementById('zbCloudSearch')||{}).value || '';
+  q = q.trim().toLowerCase();
+  var listId = _zbCloudTab === 'phone' ? 'zbCloudPhoneList' : 'zbCloudFiveList';
+  var list = document.getElementById(listId);
+  if (!list) return;
+  list.querySelectorAll('[data-date]').forEach(function(row) {
+    var date = (row.dataset.date||'').toLowerCase();
+    var match = !q || date.includes(q);
+    row.style.display = match ? '' : 'none';
+    if (match && q) {
+      var lbl = row.querySelector('.zb-date-label');
+      if (lbl) lbl.innerHTML = date.replace(new RegExp('('+q.replace(/[-\/\^$*+?.()|[\]{}]/g,'\$&')+')','gi'),'<mark style="background:#fef08a;border-radius:2px;">$1</mark>');
+    } else {
+      var lbl2 = row.querySelector('.zb-date-label');
+      if (lbl2) lbl2.innerHTML = row.dataset.date;
+    }
+  });
 }
 
 // ── 勾选逻辑 ──
@@ -5528,15 +5478,13 @@ function zbSelectNone(group) {
 }
 
 function zbUpdateBatchBtn(group) {
-  var btnId = group === 'phone' ? 'zbPhoneBatchBtn' : 'zbFiveBatchBtn';
-  var btn = document.getElementById(btnId);
-  if (!btn) return;
+  var btn = document.getElementById('zbBatchDeleteBtn');
+  var countEl = document.getElementById('zbCloudSelCount');
   var count = _zbSelected[group].size;
-  if (count > 0) {
-    btn.style.display = '';
-    btn.textContent = '🗑 删除已选（' + count + '）';
-  } else {
-    btn.style.display = 'none';
+  if (countEl) countEl.textContent = count;
+  if (btn) {
+    if (count > 0) { btn.style.display=''; btn.textContent='删除所选（'+count+'）'; }
+    else { btn.style.display='none'; }
   }
 }
 
