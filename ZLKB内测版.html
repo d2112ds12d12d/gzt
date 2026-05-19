@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.30</title>
+    <title>培训部数据看板 v1.30A</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -584,7 +584,7 @@
   <nav id="zb-sidebar">
     <div class="zb-logo">
       <div class="zb-brand">培训部数据看板</div>
-      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.30</span></div>
+      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.30A</span></div>
     </div>
     <div class="zb-nav-lbl">数据模块</div>
     <div class="zb-nav-item active" onclick="zbNav('overview',this)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 10 10 7 13 10 17 7"/></svg> 数据总览</div>
@@ -1963,15 +1963,20 @@
             }
 
             function calcSiteRate(site, cat, dateFilter) {
-                // 手机：分母=大盘抽检量(F列checks)，分子=表2大盘评估/站点 客观执行去重码
-                // 五品类：分母=sum.checks，分子=diff4客观执行去重码
-                // 三者口径统一：差异率、小字大盘台数、小字执行台数均用大盘口径
                 let checks = 0, execDiff = 0;
                 if (cat === '手机') {
                     const qaRows = DATA.qa.filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true));
                     checks = qaRows.reduce((s,r) => s + (r.checks||0), 0);
-                    const diffRows = DATA.diff5.filter(r => r.site === site && r.cat === cat && r.strategy === '大盘评估/站点' && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true));
-                    execDiff = new Set(diffRows.map(r => r.code).filter(Boolean)).size;
+                    // 优先用_allDiffData（云端+本地合并，字段已映射），回退到DATA.diff5原始格式
+                    const allDiff = window._allDiffData || [];
+                    const useMapped = allDiff.length > 0;
+                    if (useMapped) {
+                        const diffRows = allDiff.filter(d => d.warehouse === site && d.cat === cat && d.strategy === '大盘评估/站点' && d.category && d.category.includes('客观') && d.judgedIssueType === '执行问题' && (dateFilter ? dateFilter((d.date||'').split(' ')[0]) : true));
+                        execDiff = new Set(diffRows.map(d => d.code).filter(Boolean)).size;
+                    } else {
+                        const diffRows = DATA.diff5.filter(r => r.site === site && r.cat === cat && r.strategy === '大盘评估/站点' && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true));
+                        execDiff = new Set(diffRows.map(r => r.code).filter(Boolean)).size;
+                    }
                 } else {
                     const smRows = DATA.sum.filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true));
                     checks = smRows.reduce((s,r) => s + (r.checks||0), 0);
@@ -2003,13 +2008,19 @@
                 const prevDate   = allDates.length >= 2 ? allDates[allDates.length - 2] : null;
 
                 function calcSiteDetail(site, cat, dateFilter) {
-                    // 返回 { checks（大盘量）, execDiff（客观执行量）}
                     let checks = 0, execDiff = 0;
                     if (cat === '手机') {
                         const qaRows = DATA.qa.filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true));
                         checks = qaRows.reduce((s,r) => s + (r.checks||0), 0);
-                        const diffRows = DATA.diff5.filter(r => r.site === site && r.cat === cat && r.strategy === '大盘评估/站点' && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true));
-                        execDiff = new Set(diffRows.map(r => r.code).filter(Boolean)).size;
+                        const allDiff = window._allDiffData || [];
+                        const useMapped = allDiff.length > 0;
+                        if (useMapped) {
+                            const diffRows = allDiff.filter(d => d.warehouse === site && d.cat === cat && d.strategy === '大盘评估/站点' && d.category && d.category.includes('客观') && d.judgedIssueType === '执行问题' && (dateFilter ? dateFilter((d.date||'').split(' ')[0]) : true));
+                            execDiff = new Set(diffRows.map(d => d.code).filter(Boolean)).size;
+                        } else {
+                            const diffRows = DATA.diff5.filter(r => r.site === site && r.cat === cat && r.strategy === '大盘评估/站点' && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true));
+                            execDiff = new Set(diffRows.map(r => r.code).filter(Boolean)).size;
+                        }
                     } else {
                         const smRows = DATA.sum.filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true));
                         checks = smRows.reduce((s,r) => s + (r.checks||0), 0);
@@ -3904,6 +3915,7 @@ async function zbLoadCloudData(useApi) {
         const src = viaApi ? '（API直连）' : '';
         showToast('✅ 云端数据已加载（' + loaded + '/4）' + src);
         if (typeof zbSetCloudStatus === 'function') zbSetCloudStatus('ok');
+        // 云端数据是原始格式，需要重新映射字段才能被排行榜正确读取
         if (typeof bridgeData === 'function') bridgeData();
         if (typeof fullRefresh === 'function') fullRefresh();
     } else {
