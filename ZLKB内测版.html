@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.26</title>
+    <title>培训部数据看板 v1.26A</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -583,7 +583,7 @@
   <nav id="zb-sidebar">
     <div class="zb-logo">
       <div class="zb-brand">培训部数据看板</div>
-      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.26</span></div>
+      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.26A</span></div>
     </div>
     <div class="zb-nav-lbl">数据模块</div>
     <div class="zb-nav-item active" onclick="zbNav('overview',this)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 10 10 7 13 10 17 7"/></svg> 数据总览</div>
@@ -4208,6 +4208,7 @@ function zbRenderSiteDetail(siteName) {
                 }
                 var series4 = visCats4.map(function(c, ci) {
                     var col4 = CAT_COLORS[c] || DEFAULT_COLORS[ci%DEFAULT_COLORS.length];
+                    var sumData5 = (window._DATA && window._DATA.sum) ? window._DATA.sum : [];
                     var wkData = weeks4.map(function(wk) {
                         var diffs4 = new Set();
                         execDiff4.forEach(function(d){
@@ -4224,6 +4225,14 @@ function zbRenderSiteDetail(siteName) {
                             if(dt<wk.start||dt>wk.end) return;
                             chks4+=(r.checks||0);
                         });
+                        if (!chks4) {
+                            sumData5.forEach(function(r){
+                                if(!r.date||r.cat!==c||r.site!==siteName) return;
+                                var dt=r.date.split(' ')[0];
+                                if(dt<wk.start||dt>wk.end) return;
+                                chks4+=(r.checks||0);
+                            });
+                        }
                         if(!chks4) return null;
                         return parseFloat((diffs4.size/chks4*100).toFixed(2));
                     });
@@ -4267,6 +4276,8 @@ function zbRenderSiteDetail(siteName) {
 
                 var seriesD = visCats4.map(function(c, ci) {
                     var col4 = CAT_COLORS[c] || DEFAULT_COLORS[ci%DEFAULT_COLORS.length];
+                    // 从 _DATA.sum（五品类日汇总）补充抽检量
+                    var sumData5 = (window._DATA && window._DATA.sum) ? window._DATA.sum : [];
                     var data = xDates.map(function(dt) {
                         var diffs = new Set();
                         execDiff4.forEach(function(d){
@@ -4275,12 +4286,20 @@ function zbRenderSiteDetail(siteName) {
                             if((d.cat||'')!==c) return;
                             diffs.add(d.code);
                         });
+                        // 先从 qa 取抽检量，没有再从 sum 取
                         var chks=0;
                         siteQA4.forEach(function(r){
                             if(!r.date||r.cat!==c) return;
                             if(r.date.split(' ')[0]!==dt) return;
                             chks+=(r.checks||0);
                         });
+                        if (!chks) {
+                            sumData5.forEach(function(r){
+                                if(!r.date||r.cat!==c||r.site!==siteName) return;
+                                if(r.date.split(' ')[0]!==dt) return;
+                                chks+=(r.checks||0);
+                            });
+                        }
                         if(!chks) return null;
                         return parseFloat((diffs.size/chks*100).toFixed(2));
                     });
