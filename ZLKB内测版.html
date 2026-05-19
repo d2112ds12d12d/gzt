@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.29A</title>
+    <title>培训部数据看板 v1.30</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -678,6 +678,8 @@
                     <span class="cat-tab active" id="globalSiteType-ALL" data-site-type="ALL">全部</span>
                     <span class="cat-tab" id="globalSiteType-DW" data-site-type="DW">大仓</span>
                     <span class="cat-tab" id="globalSiteType-ZX" data-site-type="ZX" id="siteTypeGroup">中心仓</span>
+                    <div class="sticky-divider"></div>
+                    <button id="zbQueryBtn" onclick="zbDoQuery()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:500;background:#fff;color:#2563eb;border:1.5px solid #2563eb;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;" onmouseenter="this.style.background='#eff6ff'" onmouseleave="this.style.background='#fff'">→ 查询</button>
                 </div>
             </div>
             <!-- 第二行：其他筛选 -->
@@ -871,16 +873,19 @@
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                     人维度 · 质检项维度分析
                   </div>
-                  <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px;color:var(--text-secondary);">
-                    <span style="white-space:nowrap;">上周</span>
-                    <input type="date" id="siteWeekLastStart" style="height:26px;font-size:11px;padding:2px 5px;border-radius:7px;border:1px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);outline:none;">
-                    <span style="color:var(--text-secondary);">—</span>
-                    <input type="date" id="siteWeekLastEnd" style="height:26px;font-size:11px;padding:2px 5px;border-radius:7px;border:1px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);outline:none;">
-                    <span style="font-size:12px;color:var(--text-secondary);margin:0 2px;">vs</span>
-                    <span style="white-space:nowrap;">本周</span>
-                    <input type="date" id="siteWeekCurStart" style="height:26px;font-size:11px;padding:2px 5px;border-radius:7px;border:1px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);outline:none;">
-                    <span style="color:var(--text-secondary);">—</span>
-                    <input type="date" id="siteWeekCurEnd" style="height:26px;font-size:11px;padding:2px 5px;border-radius:7px;border:1px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);outline:none;">
+                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <button id="zbCompareToggleBtn" onclick="zbToggleCompare()" style="display:inline-flex;align-items:center;gap:5px;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;background:#fff;color:#2563eb;border:1.5px solid #2563eb;cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseenter="this.style.background='#eff6ff'" onmouseleave="if(!window._zbCompareOpen)this.style.background='#fff'">⇄ 对比数据</button>
+                  </div>
+                  <div id="zbCompareDatePanel" style="display:none;margin-top:12px;background:linear-gradient(135deg,#f0f7ff,#e8f0fe);border:1px solid #bfdbfe;border-radius:12px;padding:12px 16px;display:none;align-items:center;gap:8px;flex-wrap:wrap;">
+                    <span style="font-size:11px;font-weight:500;color:#1d4ed8;white-space:nowrap;">对比区间</span>
+                    <input type="date" id="siteWeekLastStart" style="height:26px;font-size:11px;padding:2px 5px;border-radius:7px;border:1px solid #93c5fd;background:#fff;color:#1e40af;outline:none;">
+                    <span style="color:#94a3b8;">—</span>
+                    <input type="date" id="siteWeekLastEnd" style="height:26px;font-size:11px;padding:2px 5px;border-radius:7px;border:1px solid #93c5fd;background:#fff;color:#1e40af;outline:none;">
+                    <div style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:22px;border-radius:6px;background:#2563eb;color:#fff;font-size:10px;font-weight:600;flex-shrink:0;">VS</div>
+                    <input type="date" id="siteWeekCurStart" style="height:26px;font-size:11px;padding:2px 5px;border-radius:7px;border:1px solid #93c5fd;background:#fff;color:#1e40af;outline:none;">
+                    <span style="color:#94a3b8;">—</span>
+                    <input type="date" id="siteWeekCurEnd" style="height:26px;font-size:11px;padding:2px 5px;border-radius:7px;border:1px solid #93c5fd;background:#fff;color:#1e40af;outline:none;">
+                    <button onclick="zbCloseCompare()" style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:#dbeafe;border:none;cursor:pointer;color:#2563eb;font-size:14px;margin-left:4px;" title="关闭对比">✕</button>
                   </div>
                 </div>
                 <!-- 质检人表 -->
@@ -2866,8 +2871,8 @@
                 if (lbl) lbl.textContent = '全部质检人员';
                 updatePersonFilterOptions(); fullRefresh();
             });
-            if (startDateFilter) startDateFilter.addEventListener('change', () => { zbClearQuickDate(); updatePersonFilterOptions(); fullRefresh(); });
-            if (endDateFilter) endDateFilter.addEventListener('change', () => { zbClearQuickDate(); updatePersonFilterOptions(); fullRefresh(); });
+            if (startDateFilter) startDateFilter.addEventListener('change', () => { zbClearQuickDate(); updatePersonFilterOptions(); zbMarkQueryPending(); });
+            if (endDateFilter) endDateFilter.addEventListener('change', () => { zbClearQuickDate(); updatePersonFilterOptions(); zbMarkQueryPending(); });
 
             // 自定义质检人员下拉逻辑
             (function initPersonDropdown() {
@@ -4246,12 +4251,50 @@ function zbRenderSiteDetail(siteName) {
         var execDiff4 = execDiff4all; // 趋势图用全品类
 
         // 固定5品类顺序，与顶部筛选栏一致
-        var FIXED_CATS = ['手机','笔记本','平板','手表','耳机'];
+        // 大仓站点：手机拆成「手机-线体」和「手机-后验」
+        var _isDW4 = (typeof ZB_DW_SITES !== 'undefined') && ZB_DW_SITES.indexOf(siteName) >= 0;
+        var _cityKey4 = '';
+        if (_isDW4) {
+            // 从站点名提取城市：取第一个中文城市关键词（深圳/青岛/成都等）
+            var _cityMatch = siteName.match(/[\u4e00-\u9fa5]{2,3}(?=(?:智能验机|后验|库))/);
+            if (!_cityMatch) {
+                // fallback: 取「转转-」后第一个2字以上汉字词
+                var _m2 = siteName.replace('转转-','').match(/^([\u4e00-\u9fa5]{2,4})/);
+                _cityKey4 = _m2 ? _m2[1] : '';
+            } else {
+                _cityKey4 = _cityMatch[0];
+            }
+        }
+        var FIXED_CATS = _isDW4
+            ? ['手机-线体','手机-后验','笔记本','平板','手表','耳机']
+            : ['手机','笔记本','平板','手表','耳机'];
+        var CAT_COLORS_EXT = Object.assign({}, CAT_COLORS, {'手机-线体':'#2563eb','手机-后验':'#06b6d4'});
         var VIS_KEY4 = 'site4w_cat_vis';
         var savedVis4 = {};
         try { var sv4=localStorage.getItem(VIS_KEY4); savedVis4=sv4?JSON.parse(sv4):{}; } catch(e4){}
         // 新品类默认全选
         FIXED_CATS.forEach(function(c){ if(savedVis4[c]===undefined) savedVis4[c]=true; });
+
+        // 判断某个虚拟品类是否有数据
+        function _hasCatData4(c) {
+            if (c === '手机-线体') return (window._allDiffData||[]).some(function(d){ return d.cat==='手机' && d.warehouse && _cityKey4 && d.warehouse.includes(_cityKey4) && d.warehouse.includes('验机'); });
+            if (c === '手机-后验') return (window._allDiffData||[]).some(function(d){ return d.cat==='手机' && d.warehouse && _cityKey4 && d.warehouse.includes(_cityKey4) && d.warehouse.includes('后验'); });
+            return catList4.indexOf(c) !== -1;
+        }
+
+        // 按虚拟品类过滤差异数据
+        function _filterExecDiffByCat4(diff, c) {
+            if (c === '手机-线体') return diff.filter(function(d){ return d.cat==='手机' && d.warehouse && _cityKey4 && d.warehouse.includes(_cityKey4) && d.warehouse.includes('验机'); });
+            if (c === '手机-后验') return diff.filter(function(d){ return d.cat==='手机' && d.warehouse && _cityKey4 && d.warehouse.includes(_cityKey4) && d.warehouse.includes('后验'); });
+            return diff.filter(function(d){ return (d.cat||'')===c; });
+        }
+
+        // 按虚拟品类过滤QA数据
+        function _filterQAByCat4(qa, c) {
+            if (c === '手机-线体') return qa.filter(function(r){ return r.cat==='手机' && r.site && _cityKey4 && r.site.includes(_cityKey4) && r.site.includes('验机'); });
+            if (c === '手机-后验') return qa.filter(function(r){ return r.cat==='手机' && r.site && _cityKey4 && r.site.includes(_cityKey4) && r.site.includes('后验'); });
+            return qa.filter(function(r){ return r.cat===c; });
+        }
 
         // ── 品类胶囊（固定5个，三个模式共用）──
         var catPillsEl4 = document.getElementById('siteTrendCatPills');
@@ -4266,8 +4309,8 @@ function zbRenderSiteDetail(siteName) {
         function renderCatPills4() {
             catPillsEl4.innerHTML = '';
             FIXED_CATS.forEach(function(c, ci) {
-                var col4 = CAT_COLORS[c] || DEFAULT_COLORS[ci % DEFAULT_COLORS.length];
-                var hasData = catList4.indexOf(c) !== -1;
+                var col4 = CAT_COLORS_EXT[c] || DEFAULT_COLORS[ci % DEFAULT_COLORS.length];
+                var hasData = _hasCatData4(c);
                 var on4 = hasData && savedVis4[c] !== false;
                 var pill4 = document.createElement('button');
                 // 无数据品类：灰色空心，不可点击选中
@@ -4304,27 +4347,29 @@ function zbRenderSiteDetail(siteName) {
                     weeks4.push({ label:(w4s.getMonth()+1)+'.'+(w4s.getDate())+'-'+(w4e.getMonth()+1)+'.'+(w4e.getDate()), start:_fmtD(w4s), end:_fmtD(w4e) });
                 }
                 var series4 = visCats4.map(function(c, ci) {
-                    var col4 = CAT_COLORS[c] || DEFAULT_COLORS[ci%DEFAULT_COLORS.length];
+                    var col4 = CAT_COLORS_EXT[c] || DEFAULT_COLORS[ci%DEFAULT_COLORS.length];
                     var sumData5 = (window._DATA && window._DATA.sum) ? window._DATA.sum : [];
+                    var catDiff4 = _filterExecDiffByCat4(execDiff4, c);
+                    var catQA4   = _filterQAByCat4(siteQA4, c);
                     var wkData = weeks4.map(function(wk) {
                         var diffs4 = new Set();
-                        execDiff4.forEach(function(d){
+                        catDiff4.forEach(function(d){
                             if(!d.date||!d.code) return;
                             var dt=d.date.split(' ')[0];
                             if(dt<wk.start||dt>wk.end) return;
-                            if((d.cat||'')!==c) return;
                             diffs4.add(d.code);
                         });
                         var chks4=0;
-                        siteQA4.forEach(function(r){
-                            if(!r.date||r.cat!==c) return;
+                        catQA4.forEach(function(r){
+                            if(!r.date) return;
                             var dt=r.date.split(' ')[0];
                             if(dt<wk.start||dt>wk.end) return;
                             chks4+=(r.checks||0);
                         });
                         if (!chks4) {
+                            var realCat4 = (c==='手机-线体'||c==='手机-后验') ? '手机' : c;
                             sumData5.forEach(function(r){
-                                if(!r.date||r.cat!==c||r.site!==siteName) return;
+                                if(!r.date||r.cat!==realCat4||r.site!==siteName) return;
                                 var dt=r.date.split(' ')[0];
                                 if(dt<wk.start||dt>wk.end) return;
                                 chks4+=(r.checks||0);
@@ -4372,27 +4417,27 @@ function zbRenderSiteDetail(siteName) {
                 var xDates = Array.from(dateSet).sort();
 
                 var seriesD = visCats4.map(function(c, ci) {
-                    var col4 = CAT_COLORS[c] || DEFAULT_COLORS[ci%DEFAULT_COLORS.length];
-                    // 从 _DATA.sum（五品类日汇总）补充抽检量
+                    var col4 = CAT_COLORS_EXT[c] || DEFAULT_COLORS[ci%DEFAULT_COLORS.length];
                     var sumData5 = (window._DATA && window._DATA.sum) ? window._DATA.sum : [];
+                    var catDiffD = _filterExecDiffByCat4(execDiff4, c);
+                    var catQAD   = _filterQAByCat4(siteQA4, c);
                     var data = xDates.map(function(dt) {
                         var diffs = new Set();
-                        execDiff4.forEach(function(d){
+                        catDiffD.forEach(function(d){
                             if(!d.date||!d.code) return;
                             if(d.date.split(' ')[0]!==dt) return;
-                            if((d.cat||'')!==c) return;
                             diffs.add(d.code);
                         });
-                        // 先从 qa 取抽检量，没有再从 sum 取
                         var chks=0;
-                        siteQA4.forEach(function(r){
-                            if(!r.date||r.cat!==c) return;
+                        catQAD.forEach(function(r){
+                            if(!r.date) return;
                             if(r.date.split(' ')[0]!==dt) return;
                             chks+=(r.checks||0);
                         });
                         if (!chks) {
+                            var realCatD = (c==='手机-线体'||c==='手机-后验') ? '手机' : c;
                             sumData5.forEach(function(r){
-                                if(!r.date||r.cat!==c||r.site!==siteName) return;
+                                if(!r.date||r.cat!==realCatD||r.site!==siteName) return;
                                 if(r.date.split(' ')[0]!==dt) return;
                                 chks+=(r.checks||0);
                             });
@@ -5131,6 +5176,69 @@ function zbNavToHotspotDetail(level3, level1, deltaInfo) {
 
 // 快捷时间按钮已移至站点趋势图内部，此处保留空占位避免引用报错
 function zbClearQuickDate() {}
+
+// ── 对比数据面板开关 ──
+window._zbCompareOpen = false;
+function zbToggleCompare() {
+  if (window._zbCompareOpen) {
+    zbCloseCompare();
+  } else {
+    window._zbCompareOpen = true;
+    var panel = document.getElementById('zbCompareDatePanel');
+    var btn = document.getElementById('zbCompareToggleBtn');
+    if (panel) { panel.style.display = 'flex'; }
+    if (btn) {
+      btn.style.background = 'linear-gradient(135deg,#eff6ff,#dbeafe)';
+      btn.style.borderColor = '#93c5fd';
+      btn.style.color = '#1d4ed8';
+    }
+  }
+}
+function zbCloseCompare() {
+  window._zbCompareOpen = false;
+  var panel = document.getElementById('zbCompareDatePanel');
+  var btn = document.getElementById('zbCompareToggleBtn');
+  if (panel) { panel.style.display = 'none'; }
+  if (btn) {
+    btn.style.background = '#fff';
+    btn.style.borderColor = '#2563eb';
+    btn.style.color = '#2563eb';
+  }
+  // 恢复默认日期（上一完整自然周）
+  var titleEl = document.getElementById('siteDetailTitle');
+  if (titleEl) {
+    var sn = titleEl.textContent.replace(' · 站点详情','').trim();
+    if (sn && typeof zbRenderSiteDetail === 'function') zbRenderSiteDetail(sn);
+  }
+}
+function zbMarkQueryPending() {
+  var btn = document.getElementById('zbQueryBtn');
+  if (!btn) return;
+  btn.style.background = '#fef3c7';
+  btn.style.borderColor = '#f59e0b';
+  btn.style.color = '#92400e';
+  btn.textContent = '! 查询';
+}
+function zbDoQuery() {
+  var btn = document.getElementById('zbQueryBtn');
+  if (btn) {
+    btn.style.background = '#fff';
+    btn.style.borderColor = '#2563eb';
+    btn.style.color = '#2563eb';
+    btn.textContent = '→ 查询';
+  }
+  if (typeof updatePersonFilterOptions === 'function') updatePersonFilterOptions();
+  if (typeof fullRefresh === 'function') fullRefresh();
+  // 如果当前在站点页，也刷新站点
+  var sitePage = document.getElementById('zb-page-site');
+  if (sitePage && sitePage.classList.contains('active')) {
+    var titleEl = document.getElementById('siteDetailTitle');
+    if (titleEl) {
+      var sn = titleEl.textContent.replace(' · 站点详情','').trim();
+      if (sn && typeof zbRenderSiteDetail === 'function') zbRenderSiteDetail(sn);
+    }
+  }
+}
 
 // 站点趋势图范围切换（近15天/近4周/全部）
 window._siteTrendRange = '15d';
