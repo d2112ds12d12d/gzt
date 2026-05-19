@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.24</title>
+    <title>培训部数据看板 v1.24A</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -583,7 +583,7 @@
   <nav id="zb-sidebar">
     <div class="zb-logo">
       <div class="zb-brand">培训部数据看板</div>
-      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.24</span></div>
+      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.24A</span></div>
     </div>
     <div class="zb-nav-lbl">数据模块</div>
     <div class="zb-nav-item active" onclick="zbNav('overview',this)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 10 10 7 13 10 17 7"/></svg> 数据总览</div>
@@ -4438,27 +4438,11 @@ function zbRenderSitePersonList() {
     bodyEl.innerHTML = personList.map(function(p, idx) {
         var row = '<tr style="cursor:pointer;" data-person="'+p.name.replace(/"/g,'&quot;')+'" data-site="'+siteName.replace(/"/g,'&quot;')+'">'
             + '<td>'+(idx+1)+'</td><td>'+p.name+'</td>';
-        if (timeMode === 'all') {
-            row += '<td style="text-align:center;color:#dc2626;font-weight:'+(sortKey==='obj'?'600':'400')+';">'+p.obj+'</td>'
-                + '<td style="text-align:center;">'+p.subj+'</td>'
-                + '<td style="text-align:center;font-weight:'+(sortKey==='total'?'600':'400')+';">'+p.total+'</td>';
-        } else {
-            row += '<td style="text-align:center;font-weight:600;">'+p.pB+'</td>'
-                + '<td style="text-align:center;">'+p.pA+'</td>'
-                + '<td style="text-align:center;">'+fmtDelta(p.pB-p.pA)+'</td>';
-        }
+        row += '<td style="text-align:center;font-weight:600;">'+p.pB+'</td>'
+            + '<td style="text-align:center;">'+p.pA+'</td>'
+            + '<td style="text-align:center;">'+fmtDelta(p.pB-p.pA)+'</td>';
         return row + '</tr>';
     }).join('');
-
-    // 列头排序事件（累计模式）
-    if (headEl && timeMode === 'all') {
-        headEl.querySelectorAll('th[data-person-sort]').forEach(function(th) {
-            th.addEventListener('click', function() {
-                window._sitePersonSort = th.dataset.personSort;
-                zbRenderSitePersonList('all');
-            });
-        });
-    }
 }
 
 function zbRenderSiteIssueAnalysis(execDiff, rootEl) {
