@@ -783,13 +783,7 @@
       ]
     }
   ],
-  "inbox": [
-    {
-      "id": "mpcdsrwyv09",
-      "title": "工作台做skill",
-      "created": 1779179940178
-    }
-  ],
+  "inbox": [],
   "deletedIds": [
     "moy714623sv",
     "moy7wbz80be",
@@ -812,6 +806,7 @@
     "mpc146cfi69",
     "mpc2kaiynyh",
     "mpc1edr1glk",
-    "mpc35bxigke"
+    "mpc35bxigke",
+    "mpcdsrwyv09"
   ]
 }
