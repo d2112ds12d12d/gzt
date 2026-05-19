@@ -31,16 +31,6 @@
       "created": 1779159124683
     },
     {
-      "id": "mpc1edr1glk",
-      "title": "质量看板数据更新",
-      "tag": null,
-      "date": "05/19",
-      "done": false,
-      "status": "todo",
-      "priority": "normal",
-      "created": 1779159113245
-    },
-    {
       "id": "mpc1dzh25kr",
       "title": "实操质检30台",
       "tag": null,
@@ -792,6 +782,7 @@
     "mp40a5oj9vp",
     "mpc1h46aeb3",
     "mpc146cfi69",
-    "mpc2kaiynyh"
+    "mpc2kaiynyh",
+    "mpc1edr1glk"
   ]
 }
