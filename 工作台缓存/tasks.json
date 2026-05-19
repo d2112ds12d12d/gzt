@@ -519,25 +519,6 @@
     "order": 4
   },
   {
-    "id": 94,
-    "title": "制作深圳质量看板（复测、抽检差异、主板审核）",
-    "desc": "",
-    "status": "inprogress",
-    "tag": "日常待办",
-    "tagType": "green",
-    "pri": "q4",
-    "prog": 0,
-    "repeat": "none",
-    "repeatWeekdays": [],
-    "repeatMonthday": null,
-    "hours": 0,
-    "ds": "",
-    "links": [],
-    "imgs": [],
-    "loc": "inbox",
-    "order": 1
-  },
-  {
     "id": 95,
     "title": "找晨辉、大黄沟通复测看板的建议",
     "desc": "",
@@ -836,10 +817,10 @@
     "pri": "q4",
     "repeat": "none",
     "hours": 0,
-    "ds": "2026-05-19",
+    "ds": "",
     "links": [],
     "imgs": [],
-    "loc": "date",
+    "loc": "inbox",
     "order": 0,
     "parentId": 35
   },
