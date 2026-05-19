@@ -1,12 +1,24 @@
 {
   "tasks": [
     {
+      "id": "mpc3iatiws6",
+      "title": "T-7 名单公布&差异赋能",
+      "tag": null,
+      "date": "05/19",
+      "done": false,
+      "status": "todo",
+      "priority": "normal",
+      "created": 1779162655302,
+      "fromTemplate": "moxqlsga0sr"
+    },
+    {
       "id": "mpc35bxigke",
       "title": "11",
       "tag": null,
       "date": "05/19",
       "done": false,
-      "created": 1779162050214
+      "created": 1779162050214,
+      "status": "todo"
     },
     {
       "id": "mpc1f0y7kzl",
@@ -769,6 +781,7 @@
       ]
     }
   ],
+  "inbox": [],
   "deletedIds": [
     "moy714623sv",
     "moy7wbz80be",
