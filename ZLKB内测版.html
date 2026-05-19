@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.31</title>
+    <title>培训部数据看板 v1.32</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -584,7 +584,7 @@
   <nav id="zb-sidebar">
     <div class="zb-logo">
       <div class="zb-brand">培训部数据看板</div>
-      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.31</span></div>
+      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.32</span></div>
     </div>
     <div class="zb-nav-lbl">数据模块</div>
     <div class="zb-nav-item active" onclick="zbNav('overview',this)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 10 10 7 13 10 17 7"/></svg> 数据总览</div>
@@ -853,14 +853,15 @@
               <!-- 趋势图 -->
               <div class="card" style="margin-bottom:16px;">
                 <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
-                  <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
-                    <div style="display:flex;align-items:center;gap:0;background:var(--kpi-bg);border-radius:20px;border:1px solid var(--border-color);overflow:hidden;" id="siteTrendRangeBtns">
-                      <button onclick="zbSiteTrendRange('15d',this)" style="font-size:11px;padding:4px 13px;border:none;background:#2563eb;color:#fff;cursor:pointer;font-weight:500;transition:all .15s;">近15天</button>
-                      <button onclick="zbSiteTrendRange('4w',this)" style="font-size:11px;padding:4px 13px;border:none;background:transparent;cursor:pointer;color:var(--text-secondary);transition:all .15s;">近4周</button>
-                      <button onclick="zbSiteTrendRange('1y',this)" style="font-size:11px;padding:4px 13px;border:none;background:transparent;cursor:pointer;color:var(--text-secondary);transition:all .15s;">近一年</button>
+                  <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                    <div style="display:flex;align-items:center;gap:0;" id="siteTrendRangeBtns">
+                      <button onclick="zbSiteTrendRange('15d',this)" style="font-size:11px;padding:4px 12px;border:none;border-bottom:2px solid #2563eb;background:transparent;color:#2563eb;cursor:pointer;font-weight:500;transition:all .15s;">近15天</button>
+                      <button onclick="zbSiteTrendRange('4w',this)" style="font-size:11px;padding:4px 12px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text-secondary);cursor:pointer;transition:all .15s;">近4周</button>
+                      <button onclick="zbSiteTrendRange('1y',this)" style="font-size:11px;padding:4px 12px;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--text-secondary);cursor:pointer;transition:all .15s;">近一年</button>
                     </div>
                     <span id="siteTrendFollowHint" style="display:none;font-size:11px;color:#64748b;background:var(--kpi-bg);border-radius:6px;padding:3px 9px;border:1px dashed var(--border-color);">跟随顶部日期</span>
-                    <div class="card-title" style="margin:0;"><div class="card-title-bar" style="background:#10b981;"></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>客观执行差异率趋势<span style="font-size:11px;color:var(--text-secondary);font-weight:400;margin-left:4px;">点击节点查看当日明细</span></div>
+                    <div style="width:0.5px;height:14px;background:var(--border-color);flex-shrink:0;"></div>
+                    <div class="card-title" style="margin:0;"><div style="width:3px;height:14px;background:#10b981;border-radius:2px;flex-shrink:0;margin-right:4px;"></div><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-right:2px;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>客观执行差异率趋势<span style="font-size:11px;color:var(--text-secondary);font-weight:400;margin-left:4px;">点击节点查看当日明细</span></div>
                   </div>
                 </div>
                 <div id="siteTrendChart" style="width:100%;height:320px;"></div>
@@ -3847,6 +3848,7 @@ function zbLogout() { zbSidebarUserClick(); }
 
 // ── 云端拉取 ──
 async function zbLoadCloudData(useApi) {
+    zbShowSkeleton();
     showToast('⏳ 正在加载云端数据…');
     const keyMap = { qa:'qa', diff5:'diff5', sum:'sum', diff4:'diff4' };
     const token = zbGetToken();
@@ -3900,6 +3902,7 @@ async function zbLoadCloudData(useApi) {
         showToast('云端暂无数据，请上传文件');
         if (typeof zbSetCloudStatus === 'function') zbSetCloudStatus('err');
     }
+    zbHideSkeleton();
 }
 
 // ── 推送到GitHub ──
@@ -4698,18 +4701,15 @@ function zbRenderSitePersonList() {
     var bodyEl   = document.getElementById('sitePersonBody');
     var headEl   = document.getElementById('sitePersonTableHead');
     if (!bodyEl) return;
-
     var lastStart = (document.getElementById('siteWeekLastStart') || {}).value || '';
     var lastEnd   = (document.getElementById('siteWeekLastEnd')   || {}).value || '';
     var curStart  = (document.getElementById('siteWeekCurStart')  || {}).value || '';
     var curEnd    = (document.getElementById('siteWeekCurEnd')    || {}).value || '';
-
+    var isCompare = !!window._zbCompareOpen;
     function fmtShort(s){ if(!s) return ''; var p=s.split('-'); return (p[1]|0)+'/'+(p[2]|0); }
-    var pillTextA = lastStart ? fmtShort(lastStart)+'–'+fmtShort(lastEnd) : '上期';
-    var pillTextB = curStart  ? fmtShort(curStart) +'–'+fmtShort(curEnd)  : '本期';
-
     function inPeriod(date, s, e) { if(!s||!e) return false; return date >= s && date <= e; }
-
+    var topStart = (document.getElementById('startDateFilter')||{}).value || '';
+    var topEnd   = (document.getElementById('endDateFilter')||{}).value || '';
     var personMap = {};
     siteDiff.forEach(function(d) {
         var p = d.person || '未知';
@@ -4718,76 +4718,79 @@ function zbRenderSitePersonList() {
         if (inPeriod(dt, lastStart, lastEnd)) personMap[p].periodA++;
         if (inPeriod(dt, curStart,  curEnd))  personMap[p].periodB++;
     });
-
     var personList = Object.keys(personMap).map(function(name){
-        var pA = personMap[name].periodA, pB = personMap[name].periodB;
-        return { name:name, pA:pA, pB:pB, delta:pB-pA };
+        return { name:name, pA:personMap[name].periodA, pB:personMap[name].periodB, delta:personMap[name].periodB-personMap[name].periodA };
     });
-
-    // 排名：delta降序（变差最多排前）；delta相同则pB降序；pB相同持平排中；下降排后
-    personList.sort(function(a,b){
-        if (b.delta !== a.delta) return b.delta - a.delta;
-        return b.pB - a.pB;
-    });
-
-    if (headEl) {
-        headEl.innerHTML = '<tr>'
-            + '<th style="width:60px;">排名</th><th style="width:120px;">质检人员</th>'
-            + '<th style="text-align:center;color:#3b82f6;width:110px;">'+pillTextB+' ↓</th>'
-            + '<th style="text-align:center;width:110px;">'+pillTextA+'</th>'
-            + '<th style="text-align:center;width:90px;">变化</th>'
-            + '</tr>';
-    }
-
     function fmtDelta(n) {
-        if(n>0) return '<span style="color:#dc2626;">↑+'+n+'</span>';
-        if(n<0) return '<span style="color:#16a34a;">↓'+n+'</span>';
+        if(n>0) return '<span style="color:#dc2626;font-weight:500;">↑+'+n+'</span>';
+        if(n<0) return '<span style="color:#16a34a;font-weight:500;">↓'+n+'</span>';
         return '<span style="color:#94a3b8;">—</span>';
     }
-
-    // 分页
-    var pageSize = window._zbPersonPageSize || 10;
-    var page = window._zbPersonPage || 1;
-    var total = personList.length;
-    var totalPages = Math.max(1, Math.ceil(total / pageSize));
-    if (page > totalPages) page = window._zbPersonPage = 1;
-    var sliced = personList.slice((page-1)*pageSize, page*pageSize);
-
-    bodyEl.innerHTML = sliced.map(function(p, idx) {
-        var rank = (page-1)*pageSize + idx + 1;
-        return '<tr style="cursor:pointer;" data-person="'+p.name.replace(/"/g,'&quot;')+'" data-site="'+siteName.replace(/"/g,'&quot;')+'">'
-            + '<td style="text-align:center;">'+rank+'</td>'
-            + '<td>'+p.name+'</td>'
-            + '<td style="text-align:center;font-weight:600;">'+p.pB+'</td>'
-            + '<td style="text-align:center;">'+p.pA+'</td>'
-            + '<td style="text-align:center;">'+fmtDelta(p.delta)+'</td>'
-            + '</tr>';
-    }).join('');
-
-    // 分页控件（右下角）
-    var pgWrapId = 'zbPersonPageCtrl';
-    var existPg = document.getElementById(pgWrapId);
-    var tableWrap = bodyEl.closest('table') || bodyEl.parentNode;
-    var ctrlWrap = tableWrap.parentNode;
-    if (!existPg) {
-        var pg = document.createElement('div');
-        pg.id = pgWrapId;
-        pg.style.cssText = 'display:flex;align-items:center;justify-content:flex-end;gap:8px;margin-top:8px;font-size:11px;color:var(--text-secondary);';
-        ctrlWrap.appendChild(pg);
-    }
-    var pgEl = document.getElementById(pgWrapId);
-    if (pgEl) {
-        var opts = [5,10,20,50].map(function(n){ return '<option value="'+n+'"'+(pageSize===n?' selected':'')+'>'+n+'条/页</option>'; }).join('');
-        var pageNums = '';
-        for (var pi=1; pi<=totalPages; pi++) {
-            pageNums += '<button onclick="window._zbPersonPage='+pi+';zbRenderSitePersonList();" style="min-width:24px;height:24px;border-radius:6px;border:0.5px solid var(--border-color);background:'+(pi===page?'#2563eb':'transparent')+';color:'+(pi===page?'#fff':'var(--text-primary)')+';font-size:11px;cursor:pointer;padding:0 6px;">'+ pi +'</button>';
-        }
-        pgEl.innerHTML = '<select onchange="window._zbPersonPageSize=+this.value;window._zbPersonPage=1;zbRenderSitePersonList();" style="height:24px;font-size:11px;border-radius:6px;border:0.5px solid var(--border-color);padding:0 4px;background:var(--filter-input-bg);color:var(--text-primary);">'+opts+'</select>'
-            + '<button onclick="if(window._zbPersonPage>1){window._zbPersonPage--;zbRenderSitePersonList();}" style="min-width:28px;height:24px;border-radius:6px;border:0.5px solid var(--border-color);background:transparent;color:var(--text-primary);font-size:11px;cursor:pointer;">上一页</button>'
-            + pageNums
-            + '<button onclick="if(window._zbPersonPage<'+totalPages+'){window._zbPersonPage++;zbRenderSitePersonList();}" style="min-width:28px;height:24px;border-radius:6px;border:0.5px solid var(--border-color);background:transparent;color:var(--text-primary);font-size:11px;cursor:pointer;">下一页</button>';
+    if (!isCompare) {
+        var totalDiff = 0;
+        var personListTop = {};
+        siteDiff.forEach(function(d){
+            var dt = d.date ? d.date.split(' ')[0] : '';
+            if ((!topStart||dt>=topStart) && (!topEnd||dt<=topEnd)) {
+                totalDiff++;
+                var p = d.person||'未知';
+                personListTop[p] = (personListTop[p]||0) + 1;
+            }
+        });
+        var topArr = Object.keys(personListTop).map(function(n){ return {name:n,cnt:personListTop[n]}; });
+        topArr.sort(function(a,b){ return b.cnt-a.cnt; });
+        var maxCnt = topArr.length ? topArr[0].cnt : 0;
+        var kpiHtml = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
+            + '<div style="background:var(--kpi-bg);border-radius:10px;padding:10px 12px;"><div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px;">涉及质检人</div><div style="font-size:17px;font-weight:500;color:#2563eb;">'+topArr.length+'</div></div>'
+            + '<div style="background:var(--kpi-bg);border-radius:10px;padding:10px 12px;"><div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px;">差异台数合计</div><div style="font-size:17px;font-weight:500;color:#dc2626;">'+totalDiff+'</div></div>'
+            + '<div style="background:var(--kpi-bg);border-radius:10px;padding:10px 12px;"><div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px;">最高个人差异</div><div style="font-size:17px;font-weight:500;">'+maxCnt+'台</div></div>'
+            + '</div>';
+        var dateLabel = (topStart&&topEnd) ? fmtShort(topStart)+'—'+fmtShort(topEnd)+'·累计' : '累计';
+        if (headEl) headEl.innerHTML = '<tr><th style="width:50px;">排名</th><th>质检人员</th><th style="text-align:center;color:#2563eb;width:140px;">差异台数（'+dateLabel+'）</th><th style="text-align:center;width:90px;">占比</th></tr>';
+        var kpiWrap = document.getElementById('zbPersonKpiWrap');
+        if (!kpiWrap) { kpiWrap=document.createElement('div'); kpiWrap.id='zbPersonKpiWrap'; var tw=bodyEl.closest('table'); if(tw) tw.parentNode.insertBefore(kpiWrap,tw); }
+        kpiWrap.innerHTML = kpiHtml;
+        var pageSize=window._zbPersonPageSize||10, page=window._zbPersonPage||1;
+        var totalPages=Math.max(1,Math.ceil(topArr.length/pageSize));
+        if(page>totalPages) page=window._zbPersonPage=1;
+        var sliced=topArr.slice((page-1)*pageSize,page*pageSize);
+        bodyEl.innerHTML = sliced.map(function(p,idx){
+            var rank=(page-1)*pageSize+idx+1;
+            var pct=totalDiff?Math.round(p.cnt/totalDiff*100):0;
+            var rc=rank===1?'background:#fca5a5;color:#7f1d1d;':rank===2?'background:#fed7aa;color:#7c2d12;':rank===3?'background:#fde68a;color:#78350f;':'background:var(--kpi-bg);color:var(--text-secondary);';
+            return '<tr style="cursor:pointer;" data-person="'+p.name.replace(/"/g,'&quot;')+'" data-site="'+siteName.replace(/"/g,'&quot;')+'"><td style="text-align:center;"><div style="width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;'+rc+'margin:auto;">'+rank+'</div></td><td>'+p.name+'</td><td style="text-align:center;font-weight:500;color:#dc2626;">'+p.cnt+'</td><td style="text-align:center;"><div style="display:flex;align-items:center;gap:5px;justify-content:center;"><div style="width:40px;height:4px;background:var(--kpi-bg);border-radius:3px;overflow:hidden;"><div style="width:'+pct+'%;height:100%;background:#2563eb;border-radius:3px;"></div></div><span style="font-size:11px;">'+pct+'%</span></div></td></tr>';
+        }).join('');
+        var pgWrapId='zbPersonPageCtrl',pgEl=document.getElementById(pgWrapId);
+        if(!pgEl){pgEl=document.createElement('div');pgEl.id=pgWrapId;pgEl.style.cssText='display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:8px;font-size:11px;';var tw2=bodyEl.closest('table');if(tw2)tw2.parentNode.appendChild(pgEl);}
+        var opts=[5,10,20,50].map(function(n){return '<option value="'+n+'"'+(pageSize===n?' selected':'')+'>'+n+'条/页</option>';}).join('');
+        var pns=''; for(var pi=1;pi<=Math.min(totalPages,5);pi++){pns+='<button onclick="window._zbPersonPage='+pi+';zbRenderSitePersonList();" style="min-width:24px;height:24px;border-radius:6px;border:0.5px solid var(--border-color);background:'+(pi===page?'#2563eb':'transparent')+';color:'+(pi===page?'#fff':'var(--text-primary)')+';font-size:11px;cursor:pointer;padding:0 5px;">'+pi+'</button>';}
+        pgEl.innerHTML='<select onchange="window._zbPersonPageSize=+this.value;window._zbPersonPage=1;zbRenderSitePersonList();" style="height:24px;font-size:11px;border-radius:6px;border:0.5px solid var(--border-color);padding:0 4px;background:var(--filter-input-bg);color:var(--text-primary);">'+opts+'</select><button onclick="if(window._zbPersonPage>1){window._zbPersonPage--;zbRenderSitePersonList();}" style="min-width:28px;height:24px;border-radius:6px;border:0.5px solid var(--border-color);background:transparent;color:var(--text-primary);font-size:11px;cursor:pointer;">上一页</button>'+pns+'<button onclick="if(window._zbPersonPage<'+totalPages+'){window._zbPersonPage++;zbRenderSitePersonList();}" style="min-width:28px;height:24px;border-radius:6px;border:0.5px solid var(--border-color);background:transparent;color:var(--text-primary);font-size:11px;cursor:pointer;">下一页</button>';
+    } else {
+        var pillTextA=lastStart?fmtShort(lastStart)+'–'+fmtShort(lastEnd):'上期';
+        var pillTextB=curStart?fmtShort(curStart)+'–'+fmtShort(curEnd):'本期';
+        personList.sort(function(a,b){ return b.delta!==a.delta?b.delta-a.delta:b.pB-a.pB; });
+        if(headEl) headEl.innerHTML='<tr><th style="width:50px;">排名</th><th style="width:120px;">质检人员</th><th style="text-align:center;color:#2563eb;width:110px;">'+pillTextB+' ↓</th><th style="text-align:center;width:110px;">'+pillTextA+'</th><th style="text-align:center;width:80px;">变化</th></tr>';
+        var kpiWrap3=document.getElementById('zbPersonKpiWrap'); if(kpiWrap3) kpiWrap3.innerHTML='';
+        var pageSize=window._zbPersonPageSize||10,page=window._zbPersonPage||1;
+        var totalPages=Math.max(1,Math.ceil(personList.length/pageSize));
+        if(page>totalPages) page=window._zbPersonPage=1;
+        var sliced=personList.slice((page-1)*pageSize,page*pageSize);
+        bodyEl.innerHTML=sliced.map(function(p,idx){
+            var rank=(page-1)*pageSize+idx+1;
+            var isRed=rank===1&&p.delta>0;
+            var isGreen=rank===personList.length&&p.delta<0&&personList.length>1;
+            var rowBg=isRed?'background:#fef2f2;':isGreen?'background:#f0fdf4;':'';
+            var rc=isRed?'background:#fca5a5;color:#7f1d1d;':isGreen?'background:#bbf7d0;color:#166534;':'background:var(--kpi-bg);color:var(--text-secondary);';
+            return '<tr style="cursor:pointer;'+rowBg+'" data-person="'+p.name.replace(/"/g,'&quot;')+'" data-site="'+siteName.replace(/"/g,'&quot;')+'"><td style="text-align:center;"><div style="width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;'+rc+'margin:auto;">'+rank+'</div></td><td>'+p.name+'</td><td style="text-align:center;font-weight:500;'+(isRed?'color:#dc2626;':'')+'">'+p.pB+'</td><td style="text-align:center;">'+p.pA+'</td><td style="text-align:center;">'+fmtDelta(p.delta)+'</td></tr>';
+        }).join('');
+        var pgWrapId='zbPersonPageCtrl',pgEl=document.getElementById(pgWrapId);
+        if(!pgEl){pgEl=document.createElement('div');pgEl.id=pgWrapId;pgEl.style.cssText='display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:8px;font-size:11px;';var tw3=bodyEl.closest('table');if(tw3)tw3.parentNode.appendChild(pgEl);}
+        var opts=[5,10,20,50].map(function(n){return '<option value="'+n+'"'+(pageSize===n?' selected':'')+'>'+n+'条/页</option>';}).join('');
+        var pns=''; for(var pi=1;pi<=Math.min(totalPages,5);pi++){pns+='<button onclick="window._zbPersonPage='+pi+';zbRenderSitePersonList();" style="min-width:24px;height:24px;border-radius:6px;border:0.5px solid var(--border-color);background:'+(pi===page?'#2563eb':'transparent')+';color:'+(pi===page?'#fff':'var(--text-primary)')+';font-size:11px;cursor:pointer;padding:0 5px;">'+pi+'</button>';}
+        pgEl.innerHTML='<select onchange="window._zbPersonPageSize=+this.value;window._zbPersonPage=1;zbRenderSitePersonList();" style="height:24px;font-size:11px;border-radius:6px;border:0.5px solid var(--border-color);padding:0 4px;background:var(--filter-input-bg);color:var(--text-primary);">'+opts+'</select><button onclick="if(window._zbPersonPage>1){window._zbPersonPage--;zbRenderSitePersonList();}" style="min-width:28px;height:24px;border-radius:6px;border:0.5px solid var(--border-color);background:transparent;color:var(--text-primary);font-size:11px;cursor:pointer;">上一页</button>'+pns+'<button onclick="if(window._zbPersonPage<'+totalPages+'){window._zbPersonPage++;zbRenderSitePersonList();}" style="min-width:28px;height:24px;border-radius:6px;border:0.5px solid var(--border-color);background:transparent;color:var(--text-primary);font-size:11px;cursor:pointer;">下一页</button>';
     }
 }
+
 
 function zbRenderSiteIssueAnalysis(execDiff, rootEl) {
     var lastStart = (document.getElementById('siteWeekLastStart') || {}).value || '';
@@ -5362,6 +5365,40 @@ function zbNavToHotspotDetail(level3, level1, deltaInfo) {
 // 快捷时间按钮已移至站点趋势图内部，此处保留空占位避免引用报错
 function zbClearQuickDate() {}
 
+// ── 骨架屏：加载状态 ──
+function zbShowSkeleton() {
+    var el = document.getElementById('zbSkeletonOverlay');
+    if (el) { el.style.display = 'flex'; return; }
+    el = document.createElement('div');
+    el.id = 'zbSkeletonOverlay';
+    el.style.cssText = 'position:fixed;inset:0;z-index:999;background:var(--bg-primary,#fff);display:flex;flex-direction:column;align-items:stretch;padding:0;';
+    el.innerHTML = '<div style="height:3px;background:#2563eb;width:100%;animation:zbProgAnim 1.8s ease-in-out infinite;" id="zbLoadBar"></div>'
+        + '<div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:24px;padding:40px 24px;">'
+        + '<div style="display:flex;align-items:center;gap:12px;">'
+        + '<div style="width:18px;height:18px;border:3px solid #2563eb;border-top-color:transparent;border-radius:50%;animation:zbSpin .8s linear infinite;flex-shrink:0;"></div>'
+        + '<span style="font-size:14px;font-weight:500;color:#2563eb;">正在同步云端数据…</span>'
+        + '</div>'
+        + '<div style="width:100%;max-width:560px;display:flex;flex-direction:column;gap:12px;">'
+        + '<div style="height:80px;border-radius:12px;background:var(--kpi-bg,#f3f7fe);animation:zbShimmer 1.4s ease-in-out infinite;"></div>'
+        + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">'
+        + '<div style="height:72px;border-radius:10px;background:var(--kpi-bg,#f3f7fe);animation:zbShimmer 1.4s ease-in-out infinite;"></div>'
+        + '<div style="height:72px;border-radius:10px;background:var(--kpi-bg,#f3f7fe);animation:zbShimmer 1.4s ease-in-out infinite;animation-delay:.1s;"></div>'
+        + '<div style="height:72px;border-radius:10px;background:var(--kpi-bg,#f3f7fe);animation:zbShimmer 1.4s ease-in-out infinite;animation-delay:.2s;"></div>'
+        + '<div style="height:72px;border-radius:10px;background:var(--kpi-bg,#f3f7fe);animation:zbShimmer 1.4s ease-in-out infinite;animation-delay:.3s;"></div>'
+        + '</div>'
+        + '<div style="height:120px;border-radius:12px;background:var(--kpi-bg,#f3f7fe);animation:zbShimmer 1.4s ease-in-out infinite;animation-delay:.15s;"></div>'
+        + '</div>'
+        + '</div>';
+    var style = document.createElement('style');
+    style.textContent = '@keyframes zbSpin{to{transform:rotate(360deg)}} @keyframes zbShimmer{0%,100%{opacity:1}50%{opacity:.35}} @keyframes zbProgAnim{0%{opacity:1}50%{opacity:.5}100%{opacity:1}}';
+    document.head.appendChild(style);
+    document.body.appendChild(el);
+}
+function zbHideSkeleton() {
+    var el = document.getElementById('zbSkeletonOverlay');
+    if (el) { el.style.opacity = '0'; el.style.transition = 'opacity .4s'; setTimeout(function(){ el.remove(); }, 420); }
+}
+
 // ── 对比数据面板开关 ──
 window._zbCompareOpen = false;
 function zbToggleCompare() {
@@ -5377,6 +5414,9 @@ function zbToggleCompare() {
       btn.style.borderColor = '#93c5fd';
       btn.style.color = '#1d4ed8';
     }
+    // 切换到双列对比模式
+    if (typeof zbRenderSitePersonList === 'function') zbRenderSitePersonList();
+    if (window._zbIssueRerender) window._zbIssueRerender();
   }
 }
 function zbCloseCompare() {
@@ -5389,12 +5429,9 @@ function zbCloseCompare() {
     btn.style.borderColor = '#2563eb';
     btn.style.color = '#2563eb';
   }
-  // 恢复默认日期（上一完整自然周）
-  var titleEl = document.getElementById('siteDetailTitle');
-  if (titleEl) {
-    var sn = titleEl.textContent.replace(' · 站点详情','').trim();
-    if (sn && typeof zbRenderSiteDetail === 'function') zbRenderSiteDetail(sn);
-  }
+  // 重渲染人维度（回到单列模式）
+  if (typeof zbRenderSitePersonList === 'function') zbRenderSitePersonList();
+  if (window._zbIssueRerender) window._zbIssueRerender();
 }
 function zbMarkQueryPending() {
   var btn = document.getElementById('zbQueryBtn');
@@ -5437,15 +5474,13 @@ function zbSiteTrendRange(range, btn) {
     if (btns) {
         btns.querySelectorAll('button').forEach(function(b) {
             var isActive = !isCancel && (b === btn);
-            b.style.background = isActive ? '#2563eb' : 'transparent';
-            b.style.color      = isActive ? '#fff'    : 'var(--text-secondary)';
-            b.style.fontWeight = isActive ? '500'     : '400';
-            // 取消态：被取消的按钮变虚线灰框
+            b.style.borderBottom = isActive ? '2px solid #2563eb' : '2px solid transparent';
+            b.style.color = isActive ? '#2563eb' : 'var(--text-secondary)';
+            b.style.fontWeight = isActive ? '500' : '400';
             if (isCancel && b === btn) {
-                b.style.background = 'transparent';
+                b.style.borderBottom = '2px solid transparent';
                 b.style.color = '#94a3b8';
-                b.style.outline = '1.5px dashed #94a3b8';
-                b.style.outlineOffset = '-2px';
+                b.style.outline = 'none';
             } else {
                 b.style.outline = 'none';
             }
