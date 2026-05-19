@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.28</title>
+    <title>培训部数据看板 v1.29</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -584,7 +584,7 @@
   <nav id="zb-sidebar">
     <div class="zb-logo">
       <div class="zb-brand">培训部数据看板</div>
-      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.28</span></div>
+      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.29</span></div>
     </div>
     <div class="zb-nav-lbl">数据模块</div>
     <div class="zb-nav-item active" onclick="zbNav('overview',this)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 10 10 7 13 10 17 7"/></svg> 数据总览</div>
@@ -689,6 +689,9 @@
             <input type="hidden" id="judgedIssueTypeFilter" value="__ALL__">
 
             <div class="zb-page active" id="zb-page-overview">
+
+            <!-- 数据完整性提示条 -->
+            <div id="zbDataHealthBar" style="display:none;margin-bottom:12px;"></div>
 
             <!-- KPI -->
             <div class="card">
@@ -2792,6 +2795,8 @@
                 if (typeof zbPushToGitHub === 'function' && (zbRole === 'admin' || zbRole === 'super')) {
                     await zbPushAllWithProgress();
                     setTimeout(() => { if (typeof zbPushLog === 'function') zbPushLog(); }, 800);
+                    _zbHealthDismissed = false;
+                    zbCheckDataHealth();
                 }
             }
 
@@ -4059,6 +4064,7 @@ if (!window._dashboardStarted) {
     setTimeout(() => {
         zbUpdateRoleBadge();
         zbLoadCloudData();
+        setTimeout(zbCheckDataHealth, 800);
     }, 300);
 }
 </script>
@@ -5164,6 +5170,48 @@ function zbUpdateLogSync(record, ok) {
     try { localStorage.setItem('zb_upload_log', JSON.stringify(_zbLog)); } catch(e) {}
 }
 
+// ── 数据完整性检测 ──
+var _zbHealthDismissed = false;
+function zbCheckDataHealth() {
+    var bar = document.getElementById('zbDataHealthBar');
+    if (!bar || _zbHealthDismissed) return;
+    var ALL_TYPES = ['qa','diff5','sum','diff4'];
+    var TYPE_NAMES = { qa:'QA差异率', diff5:'手机差异明细', sum:'日汇总', diff4:'五品类明细' };
+    var today = new Date();
+    var missing = [];
+    for (var i = 1; i <= 15; i++) {
+        var d = new Date(today); d.setDate(today.getDate() - i);
+        var dateStr = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+        var uploaded = {};
+        _zbLog.forEach(function(log) {
+            if (!log.dates) return;
+            if (log.dates.indexOf(dateStr) !== -1 && ALL_TYPES.indexOf(log.type) !== -1) {
+                uploaded[log.type] = true;
+            }
+        });
+        var missingTypes = ALL_TYPES.filter(function(t){ return !uploaded[t]; });
+        if (missingTypes.length > 0) {
+            missing.push({ date: dateStr, types: missingTypes });
+        }
+    }
+    if (!missing.length) { bar.style.display = 'none'; return; }
+    var lines = missing.slice(0,5).map(function(m){
+        var tags = m.types.map(function(t){ return '<span style="background:#fef3c7;padding:1px 6px;border-radius:4px;font-size:11px;color:#92400e;margin-right:3px;">'+TYPE_NAMES[t]+'</span>'; }).join('');
+        return '<div style="font-size:12px;color:#92400e;margin-top:4px;">'+m.date.slice(5)+' 缺：'+tags+'</div>';
+    }).join('');
+    var moreText = missing.length > 5 ? '<div style="font-size:11px;color:#92400e;margin-top:4px;">……共 '+missing.length+' 天有缺失</div>' : '';
+    bar.style.display = 'block';
+    bar.innerHTML = '<div style="background:var(--color-background-primary,#fff);border:0.5px solid #fcd34d;border-radius:12px;padding:12px 16px;">'
+        + '<div style="display:flex;align-items:flex-start;gap:10px;">'
+        + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+        + '<div style="flex:1;min-width:0;">'
+        + '<div style="font-size:13px;font-weight:500;color:#92400e;margin-bottom:2px;">近15天有 '+missing.length+' 天数据不完整</div>'
+        + lines + moreText
+        + '</div>'
+        + '<button onclick="_zbHealthDismissed=true;document.getElementById(\'zbDataHealthBar\').style.display=\'none\';" style="font-size:18px;line-height:1;color:#b45309;background:none;border:none;cursor:pointer;flex-shrink:0;padding:0;margin-top:-2px;">×</button>'
+        + '</div></div>';
+}
+
 function zbOpenLog(){
   var m=document.getElementById('zbLogModal');
   if(m){ m.style.display='flex'; zbSwitchLogTab(_zbCurrentLogTab); }
@@ -5201,118 +5249,97 @@ function zbSwitchLogTab(tab){
 
 function _zbRenderLog(){
   var el=document.getElementById('zbLogList'); if(!el) return;
-  if(!_zbLog.length){
+  var ALL_TYPES = ['qa','diff5','sum','diff4'];
+  var TYPE_NAMES = { qa:'QA差异率', diff5:'手机差异明细', sum:'日汇总', diff4:'五品类明细' };
+  var TYPE_COLORS = { qa:'#2563eb', diff5:'#7c3aed', sum:'#059669', diff4:'#d97706' };
+
+  // 按数据日期汇总（每个日期×表类型 → 最新一条日志）
+  var dateTypeMap = {}; // { 'YYYY-MM-DD': { qa:{rows,ok,ts}, diff5:{...}, ... } }
+  _zbLog.forEach(function(log){
+    if (!log.dates || !log.type || ALL_TYPES.indexOf(log.type) === -1) return;
+    log.dates.forEach(function(d){
+      if (!d || d==='—') return;
+      if (!dateTypeMap[d]) dateTypeMap[d] = {};
+      if (!dateTypeMap[d][log.type]) {
+        dateTypeMap[d][log.type] = { rows: log.rows||0, ok: log.ok, ts: log.ts||log.time||'' };
+      }
+    });
+  });
+
+  var allDates = Object.keys(dateTypeMap).sort().reverse();
+
+  if (!allDates.length) {
     el.innerHTML='<div style="text-align:center;padding:32px;color:var(--text-secondary);font-size:13px;">暂无上传记录</div>';
     return;
   }
 
-  var names={qa:'QA差异率',diff5:'手机差异明细',sum:'日汇总',diff4:'五品类明细'};
-  var typeColors={qa:'#2563eb',diff5:'#7c3aed',sum:'#059669',diff4:'#d97706'};
-
-  // 统计数字（本月）
+  // 统计
   var thisMonth = new Date().toISOString().slice(0,7);
-  var uploadCount=0, okCount=0, failCount=0;
-  _zbLog.forEach(function(log){
-    var ts = log.ts || log.time || '';
-    if(!ts) return;
-    if(ts.startsWith(thisMonth)) uploadCount++;
-    if(log.ok===false) failCount++; else okCount++;
-  });
+  var monthDates = allDates.filter(function(d){ return d.startsWith(thisMonth); });
+  var completeDates = monthDates.filter(function(d){ return ALL_TYPES.every(function(t){ return !!dateTypeMap[d][t]; }); });
+  var missingDates = monthDates.filter(function(d){ return !ALL_TYPES.every(function(t){ return !!dateTypeMap[d][t]; }); });
+
   var statsEl = document.getElementById('zbLogStats');
-  if(statsEl){
-    statsEl.innerHTML = '<span style="color:#2563eb;font-size:22px;font-weight:500;">'+uploadCount+'</span><div style="font-size:12px;color:var(--text-secondary);">本月上传</div>';
-  }
+  if(statsEl) statsEl.innerHTML = '<span style="color:#2563eb;font-size:22px;font-weight:500;">'+monthDates.length+'</span><div style="font-size:12px;color:var(--text-secondary);">本月天数</div>';
   var okEl = document.getElementById('zbLogOk');
-  if(okEl) okEl.innerHTML = '<span style="color:#059669;font-size:22px;font-weight:500;">'+okCount+'</span><div style="font-size:12px;color:var(--text-secondary);">读取成功</div>';
+  if(okEl) okEl.innerHTML = '<span style="color:#059669;font-size:22px;font-weight:500;">'+completeDates.length+'</span><div style="font-size:12px;color:var(--text-secondary);">完整</div>';
   var failEl = document.getElementById('zbLogFail');
-  if(failEl) failEl.innerHTML = '<span style="color:#dc2626;font-size:22px;font-weight:500;">'+failCount+'</span><div style="font-size:12px;color:var(--text-secondary);">读取失败</div>';
+  if(failEl) failEl.innerHTML = '<span style="color:#dc2626;font-size:22px;font-weight:500;">'+missingDates.length+'</span><div style="font-size:12px;color:var(--text-secondary);">缺失</div>';
 
-  // 按操作时间分组
-  var grouped = {};
-  _zbLog.forEach(function(log){
-    var ts = log.ts || log.time || '';
-    var t = ts ? new Date(ts) : new Date();
-    var dateKey = isNaN(t.getTime()) ? '未知日期' : t.toISOString().slice(0,10);
-    if(!grouped[dateKey]) grouped[dateKey]=[];
-    grouped[dateKey].push(log);
-  });
-
-  var sortedDates = Object.keys(grouped).sort().reverse();
   var today = new Date().toISOString().slice(0,10);
   var yesterday = new Date(Date.now()-86400000).toISOString().slice(0,10);
+  function dayLabel(d){ return d===today?'今天 · '+d : d===yesterday?'昨天 · '+d : d; }
 
-  function dateLabel(d) {
-    if(d===today) return '今天 · ' + d;
-    if(d===yesterday) return '昨天 · ' + d;
-    return d;
-  }
+  // 按操作时间段分组（今天/昨天/其他）
+  var groups = {};
+  allDates.forEach(function(d){
+    var gk = d===today?'今天 · '+d : d===yesterday?'昨天 · '+d : d.slice(0,7);
+    if(!groups[gk]) groups[gk]=[];
+    groups[gk].push(d);
+  });
 
   var html = '';
-  sortedDates.forEach(function(dateKey){
-    html += '<div style="padding:6px 20px;font-size:11px;color:var(--text-secondary);background:var(--kpi-bg);border-bottom:0.5px solid var(--border-color);font-weight:500;letter-spacing:0.3px;">'
-      + dateLabel(dateKey) + '</div>';
+  Object.keys(groups).forEach(function(gk){
+    html += '<div style="padding:7px 18px;font-size:11px;color:var(--text-secondary);background:var(--kpi-bg);border-bottom:0.5px solid var(--border-color);">'+gk+'</div>';
+    groups[gk].forEach(function(dateStr){
+      var typesData = dateTypeMap[dateStr];
+      var uploadedCount = ALL_TYPES.filter(function(t){ return !!typesData[t]; }).length;
+      var isComplete = uploadedCount === ALL_TYPES.length;
+      var icon = isComplete
+        ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>'
+        : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
+      var badge = isComplete
+        ? '<span style="font-size:11px;color:#065f46;background:#d1fae5;padding:1px 7px;border-radius:6px;">4 / 4 完整</span>'
+        : '<span style="font-size:11px;color:#92400e;background:#fef3c7;padding:1px 7px;border-radius:6px;">'+uploadedCount+' / 4 缺失</span>';
+      // 最新上传时间
+      var latestTs = '';
+      ALL_TYPES.forEach(function(t){ if(typesData[t] && typesData[t].ts > latestTs) latestTs = typesData[t].ts; });
+      var timeStr = '';
+      if(latestTs){ var tt=new Date(latestTs); if(!isNaN(tt.getTime())) timeStr=('0'+tt.getHours()).slice(-2)+':'+('0'+tt.getMinutes()).slice(-2); }
 
-    grouped[dateKey].forEach(function(log){
-      var ts = log.ts || log.time || '';
-      var t = ts ? new Date(ts) : null;
-      var timeStr = (t && !isNaN(t.getTime())) ? ('0'+t.getHours()).slice(-2)+':'+('0'+t.getMinutes()).slice(-2) : '--:--';
-      var typeName = names[log.type] || log.tableName || log.type || '未知';
-      var typeColor = typeColors[log.type] || '#64748b';
-      var isOk = log.ok !== false;
-
-      // 数据摘要：行数、日期范围
-      var summaryParts = [];
-      if(log.rows) summaryParts.push('共 '+log.rows+' 条');
-      if(log.dateMin && log.dateMax) {
-        summaryParts.push(log.dateMin === log.dateMax ? log.dateMin : log.dateMin + ' — ' + log.dateMax);
-      }
-
-      // 同步状态标注
-      var syncBadge = '';
-      if (log.ok === true) {
-          syncBadge = '<span style="font-size:11px;padding:1px 7px;border-radius:6px;background:#d1fae5;color:#065f46;border:0.5px solid #6ee7b7;margin-left:4px;">☁️ 已同步</span>';
-      } else if (log.ok === false) {
-          syncBadge = '<span style="font-size:11px;padding:1px 7px;border-radius:6px;background:#fee2e2;color:#991b1b;border:0.5px solid #fca5a5;margin-left:4px;">⚠️ 同步失败</span>';
-      } else if (log.ok === null || log.ok === undefined) {
-          syncBadge = '<span style="font-size:11px;padding:1px 7px;border-radius:6px;background:var(--kpi-bg);color:var(--text-secondary);border:0.5px solid var(--border-color);margin-left:4px;">待同步</span>';
-      }
-
-      // 数据质量提示
-      var qualityHint = '';
-      if(log.rows === 0) qualityHint = '<span style="color:#dc2626;font-size:11px;margin-left:6px;">⚠ 数据为空</span>';
-
-      if(log.type==='delete'){
-        html += '<div style="display:flex;align-items:flex-start;gap:10px;padding:11px 20px;border-bottom:0.5px solid var(--border-color);">'
-          +'<span style="width:8px;height:8px;border-radius:50%;background:#94a3b8;flex-shrink:0;margin-top:4px;"></span>'
-          +'<div style="flex:1;">'
-            +'<div style="font-size:13px;font-weight:500;color:var(--text-primary);margin-bottom:2px;">删除云端文件</div>'
-            +'<div style="font-size:11px;color:var(--text-secondary);">'+(log.desc||'')+'</div>'
-          +'</div>'
-          +'<span style="font-size:11px;color:var(--text-secondary);flex-shrink:0;">'+timeStr+'</span>'
-          +'</div>';
-        return;
-      }
-
-      html += '<div style="display:flex;align-items:flex-start;gap:10px;padding:11px 20px;border-bottom:0.5px solid var(--border-color);">'
-        +'<span style="width:8px;height:8px;border-radius:50%;background:'+(isOk?'#10b981':'#ef4444')+';flex-shrink:0;margin-top:5px;"></span>'
-        +'<div style="flex:1;min-width:0;">'
-          +'<div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;flex-wrap:wrap;">'
-            +'<span style="font-size:13px;font-weight:500;color:var(--text-primary);">'+typeName+'</span>'
-            +'<span style="font-size:11px;padding:1px 7px;border-radius:6px;background:'+typeColor+'18;color:'+typeColor+';border:0.5px solid '+typeColor+'44;">'+( isOk?'成功':'失败')+'</span>'
-            + syncBadge
-            + qualityHint
-          +'</div>'
-          +(summaryParts.length ? '<div style="font-size:11px;color:var(--text-secondary);">'+summaryParts.join(' · ')+'</div>' : '')
+      html += '<div style="padding:11px 18px;border-bottom:0.5px solid var(--border-color);">'
+        +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:7px;">'
+        +icon
+        +'<span style="font-size:13px;font-weight:500;color:var(--text-primary);">'+dateStr+'</span>'
+        +badge
+        +'<span style="font-size:11px;color:var(--text-secondary);margin-left:auto;">'+timeStr+'</span>'
         +'</div>'
-        +'<span style="font-size:11px;color:var(--text-secondary);flex-shrink:0;">'+timeStr+'</span>'
-        +'</div>';
+        +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;padding-left:22px;">';
+      ALL_TYPES.forEach(function(t){
+        var info = typesData[t];
+        var col = info ? TYPE_COLORS[t] : '#ef4444';
+        var dot = '<span style="width:5px;height:5px;border-radius:50%;background:'+col+';flex-shrink:0;display:inline-block;"></span>';
+        var txt = info ? TYPE_NAMES[t]+' · '+info.rows+'条' : TYPE_NAMES[t]+' · 未上传';
+        var txtCol = info ? 'var(--text-secondary)' : 'var(--color-text-danger,#dc2626)';
+        html += '<div style="font-size:11px;color:'+txtCol+';display:flex;align-items:center;gap:4px;">'+dot+txt+'</div>';
+      });
+      html += '</div></div>';
     });
   });
 
-  el.innerHTML = html || '<div style="text-align:center;padding:32px;color:var(--text-secondary);font-size:13px;">暂无上传记录</div>';
-
+  el.innerHTML = html;
   var footerTxt = document.getElementById('zbLogFooter');
-  if(footerTxt) footerTxt.textContent = '共 ' + _zbLog.length + ' 条记录';
+  if(footerTxt) footerTxt.textContent = '共 '+allDates.length+' 个数据日期';
 }
 
 // 品类切换已在initDashboard内部处理
