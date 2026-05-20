@@ -348,12 +348,13 @@
       "title": "新人交付展示图迭代并发送到群里",
       "tag": null,
       "date": "05/15",
-      "done": false,
+      "done": true,
       "created": 1778657412837,
       "pinned": false,
       "note": "",
       "links": [],
-      "quadrant": "q2"
+      "quadrant": "q2",
+      "status": "done"
     },
     {
       "id": "mp2ma27k4vc",
@@ -386,11 +387,12 @@
       "title": "质量触发机制迭代",
       "tag": null,
       "date": "05/15",
-      "done": false,
+      "done": true,
       "created": 1778587330121,
       "pinned": false,
       "note": "",
-      "links": []
+      "links": [],
+      "status": "done"
     },
     {
       "id": "mp2i698tzzd",
