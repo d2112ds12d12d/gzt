@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.38</title>
+    <title>培训部数据看板 v1.39</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -610,7 +610,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.38</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.39</div>
     </div>
   </nav>
 
@@ -967,31 +967,35 @@
 
     <div id="detailModal" class="modal">
         <div class="modal-content" style="border-left:3px solid #2563eb;border-radius:0 14px 14px 14px;overflow:hidden;display:flex;flex-direction:column;max-height:90vh;">
-            <!-- B3顶部：渐变蓝头 -->
+            <!-- 顶部：渐变蓝头 -->
             <div style="background:linear-gradient(135deg,#eef6ff,#e4effd);padding:14px 20px 10px;border-bottom:0.5px solid #bfdbfe;flex-shrink:0;">
                 <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
                     <div style="flex:1;min-width:0;">
-                        <h3 id="modalTitle" style="font-size:13px;font-weight:600;color:#1e3a8a;margin:0 0 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">差异明细</h3>
-                        <div id="modalMetaBar" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                        <h3 id="modalTitle" style="font-size:13px;font-weight:600;color:#1e3a8a;margin:0 0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">差异明细</h3>
+                        <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
                             <span id="modalTotalChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,.7);color:#64748b;border:0.5px solid #bfdbfe;">共 0 条</span>
                             <span id="modalFilteredChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:#2563eb;color:#fff;display:none;">已筛选 0 条</span>
                             <span id="modalCatChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:#dbeafe;color:#1d4ed8;display:none;"></span>
-                            <span id="modalIssueStatChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:#f0fdf4;color:#166534;border:0.5px solid #bbf7d0;display:none;"></span>
+                            <span id="modalKouJingChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:#dbeafe;color:#1d4ed8;display:none;"></span>
+                        </div>
+                        <!-- 周报句子 -->
+                        <div id="modalWeeklyWrap" style="display:none;align-items:center;gap:8px;background:rgba(255,255,255,.55);border-radius:8px;padding:7px 12px;border:0.5px solid #bfdbfe;">
+                            <div id="modalWeeklySentence" style="flex:1;font-size:11px;color:#1e3a8a;line-height:1.6;"></div>
+                            <button onclick="zbCopyWeekly()" style="height:24px;padding:0 10px;border-radius:6px;border:0.5px solid #93c5fd;background:#eff6ff;color:#2563eb;font-size:11px;cursor:pointer;flex-shrink:0;white-space:nowrap;">📋 复制</button>
                         </div>
                     </div>
                     <span class="close-modal" style="flex-shrink:0;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#64748b;">&times;</span>
                 </div>
             </div>
-            <!-- 筛选栏：融入表头区风格 -->
-            <div style="display:flex;align-items:center;gap:6px;padding:7px 16px;background:#f8faff;border-bottom:0.5px solid #e2e8f0;flex-shrink:0;flex-wrap:wrap;">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                <input id="modalKeywordFilter" style="flex:1;min-width:80px;height:26px;border:none;background:transparent;font-size:11px;outline:none;color:var(--text-primary);" placeholder="全字段搜索…">
-                <div style="width:0.5px;height:12px;background:#dce6f5;"></div>
-                <select id="modalSubjObjFilter" style="height:26px;border:none;background:transparent;font-size:11px;color:#94a3b8;outline:none;"><option value="ALL">主客观：全部</option><option value="OBJ">客观问题</option><option value="SUBJ">主观问题</option></select>
-                <div style="width:0.5px;height:12px;background:#dce6f5;"></div>
-                <select id="modalIssueTypeFilter" style="height:26px;border:none;background:transparent;font-size:11px;color:#94a3b8;outline:none;"><option value="__ALL__">问题类型：全部</option></select>
-                <div style="width:0.5px;height:12px;background:#dce6f5;"></div>
-                <span id="modalResetFilter" style="font-size:11px;color:#94a3b8;cursor:pointer;white-space:nowrap;">重置</span>
+            <!-- 副筛选栏：仅保留口径提示，列筛选在表头▾ -->
+            <div style="display:flex;align-items:center;gap:6px;padding:6px 16px;background:#f8faff;border-bottom:0.5px solid #e2e8f0;flex-shrink:0;">
+                <span id="modalKouJingHint" style="font-size:11px;color:#94a3b8;">数据口径：全部</span>
+                <span style="font-size:11px;color:#cbd5e1;margin-left:4px;">· 每列表头 ▾ 可独立筛选</span>
+                <!-- 保留隐藏的旧filter元素供JS引用，不展示 -->
+                <select id="modalSubjObjFilter" style="display:none;"></select>
+                <select id="modalIssueTypeFilter" style="display:none;"></select>
+                <span id="modalResetFilter" style="display:none;"></span>
+                <input id="modalKeywordFilter" style="display:none;">
             </div>
             <div id="modalBody" style="flex:1;overflow:auto;">
                 <div class="virtual-scroll-container" id="virtualScrollContainer"></div>
@@ -1899,42 +1903,23 @@
             }
 
             function renderModalTableVirtual() {
-                var kw = (document.getElementById('modalKeywordFilter')||{}).value||'';
-                kw = kw.trim().toLowerCase();
                 var showCat = window._modalShowCat !== false;
 
                 var filtered = currentModalRecords.filter(function(d) {
-                    var subjVal = modalSubjObjFilter.value;
+                    var subjVal = modalSubjObjFilter ? modalSubjObjFilter.value : 'ALL';
                     var subjMatch = subjVal==='ALL'?true:(subjVal==='OBJ'?isObjective(d.category):isSubjective(d.category));
-                    var issueMatch = modalIssueTypeFilter.value==='__ALL__'||d.issueType===modalIssueTypeFilter.value;
-                    if (!subjMatch||!issueMatch) return false;
-                    if (!kw) return true;
-                    // 全字段关键字搜索
-                    return ['date','code','cat','brand','model','level1','level2','level3_orig','level3','person','category','issueType'].some(function(f){
-                        return String(d[f]||'').toLowerCase().includes(kw);
-                    });
+                    var issueMatch = !modalIssueTypeFilter || modalIssueTypeFilter.value==='__ALL__'||d.issueType===modalIssueTypeFilter.value;
+                    return subjMatch && issueMatch;
                 });
 
-                // 更新顶部徽章
+                // 更新徽章
                 var totalChip = document.getElementById('modalTotalChip');
                 var filteredChip = document.getElementById('modalFilteredChip');
-                var issueStatChip = document.getElementById('modalIssueStatChip');
                 if (totalChip) totalChip.textContent = '共 '+currentModalRecords.length+' 条';
                 if (filteredChip) {
                     if (filtered.length < currentModalRecords.length) {
-                        filteredChip.style.display='';
-                        filteredChip.textContent = '已筛选 '+filtered.length+' 条';
-                    } else { filteredChip.style.display='none'; }
-                }
-                // 问题类型统计徽章
-                if (issueStatChip) {
-                    var issueCnt={};
-                    filtered.forEach(function(d){ var t=d.issueType||'其他'; issueCnt[t]=(issueCnt[t]||0)+1; });
-                    var parts=Object.keys(issueCnt).sort().map(function(k){ return k+' '+issueCnt[k]; });
-                    if (parts.length && parts.length<=4) {
-                        issueStatChip.textContent = parts.join(' · ');
-                        issueStatChip.style.display='';
-                    } else { issueStatChip.style.display='none'; }
+                        filteredChip.style.display=''; filteredChip.textContent='已筛选 '+filtered.length+' 条';
+                    } else filteredChip.style.display='none';
                 }
 
                 if (!filtered.length) {
@@ -1943,59 +1928,144 @@
                     return;
                 }
 
-                // 新字段顺序：抽检日期/质检码/品类/品牌/型号/一级项/二级项/原三级项/新三级项/原操作人/主客观分类/问题类型
+                // 字段顺序
                 var columnKeys  = ['date','code','cat','brand','model','level1','level2','level3_orig','level3','person','category','issueType'];
                 var columnNames = ['抽检日期','质检码','品类','品牌','型号','一级项','二级项','原三级项','新三级项','原操作人','主客观分类','问题类型'];
                 if (!showCat) {
-                    var catIdx = columnKeys.indexOf('cat');
-                    if (catIdx>-1){ columnKeys.splice(catIdx,1); columnNames.splice(catIdx,1); }
+                    var ci=columnKeys.indexOf('cat'); if(ci>-1){columnKeys.splice(ci,1);columnNames.splice(ci,1);}
                 }
 
                 if (!virtualScroll) { virtualScroll = new VirtualScroll(virtualScrollContainer, 36); }
                 virtualScroll.attachScroll();
                 virtualScroll.setData(
-                    filtered.map(function(r) {
+                    filtered.map(function(r){
                         var obj={};
-                        columnKeys.forEach(function(key){
-                            // 字段映射：brand/model 手机用 brand/model，五品类同
-                            obj[key] = r[key]||r[{'level3_orig':'level3_orig','person':'person'}[key]||key]||'—';
-                        });
+                        columnKeys.forEach(function(key){ obj[key]=r[key]||'—'; });
                         return obj;
                     }),
-                    columnKeys,
-                    columnNames
+                    columnKeys, columnNames
                 );
             }
 
             window.openDetailWithData = function openDetailWithData(records, title, showCat) {
                 if (!records.length) { showToast('无明细数据'); return; }
-                currentModalRecords = [...records];
-                window._modalShowCat = (showCat !== false); // 默认显示，站点/质检人详情传false
+
+                // 口径联动：读当前激活的口径按钮
+                var kouJing = 'ALL';
+                var kouJingLabel = '全部';
+                var activeKJ = document.querySelector('.kj-btn.active, [data-kj].active, #zbKouJing .active');
+                // 兼容多种口径按钮写法，读 data-kj 或 textContent
+                var kjBtns = document.querySelectorAll('[onclick*="switchKouJing"],[onclick*="zbKouJing"],[data-kj]');
+                if (!kjBtns.length) kjBtns = document.querySelectorAll('.kj-tab, .scope-btn');
+                kjBtns.forEach(function(b){
+                    if (b.classList.contains('active')||b.style.background==='rgb(37, 99, 235)'||b.style.background==='#2563eb') {
+                        kouJingLabel = b.textContent.trim();
+                        if (kouJingLabel.includes('客观执行')) kouJing='EXEC';
+                        else if (kouJingLabel.includes('客观整体')) kouJing='OBJ_ALL';
+                        else if (kouJingLabel.includes('主观')) kouJing='SUBJ';
+                        else kouJing='ALL';
+                    }
+                });
+                // 也读当前站点页的口径状态
+                var siteKJActive = document.querySelector('#zbSiteKouJing .active, [onclick*="zbSwitchKouJing"].active');
+                if (siteKJActive) {
+                    kouJingLabel = siteKJActive.textContent.trim();
+                    if (kouJingLabel.includes('客观执行')) kouJing='EXEC';
+                    else if (kouJingLabel.includes('客观整体')) kouJing='OBJ_ALL';
+                    else if (kouJingLabel.includes('主观')) kouJing='SUBJ';
+                    else kouJing='ALL';
+                }
+                window._modalKouJing = kouJing;
+                window._modalKouJingLabel = kouJingLabel;
+
+                // 按口径过滤records
+                var filteredByKJ = records.filter(function(d){
+                    if (kouJing==='ALL') return true;
+                    if (kouJing==='EXEC') return isObjective(d.category) && isExecutionIssue(d.judgedIssueType);
+                    if (kouJing==='OBJ_ALL') return isObjective(d.category);
+                    if (kouJing==='SUBJ') return isSubjective(d.category);
+                    return true;
+                });
+
+                currentModalRecords = filteredByKJ.length ? filteredByKJ : records;
+                window._modalShowCat = (showCat !== false);
+
                 var modalTitleEl = document.getElementById('modalTitle');
                 if (modalTitleEl) modalTitleEl.innerText = title;
+
+                // 口径提示
+                var kjHint = document.getElementById('modalKouJingHint');
+                if (kjHint) kjHint.textContent = '数据口径：' + (kouJing==='ALL'?'全部':kouJingLabel);
+                var kjChip = document.getElementById('modalKouJingChip');
+                if (kjChip && kouJing!=='ALL') { kjChip.textContent=kouJingLabel; kjChip.style.display=''; }
+                else if (kjChip) kjChip.style.display='none';
 
                 // 品类徽章
                 var catChip = document.getElementById('modalCatChip');
                 if (catChip) {
-                    var cats = [...new Set(records.map(function(r){return r.cat||'';}).filter(Boolean))];
-                    if (cats.length) { catChip.textContent=cats.join('/'); catChip.style.display=''; }
+                    var cats=[...new Set(currentModalRecords.map(function(r){return r.cat||'';}).filter(Boolean))];
+                    if (cats.length){ catChip.textContent=cats.join('/'); catChip.style.display=''; }
                     else catChip.style.display='none';
                 }
 
+                // 周报句子：统计 judgedIssueType
+                zbUpdateWeeklySentence(currentModalRecords);
+
                 // 重置筛选
-                var kwEl = document.getElementById('modalKeywordFilter');
-                if (kwEl) kwEl.value='';
                 if (modalSubjObjFilter) modalSubjObjFilter.value='ALL';
                 var issueSet=new Set();
-                records.forEach(function(r){ if(r.issueType) issueSet.add(r.issueType); });
+                currentModalRecords.forEach(function(r){ if(r.issueType) issueSet.add(r.issueType); });
                 if (modalIssueTypeFilter) {
-                    modalIssueTypeFilter.innerHTML='<option value="__ALL__">问题类型：全部</option>'
+                    modalIssueTypeFilter.innerHTML='<option value="__ALL__">全部</option>'
                         +Array.from(issueSet).sort().map(function(t){ return '<option value="'+t.replace(/"/g,'&quot;')+'">'+t+'</option>'; }).join('');
                     modalIssueTypeFilter.value='__ALL__';
                 }
                 modal.classList.add('visible');
                 requestAnimationFrame(function(){ renderModalTableVirtual(); });
+            };
+
+            // 生成周报句子
+            function zbUpdateWeeklySentence(records) {
+                var wrap = document.getElementById('modalWeeklyWrap');
+                var sentEl = document.getElementById('modalWeeklySentence');
+                var totalChip = document.getElementById('modalTotalChip');
+                if (!wrap||!sentEl) return;
+                if (totalChip) totalChip.textContent = '共 '+records.length+' 条';
+                if (!records.length) { wrap.style.display='none'; return; }
+
+                // 统计责任类型
+                var typeCnt = {};
+                records.forEach(function(r){
+                    var t = (r.judgedIssueType||r.judgedType||'').trim()||'其他';
+                    typeCnt[t] = (typeCnt[t]||0)+1;
+                });
+                var total = records.length;
+                var parts = Object.keys(typeCnt).sort().map(function(k){
+                    return k+'共<b>'+typeCnt[k]+'</b>例';
+                });
+                // 从QA数据取抽检台数
+                var checks = 0;
+                var allQA = (window._DATA&&window._DATA.qa)||[];
+                var sites = [...new Set(records.map(function(r){return r.warehouse||r.site||'';}))];
+                var cats  = [...new Set(records.map(function(r){return r.cat||'';}))];
+                var dates = [...new Set(records.map(function(r){return (r.date||'').split(' ')[0];}))];
+                allQA.forEach(function(q){
+                    if (sites.includes(q.site) && (cats.length===0||cats.includes(q.cat)) && dates.includes(q.date)) {
+                        checks += (q.checks||0);
+                    }
+                });
+
+                var checkStr = checks>0?'抽检<b>'+checks+'</b>台，':'';
+                sentEl.innerHTML = checkStr+parts.join('，');
+                wrap.style.display='flex';
+                window._zbWeeklyText = (checks>0?'抽检'+checks+'台，':'')+Object.keys(typeCnt).sort().map(function(k){ return k+'共'+typeCnt[k]+'例'; }).join('，');
             }
+
+            window.zbCopyWeekly = function() {
+                var txt = window._zbWeeklyText||'';
+                if (!txt) return;
+                navigator.clipboard.writeText(txt).then(function(){ showToast('✅ 已复制到剪贴板'); }).catch(function(){ showToast('复制失败，请手动复制'); });
+            };
 
             function exportToExcel() {
                 const wb = XLSX.utils.book_new();
