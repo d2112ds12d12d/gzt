@@ -190,9 +190,10 @@
       "title": "俩质量看板需求落地",
       "tag": null,
       "date": "05/15",
-      "done": false,
+      "done": true,
       "created": 1778776880250,
-      "pinned": true
+      "pinned": true,
+      "status": "done"
     },
     {
       "id": "mp5g4fttswk",
@@ -284,10 +285,11 @@
       "title": "0515拆修Kappa任务推送(设定晚上推送）",
       "tag": null,
       "date": "05/15",
-      "done": false,
+      "done": true,
       "created": 1778723320637,
       "parentId": "mp3zjdzr2mn",
-      "pinned": true
+      "pinned": true,
+      "status": "done"
     },
     {
       "id": "mp4tbzg9d6f",
