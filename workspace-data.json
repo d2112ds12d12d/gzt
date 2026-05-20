@@ -76,8 +76,8 @@
       "title": "推送0520晚上的拆修专项",
       "tag": null,
       "date": "05/20",
-      "done": false,
-      "status": "todo",
+      "done": true,
+      "status": "done",
       "priority": "normal",
       "created": 1779189082531,
       "parentId": "mpc3oirrovt"
