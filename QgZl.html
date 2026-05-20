@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.40</title>
+    <title>培训部数据看板 v1.41</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -611,7 +611,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.40</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.41</div>
     </div>
   </nav>
 
@@ -718,41 +718,60 @@
             </div>
 
             <!-- 新排行榜 -->
-            <div class="card">
-                <div class="card-header" style="margin-bottom:10px;">
-                    <div class="card-title"><div class="card-title-bar" style="background:#f59e0b;"></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>差异排行榜 · 全国总览<span style="font-size:10px;color:var(--text-secondary);font-weight:400;margin-left:4px;">差异率=筛选期间累计 · ↑↓=较前日变化</span></div>
+            <div class="card" id="rankBoardCard" style="padding:0;overflow:hidden;">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:0.5px solid var(--border-color);">
+                    <div class="card-title" style="margin:0;"><div class="card-title-bar" style="background:#f59e0b;"></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6"/><path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18"/><path d="M4 22h16"/><path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22"/><path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22"/><path d="M18 2H6v7a6 6 0 0 0 12 0V2Z"/></svg>差异排行榜 · 全国总览<span style="font-size:10px;color:var(--text-secondary);font-weight:400;margin-left:4px;">差异率=筛选期间累计 · ↑↓=较前日变化</span></div>
                 </div>
-                <div class="rank-board" style="grid-template-columns:1fr 1fr;">
-                    <div class="rank-col-box">
-                        <div class="rank-col-title">
-                            <span>🏭 站点差异率排名（低→高）</span>
-                            <span class="rank-col-cnt" id="rankSiteCnt"></span>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:0;">
+                    <!-- 左：大仓 -->
+                    <div id="rankColDW" style="border-right:0.5px solid var(--border-color);border-left:3px solid #ffedd5;">
+                        <div style="padding:9px 14px;font-size:11px;font-weight:500;color:#92400e;display:flex;align-items:center;justify-content:space-between;border-bottom:0.5px solid var(--border-color);">
+                            <span>大仓</span>
+                            <span style="font-size:10px;color:#a16207;font-weight:400;">智能验机中心 + 后验中心仓</span>
                         </div>
-                        <div class="rank-col-scroll">
-                            <div style="font-size:10px;color:var(--text-secondary);margin:6px 0 4px;font-weight:600;">大仓（智能验机中心 + 后验中心仓）</div>
-                            <div id="rankBoardDW"></div>
-                            <div style="font-size:10px;color:var(--text-secondary);margin:8px 0 4px;font-weight:600;padding-top:6px;border-top:1px dashed var(--border-color);">中心仓</div>
-                            <div id="rankBoardZX"></div>
-                        </div>
+                        <div style="padding:4px 14px;font-size:10px;color:var(--text-secondary);background:var(--kpi-bg);border-bottom:0.5px solid var(--border-color);letter-spacing:.03em;">— 智能验机中心 —</div>
+                        <div id="rankBoardDW"></div>
+                        <div style="padding:4px 14px;font-size:10px;color:var(--text-secondary);background:var(--kpi-bg);border-top:0.5px solid var(--border-color);border-bottom:0.5px solid var(--border-color);letter-spacing:.03em;" id="rankHouyanLabel">— 后验中心仓 —</div>
+                        <div id="rankBoardHouyan"></div>
                     </div>
-                    <div class="rank-col-box">
-                        <div class="rank-col-title">
-                            <span>👤 质检人差异排名</span>
-                            <span class="rank-col-cnt" id="rankPersonCnt"></span>
-                        </div>
-                        <div style="display:flex;align-items:center;gap:6px;padding:6px 0 4px;">
-                            <input id="personRankSearch" type="text" placeholder="搜索质检人…" oninput="zbPersonRankRender()" style="flex:1;height:24px;font-size:11px;padding:2px 8px;border-radius:6px;border:0.5px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);outline:none;">
-                            <button id="personRankSortBtn" onclick="zbPersonRankToggleSort()" style="height:24px;padding:0 8px;font-size:11px;border-radius:6px;border:0.5px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-secondary);cursor:pointer;white-space:nowrap;">高→低</button>
-                        </div>
-                        <div class="rank-col-scroll" style="height:calc(100% - 56px);">
-                            <div id="rankBoardPerson"></div>
-                        </div>
-                        <div id="personRankPager" style="display:flex;align-items:center;justify-content:flex-end;gap:4px;padding:4px 0 0;font-size:11px;"></div>
+                    <!-- 右：中心仓 -->
+                    <div id="rankColZX" style="border-left:3px solid #dbeafe;">
+                        <div style="padding:9px 14px;font-size:11px;font-weight:500;color:#1d4ed8;border-bottom:0.5px solid var(--border-color);">中心仓</div>
+                        <div id="rankBoardZX"></div>
                     </div>
                 </div>
-                <div style="font-size:10px;color:var(--text-secondary);margin-top:8px;">
-                    ↑红色=较昨日上升（变差）· ↓绿色=较昨日下降（改善）· —=暂无昨日数据 · <span style="color:var(--text-secondary);">涨跌 = 筛选期最新日 vs 前一日的差异率变化</span>
+                <div style="padding:7px 16px;border-top:0.5px solid var(--border-color);font-size:10px;color:var(--text-secondary);">
+                    ↑红色=较昨日上升（变差）· ↓绿色=较昨日下降（改善）· —=暂无昨日数据 · 涨跌 = 筛选期最新日 vs 前一日的差异率变化
                 </div>
+            </div>
+
+            <!-- 质检人差异排名（独立全宽板块） -->
+            <div class="card" style="padding:0;overflow:hidden;">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:0.5px solid var(--border-color);">
+                    <div class="card-title" style="margin:0;">
+                        <div class="card-title-bar" style="background:#2563eb;"></div>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                        全国客观执行差异量排名
+                    </div>
+                    <span id="rankPersonCnt" style="font-size:12px;color:var(--text-secondary);"></span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;padding:8px 16px;border-bottom:0.5px solid var(--border-color);">
+                    <input id="personRankSearch" type="text" placeholder="搜索质检人姓名…" oninput="zbPersonRankRender()" style="flex:1;height:28px;font-size:12px;padding:2px 10px;border-radius:7px;border:0.5px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);outline:none;">
+                    <button id="personRankSortBtn" onclick="zbPersonRankToggleSort()" style="height:28px;padding:0 12px;font-size:12px;border-radius:7px;border:0.5px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-secondary);cursor:pointer;white-space:nowrap;">差异量 高→低 ↕</button>
+                </div>
+                <table style="width:100%;border-collapse:collapse;">
+                    <thead>
+                        <tr style="background:var(--kpi-bg);border-bottom:0.5px solid var(--border-color);">
+                            <th style="padding:8px 16px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);width:48px;">#</th>
+                            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);">质检人</th>
+                            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);">所属仓</th>
+                            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);">站点类型</th>
+                            <th style="padding:8px 16px;text-align:right;font-size:11px;font-weight:500;color:#2563eb;">客观执行差异量 ↓</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rankBoardPerson"></tbody>
+                </table>
+                <div id="personRankPager" style="display:flex;align-items:center;justify-content:flex-end;gap:4px;padding:8px 16px;border-top:0.5px solid var(--border-color);font-size:11px;"></div>
             </div>
 
             <!-- 全国差异率趋势图 -->
@@ -2261,26 +2280,25 @@
 
                 const zxMax = Math.max(...zxDynRows.map(r=>r.rate||0), 0.001);
                 const dwMax = Math.max(...dwDynRows.map(r=>r.rate||0), ...dwFixRows.map(r=>r.rate||0), 0.001);
-                document.getElementById('rankBoardDW').innerHTML =
-                    renderRows(dwDynRows, dwMax) +
-                    (dwFixRows.length ? '<div class="rank-fixed-divider">— 后验中心仓 —</div>' + renderRows(dwFixRows, dwMax) : '');
-                document.getElementById('rankBoardZX').innerHTML =
-                    renderRows(zxDynRows, zxMax) +
-                    (zxFixRows.length ? '<div class="rank-fixed-divider">— 后验中心仓 —</div>' + renderRows(zxFixRows, zxMax) : '');
+                document.getElementById('rankBoardDW').innerHTML = renderRows(dwDynRows, dwMax);
+                var houyanEl = document.getElementById('rankBoardHouyan');
+                var houyanLabel = document.getElementById('rankHouyanLabel');
+                if (houyanEl) houyanEl.innerHTML = dwFixRows.length ? renderRows(dwFixRows, dwMax) : '';
+                if (houyanLabel) houyanLabel.style.display = dwFixRows.length ? '' : 'none';
+                document.getElementById('rankBoardZX').innerHTML = renderRows(zxDynRows, zxMax);
 
                 // 站点类型联动：控制大仓/中心仓区块显隐
                 (function applyRankSiteTypeFilter() {
                     var siteType = (typeof currentSiteType !== 'undefined') ? currentSiteType : 'ALL';
-                    var dwSection = document.getElementById('rankBoardDW');
-                    var dwLabel   = dwSection ? dwSection.previousElementSibling : null;
-                    var zxSection = document.getElementById('rankBoardZX');
-                    var zxLabel   = zxSection ? zxSection.previousElementSibling : null;
+                    var dwCol = document.getElementById('rankColDW');
+                    var zxCol = document.getElementById('rankColZX');
                     var showDW = siteType === 'ALL' || siteType === 'DW';
                     var showZX = siteType === 'ALL' || siteType === 'ZX';
-                    if (dwSection) dwSection.style.display = showDW ? '' : 'none';
-                    if (dwLabel)   dwLabel.style.display   = showDW ? '' : 'none';
-                    if (zxSection) zxSection.style.display = showZX ? '' : 'none';
-                    if (zxLabel)   zxLabel.style.display   = showZX ? '' : 'none';
+                    if (dwCol) dwCol.style.display = showDW ? '' : 'none';
+                    if (zxCol) zxCol.style.display = showZX ? '' : 'none';
+                    // 单侧显示时去掉左色条视觉割裂感
+                    if (dwCol) dwCol.style.borderLeft = showDW ? '3px solid #ffedd5' : 'none';
+                    if (zxCol) zxCol.style.borderLeft = showZX ? '3px solid #dbeafe' : 'none';
                 })();
             }
 
@@ -3304,48 +3322,60 @@
                     return !kw || p.name.includes(kw);
                 }).sort(function(a,b){ return asc ? a.total - b.total : b.total - a.total; });
                 var total = list.length;
-                if (cntEl) cntEl.textContent = '共' + total + '条';
-                if (!total) { el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-secondary);font-size:12px;">暂无数据</div>'; if(pager)pager.innerHTML=''; return; }
+                if (cntEl) cntEl.textContent = '共 ' + total + ' 人';
+                if (!total) {
+                    el.innerHTML = '<tr><td colspan="5" style="text-align:center;padding:24px;color:var(--text-secondary);font-size:13px;">暂无数据</td></tr>';
+                    if (pager) pager.innerHTML = '';
+                    return;
+                }
                 var pageSize = 10;
                 var totalPages = Math.ceil(total / pageSize);
                 var page = Math.max(1, Math.min(window._personRankPage || 1, totalPages));
                 window._personRankPage = page;
                 var pageList = list.slice((page-1)*pageSize, page*pageSize);
-                var globalMax = list[0] ? list[0].total : 1;
-                if (asc) globalMax = list[list.length-1] ? list[list.length-1].total : 1;
                 var noClsMap = ['top1','top2','top3'];
                 el.innerHTML = pageList.map(function(p, idx) {
                     var globalIdx = (page-1)*pageSize + idx;
-                    var cls = globalIdx < 3 ? noClsMap[globalIdx] : 'normal';
-                    // 如果是低→高排序，top标记无意义，全部normal
-                    if (asc) cls = 'normal';
+                    var rankNo = globalIdx + 1;
+                    // 排名圆圈样式
+                    var noBg = rankNo===1?'#FAC775':rankNo===2?'#D3D1C7':rankNo===3?'#F5C4B3':'var(--kpi-bg)';
+                    var noColor = rankNo===1?'#633806':rankNo===2?'#2C2C2A':rankNo===3?'#4A1B0C':'var(--text-tertiary)';
+                    var noWeight = rankNo<=3?'600':'400';
+                    // 差异量颜色
                     var third = Math.ceil(total / 3);
                     var cntColor = !asc
                         ? (globalIdx < third ? '#dc2626' : globalIdx < third*2 ? '#ea580c' : '#16a34a')
                         : (globalIdx < third ? '#16a34a' : globalIdx < third*2 ? '#ea580c' : '#dc2626');
-                    // 仓库标签：最多显示2个
-                    var whArr = Array.from(p.whs||[]).slice(0,2);
-                    var whHtml = whArr.map(function(w){
-                        var short = w.replace('转转-','').replace('智能验机中心','大仓').replace('后验中心仓','后验').replace('中心仓','').replace('库','');
-                        return '<span style="font-size:9px;padding:1px 5px;border-radius:4px;background:var(--kpi-bg);color:var(--text-secondary);margin-left:3px;white-space:nowrap;">'+short+'</span>';
-                    }).join('');
-                    return '<div class="rank-row" data-person="' + p.name.replace(/"/g,'&quot;') + '" style="display:flex;align-items:center;gap:0;padding:5px 0;">'
-                        + '<span class="rank-no ' + cls + '" style="flex-shrink:0;">' + (globalIdx+1) + '</span>'
-                        + '<span class="rank-name" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + p.name + whHtml + '</span>'
-                        + '<span class="rank-rate" style="color:'+cntColor+';font-weight:700;min-width:40px;text-align:right;flex-shrink:0;">' + p.total + '次</span>'
-                        + '</div>';
+                    // 仓库名（取第一个）
+                    var whArr = Array.from(p.whs||[]);
+                    var whName = whArr.length ? whArr[0] : '—';
+                    // 站点类型标签
+                    var siteType = getSiteType ? getSiteType(whName) : 'ZX';
+                    var typeLabel = siteType === 'DW' ? '大仓' : '中心仓';
+                    var typeBg = siteType === 'DW' ? '#FAEEDA' : '#E1F5EE';
+                    var typeColor = siteType === 'DW' ? '#633806' : '#0F6E56';
+                    return '<tr style="border-top:0.5px solid var(--border-color);" data-person="' + p.name.replace(/"/g,'&quot;') + '">'
+                        + '<td style="padding:10px 16px;">'
+                          + '<div style="width:24px;height:24px;border-radius:50%;background:'+noBg+';color:'+noColor+';font-size:11px;font-weight:'+noWeight+';display:flex;align-items:center;justify-content:center;">' + rankNo + '</div>'
+                        + '</td>'
+                        + '<td style="padding:10px 12px;font-size:13px;font-weight:'+(rankNo<=3?'500':'400')+';color:var(--text-primary);">' + p.name + '</td>'
+                        + '<td style="padding:10px 12px;font-size:12px;color:var(--text-secondary);">' + whName + '</td>'
+                        + '<td style="padding:10px 12px;"><span style="font-size:11px;padding:2px 7px;border-radius:4px;background:'+typeBg+';color:'+typeColor+';">' + typeLabel + '</span></td>'
+                        + '<td style="padding:10px 16px;text-align:right;font-size:14px;font-weight:500;color:'+cntColor+';">' + p.total + '</td>'
+                        + '</tr>';
                 }).join('');
                 // 分页器
                 if (pager) {
+                    var info = '<span style="font-size:11px;color:var(--text-tertiary);margin-right:auto;">第 '+page+' 页 / 共 '+totalPages+' 页</span>';
                     var btns = '';
-                    btns += '<button onclick="window._personRankPage=Math.max(1,window._personRankPage-1);zbPersonRankRender();" style="min-width:24px;height:22px;border-radius:5px;border:0.5px solid var(--border-color);background:transparent;color:var(--text-primary);font-size:11px;cursor:pointer;">&lsaquo;</button>';
+                    btns += '<button onclick="window._personRankPage=Math.max(1,window._personRankPage-1);zbPersonRankRender();" style="min-width:26px;height:26px;border-radius:6px;border:0.5px solid var(--border-color);background:transparent;color:var(--text-primary);font-size:12px;cursor:pointer;">&lsaquo;</button>';
                     var start = Math.max(1, page-2), end = Math.min(totalPages, start+4);
                     start = Math.max(1, end-4);
                     for (var pi=start; pi<=end; pi++) {
-                        btns += '<button onclick="window._personRankPage='+pi+';zbPersonRankRender();" style="min-width:22px;height:22px;border-radius:5px;border:0.5px solid var(--border-color);background:'+(pi===page?'#2563eb':'transparent')+';color:'+(pi===page?'#fff':'var(--text-primary)')+';font-size:11px;cursor:pointer;">'+pi+'</button>';
+                        btns += '<button onclick="window._personRankPage='+pi+';zbPersonRankRender();" style="min-width:26px;height:26px;border-radius:6px;border:0.5px solid var(--border-color);background:'+(pi===page?'#2563eb':'transparent')+';color:'+(pi===page?'#fff':'var(--text-primary)')+';font-size:12px;cursor:pointer;">'+pi+'</button>';
                     }
-                    btns += '<button onclick="window._personRankPage=Math.min('+totalPages+',window._personRankPage+1);zbPersonRankRender();" style="min-width:24px;height:22px;border-radius:5px;border:0.5px solid var(--border-color);background:transparent;color:var(--text-primary);font-size:11px;cursor:pointer;">&rsaquo;</button>';
-                    pager.innerHTML = btns;
+                    btns += '<button onclick="window._personRankPage=Math.min('+totalPages+',window._personRankPage+1);zbPersonRankRender();" style="min-width:26px;height:26px;border-radius:6px;border:0.5px solid var(--border-color);background:transparent;color:var(--text-primary);font-size:12px;cursor:pointer;">&rsaquo;</button>';
+                    pager.innerHTML = info + btns;
                 }
             };
 
