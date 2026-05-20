@@ -1,54 +1,111 @@
 {
   "tasks": [
     {
+      "id": "mpdecbdbs4l",
+      "title": "T-7 名单公布&差异赋能",
+      "tag": null,
+      "date": "05/20",
+      "done": false,
+      "status": "todo",
+      "priority": "normal",
+      "created": 1779241318031,
+      "fromTemplate": "moxqlsga0sr"
+    },
+    {
+      "id": "mpcjrmft91k",
+      "title": "复测新人训（拆修第一节）16:30-18:00",
+      "tag": null,
+      "date": "05/20",
+      "done": false,
+      "status": "todo",
+      "priority": "normal",
+      "created": 1779189964121,
+      "parentId": "mpcieo9lgqh",
+      "note": "",
+      "links": []
+    },
+    {
+      "id": "mpcjqo8ln7b",
+      "title": "黄浩瀚重新计算差异（拉数据 11-17 号）",
+      "tag": null,
+      "date": "05/25",
+      "done": false,
+      "status": "todo",
+      "priority": "normal",
+      "created": 1779189919797,
+      "parentId": "mpc1csbio5h"
+    },
+    {
+      "id": "mpcj8q77q7v",
+      "title": "推送0520晚上的拆修专项",
+      "tag": null,
+      "date": "05/20",
+      "done": false,
+      "status": "todo",
+      "priority": "normal",
+      "created": 1779189082531,
+      "parentId": "mpc3oirrovt"
+    },
+    {
+      "id": "mpcieo9lgqh",
+      "title": "预定明天的新人培训会议室&群内通知",
+      "tag": null,
+      "date": "05/19",
+      "done": true,
+      "status": "done",
+      "priority": "normal",
+      "created": 1779187680345,
+      "parentId": "mpc1ernfwpg",
+      "childIds": [
+        "mpcjrmft91k"
+      ]
+    },
+    {
       "id": "mpc3oirrovt",
       "title": "推送今晚的拆修专项",
       "tag": null,
       "date": "05/19",
-      "done": false,
-      "status": "todo",
+      "done": true,
+      "status": "done",
       "priority": "normal",
       "note": "",
-      "created": 1779162945543
-    },
-    {
-      "id": "mpc3iatiws6",
-      "title": "T-7 名单公布&差异赋能",
-      "tag": null,
-      "date": "05/19",
-      "done": false,
-      "status": "todo",
-      "priority": "normal",
-      "created": 1779162655302,
-      "fromTemplate": "moxqlsga0sr"
+      "created": 1779162945543,
+      "childIds": [
+        "mpcj8q77q7v"
+      ]
     },
     {
       "id": "mpc1f0y7kzl",
       "title": "写周报",
       "tag": null,
-      "date": "05/19",
+      "date": "05/20",
       "done": false,
       "status": "todo",
       "priority": "normal",
-      "created": 1779159143311
+      "created": 1779159143311,
+      "note": "",
+      "links": []
     },
     {
       "id": "mpc1ernfwpg",
       "title": "复测新人培训——有效-外观（14:30-16:30）",
       "tag": null,
       "date": "05/19",
-      "done": false,
-      "status": "todo",
+      "done": true,
+      "status": "done",
       "priority": "normal",
-      "created": 1779159131259
+      "created": 1779159131259,
+      "childIds": [
+        "mpcieo9lgqh"
+      ]
     },
     {
       "id": "mpc1emkrbq5",
       "title": "擎天权限申请",
       "tag": null,
       "date": "05/19",
-      "done": false,
-      "status": "todo",
+      "done": true,
+      "status": "done",
       "priority": "normal",
       "created": 1779159124683
     },
@@ -56,7 +113,7 @@
       "id": "mpc1dzh25kr",
       "title": "实操质检30台",
       "tag": null,
-      "date": "05/19",
+      "date": "05/20",
       "done": false,
       "status": "todo",
       "priority": "normal",
@@ -65,7 +122,7 @@
       "links": [
         {
           "url": "https://doc.weixin.qq.com/doc/w3_AVMAlwa8AKsCN1d70EnvOT0Sxyyto?scode=AJ4AfQfgAAw0xhRd3qAVMAlwa8AKs&isEnterEdit=1",
-          "text": ""
+          "text": "https://doc.weixin.qq.com/doc/w3_AVMAlwa8AKsCN1d70EnvOT0Sxyyto?scode=AJ4AfQfgAAw0xhRd3qAVMAlwa8AKs&isEnterEdit=1"
         }
       ]
     },
@@ -74,12 +131,15 @@
       "title": "吴日荣结业通知&黄浩瀚重新计算差异",
       "tag": null,
       "date": "05/19",
-      "done": false,
-      "status": "todo",
+      "done": true,
+      "status": "done",
       "priority": "normal",
       "created": 1779159038814,
       "note": "原标题：\n1、新人黄浩瀚是否汰换确认，看是不是要继续延期？\n2、两位新人实操数据拉取&考试推送&公表更新&结业通知",
-      "links": []
+      "links": [],
+      "childIds": [
+        "mpcjqo8ln7b"
+      ]
     },
     {
       "id": "mp6u9t88lsn",
@@ -625,26 +685,14 @@
       "date": "05/08",
       "done": true,
       "created": 1778165730239
-    },
-    {
-      "id": "moxqlsga0sr",
-      "title": "T-7 名单公布&差异赋能",
-      "tag": null,
-      "date": "05/15",
-      "done": false,
-      "created": 1778294456650,
-      "isTemplate": true,
-      "repeat": {
-        "type": "daily"
-      }
     }
   ],
   "books": [],
   "notes": [
     {
       "id": "mp5e4rsnn90",
-      "title": "工作台需求整理",
-      "body": "1、做一个 skill 的便捷进入窗口",
+      "title": "",
+      "body": "",
       "cat": "experience",
       "date": "05/14 19:13",
       "created": 1778757236663
@@ -807,6 +855,7 @@
     "mpc2kaiynyh",
     "mpc1edr1glk",
     "mpc35bxigke",
+    "mpc3iatiws6",
     "mpcdsrwyv09"
   ]
 }
