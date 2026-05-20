@@ -199,7 +199,7 @@
       "title": "星级培训",
       "tag": null,
       "date": "05/15",
-      "done": false,
+      "done": true,
       "created": 1778760580385,
       "note": "",
       "links": [
@@ -216,7 +216,8 @@
           "text": "星级质量训"
         }
       ],
-      "pinned": true
+      "pinned": true,
+      "status": "done"
     },
     {
       "id": "mp5g1168go9",
