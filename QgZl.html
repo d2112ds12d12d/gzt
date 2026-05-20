@@ -8,6 +8,7 @@
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
     </script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
@@ -865,7 +866,7 @@
                 <div id="siteKpiRow" class="stats-grid"></div>
               </div>
               <!-- 趋势图 -->
-              <div class="card" style="margin-bottom:16px;">
+              <div class="card" id="siteTrendCard" style="margin-bottom:16px;">
                 <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;">
                   <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
                     <div style="display:flex;align-items:center;gap:0;" id="siteTrendRangeBtns">
@@ -877,6 +878,7 @@
                     <div style="width:0.5px;height:14px;background:var(--border-color);flex-shrink:0;"></div>
                     <div class="card-title" style="margin:0;"><div style="width:3px;height:14px;background:#10b981;border-radius:2px;flex-shrink:0;margin-right:4px;"></div><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-right:2px;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>客观执行差异率趋势<span style="font-size:11px;color:var(--text-secondary);font-weight:400;margin-left:4px;">点击节点查看当日明细</span></div>
                   </div>
+                  <button onclick="zbCopyTrendImg()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 11px;border-radius:7px;font-size:11px;font-weight:500;border:0.5px solid #93c5fd;background:#eff6ff;color:#2563eb;cursor:pointer;white-space:nowrap;flex-shrink:0;" onmouseenter="this.style.background='#dbeafe'" onmouseleave="this.style.background='#eff6ff'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制图片</button>
                 </div>
                 <div id="siteTrendChart" style="width:100%;height:320px;"></div>
               </div>
@@ -889,7 +891,10 @@
                     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/></svg>
                     质检维度分析
                   </div>
-                  <button id="zbCompareToggleBtn" onclick="zbToggleCompare()" style="display:inline-flex;align-items:center;gap:5px;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;background:#fff;color:#2563eb;border:1.5px solid #2563eb;cursor:pointer;white-space:nowrap;transition:all .15s;position:relative;" onmouseenter="this.style.background='#eff6ff'" onmouseleave="if(!window._zbCompareOpen)this.style.background='#fff'">⇄ 对比数据</button>
+                  <div style="display:flex;align-items:center;gap:8px;">
+                    <button onclick="zbCopyDimTable()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 11px;border-radius:7px;font-size:11px;font-weight:500;border:0.5px solid #93c5fd;background:#eff6ff;color:#2563eb;cursor:pointer;white-space:nowrap;" onmouseenter="this.style.background='#dbeafe'" onmouseleave="this.style.background='#eff6ff'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制表格</button>
+                    <button id="zbCompareToggleBtn" onclick="zbToggleCompare()" style="display:inline-flex;align-items:center;gap:5px;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;background:#fff;color:#2563eb;border:1.5px solid #2563eb;cursor:pointer;white-space:nowrap;transition:all .15s;position:relative;" onmouseenter="this.style.background='#eff6ff'" onmouseleave="if(!window._zbCompareOpen)this.style.background='#fff'">⇄ 对比数据</button>
+                  </div>
                 </div>
                 <!-- 对比日期面板 -->
                 <div id="zbCompareDatePanel" style="display:none;background:linear-gradient(135deg,#f0f7ff,#e8f0fe);border-bottom:1px solid #bfdbfe;padding:10px 16px;align-items:center;gap:8px;flex-wrap:wrap;">
@@ -1930,8 +1935,8 @@
                 }
 
                 // 字段顺序
-                var columnKeys  = ['date','code','cat','brand','model','level1','level2','level3_orig','level3','person','category','issueType'];
-                var columnNames = ['抽检日期','质检码','品类','品牌','型号','一级项','二级项','原三级项','新三级项','原操作人','主客观分类','问题类型'];
+                var columnKeys  = ['date','code','cat','brand','model','level1','level2','level3_orig','level3','person','category','issueType','judgedIssueType'];
+                var columnNames = ['抽检日期','质检码','品类','品牌','型号','一级项','二级项','原三级项','新三级项','原操作人','主客观分类','问题类型','责任类型'];
                 if (!showCat) {
                     var ci=columnKeys.indexOf('cat'); if(ci>-1){columnKeys.splice(ci,1);columnNames.splice(ci,1);}
                 }
@@ -4495,7 +4500,7 @@ function zbRenderSiteDetail(siteName) {
             ? ['手机-线体','手机-后验','笔记本','平板','手表','耳机']
             : ['手机','笔记本','平板','手表','耳机'];
         var CAT_COLORS_EXT = Object.assign({}, CAT_COLORS, {'手机-线体':'#2563eb','手机-后验':'#f59e0b'});
-        var VIS_KEY4 = 'site4w_cat_vis';
+        var VIS_KEY4 = 'site4w_cat_vis__' + siteName;
         var savedVis4 = {};
         try { var sv4=localStorage.getItem(VIS_KEY4); savedVis4=sv4?JSON.parse(sv4):{}; } catch(e4){}
         // 新品类默认全选
@@ -4753,6 +4758,7 @@ function zbRenderSiteDetail(siteName) {
                         });
                         return html;
                     }},
+                    xAxis:{type:'category',data:months12,axisLabel:{color:textColor,rotate:30,fontSize:10},axisLine:{lineStyle:{color:axisColor}},splitLine:{show:false}},
                     yAxis:{type:'value',name:'差异率(%)',nameTextStyle:{color:textColor},axisLabel:{color:textColor,formatter:'{value}%'},min:0},
                     grid:{top:30,right:16,bottom:60,left:56},
                     series:seriesY
@@ -6032,11 +6038,90 @@ function zbSiteTrendRange(range, btn) {
         }
     }
 
-    // 重新渲染站点详情
-    var titleEl = document.getElementById('siteDetailTitle');
-    if (!titleEl) return;
-    var siteName = titleEl.textContent.replace(' · 站点详情', '').trim();
-    if (siteName) zbRenderSiteDetail(siteName);
+    // 只刷新趋势图，不重建整页
+    if (typeof renderTrendChart === 'function') {
+        renderTrendChart();
+    } else {
+        var titleEl2 = document.getElementById('siteDetailTitle');
+        if (!titleEl2) return;
+        var siteName2 = titleEl2.textContent.replace(' · 站点详情', '').trim();
+        if (siteName2) zbRenderSiteDetail(siteName2);
+    }
+}
+
+// ── 趋势图板块：复制图片到剪贴板 ──
+function zbCopyTrendImg() {
+    var card = document.getElementById('siteTrendCard');
+    if (!card) { showToast('找不到趋势图板块'); return; }
+    if (typeof html2canvas === 'undefined') { showToast('截图库未加载，请刷新重试'); return; }
+    showToast('正在生成图片…');
+    html2canvas(card, { backgroundColor: '#ffffff', scale: 2, useCORS: true, logging: false }).then(function(canvas) {
+        canvas.toBlob(function(blob) {
+            if (!blob) { showToast('生成失败，请重试'); return; }
+            try {
+                navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]).then(function() {
+                    showToast('✓ 已复制到剪贴板，可直接粘贴到 Word');
+                }).catch(function() {
+                    // 降级：下载
+                    var a = document.createElement('a');
+                    a.href = URL.createObjectURL(blob);
+                    a.download = '趋势图_' + new Date().toLocaleDateString('zh-CN').replace(/\//g,'-') + '.png';
+                    a.click();
+                    showToast('浏览器不支持直接复制，已自动下载');
+                });
+            } catch(e) {
+                showToast('复制失败：' + e.message);
+            }
+        }, 'image/png');
+    }).catch(function(e) { showToast('截图失败：' + e.message); });
+}
+
+// ── 质检维度分析：复制当前tab表格到剪贴板（HTML table，可粘贴到Word）──
+function zbCopyDimTable() {
+    // 判断当前激活tab
+    var isPerson = !document.getElementById('zbTabIssue') || document.getElementById('zbTabPerson').style.borderBottomColor === 'rgb(37, 99, 235)' || document.getElementById('zbTabPerson').style.color === 'rgb(37, 99, 235)';
+    // 找表格：人维度或项维度的tbody所在table
+    var tbls = document.querySelectorAll('#zbPersonListRoot table, #zbIssueListRoot table, #sitePersonRoot table, #siteIssueRoot table');
+    if (!tbls.length) {
+        // 通用兜底：找维度分析卡片里的第一个table
+        var dimCard = document.querySelector('#zbDimTabBar');
+        if (dimCard) {
+            var parent = dimCard.parentElement;
+            if (parent) tbls = parent.querySelectorAll('table');
+        }
+    }
+    if (!tbls.length) { showToast('未找到表格数据'); return; }
+    // 取第一个有内容的table
+    var tbl = null;
+    for (var i = 0; i < tbls.length; i++) {
+        if (tbls[i].rows.length > 1) { tbl = tbls[i]; break; }
+    }
+    if (!tbl) { showToast('表格暂无数据'); return; }
+    // 构造干净的HTML table（去掉进度条、颜色标记等交互元素，只保留文字）
+    var html = '<table border="1" cellpadding="4" cellspacing="0" style="border-collapse:collapse;font-family:sans-serif;font-size:12px;">';
+    for (var r = 0; r < tbl.rows.length; r++) {
+        html += '<tr>';
+        var row = tbl.rows[r];
+        for (var c = 0; c < row.cells.length; c++) {
+            var cell = row.cells[c];
+            var tag = (r === 0 || cell.tagName === 'TH') ? 'th' : 'td';
+            // 只取纯文字，去掉SVG、进度条等
+            var text = cell.innerText.replace(/\s+/g,' ').trim();
+            html += '<' + tag + ' style="padding:4px 8px;border:1px solid #ccc;">' + text + '</' + tag + '>';
+        }
+        html += '</tr>';
+    }
+    html += '</table>';
+    try {
+        var blob = new Blob([html], { type: 'text/html' });
+        navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]).then(function() {
+            showToast('✓ 已复制表格，可直接粘贴到 Word');
+        }).catch(function() {
+            // 降级：复制纯文字
+            var text = tbl.innerText;
+            navigator.clipboard.writeText(text).then(function(){ showToast('✓ 已复制（纯文本）'); });
+        });
+    } catch(e) { showToast('复制失败：' + e.message); }
 }
 
 function zbAddLog(entry) {
