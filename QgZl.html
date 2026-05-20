@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.39A</title>
+    <title>培训部数据看板 v1.39B</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -610,7 +610,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.39A</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.39B</div>
     </div>
   </nav>
 
@@ -3978,11 +3978,11 @@ document.addEventListener('keydown', function(e){
 function zbUpdateRoleBadge() {
     var canEdit = (zbRole === 'admin' || zbRole === 'super');
 
-    // ── 上传按钮 ──
+    // ── 上传按钮：浏览者隐藏，其他保留 ──
     var uploadBtn = document.getElementById('zbUploadBtnLabel');
     if (uploadBtn) uploadBtn.style.display = canEdit ? '' : 'none';
 
-    // ── 公告栏 ──
+    // ── 公告栏（top-bar）：仅管理员可见 ──
     var topBar = document.querySelector('.top-bar');
     if (topBar) topBar.style.display = canEdit ? '' : 'none';
 
@@ -6057,6 +6057,8 @@ function zbUpdateLogSync(record, ok) {
 // ── 数据完整性检测 ──
 var _zbHealthDismissed = false;
 function zbCheckDataHealth() {
+    // 仅管理员可见
+    if (zbRole !== 'admin' && zbRole !== 'super') return;
     var bar = document.getElementById('zbDataHealthBar');
     if (!bar || _zbHealthDismissed) return;
     var ALL_TYPES = ['qa','diff5','sum','diff4'];
