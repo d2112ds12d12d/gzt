@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.33</title>
+    <title>培训部数据看板 v1.34</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -584,7 +584,7 @@
   <nav id="zb-sidebar">
     <div class="zb-logo">
       <div class="zb-brand">培训部数据看板</div>
-      <div class="zb-sub">ZHUAN · 培训内部数据平台 &nbsp;<span style="opacity:0.4;">v1.33</span></div>
+      <div class="zb-sub">ZHUAN · 培训内部数据平台</div>
     </div>
     <div class="zb-nav-lbl">数据模块</div>
     <div class="zb-nav-item active" onclick="zbNav('overview',this)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 10 10 7 13 10 17 7"/></svg> 数据总览</div>
@@ -598,27 +598,41 @@
     <div class="zb-nav-item" onclick="zbOpenLog()" style="cursor:pointer;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> 日志</div>
     <div class="zb-nav-item" id="zb-nav-settings" onclick="zbOpenSettings()" style="cursor:pointer;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> 设置</div>
     <div class="zb-sidebar-footer" id="zbSidebarFooter">
-      <!-- 未登录：显示登录框 -->
-      <div id="zbLoginBlock" class="zb-login-block">
-        <div class="zb-login-lbl">登录 ID</div>
-        <input type="password" id="zbSidebarPwd" class="zb-login-input" placeholder="输入 ID…" onkeydown="if(event.key==='Enter')zbSidebarLogin()">
-        <button class="zb-login-btn" onclick="zbSidebarLogin()">确认登录</button>
-        <div id="zbSidebarHint" class="zb-login-hint"></div>
-      </div>
-      <!-- 已登录：显示用户信息 -->
+      <!-- 已登录：显示用户信息（管理员） -->
       <div id="zbUserBlock" class="zb-user-block" style="display:none;" onclick="zbSidebarUserClick()">
         <div id="zbSidebarAvatar" class="zb-avatar viewer">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
         </div>
         <div style="flex:1;min-width:0;">
-          <div id="zbSidebarName" class="zb-uname">访客</div>
-          <div id="zbSidebarRole" class="zb-urole" style="display:flex;align-items:center;gap:3px;"><span style="width:5px;height:5px;border-radius:50%;background:#22c55e;flex-shrink:0;display:inline-block;"></span><span id="zbCloudStatusSidebar">云端已连接</span></div>
+          <div id="zbSidebarName" class="zb-uname">管理员</div>
+          <div id="zbSidebarRole" class="zb-urole" style="display:flex;align-items:center;gap:3px;"><span style="width:5px;height:5px;border-radius:50%;background:#22c55e;flex-shrink:0;display:inline-block;"></span><span>已登录</span></div>
         </div>
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
-  
+      <!-- 版本号：双击触发管理员登录（无感知） -->
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.34</div>
     </div>
   </nav>
+
+  <!-- ══ 管理员登录弹窗（B款） ══ -->
+  <div id="zbAdminLoginModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(15,25,60,0.48);backdrop-filter:blur(3px);align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:14px;width:300px;overflow:hidden;box-shadow:0 24px 64px rgba(15,40,100,0.22);" onclick="event.stopPropagation()">
+      <!-- 顶部品牌蓝 -->
+      <div style="background:linear-gradient(135deg,#1e40af,#2563eb);padding:20px 24px 16px;">
+        <div style="font-size:15px;font-weight:700;letter-spacing:.22em;color:#fff;margin-bottom:3px;">ZHUAN</div>
+        <div style="font-size:10px;color:#93c5fd;">培训内部数据平台 · 管理员登录</div>
+      </div>
+      <!-- 表单 -->
+      <div style="padding:20px 24px 22px;">
+        <div style="font-size:11px;color:#64748b;margin-bottom:6px;">管理密码</div>
+        <input type="password" id="zbAdminPwdInput" placeholder="请输入密码" lang="zh"
+          style="width:100%;box-sizing:border-box;height:38px;border:1px solid #dce6f5;border-radius:8px;padding:0 12px;font-size:13px;color:#0f172a;outline:none;margin-bottom:6px;"
+          onkeydown="if(event.key==='Enter')zbAdminLoginSubmit()" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#dce6f5'">
+        <div id="zbAdminLoginHint" style="font-size:11px;color:#dc2626;min-height:16px;margin-bottom:10px;"></div>
+        <button onclick="zbAdminLoginSubmit()" style="width:100%;height:38px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">确认登录</button>
+      </div>
+    </div>
+  </div>
   <!-- 右侧主内容（原封不动） -->
   <div id="zb-main">
     <div id="loadingBar" class="loading-bar"><div class="bar-inner"></div></div>
@@ -3750,57 +3764,99 @@ function zbGetToken() {
 }
 
 // ── 侧边栏身份区更新 ──
-function zbUpdateRoleBadge() {
-    var loginBlock = document.getElementById('zbLoginBlock');
-    var userBlock  = document.getElementById('zbUserBlock');
-    var avatar     = document.getElementById('zbSidebarAvatar');
-    var nameEl     = document.getElementById('zbSidebarName');
-    var roleEl     = document.getElementById('zbSidebarRole');
-    var uploadBtn  = document.getElementById('zbUploadBtnLabel');
-    var exportBtn  = document.getElementById('exportDataBtn');
-    var canEdit    = (zbRole === 'admin' || zbRole === 'super');
-
-    if (uploadBtn) {
-        if (canEdit) {
-            uploadBtn.style.opacity = '1';
-            uploadBtn.style.cursor = 'pointer';
-            uploadBtn.style.pointerEvents = '';
-            uploadBtn.style.filter = '';
-        } else {
-            // viewer：显示但禁用，视觉灰化
-            uploadBtn.style.opacity = '0.45';
-            uploadBtn.style.cursor = 'not-allowed';
-            uploadBtn.style.pointerEvents = 'none';
-            uploadBtn.setAttribute('title', '暂无上传权限');
-        }
-    }
-    if (exportBtn) exportBtn.style.display = '';
-
-    if (zbRole === 'viewer') {
-        if (loginBlock) loginBlock.style.display = '';
-        if (userBlock)  userBlock.style.display  = 'none';
+// ── 管理员登录弹窗 ──
+function zbOpenAdminLogin() {
+    var modal = document.getElementById('zbAdminLoginModal');
+    if (modal) { modal.style.display = 'flex'; }
+    setTimeout(function(){ var inp = document.getElementById('zbAdminPwdInput'); if(inp) inp.focus(); }, 80);
+}
+function zbCloseAdminLogin() {
+    var modal = document.getElementById('zbAdminLoginModal');
+    if (modal) { modal.style.display = 'none'; }
+    var hint = document.getElementById('zbAdminLoginHint');
+    if (hint) hint.textContent = '';
+}
+async function zbAdminLoginSubmit() {
+    var inp  = document.getElementById('zbAdminPwdInput');
+    var hint = document.getElementById('zbAdminLoginHint');
+    if (!inp) return;
+    var v = inp.value.trim();
+    if (!v) { hint.textContent = '请输入密码'; return; }
+    hint.textContent = '验证中…';
+    // 超管 Token
+    if (v.startsWith('ghp_') || v.startsWith('github_pat_') || v.length > 30) {
+        try {
+            var r = await fetch('https://api.github.com/repos/' + GH_USER + '/' + GH_REPO, { headers: { Authorization: 'token ' + v } });
+            if (r.ok) {
+                zbRole = 'super'; zbToken = v;
+                localStorage.setItem('zb_role','super');
+                localStorage.setItem('zb_token', v);
+                inp.value = ''; hint.textContent = '';
+                zbCloseAdminLogin();
+                zbUpdateRoleBadge();
+                showToast('⚡ 超管模式已激活');
+                return;
+            }
+        } catch(e) {}
+        hint.textContent = 'Token无效，请重试';
         return;
     }
-    // 已登录
-    if (loginBlock) loginBlock.style.display = 'none';
-    if (userBlock)  userBlock.style.display  = 'flex';
+    // 管理员密码
+    if (v === ADMIN_PASSWORD) {
+        zbRole = 'admin';
+        localStorage.setItem('zb_role','admin');
+        inp.value = ''; hint.textContent = '';
+        zbCloseAdminLogin();
+        zbUpdateRoleBadge();
+        showToast('✅ 已登录为管理员');
+        return;
+    }
+    hint.textContent = '密码错误';
+}
+// 点遮罩关闭
+document.addEventListener('click', function(e){
+    var modal = document.getElementById('zbAdminLoginModal');
+    if (modal && e.target === modal) zbCloseAdminLogin();
+});
+document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') zbCloseAdminLogin();
+});
 
-    // 头像：管理员蓝色首字，超管紫色
+function zbUpdateRoleBadge() {
+    var canEdit = (zbRole === 'admin' || zbRole === 'super');
+
+    // ── 上传按钮 ──
+    var uploadBtn = document.getElementById('zbUploadBtnLabel');
+    if (uploadBtn) uploadBtn.style.display = canEdit ? '' : 'none';
+
+    // ── 公告栏 ──
+    var topBar = document.querySelector('.top-bar');
+    if (topBar) topBar.style.display = canEdit ? '' : 'none';
+
+    // ── 日志、设置侧边栏入口 ──
+    var logNav     = document.querySelector('[onclick*="zbOpenLog"]');
+    var settingNav = document.getElementById('zb-nav-settings');
+    if (logNav)     logNav.style.display     = canEdit ? '' : 'none';
+    if (settingNav) settingNav.style.display  = canEdit ? '' : 'none';
+
+    // ── 用户块：管理员显示，浏览者隐藏 ──
+    var userBlock = document.getElementById('zbUserBlock');
+    if (userBlock) userBlock.style.display = canEdit ? 'flex' : 'none';
+
+    if (!canEdit) return; // 浏览者到此为止
+
+    // ── 管理员头像和名称 ──
+    var avatar = document.getElementById('zbSidebarAvatar');
+    var nameEl = document.getElementById('zbSidebarName');
+    var roleEl = document.getElementById('zbSidebarRole');
     if (avatar) {
-        var initials = zbRole === 'super' ? '超' : (zbRole === 'admin' ? '管' : '');
-        avatar.className = 'zb-avatar';
-        if (zbRole === 'super') { avatar.style.background='#ede9fe'; avatar.style.color='#6d28d9'; }
-        else { avatar.style.background='#dbeafe'; avatar.style.color='#1d4ed8'; }
-        avatar.textContent = initials;
+        if (zbRole === 'super') { avatar.style.background='#ede9fe'; avatar.style.color='#6d28d9'; avatar.textContent='超'; }
+        else { avatar.style.background='#dbeafe'; avatar.style.color='#1d4ed8'; avatar.textContent='管'; }
     }
     if (nameEl) nameEl.textContent = zbRole === 'super' ? '超级管理员' : '管理员';
-    var roleEl = document.getElementById('zbSidebarRole');
     if (roleEl) roleEl.style.display = 'flex';
-    if (roleEl) {
-        roleEl.style.display = canEdit ? '' : 'none';
-        roleEl.textContent = zbRole === 'super' ? '超管' : '管理';
-    }
 }
+
 
 // ── 侧边栏登录 ──
 async function zbSidebarLogin() {
@@ -5422,38 +5478,46 @@ function zbSwitchDimTab(tab) {
     }
 }
 
-// ── 骨架屏：加载状态 ──
+// ── 骨架屏 C方案：ZHUAN光晕从中心扩散 ──
 function zbShowSkeleton() {
-    var el = document.getElementById('zbSkeletonOverlay');
-    if (el) { el.style.display = 'flex'; return; }
-    el = document.createElement('div');
+    if (document.getElementById('zbSkeletonOverlay')) return;
+    var el = document.createElement('div');
     el.id = 'zbSkeletonOverlay';
-    el.style.cssText = 'position:fixed;inset:0;z-index:999;background:var(--bg-primary,#fff);display:flex;flex-direction:column;align-items:stretch;padding:0;';
-    el.innerHTML = '<div style="height:3px;background:#2563eb;width:100%;animation:zbProgAnim 1.8s ease-in-out infinite;" id="zbLoadBar"></div>'
-        + '<div style="flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:24px;padding:40px 24px;">'
-        + '<div style="display:flex;align-items:center;gap:12px;">'
-        + '<div style="width:18px;height:18px;border:3px solid #2563eb;border-top-color:transparent;border-radius:50%;animation:zbSpin .8s linear infinite;flex-shrink:0;"></div>'
-        + '<span style="font-size:14px;font-weight:500;color:#2563eb;">正在同步云端数据…</span>'
-        + '</div>'
-        + '<div style="width:100%;max-width:560px;display:flex;flex-direction:column;gap:12px;">'
-        + '<div style="height:80px;border-radius:12px;background:var(--kpi-bg,#f3f7fe);animation:zbShimmer 1.4s ease-in-out infinite;"></div>'
-        + '<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;">'
-        + '<div style="height:72px;border-radius:10px;background:var(--kpi-bg,#f3f7fe);animation:zbShimmer 1.4s ease-in-out infinite;"></div>'
-        + '<div style="height:72px;border-radius:10px;background:var(--kpi-bg,#f3f7fe);animation:zbShimmer 1.4s ease-in-out infinite;animation-delay:.1s;"></div>'
-        + '<div style="height:72px;border-radius:10px;background:var(--kpi-bg,#f3f7fe);animation:zbShimmer 1.4s ease-in-out infinite;animation-delay:.2s;"></div>'
-        + '<div style="height:72px;border-radius:10px;background:var(--kpi-bg,#f3f7fe);animation:zbShimmer 1.4s ease-in-out infinite;animation-delay:.3s;"></div>'
-        + '</div>'
-        + '<div style="height:120px;border-radius:12px;background:var(--kpi-bg,#f3f7fe);animation:zbShimmer 1.4s ease-in-out infinite;animation-delay:.15s;"></div>'
-        + '</div>'
-        + '</div>';
+    el.style.cssText = 'position:fixed;inset:0;z-index:9990;background:#f5f8ff;display:flex;align-items:center;justify-content:center;overflow:hidden;';
+    var glow = document.createElement('div');
+    glow.style.cssText = 'position:absolute;width:360px;height:220px;background:radial-gradient(ellipse,rgba(37,99,235,0.14) 0%,transparent 70%);border-radius:50%;animation:zbGlowPulse 3s ease-in-out infinite;pointer-events:none;';
+    el.appendChild(glow);
+    var COLS=7, ROWS=5;
+    var grid = document.createElement('div');
+    grid.style.cssText = 'display:grid;grid-template-columns:repeat('+COLS+',auto);gap:22px 20px;position:relative;z-index:1;';
+    var cr=(ROWS-1)/2, cc=(COLS-1)/2;
+    for(var r=0;r<ROWS;r++){
+        for(var c=0;c<COLS;c++){
+            var s=document.createElement('span');
+            var dist=Math.sqrt(Math.pow(r-cr,2)+Math.pow(c-cc,2));
+            var delay=(dist*0.20).toFixed(2);
+            var blue=dist<1?'#1d4ed8':dist<2?'#2563eb':dist<3?'#3b82f6':'#93c5fd';
+            var baseOp=Math.max(0.18,0.75-dist*0.14).toFixed(2);
+            s.style.cssText=[
+                'font-size:14px','font-weight:700','letter-spacing:.16em',
+                'color:'+blue,'opacity:'+baseOp,
+                'animation:zbWordFade 3.0s '+delay+'s ease-in-out infinite',
+                'user-select:none','white-space:nowrap',
+                'font-family:system-ui,-apple-system,sans-serif'
+            ].join(';');
+            s.textContent='ZHUAN';
+            grid.appendChild(s);
+        }
+    }
+    el.appendChild(grid);
     var style = document.createElement('style');
-    style.textContent = '@keyframes zbSpin{to{transform:rotate(360deg)}} @keyframes zbShimmer{0%,100%{opacity:1}50%{opacity:.35}} @keyframes zbProgAnim{0%{opacity:1}50%{opacity:.5}100%{opacity:1}}';
+    style.textContent = '@keyframes zbWordFade{0%,100%{opacity:inherit}50%{opacity:0.03}} @keyframes zbGlowPulse{0%,100%{opacity:.25;transform:scale(1)}50%{opacity:.7;transform:scale(1.12)}}';
     document.head.appendChild(style);
     document.body.appendChild(el);
 }
 function zbHideSkeleton() {
     var el = document.getElementById('zbSkeletonOverlay');
-    if (el) { el.style.opacity = '0'; el.style.transition = 'opacity .4s'; setTimeout(function(){ el.remove(); }, 420); }
+    if (el) { el.style.opacity='0'; el.style.transition='opacity .5s'; setTimeout(function(){ el.remove(); },520); }
 }
 
 // ── 对比数据面板开关 ──
