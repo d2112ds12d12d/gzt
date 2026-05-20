@@ -4,11 +4,14 @@
       "id": "mpdj3whco3w",
       "title": "上岗认证生成板完善发周报里面",
       "tag": null,
-      "date": "05/20",
+      "date": "05/27",
       "done": false,
       "status": "todo",
       "priority": "normal",
-      "created": 1779249323568
+      "created": 1779249323568,
+      "pinned": true,
+      "note": "",
+      "links": []
     },
     {
       "id": "mpdi0nptk8m",
