@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.37</title>
+    <title>培训部数据看板 v1.38</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -610,7 +610,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.37</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.38</div>
     </div>
   </nav>
 
@@ -966,17 +966,34 @@
     </div>
 
     <div id="detailModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 id="modalTitle">差异明细</h3><span class="close-modal">&times;</span>
+        <div class="modal-content" style="border-left:3px solid #2563eb;border-radius:0 14px 14px 14px;overflow:hidden;display:flex;flex-direction:column;max-height:90vh;">
+            <!-- B3顶部：渐变蓝头 -->
+            <div style="background:linear-gradient(135deg,#eef6ff,#e4effd);padding:14px 20px 10px;border-bottom:0.5px solid #bfdbfe;flex-shrink:0;">
+                <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:10px;">
+                    <div style="flex:1;min-width:0;">
+                        <h3 id="modalTitle" style="font-size:13px;font-weight:600;color:#1e3a8a;margin:0 0 5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">差异明细</h3>
+                        <div id="modalMetaBar" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                            <span id="modalTotalChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,.7);color:#64748b;border:0.5px solid #bfdbfe;">共 0 条</span>
+                            <span id="modalFilteredChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:#2563eb;color:#fff;display:none;">已筛选 0 条</span>
+                            <span id="modalCatChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:#dbeafe;color:#1d4ed8;display:none;"></span>
+                            <span id="modalIssueStatChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:#f0fdf4;color:#166534;border:0.5px solid #bbf7d0;display:none;"></span>
+                        </div>
+                    </div>
+                    <span class="close-modal" style="flex-shrink:0;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#64748b;">&times;</span>
+                </div>
             </div>
-            <div class="modal-filter-bar">
-                <div class="filter-group"><label>📌 主客观项</label><select id="modalSubjObjFilter"><option value="ALL">全部</option><option value="OBJ">客观</option><option value="SUBJ">主观</option></select></div>
-                <div class="filter-group"><label>⚠️ 问题类型</label><select id="modalIssueTypeFilter"><option value="__ALL__">全部</option></select></div>
-                <div class="filter-group"><label>🔖 抽检判定类型</label><select id="modalJudgedIssueTypeFilter"><option value="__ALL__">全部</option></select></div>
-                <button id="modalResetFilter" class="reset-filter-btn">↻ 重置筛选</button>
+            <!-- 筛选栏：融入表头区风格 -->
+            <div style="display:flex;align-items:center;gap:6px;padding:7px 16px;background:#f8faff;border-bottom:0.5px solid #e2e8f0;flex-shrink:0;flex-wrap:wrap;">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                <input id="modalKeywordFilter" style="flex:1;min-width:80px;height:26px;border:none;background:transparent;font-size:11px;outline:none;color:var(--text-primary);" placeholder="全字段搜索…">
+                <div style="width:0.5px;height:12px;background:#dce6f5;"></div>
+                <select id="modalSubjObjFilter" style="height:26px;border:none;background:transparent;font-size:11px;color:#94a3b8;outline:none;"><option value="ALL">主客观：全部</option><option value="OBJ">客观问题</option><option value="SUBJ">主观问题</option></select>
+                <div style="width:0.5px;height:12px;background:#dce6f5;"></div>
+                <select id="modalIssueTypeFilter" style="height:26px;border:none;background:transparent;font-size:11px;color:#94a3b8;outline:none;"><option value="__ALL__">问题类型：全部</option></select>
+                <div style="width:0.5px;height:12px;background:#dce6f5;"></div>
+                <span id="modalResetFilter" style="font-size:11px;color:#94a3b8;cursor:pointer;white-space:nowrap;">重置</span>
             </div>
-            <div id="modalBody">
+            <div id="modalBody" style="flex:1;overflow:auto;">
                 <div class="virtual-scroll-container" id="virtualScrollContainer"></div>
             </div>
         </div>
@@ -1882,30 +1899,67 @@
             }
 
             function renderModalTableVirtual() {
-                let filtered = currentModalRecords.filter(d => {
-                    const subjMatch = modalSubjObjFilter.value === 'ALL' ? true : (modalSubjObjFilter.value === 'OBJ' ? isObjective(d.category) : isSubjective(d.category));
-                    const issueMatch = modalIssueTypeFilter.value === '__ALL__' || d.issueType === modalIssueTypeFilter.value;
-                    const judgedMatch = modalJudgedIssueTypeFilter.value === '__ALL__' || d.judgedIssueType === modalJudgedIssueTypeFilter.value;
-                    return subjMatch && issueMatch && judgedMatch;
+                var kw = (document.getElementById('modalKeywordFilter')||{}).value||'';
+                kw = kw.trim().toLowerCase();
+                var showCat = window._modalShowCat !== false;
+
+                var filtered = currentModalRecords.filter(function(d) {
+                    var subjVal = modalSubjObjFilter.value;
+                    var subjMatch = subjVal==='ALL'?true:(subjVal==='OBJ'?isObjective(d.category):isSubjective(d.category));
+                    var issueMatch = modalIssueTypeFilter.value==='__ALL__'||d.issueType===modalIssueTypeFilter.value;
+                    if (!subjMatch||!issueMatch) return false;
+                    if (!kw) return true;
+                    // 全字段关键字搜索
+                    return ['date','code','cat','brand','model','level1','level2','level3_orig','level3','person','category','issueType'].some(function(f){
+                        return String(d[f]||'').toLowerCase().includes(kw);
+                    });
                 });
+
+                // 更新顶部徽章
+                var totalChip = document.getElementById('modalTotalChip');
+                var filteredChip = document.getElementById('modalFilteredChip');
+                var issueStatChip = document.getElementById('modalIssueStatChip');
+                if (totalChip) totalChip.textContent = '共 '+currentModalRecords.length+' 条';
+                if (filteredChip) {
+                    if (filtered.length < currentModalRecords.length) {
+                        filteredChip.style.display='';
+                        filteredChip.textContent = '已筛选 '+filtered.length+' 条';
+                    } else { filteredChip.style.display='none'; }
+                }
+                // 问题类型统计徽章
+                if (issueStatChip) {
+                    var issueCnt={};
+                    filtered.forEach(function(d){ var t=d.issueType||'其他'; issueCnt[t]=(issueCnt[t]||0)+1; });
+                    var parts=Object.keys(issueCnt).sort().map(function(k){ return k+' '+issueCnt[k]; });
+                    if (parts.length && parts.length<=4) {
+                        issueStatChip.textContent = parts.join(' · ');
+                        issueStatChip.style.display='';
+                    } else { issueStatChip.style.display='none'; }
+                }
+
                 if (!filtered.length) {
-                    virtualScrollContainer.innerHTML = '<div style="padding:20px;text-align:center;">无匹配记录</div>';
-                    if (virtualScroll) {
-                        virtualScroll.detachScroll();
-                        virtualScroll = null;
-                    }
+                    virtualScrollContainer.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-secondary);font-size:13px;">无匹配记录</div>';
+                    if (virtualScroll) { virtualScroll.detachScroll(); virtualScroll=null; }
                     return;
                 }
-                const columnKeys = ['level1','level2','level3','category','issueType','judgedIssueType','warehouse','code','person','date'];
-                const columnNames = ['一级项','二级项','三级项','主客观分类','问题类型','抽检判定类型','中心仓','质检码','质检人员','日期'];
-                if (!virtualScroll) {
-                    virtualScroll = new VirtualScroll(virtualScrollContainer, 36);
+
+                // 新字段顺序：抽检日期/质检码/品类/品牌/型号/一级项/二级项/原三级项/新三级项/原操作人/主客观分类/问题类型
+                var columnKeys  = ['date','code','cat','brand','model','level1','level2','level3_orig','level3','person','category','issueType'];
+                var columnNames = ['抽检日期','质检码','品类','品牌','型号','一级项','二级项','原三级项','新三级项','原操作人','主客观分类','问题类型'];
+                if (!showCat) {
+                    var catIdx = columnKeys.indexOf('cat');
+                    if (catIdx>-1){ columnKeys.splice(catIdx,1); columnNames.splice(catIdx,1); }
                 }
+
+                if (!virtualScroll) { virtualScroll = new VirtualScroll(virtualScrollContainer, 36); }
                 virtualScroll.attachScroll();
                 virtualScroll.setData(
-                    filtered.map(r => {
-                        let obj = {};
-                        columnKeys.forEach(key => obj[key] = r[key] || '-');
+                    filtered.map(function(r) {
+                        var obj={};
+                        columnKeys.forEach(function(key){
+                            // 字段映射：brand/model 手机用 brand/model，五品类同
+                            obj[key] = r[key]||r[{'level3_orig':'level3_orig','person':'person'}[key]||key]||'—';
+                        });
                         return obj;
                     }),
                     columnKeys,
@@ -1913,18 +1967,34 @@
                 );
             }
 
-            window.openDetailWithData = function openDetailWithData(records, title) {
+            window.openDetailWithData = function openDetailWithData(records, title, showCat) {
                 if (!records.length) { showToast('无明细数据'); return; }
                 currentModalRecords = [...records];
-                modalTitle.innerText = title;
-                const issueSet = new Set(), judgedSet = new Set();
-                records.forEach(r => { if (r.issueType) issueSet.add(r.issueType); if (r.judgedIssueType) judgedSet.add(r.judgedIssueType); });
-                modalSubjObjFilter.value = 'ALL';
-                modalIssueTypeFilter.innerHTML = '<option value="__ALL__">全部</option>' + Array.from(issueSet).sort().map(t => `<option value="${t.replace(/"/g,'&quot;')}">${t}</option>`).join('');
-                modalJudgedIssueTypeFilter.innerHTML = '<option value="__ALL__">全部</option>' + Array.from(judgedSet).sort().map(t => `<option value="${t.replace(/"/g,'&quot;')}">${t}</option>`).join('');
-                modalIssueTypeFilter.value = '__ALL__'; modalJudgedIssueTypeFilter.value = '__ALL__';
+                window._modalShowCat = (showCat !== false); // 默认显示，站点/质检人详情传false
+                var modalTitleEl = document.getElementById('modalTitle');
+                if (modalTitleEl) modalTitleEl.innerText = title;
+
+                // 品类徽章
+                var catChip = document.getElementById('modalCatChip');
+                if (catChip) {
+                    var cats = [...new Set(records.map(function(r){return r.cat||'';}).filter(Boolean))];
+                    if (cats.length) { catChip.textContent=cats.join('/'); catChip.style.display=''; }
+                    else catChip.style.display='none';
+                }
+
+                // 重置筛选
+                var kwEl = document.getElementById('modalKeywordFilter');
+                if (kwEl) kwEl.value='';
+                if (modalSubjObjFilter) modalSubjObjFilter.value='ALL';
+                var issueSet=new Set();
+                records.forEach(function(r){ if(r.issueType) issueSet.add(r.issueType); });
+                if (modalIssueTypeFilter) {
+                    modalIssueTypeFilter.innerHTML='<option value="__ALL__">问题类型：全部</option>'
+                        +Array.from(issueSet).sort().map(function(t){ return '<option value="'+t.replace(/"/g,'&quot;')+'">'+t+'</option>'; }).join('');
+                    modalIssueTypeFilter.value='__ALL__';
+                }
                 modal.classList.add('visible');
-                requestAnimationFrame(() => { renderModalTableVirtual(); });
+                requestAnimationFrame(function(){ renderModalTableVirtual(); });
             }
 
             function exportToExcel() {
@@ -2847,7 +2917,16 @@
             window.addEventListener('click', e => { if (e.target === modal) { modal.classList.remove('visible'); if (virtualScroll) virtualScroll.detachScroll(); } });
             safeOn('modalSubjObjFilter', 'change', renderModalTableVirtual);
             safeOn('modalIssueTypeFilter', 'change', renderModalTableVirtual);
-            safeOn('modalJudgedIssueTypeFilter', 'change', renderModalTableVirtual);
+            safeOn('modalKeywordFilter', 'input', renderModalTableVirtual);
+            safeOn('modalResetFilter', 'click', function(){
+                var kwEl=document.getElementById('modalKeywordFilter');
+                if(kwEl) kwEl.value='';
+                var sf=document.getElementById('modalSubjObjFilter');
+                var itf=document.getElementById('modalIssueTypeFilter');
+                if(sf) sf.value='ALL';
+                if(itf) itf.value='__ALL__';
+                renderModalTableVirtual();
+            });
             safeOn('modalResetFilter', 'click', () => {
                 modalSubjObjFilter.value = 'ALL'; modalIssueTypeFilter.value = '__ALL__'; modalJudgedIssueTypeFilter.value = '__ALL__';
                 renderModalTableVirtual();
@@ -4692,21 +4771,21 @@ function zbRenderSiteDetail(siteName) {
                 var wk = weeks4c[params.dataIndex];
                 if (!wk) return;
                 var filtered = siteDiff.filter(function(d){ var dt=(d.date||'').split(' ')[0]; return dt>=wk.start&&dt<=wk.end; });
-                if (typeof openDetailWithData === 'function') openDetailWithData(filtered, '📅 ' + siteName + ' · ' + wk.start + '—' + wk.end + ' 客观执行（' + filtered.length + '条）');
+                if (typeof openDetailWithData === 'function') openDetailWithData(filtered, '📅 ' + siteName + ' · ' + wk.start + '—' + wk.end + ' 客观执行（' + filtered.length + '条）', false);
             } else if (trendRange === '1y') {
                 // 近一年：点节点跳该月差异列表
                 var months12c = window._trend1yMonths || [];
                 var ym = months12c[params.dataIndex];
                 if (!ym) return;
                 var filtered = siteDiff.filter(function(d){ return d.date && d.date.slice(0,7)===ym; });
-                if (typeof openDetailWithData === 'function') openDetailWithData(filtered, '📅 ' + siteName + ' · ' + ym + ' 客观执行（' + filtered.length + '条）');
+                if (typeof openDetailWithData === 'function') openDetailWithData(filtered, '📅 ' + siteName + ' · ' + ym + ' 客观执行（' + filtered.length + '条）', false);
             } else {
                 // 日维度：跳当日差异列表
                 var xDatesAll = window._trendDayDates || [];
                 var date = xDatesAll[params.dataIndex];
                 if (!date) return;
                 var filtered = siteDiff.filter(function(d){ return d.date && d.date.split(' ')[0] === date; });
-                if (typeof openDetailWithData === 'function') openDetailWithData(filtered, '📅 ' + siteName + ' · ' + date + ' 客观执行（' + filtered.length + '条）');
+                if (typeof openDetailWithData === 'function') openDetailWithData(filtered, '📅 ' + siteName + ' · ' + date + ' 客观执行（' + filtered.length + '条）', false);
             }
         });
     }
@@ -4733,7 +4812,7 @@ function zbRenderSiteDetail(siteName) {
         _siteChart_issue.on('click', function(params) {
             var typeName = params.name;
             var filtered = scopedDiff.filter(function(d){ return (d.issueType||'未知') === typeName; });
-            if (typeof openDetailWithData === 'function') openDetailWithData(filtered, '🔎 ' + siteName + ' · ' + typeName + '（' + filtered.length + '台）');
+            if (typeof openDetailWithData === 'function') openDetailWithData(filtered, '🔎 ' + siteName + ' · ' + typeName + '（' + filtered.length + '台）', false);
         });
         _siteChart_issue.resize();
     }
@@ -5135,7 +5214,7 @@ function zbRenderPersonDetail(personName) {
             if (params.componentType !== 'series') return;
             var date = sorted[params.dataIndex];
             var filtered = personDiff.filter(function(d){ return d.date && d.date.split(' ')[0] === date; });
-            if (typeof openDetailWithData === 'function') openDetailWithData(filtered, '👤 ' + personName + ' · ' + date + '（' + filtered.length + '条）');
+            if (typeof openDetailWithData === 'function') openDetailWithData(filtered, '👤 ' + personName + ' · ' + date + '（' + filtered.length + '条）', false);
         });
         _personChart_trend.resize();
     }
@@ -5225,7 +5304,7 @@ document.addEventListener('DOMContentLoaded', function() {
             var filtered = allExec.filter(function(d){ return (d.level3||'未知') === itemName; });
             var sn = window._sitePersonName || '';
             if (typeof openDetailWithData === 'function') {
-                openDetailWithData(filtered, '🔎 ' + sn + ' · ' + itemName + '（' + filtered.length + '条）');
+                openDetailWithData(filtered, '🔎 ' + sn + ' · ' + itemName + '（' + filtered.length + '条）', false);
             }
         });
     }
@@ -5245,7 +5324,7 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!fn) return;
             var filtered = diff.filter(fn);
             if (typeof openDetailWithData === 'function') {
-                openDetailWithData(filtered, '🏢 ' + sn + ' · ' + kpiType + '（' + filtered.length + '条）');
+                openDetailWithData(filtered, '🏢 ' + sn + ' · ' + kpiType + '（' + filtered.length + '条）', false);
             }
         });
     }
@@ -5273,7 +5352,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 return d.person === personName && d.warehouse === siteName;
             });
             if (typeof openDetailWithData === 'function') {
-                openDetailWithData(filtered, '👤 ' + personName + ' · 🏢 ' + siteName + '（' + filtered.length + '条）');
+                openDetailWithData(filtered, '👤 ' + personName + ' · 🏢 ' + siteName + '（' + filtered.length + '条）', false);
             }
         });
     }
@@ -5646,46 +5725,82 @@ async function zbEditSavePush() {
     var msg = [];
     if (hasDel)  msg.push('删除 '+_zbEditDeletes.size+' 条');
     if (hasEdit) msg.push('修改 '+Object.keys(_zbEditChanges).length+' 条');
-    if (!confirm('确认'+msg.join('、')+'并推送云端？此操作不可撤销。')) return;
 
-    // 应用改动到内存数据
+    // 3秒倒计时确认弹窗
+    await new Promise(function(resolve){
+        var overlay = document.createElement('div');
+        overlay.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(15,25,60,0.45);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;';
+        var box = document.createElement('div');
+        box.style.cssText='background:#fff;border-radius:14px;padding:24px 28px;width:300px;box-shadow:0 20px 60px rgba(15,40,100,0.2);text-align:center;';
+        box.innerHTML='<div style="font-size:14px;font-weight:600;color:#0f172a;margin-bottom:8px;">确认推送？</div>'
+            +'<div style="font-size:12px;color:#64748b;margin-bottom:20px;">'+msg.join('、')+'<br>此操作将应用改动，不可直接撤销</div>'
+            +'<div style="display:flex;gap:8px;">'
+            +'<button id="zbEditCancelBtn" style="flex:1;height:36px;border-radius:8px;border:1px solid #dce6f5;background:#fff;font-size:13px;cursor:pointer;color:#64748b;">取消</button>'
+            +'<button id="zbEditConfirmBtn" style="flex:1;height:36px;border-radius:8px;border:none;background:#94a3b8;font-size:13px;color:#fff;cursor:not-allowed;" disabled>确认 (3)</button>'
+            +'</div>';
+        overlay.appendChild(box);
+        document.body.appendChild(overlay);
+
+        var btn = box.querySelector('#zbEditConfirmBtn');
+        var cancelBtn = box.querySelector('#zbEditCancelBtn');
+        var count = 3;
+        var timer = setInterval(function(){
+            count--;
+            if (count <= 0) {
+                clearInterval(timer);
+                btn.textContent='确认推送';
+                btn.style.background='#2563eb';
+                btn.style.cursor='pointer';
+                btn.disabled=false;
+            } else {
+                btn.textContent='确认 ('+count+')';
+            }
+        }, 1000);
+
+        btn.addEventListener('click', function(){
+            if (!btn.disabled){ clearInterval(timer); overlay.remove(); resolve(true); }
+        });
+        cancelBtn.addEventListener('click', function(){
+            clearInterval(timer); overlay.remove(); resolve(false);
+        });
+        overlay.addEventListener('click', function(e){
+            if(e.target===overlay){ clearInterval(timer); overlay.remove(); resolve(false); }
+        });
+    }).then(function(confirmed){
+        if (!confirmed) return;
+        _doEditSave();
+    });
+}
+
+function _doEditSave() {
     var allDiff = window._allDiffData || [];
     var delKeys = new Set();
     _zbEditDeletes.forEach(function(key){
-        var parts = key.split('_');
-        var idx = parseInt(parts[0]);
+        var idx = parseInt(key.split('_')[0]);
         var r = _zbEditResults[idx];
-        if (r) {
-            var gi = allDiff.indexOf(r);
-            if (gi !== -1) delKeys.add(gi);
-        }
+        if (r) { var gi=allDiff.indexOf(r); if(gi!==-1) delKeys.add(gi); }
     });
     Object.keys(_zbEditChanges).forEach(function(key){
-        var parts = key.split('_');
-        var idx = parseInt(parts[0]);
+        var idx = parseInt(key.split('_')[0]);
         var r = _zbEditResults[idx];
         if (!r) return;
         var gi = allDiff.indexOf(r);
-        if (gi !== -1) {
-            Object.assign(allDiff[gi], _zbEditChanges[key]);
-        }
+        if (gi !== -1) Object.assign(allDiff[gi], _zbEditChanges[key]);
     });
-    // 删除（倒序）
-    var delIdxArr = Array.from(delKeys).sort(function(a,b){return b-a;});
-    delIdxArr.forEach(function(i){ allDiff.splice(i,1); });
+    var delArr = Array.from(delKeys).sort(function(a,b){return b-a;});
+    delArr.forEach(function(i){ allDiff.splice(i,1); });
     window._allDiffData = allDiff;
 
-    // 记录修改日志到localStorage
+    // 记录撤回快照到localStorage
+    var snap = { ts:Date.now(), edits:Object.keys(_zbEditChanges).length, deletes:_zbEditDeletes.size, code:(_zbEditResults[0]||{}).code||'', canRevert:true };
     var editLog = JSON.parse(localStorage.getItem('zb_edit_log')||'[]');
-    editLog.push({ ts: Date.now(), edits: Object.keys(_zbEditChanges).length, deletes: _zbEditDeletes.size, code: (_zbEditResults[0]||{}).code||'' });
-    localStorage.setItem('zb_edit_log', JSON.stringify(editLog.slice(-100)));
+    editLog.push(snap);
+    localStorage.setItem('zb_edit_log', JSON.stringify(editLog.slice(-50)));
 
-    showToast('✅ 改动已应用，正在推送云端…');
-    _zbEditChanges = {}; _zbEditDeletes = new Set(); _zbEditResults = [];
-    document.getElementById('zbEditResult').innerHTML = '<div style="text-align:center;padding:24px;color:#10b981;font-size:13px;">✅ 已保存并应用，请在上传页重新推送云端以同步</div>';
-
-    // 触发重新渲染
-    if (typeof fullRefresh === 'function') fullRefresh();
+    showToast('✅ 改动已应用，可在日志-云端管理里撤回');
+    _zbEditChanges={}; _zbEditDeletes=new Set(); _zbEditResults=[];
+    document.getElementById('zbEditResult').innerHTML='<div style="text-align:center;padding:24px;color:#10b981;font-size:13px;">✅ 已保存，在上传页重新推送云端以同步</div>';
+    if (typeof fullRefresh==='function') fullRefresh();
 }
 
 function zbShowSkeleton() {
@@ -6041,7 +6156,77 @@ function _zbRenderLog(){
   el.innerHTML = html;
   var footerTxt = document.getElementById('zbLogFooter');
   if(footerTxt) footerTxt.textContent = '共 '+allDates.length+' 个数据日期';
+
+  // ── 编辑日志 + 撤回按钮 ──
+  var editLog = JSON.parse(localStorage.getItem('zb_edit_log')||'[]');
+  var editLogEl = document.getElementById('zbEditLogSection');
+  if (!editLogEl) {
+    editLogEl = document.createElement('div');
+    editLogEl.id = 'zbEditLogSection';
+    el.parentNode.appendChild(editLogEl);
+  }
+  if (!editLog.length) { editLogEl.innerHTML=''; return; }
+  var eHtml = '<div style="border-top:0.5px solid var(--border-color);padding:12px 18px;">'
+    +'<div style="font-size:11px;font-weight:500;color:var(--text-secondary);margin-bottom:8px;display:flex;align-items:center;gap:6px;">'
+    +'<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>'
+    +'记录编辑历史</div>';
+  editLog.slice().reverse().slice(0,5).forEach(function(log, idx){
+    var realIdx = editLog.length - 1 - idx;
+    var ts = new Date(log.ts);
+    var tStr = ts.getFullYear()+'/'+(ts.getMonth()+1)+'/'+ts.getDate()+' '+('0'+ts.getHours()).slice(-2)+':'+('0'+ts.getMinutes()).slice(-2);
+    eHtml += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--border-color);">'
+      +'<div style="flex:1;font-size:11px;color:var(--text-primary);">'
+      +'<span style="color:var(--text-secondary);">'+tStr+'</span>'
+      +(log.edits?' &nbsp;修改 <b>'+log.edits+'</b> 条':'')
+      +(log.deletes?' &nbsp;删除 <b>'+log.deletes+'</b> 条':'')
+      +(log.code?' &nbsp;<span style="color:#94a3b8;font-size:10px;">'+log.code+'</span>':'')
+      +'</div>'
+      +'<button onclick="zbRevertEdit('+realIdx+')" style="height:26px;padding:0 10px;border-radius:6px;border:0.5px solid #fca5a5;background:#fef2f2;color:#dc2626;font-size:11px;cursor:pointer;flex-shrink:0;">↩ 撤回</button>'
+      +'</div>';
+  });
+  eHtml += '</div>';
+  editLogEl.innerHTML = eHtml;
 }
+
+async function zbRevertEdit(logIdx) {
+    var editLog = JSON.parse(localStorage.getItem('zb_edit_log')||'[]');
+    var log = editLog[logIdx];
+    if (!log) { showToast('撤回记录不存在'); return; }
+
+    // 3秒倒计时确认
+    var confirmed = await new Promise(function(resolve){
+        var overlay=document.createElement('div');
+        overlay.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(15,25,60,0.45);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;';
+        var box=document.createElement('div');
+        box.style.cssText='background:#fff;border-radius:14px;padding:24px 28px;width:300px;box-shadow:0 20px 60px rgba(15,40,100,0.2);text-align:center;';
+        box.innerHTML='<div style="font-size:14px;font-weight:600;color:#0f172a;margin-bottom:8px;">确认撤回？</div>'
+            +'<div style="font-size:12px;color:#64748b;margin-bottom:20px;">将重新加载云端数据，当前内存数据会被替换</div>'
+            +'<div style="display:flex;gap:8px;">'
+            +'<button id="zbRvCancelBtn" style="flex:1;height:36px;border-radius:8px;border:1px solid #dce6f5;background:#fff;font-size:13px;cursor:pointer;color:#64748b;">取消</button>'
+            +'<button id="zbRvConfirmBtn" style="flex:1;height:36px;border-radius:8px;border:none;background:#94a3b8;font-size:13px;color:#fff;cursor:not-allowed;" disabled>撤回 (3)</button>'
+            +'</div>';
+        overlay.appendChild(box); document.body.appendChild(overlay);
+        var btn=box.querySelector('#zbRvConfirmBtn'), count=3;
+        var timer=setInterval(function(){
+            count--;
+            if(count<=0){ clearInterval(timer); btn.textContent='确认撤回'; btn.style.background='#dc2626'; btn.style.cursor='pointer'; btn.disabled=false; }
+            else btn.textContent='撤回 ('+count+')';
+        },1000);
+        btn.addEventListener('click',function(){ if(!btn.disabled){ clearInterval(timer); overlay.remove(); resolve(true); }});
+        box.querySelector('#zbRvCancelBtn').addEventListener('click',function(){ clearInterval(timer); overlay.remove(); resolve(false); });
+        overlay.addEventListener('click',function(e){ if(e.target===overlay){ clearInterval(timer); overlay.remove(); resolve(false); }});
+    });
+
+    if (!confirmed) return;
+    showToast('⏳ 正在重新加载云端数据…');
+    editLog[logIdx].canRevert = false;
+    localStorage.setItem('zb_edit_log', JSON.stringify(editLog));
+    if (typeof zbLoadCloudData === 'function') {
+        await zbLoadCloudData();
+        showToast('✅ 已撤回，云端数据已重新加载');
+    }
+}
+
 
 // 品类切换已在initDashboard内部处理
 
