@@ -1,6 +1,17 @@
 {
   "tasks": [
     {
+      "id": "mpe18zv8oeo",
+      "title": "推送0521晚上的拆修专项",
+      "tag": null,
+      "date": "05/21",
+      "done": false,
+      "status": "todo",
+      "priority": "normal",
+      "created": 1779279794324,
+      "parentId": "mpcj8q77q7v"
+    },
+    {
       "id": "mpdxn6019ci",
       "title": "培训师周会",
       "tag": null,
@@ -80,7 +91,10 @@
       "status": "done",
       "priority": "normal",
       "created": 1779189082531,
-      "parentId": "mpc3oirrovt"
+      "parentId": "mpc3oirrovt",
+      "childIds": [
+        "mpe18zv8oeo"
+      ]
     },
     {
       "id": "mpcieo9lgqh",
