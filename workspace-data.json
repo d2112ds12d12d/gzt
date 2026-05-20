@@ -25,12 +25,14 @@
       "id": "mpdxlqzw7r5",
       "title": "复测新人训（拆修第二节）15:30-18:00",
       "tag": null,
-      "date": "05/20",
+      "date": "05/21",
       "done": false,
       "status": "todo",
       "priority": "normal",
       "created": 1779273670892,
-      "parentId": "mpcjrmft91k"
+      "parentId": "mpcjrmft91k",
+      "note": "",
+      "links": []
     },
     {
       "id": "mpdj3whco3w",
