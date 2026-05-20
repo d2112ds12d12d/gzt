@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.39D</title>
+    <title>培训部数据看板 v1.39E</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -611,7 +611,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.39D</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.39E</div>
     </div>
   </nav>
 
@@ -4576,15 +4576,14 @@ function zbRenderSiteDetail(siteName) {
             FIXED_CATS.forEach(function(c, ci) {
                 var col4 = CAT_COLORS_EXT[c] || DEFAULT_COLORS[ci % DEFAULT_COLORS.length];
                 var hasData = _hasCatData4(c);
-                var on4 = hasData && savedVis4[c] !== false;
+                if (!hasData) return; // 无数据直接跳过，不渲染按钮
+                var on4 = savedVis4[c] !== false;
                 var pill4 = document.createElement('button');
-                // 无数据品类：灰色空心，不可点击选中
-                var borderCol = on4 ? col4 : (hasData ? col4 : 'var(--border-color)');
+                var borderCol = on4 ? col4 : 'var(--border-color)';
                 var bgCol = on4 ? col4+'22' : 'transparent';
-                var txtCol = on4 ? col4 : (hasData ? col4 : 'var(--text-secondary)');
+                var txtCol = on4 ? col4 : 'var(--text-secondary)';
                 var dotCol = on4 ? col4 : 'var(--border-color)';
-                var opacity = hasData ? '1' : '0.4';
-                pill4.style.cssText = 'display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;cursor:'+(hasData?'pointer':'default')+';border:0.5px solid '+borderCol+';background:'+bgCol+';color:'+txtCol+';transition:all .15s;opacity:'+opacity+';';
+                pill4.style.cssText = 'display:inline-flex;align-items:center;gap:4px;padding:3px 10px;border-radius:20px;font-size:11px;cursor:pointer;border:0.5px solid '+borderCol+';background:'+bgCol+';color:'+txtCol+';transition:all .15s;';
                 pill4.innerHTML = '<span style="width:7px;height:7px;border-radius:50%;background:'+dotCol+';display:inline-block;flex-shrink:0;"></span>'+c;
                 if (hasData) {
                     pill4.addEventListener('click', (function(cat4){ return function(){
@@ -6078,26 +6077,17 @@ function zbCopyTrendImg() {
 
 // ── 质检维度分析：复制当前tab表格到剪贴板（HTML table，可粘贴到Word）──
 function zbCopyDimTable() {
-    // 判断当前激活tab
-    var isPerson = !document.getElementById('zbTabIssue') || document.getElementById('zbTabPerson').style.borderBottomColor === 'rgb(37, 99, 235)' || document.getElementById('zbTabPerson').style.color === 'rgb(37, 99, 235)';
-    // 找表格：人维度或项维度的tbody所在table
-    var tbls = document.querySelectorAll('#zbPersonListRoot table, #zbIssueListRoot table, #sitePersonRoot table, #siteIssueRoot table');
-    if (!tbls.length) {
-        // 通用兜底：找维度分析卡片里的第一个table
-        var dimCard = document.querySelector('#zbDimTabBar');
-        if (dimCard) {
-            var parent = dimCard.parentElement;
-            if (parent) tbls = parent.querySelectorAll('table');
-        }
-    }
-    if (!tbls.length) { showToast('未找到表格数据'); return; }
-    // 取第一个有内容的table
+    var tab = window._zbDimTab || 'person';
+    var panelId = tab === 'issue' ? 'zbDimPanelIssue' : 'zbDimPanelPerson';
+    var panel = document.getElementById(panelId);
+    if (!panel) { showToast('未找到面板'); return; }
+    var tbls = panel.querySelectorAll('table');
     var tbl = null;
     for (var i = 0; i < tbls.length; i++) {
         if (tbls[i].rows.length > 1) { tbl = tbls[i]; break; }
     }
     if (!tbl) { showToast('表格暂无数据'); return; }
-    // 构造干净的HTML table（去掉进度条、颜色标记等交互元素，只保留文字）
+    // 构造干净的HTML table（去掉SVG、进度条等，只保留文字）
     var html = '<table border="1" cellpadding="4" cellspacing="0" style="border-collapse:collapse;font-family:sans-serif;font-size:12px;">';
     for (var r = 0; r < tbl.rows.length; r++) {
         html += '<tr>';
@@ -6105,7 +6095,6 @@ function zbCopyDimTable() {
         for (var c = 0; c < row.cells.length; c++) {
             var cell = row.cells[c];
             var tag = (r === 0 || cell.tagName === 'TH') ? 'th' : 'td';
-            // 只取纯文字，去掉SVG、进度条等
             var text = cell.innerText.replace(/\s+/g,' ').trim();
             html += '<' + tag + ' style="padding:4px 8px;border:1px solid #ccc;">' + text + '</' + tag + '>';
         }
@@ -6117,9 +6106,7 @@ function zbCopyDimTable() {
         navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]).then(function() {
             showToast('✓ 已复制表格，可直接粘贴到 Word');
         }).catch(function() {
-            // 降级：复制纯文字
-            var text = tbl.innerText;
-            navigator.clipboard.writeText(text).then(function(){ showToast('✓ 已复制（纯文本）'); });
+            navigator.clipboard.writeText(tbl.innerText).then(function(){ showToast('✓ 已复制（纯文本）'); });
         });
     } catch(e) { showToast('复制失败：' + e.message); }
 }
