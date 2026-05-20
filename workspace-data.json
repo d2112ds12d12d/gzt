@@ -1,6 +1,16 @@
 {
   "tasks": [
     {
+      "id": "mpdxn6019ci",
+      "title": "培训师周会",
+      "tag": null,
+      "date": "05/20",
+      "done": true,
+      "status": "done",
+      "priority": "normal",
+      "created": 1779273736993
+    },
+    {
       "id": "mpdxlqzw7r5",
       "title": "复测新人训（拆修第二节）15:30-18:00",
       "tag": null,
