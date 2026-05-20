@@ -1,6 +1,17 @@
 {
   "tasks": [
     {
+      "id": "mpdxlqzw7r5",
+      "title": "复测新人训（拆修第二节）15:30-18:00",
+      "tag": null,
+      "date": "05/20",
+      "done": false,
+      "status": "todo",
+      "priority": "normal",
+      "created": 1779273670892,
+      "parentId": "mpcjrmft91k"
+    },
+    {
       "id": "mpdj3whco3w",
       "title": "上岗认证生成板完善发周报里面",
       "tag": null,
@@ -28,13 +39,16 @@
       "title": "复测新人训（拆修第一节）16:30-18:00",
       "tag": null,
       "date": "05/20",
-      "done": false,
-      "status": "todo",
+      "done": true,
+      "status": "done",
       "priority": "normal",
       "created": 1779189964121,
       "parentId": "mpcieo9lgqh",
       "note": "",
-      "links": []
+      "links": [],
+      "childIds": [
+        "mpdxlqzw7r5"
+      ]
     },
     {
       "id": "mpcjqo8ln7b",
