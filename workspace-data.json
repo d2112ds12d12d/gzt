@@ -241,10 +241,11 @@
       "title": "0515拆修刷题任务推送(设定晚上推送）",
       "tag": null,
       "date": "05/15",
-      "done": false,
+      "done": true,
       "created": 1778755465948,
       "note": "",
-      "links": []
+      "links": [],
+      "status": "done"
     },
     {
       "id": "mp564tliowd",
@@ -305,10 +306,11 @@
       "title": "质量看板修复",
       "tag": null,
       "date": "05/15",
-      "done": false,
+      "done": true,
       "created": 1778722276042,
       "pinned": false,
-      "quadrant": "q1"
+      "quadrant": "q1",
+      "status": "done"
     },
     {
       "id": "mp3zjdzr2mn",
