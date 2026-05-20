@@ -223,7 +223,7 @@
       "title": "星级宣导（星期一早上）",
       "tag": null,
       "date": "05/18",
-      "done": false,
+      "done": true,
       "created": 1778760421424,
       "note": "",
       "links": [
@@ -231,7 +231,8 @@
           "url": "https://doc.weixin.qq.com/doc/w3_AcwATQYlALMCNi7BDoATjS8iIIxZl?scode=AJ4AfQfgAAwZ03eO4XAcwATQYlALM",
           "text": ""
         }
-      ]
+      ],
+      "status": "done"
     },
     {
       "id": "mp5d2ti4nqr",
