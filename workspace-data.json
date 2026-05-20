@@ -1,6 +1,16 @@
 {
   "tasks": [
     {
+      "id": "mpdj3whco3w",
+      "title": "上岗认证生成板完善发周报里面",
+      "tag": null,
+      "date": "05/20",
+      "done": false,
+      "status": "todo",
+      "priority": "normal",
+      "created": 1779249323568
+    },
+    {
       "id": "mpdi0nptk8m",
       "title": "主板审核明细更新&群通知",
       "tag": null,
