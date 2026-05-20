@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.39E</title>
+    <title>培训部数据看板 v1.40</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -611,7 +611,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.39E</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.40</div>
     </div>
   </nav>
 
@@ -737,16 +737,21 @@
                     </div>
                     <div class="rank-col-box">
                         <div class="rank-col-title">
-                            <span>👤 质检人差异排名（高→低）</span>
+                            <span>👤 质检人差异排名</span>
                             <span class="rank-col-cnt" id="rankPersonCnt"></span>
                         </div>
-                        <div class="rank-col-scroll">
+                        <div style="display:flex;align-items:center;gap:6px;padding:6px 0 4px;">
+                            <input id="personRankSearch" type="text" placeholder="搜索质检人…" oninput="zbPersonRankRender()" style="flex:1;height:24px;font-size:11px;padding:2px 8px;border-radius:6px;border:0.5px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);outline:none;">
+                            <button id="personRankSortBtn" onclick="zbPersonRankToggleSort()" style="height:24px;padding:0 8px;font-size:11px;border-radius:6px;border:0.5px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-secondary);cursor:pointer;white-space:nowrap;">高→低</button>
+                        </div>
+                        <div class="rank-col-scroll" style="height:calc(100% - 56px);">
                             <div id="rankBoardPerson"></div>
                         </div>
+                        <div id="personRankPager" style="display:flex;align-items:center;justify-content:flex-end;gap:4px;padding:4px 0 0;font-size:11px;"></div>
                     </div>
                 </div>
                 <div style="font-size:10px;color:var(--text-secondary);margin-top:8px;">
-                    ↑红色=较昨日上升（变差）· ↓绿色=较昨日下降（改善）· —=暂无昨日数据
+                    ↑红色=较昨日上升（变差）· ↓绿色=较昨日下降（改善）· —=暂无昨日数据 · <span style="color:var(--text-secondary);">涨跌 = 筛选期最新日 vs 前一日的差异率变化</span>
                 </div>
             </div>
 
@@ -2527,7 +2532,7 @@
                     curEnd   = _fmtDate(new Date(ld.getFullYear(), ld.getMonth() + 1, 0));
                     prevStart = _fmtDate(new Date(ld.getFullYear(), ld.getMonth() - 1, 1));
                     prevEnd   = _fmtDate(new Date(ld.getFullYear(), ld.getMonth(), 0));
-                    periodLabel = '上月 vs 本月 ' + (ld.getMonth() + 1) + '月';
+                    periodLabel = '上月 ' + _shortDate(new Date(prevStart)) + '—' + _shortDate(new Date(prevEnd)) + ' vs 本月 ' + _shortDate(new Date(curStart)) + '—' + _shortDate(new Date(curEnd));
                 } else {
                     // 日度：本日 vs 昨日
                     curStart = curEnd = latestDate;
@@ -3251,43 +3256,98 @@
             }
 
             // ── 质检人排行榜渲染 ──
+            window._personRankData = [];
+            window._personRankPage = 1;
+            window._personRankAsc  = false; // false=高→低，true=低→高
+
             function buildPersonRankBoard() {
-                var el = document.getElementById('rankBoardPerson');
-                if (!el) return;
                 var allDiff = window._allDiffData || [];
-                // 按站点类型过滤
-                var filtered = allDiff;
-                if (currentSiteType !== 'ALL') {
-                    filtered = allDiff.filter(function(d) {
-                        return getSiteType(d.warehouse || '') === currentSiteType;
-                    });
-                }
-                if (!filtered.length) {
-                    el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-secondary);font-size:12px;">暂无数据</div>';
-                    return;
-                }
+                // 顶部日期过滤
+                var startD = (document.getElementById('startDateFilter')||{}).value || '';
+                var endD   = (document.getElementById('endDateFilter')||{}).value || '';
+                var filtered = allDiff.filter(function(d) {
+                    if (currentSiteType !== 'ALL' && getSiteType(d.warehouse||'') !== currentSiteType) return false;
+                    if (startD && d.date && d.date.split(' ')[0] < startD) return false;
+                    if (endD   && d.date && d.date.split(' ')[0] > endD)   return false;
+                    return true;
+                });
+                // 聚合：人 → { total, warehouses }
                 var map = {};
                 filtered.forEach(function(d) {
                     var p = d.person || '未知';
-                    map[p] = (map[p] || 0) + 1;
+                    if (!map[p]) map[p] = { name:p, total:0, whs:new Set() };
+                    map[p].total++;
+                    if (d.warehouse) map[p].whs.add(d.warehouse);
                 });
-                var list = Object.keys(map).map(function(name){ return { name:name, total:map[name] }; })
-                    .sort(function(a,b){ return b.total - a.total; }).slice(0, 10);
-                var max = list[0] ? list[0].total : 1;
-                var noClsMap = ['top1','top2','top3','normal','normal','normal','normal','normal','normal','normal'];
-                var n = list.length;
-                el.innerHTML = list.map(function(p, idx) {
-                    var third = Math.ceil(n / 3);
-                    var cntColor = idx < third ? '#dc2626' : idx < third * 2 ? '#ea580c' : '#16a34a';
-                    return '<div class="rank-row" data-person="' + p.name.replace(/"/g,'&quot;') + '">'
-                        + '<span class="rank-no ' + (noClsMap[idx]||'normal') + '">' + (idx+1) + '</span>'
-                        + '<span class="rank-name">' + p.name + '</span>'
-                        + '<span class="rank-rate" style="color:' + cntColor + ';font-weight:700;min-width:40px;text-align:right;">' + p.total + '次</span>'
+                var list = Object.keys(map).map(function(n){ return { name:n, total:map[n].total, whs:map[n].whs }; });
+                window._personRankData = list;
+                window._personRankPage = 1;
+                zbPersonRankRender();
+            }
+
+            window.zbPersonRankToggleSort = function() {
+                window._personRankAsc = !window._personRankAsc;
+                var btn = document.getElementById('personRankSortBtn');
+                if (btn) btn.textContent = window._personRankAsc ? '低→高' : '高→低';
+                window._personRankPage = 1;
+                zbPersonRankRender();
+            };
+
+            window.zbPersonRankRender = function() {
+                var el = document.getElementById('rankBoardPerson');
+                var pager = document.getElementById('personRankPager');
+                var cntEl = document.getElementById('rankPersonCnt');
+                if (!el) return;
+                var kw = ((document.getElementById('personRankSearch')||{}).value||'').trim();
+                var asc = window._personRankAsc;
+                var list = (window._personRankData || []).filter(function(p){
+                    return !kw || p.name.includes(kw);
+                }).sort(function(a,b){ return asc ? a.total - b.total : b.total - a.total; });
+                var total = list.length;
+                if (cntEl) cntEl.textContent = '共' + total + '条';
+                if (!total) { el.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-secondary);font-size:12px;">暂无数据</div>'; if(pager)pager.innerHTML=''; return; }
+                var pageSize = 10;
+                var totalPages = Math.ceil(total / pageSize);
+                var page = Math.max(1, Math.min(window._personRankPage || 1, totalPages));
+                window._personRankPage = page;
+                var pageList = list.slice((page-1)*pageSize, page*pageSize);
+                var globalMax = list[0] ? list[0].total : 1;
+                if (asc) globalMax = list[list.length-1] ? list[list.length-1].total : 1;
+                var noClsMap = ['top1','top2','top3'];
+                el.innerHTML = pageList.map(function(p, idx) {
+                    var globalIdx = (page-1)*pageSize + idx;
+                    var cls = globalIdx < 3 ? noClsMap[globalIdx] : 'normal';
+                    // 如果是低→高排序，top标记无意义，全部normal
+                    if (asc) cls = 'normal';
+                    var third = Math.ceil(total / 3);
+                    var cntColor = !asc
+                        ? (globalIdx < third ? '#dc2626' : globalIdx < third*2 ? '#ea580c' : '#16a34a')
+                        : (globalIdx < third ? '#16a34a' : globalIdx < third*2 ? '#ea580c' : '#dc2626');
+                    // 仓库标签：最多显示2个
+                    var whArr = Array.from(p.whs||[]).slice(0,2);
+                    var whHtml = whArr.map(function(w){
+                        var short = w.replace('转转-','').replace('智能验机中心','大仓').replace('后验中心仓','后验').replace('中心仓','').replace('库','');
+                        return '<span style="font-size:9px;padding:1px 5px;border-radius:4px;background:var(--kpi-bg);color:var(--text-secondary);margin-left:3px;white-space:nowrap;">'+short+'</span>';
+                    }).join('');
+                    return '<div class="rank-row" data-person="' + p.name.replace(/"/g,'&quot;') + '" style="display:flex;align-items:center;gap:0;padding:5px 0;">'
+                        + '<span class="rank-no ' + cls + '" style="flex-shrink:0;">' + (globalIdx+1) + '</span>'
+                        + '<span class="rank-name" style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + p.name + whHtml + '</span>'
+                        + '<span class="rank-rate" style="color:'+cntColor+';font-weight:700;min-width:40px;text-align:right;flex-shrink:0;">' + p.total + '次</span>'
                         + '</div>';
                 }).join('');
-                var pCntEl = document.getElementById('rankPersonCnt');
-                if (pCntEl && el) pCntEl.textContent = '共' + el.querySelectorAll('.rank-row').length + '条';
-            }
+                // 分页器
+                if (pager) {
+                    var btns = '';
+                    btns += '<button onclick="window._personRankPage=Math.max(1,window._personRankPage-1);zbPersonRankRender();" style="min-width:24px;height:22px;border-radius:5px;border:0.5px solid var(--border-color);background:transparent;color:var(--text-primary);font-size:11px;cursor:pointer;">&lsaquo;</button>';
+                    var start = Math.max(1, page-2), end = Math.min(totalPages, start+4);
+                    start = Math.max(1, end-4);
+                    for (var pi=start; pi<=end; pi++) {
+                        btns += '<button onclick="window._personRankPage='+pi+';zbPersonRankRender();" style="min-width:22px;height:22px;border-radius:5px;border:0.5px solid var(--border-color);background:'+(pi===page?'#2563eb':'transparent')+';color:'+(pi===page?'#fff':'var(--text-primary)')+';font-size:11px;cursor:pointer;">'+pi+'</button>';
+                    }
+                    btns += '<button onclick="window._personRankPage=Math.min('+totalPages+',window._personRankPage+1);zbPersonRankRender();" style="min-width:24px;height:22px;border-radius:5px;border:0.5px solid var(--border-color);background:transparent;color:var(--text-primary);font-size:11px;cursor:pointer;">&rsaquo;</button>';
+                    pager.innerHTML = btns;
+                }
+            };
 
             // 质检人排行榜点击 → 跳质检人详情页
             var rankBoardPerson = document.getElementById('rankBoardPerson');
@@ -3306,6 +3366,17 @@
                 if (!el || typeof echarts === 'undefined') return;
                 if (!_nationalTrendChart) _nationalTrendChart = echarts.init(el);
 
+                // 读顶部日期筛选范围
+                var _startD = (document.getElementById('startDateFilter')||{}).value || '';
+                var _endD   = (document.getElementById('endDateFilter')||{}).value || '';
+                function _inDateRange(dt) {
+                    if (!dt) return false;
+                    var d = dt.split(' ')[0];
+                    if (_startD && d < _startD) return false;
+                    if (_endD   && d > _endD)   return false;
+                    return true;
+                }
+
                 var allDiff = window._allDiffData || [];
                 var titleEl = document.getElementById('nationalTrendTitle');
                 var isDark = document.body.classList.contains('dark');
@@ -3318,6 +3389,7 @@
                     var execByDate = {};
                     diffRows.forEach(function(d) {
                         if (!d.date || !d.code) return;
+                        if (!_inDateRange(d.date)) return;
                         if (!isObjective(d.category) || !isExecutionIssue(d.judgedIssueType)) return;
                         var dt = d.date.split(' ')[0];
                         if (!execByDate[dt]) execByDate[dt] = new Set();
@@ -3325,7 +3397,7 @@
                     });
                     var checksByDate = {};
                     sumRows.forEach(function(r) {
-                        if (!r.date) return;
+                        if (!r.date || !_inDateRange(r.date)) return;
                         var dt = r.date.split(' ')[0];
                         checksByDate[dt] = (checksByDate[dt] || 0) + (r.totalChecks || 0);
                     });
