@@ -1,6 +1,16 @@
 {
   "tasks": [
     {
+      "id": "mpdi0nptk8m",
+      "title": "主板审核明细更新&群通知",
+      "tag": null,
+      "date": "05/20",
+      "done": false,
+      "status": "todo",
+      "priority": "normal",
+      "created": 1779247492625
+    },
+    {
       "id": "mpcjrmft91k",
       "title": "复测新人训（拆修第一节）16:30-18:00",
       "tag": null,
