@@ -1,17 +1,6 @@
 {
   "tasks": [
     {
-      "id": "mpdecbdbs4l",
-      "title": "T-7 名单公布&差异赋能",
-      "tag": null,
-      "date": "05/20",
-      "done": false,
-      "status": "todo",
-      "priority": "normal",
-      "created": 1779241318031,
-      "fromTemplate": "moxqlsga0sr"
-    },
-    {
       "id": "mpcjrmft91k",
       "title": "复测新人训（拆修第一节）16:30-18:00",
       "tag": null,
@@ -856,6 +845,7 @@
     "mpc1edr1glk",
     "mpc35bxigke",
     "mpc3iatiws6",
-    "mpcdsrwyv09"
+    "mpcdsrwyv09",
+    "mpdecbdbs4l"
   ]
 }
