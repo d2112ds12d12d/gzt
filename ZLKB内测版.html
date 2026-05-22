@@ -6325,6 +6325,17 @@ function _doEditSave() {
         var r = _zbEditResults[idx];
         if (r) { var gi=allDiff.indexOf(r); if(gi!==-1) delKeys.add(gi); }
     });
+    // 在应用改动前，先快照每个被改字段的原始值
+    window._zbOrigSnapshot = {};
+    Object.keys(_zbEditChanges).forEach(function(key){
+        var idx = parseInt(key.split('_')[0]);
+        var r = _zbEditResults[idx];
+        if (!r) return;
+        window._zbOrigSnapshot[key] = {};
+        Object.keys(_zbEditChanges[key]).forEach(function(field){
+            window._zbOrigSnapshot[key][field] = r[field] !== undefined ? r[field] : '';
+        });
+    });
     Object.keys(_zbEditChanges).forEach(function(key){
         var idx = parseInt(key.split('_')[0]);
         var r = _zbEditResults[idx];
@@ -6337,17 +6348,20 @@ function _doEditSave() {
     window._allDiffData = allDiff;
 
     // 记录撤回快照到localStorage，含字段级改前改后
+    // 注意：此处在 Object.assign 应用改动之后执行，origRow 已被修改
+    // 需从 _zbOrigSnapshot 取改前值（在保存前已预先快照）
     var fieldDiffs = [];
     Object.keys(_zbEditChanges).forEach(function(key) {
         var idx = parseInt(key.split('_')[0]);
         var origRow = _zbEditResults[idx];
         if (!origRow) return;
         var changes = _zbEditChanges[key];
+        var origSnap = (_zbOrigSnapshot && _zbOrigSnapshot[key]) || {};
         Object.keys(changes).forEach(function(field) {
             fieldDiffs.push({
                 code: origRow.code || key,
                 field: (typeof ZB_EDIT_LABELS !== 'undefined' && ZB_EDIT_LABELS[field]) || field,
-                from: origRow[field] || '—',
+                from: origSnap[field] !== undefined ? (origSnap[field] || '—') : '—',
                 to: changes[field] || '—'
             });
         });
@@ -6529,65 +6543,365 @@ function zbSiteTrendRange(range, btn) {
     }
 }
 
-// ── 趋势图板块：复制图片到剪贴板 ──
+// ── 趋势图板块：复制图片到剪贴板（F风格卡片） ──
 function zbCopyTrendImg() {
-    var card = document.getElementById('siteTrendCard');
-    if (!card) { showToast('找不到趋势图板块'); return; }
     if (typeof html2canvas === 'undefined') { showToast('截图库未加载，请刷新重试'); return; }
+    if (!window._siteChart_trend) { showToast('趋势图尚未渲染'); return; }
+
     showToast('正在生成图片…');
-    html2canvas(card, { backgroundColor: '#ffffff', scale: 2, useCORS: true, logging: false }).then(function(canvas) {
+
+    // 1. 基本信息
+    var titleEl = document.getElementById('siteDetailTitle');
+    var siteName = titleEl ? titleEl.textContent.replace(' · 站点详情','').trim() : '站点';
+    var range = window._siteTrendRange;
+    var rangeLabel = range === '4w' ? '近4周' : range === '1y' ? '近一年' : '近15天';
+    if (!range) {
+        var sVal = (document.getElementById('startDateFilter')||{}).value||'';
+        var eVal = (document.getElementById('endDateFilter')||{}).value||'';
+        var fmt2 = function(d){ return d ? d.replace(/^(\d{4})-(\d{2})-(\d{2})$/,'$2/$3') : ''; };
+        rangeLabel = fmt2(sVal) + '–' + fmt2(eVal);
+    }
+
+    // 2. 从 ECharts 实例取图表图片
+    var chartImgSrc = window._siteChart_trend.getDataURL({
+        type: 'png', pixelRatio: 2, backgroundColor: '#ffffff'
+    });
+
+    // 3. 读数据表（site4wTable）构造行数据
+    var tblEl = document.getElementById('site4wTable');
+    var tableRows = []; // [{cells:[{text,bg,color,bold}]}]
+    if (tblEl) {
+        var tbl = tblEl.querySelector('table');
+        if (tbl) {
+            for (var ri = 0; ri < tbl.rows.length; ri++) {
+                var row = tbl.rows[ri];
+                var cells = [];
+                for (var ci = 0; ci < row.cells.length; ci++) {
+                    var cell = row.cells[ci];
+                    // 取纯文字，去掉span色点
+                    var txt = cell.innerText || cell.textContent || '';
+                    txt = txt.replace(/\s+/g,' ').trim();
+                    // 品类列：从span的background提取色
+                    var dotSpan = cell.querySelector('span[style*="border-radius:50%"]');
+                    var catColor = dotSpan ? dotSpan.style.background : null;
+                    cells.push({ text: txt, isHeader: ri === 0, catColor: catColor });
+                }
+                tableRows.push(cells);
+            }
+        }
+    }
+
+    // 4. 构建离屏 Canvas
+    var SCALE = 2;
+    var W = 800, PAD = 24;
+    var TOPBAR_H = 44;
+    var CHART_H = 240;
+    var ROW_H = 28;
+    var TABLE_H = tableRows.length > 0 ? (ROW_H * tableRows.length + 12) : 0;
+    var TOTAL_H = TOPBAR_H + CHART_H + (TABLE_H > 0 ? TABLE_H + 16 : 0) + 24;
+
+    var canvas = document.createElement('canvas');
+    canvas.width = W * SCALE;
+    canvas.height = TOTAL_H * SCALE;
+    var ctx = canvas.getContext('2d');
+    ctx.scale(SCALE, SCALE);
+
+    // 背景白
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, W, TOTAL_H);
+
+    // 圆角裁剪
+    var R = 14;
+    ctx.beginPath();
+    ctx.moveTo(R, 0); ctx.lineTo(W-R, 0);
+    ctx.quadraticCurveTo(W, 0, W, R);
+    ctx.lineTo(W, TOTAL_H-R); ctx.quadraticCurveTo(W, TOTAL_H, W-R, TOTAL_H);
+    ctx.lineTo(R, TOTAL_H); ctx.quadraticCurveTo(0, TOTAL_H, 0, TOTAL_H-R);
+    ctx.lineTo(0, R); ctx.quadraticCurveTo(0, 0, R, 0);
+    ctx.closePath();
+    ctx.clip();
+
+    // 顶栏渐变
+    var grad = ctx.createLinearGradient(0, 0, W, 0);
+    grad.addColorStop(0, '#1e40af');
+    grad.addColorStop(1, '#2563eb');
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, 0, W, TOPBAR_H);
+
+    // 顶栏标题
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '500 13px -apple-system, PingFang SC, Microsoft YaHei, sans-serif';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(siteName + ' · 客观执行差异率趋势', PAD, TOPBAR_H / 2);
+
+    // 顶栏右侧周期
+    ctx.fillStyle = 'rgba(255,255,255,0.75)';
+    ctx.font = '11px -apple-system, PingFang SC, Microsoft YaHei, sans-serif';
+    var periodW = ctx.measureText(rangeLabel).width;
+    ctx.fillText(rangeLabel, W - PAD - periodW, TOPBAR_H / 2);
+
+    // 画图表图片
+    var chartImg = new Image();
+    chartImg.onload = function() {
+        ctx.drawImage(chartImg, 0, TOPBAR_H, W, CHART_H);
+
+        // 画数据表
+        if (tableRows.length > 0) {
+            var tblTop = TOPBAR_H + CHART_H + 16;
+            var CAT_COLORS_MAP = {'手机':'#2563eb','笔记本':'#f59e0b','平板':'#10b981','手表':'#8b5cf6','耳机':'#ef4444'};
+            var colW = (W - PAD * 2) / (tableRows[0] ? tableRows[0].length : 5);
+
+            tableRows.forEach(function(row, ri) {
+                var y = tblTop + ri * ROW_H;
+                // 行背景
+                if (ri === 0) {
+                    ctx.fillStyle = '#f1f5f9';
+                } else {
+                    ctx.fillStyle = ri % 2 === 1 ? '#f5f9ff' : '#ffffff';
+                }
+                ctx.fillRect(PAD, y, W - PAD * 2, ROW_H);
+
+                // 行分割线
+                ctx.strokeStyle = '#e2e8f0';
+                ctx.lineWidth = 0.5;
+                ctx.beginPath();
+                ctx.moveTo(PAD, y + ROW_H);
+                ctx.lineTo(W - PAD, y + ROW_H);
+                ctx.stroke();
+
+                row.forEach(function(cell, ci) {
+                    var x = PAD + ci * colW;
+                    var cellMidY = y + ROW_H / 2;
+                    var txt = cell.text;
+
+                    // 品类列色块
+                    if (ci === 0 && !cell.isHeader && cell.catColor) {
+                        var dotColor = cell.catColor || CAT_COLORS_MAP[txt] || '#94a3b8';
+                        ctx.fillStyle = dotColor;
+                        ctx.beginPath();
+                        ctx.arc(x + 10, cellMidY, 4, 0, Math.PI * 2);
+                        ctx.fill();
+                        ctx.fillStyle = '#1e293b';
+                        ctx.font = '12px -apple-system, PingFang SC, Microsoft YaHei, sans-serif';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(txt, x + 20, cellMidY);
+                        return;
+                    }
+
+                    // 颜色判断
+                    var txtColor = '#1e293b';
+                    if (cell.isHeader) txtColor = '#64748b';
+                    else if (txt.startsWith('↑')) txtColor = '#dc2626';
+                    else if (txt.startsWith('↓')) txtColor = '#16a34a';
+                    else if (ci === row.length - 2 && !cell.isHeader) txtColor = '#2563eb'; // 最新一期
+
+                    ctx.fillStyle = txtColor;
+                    ctx.font = (cell.isHeader ? '500 ' : '') + '12px -apple-system, PingFang SC, Microsoft YaHei, sans-serif';
+                    ctx.textBaseline = 'middle';
+                    var textX = ci === 0 ? x + 8 : x + colW / 2 - ctx.measureText(txt).width / 2;
+                    ctx.fillText(txt, textX, cellMidY);
+                });
+            });
+        }
+
+        // 输出
         canvas.toBlob(function(blob) {
             if (!blob) { showToast('生成失败，请重试'); return; }
             try {
-                navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })]).then(function() {
-                    showToast('✓ 已复制到剪贴板，可直接粘贴到 Word');
+                navigator.clipboard.write([new ClipboardItem({'image/png': blob})]).then(function() {
+                    showToast('✓ 已复制到剪贴板，可直接粘贴');
                 }).catch(function() {
-                    // 降级：下载
                     var a = document.createElement('a');
                     a.href = URL.createObjectURL(blob);
-                    a.download = '趋势图_' + new Date().toLocaleDateString('zh-CN').replace(/\//g,'-') + '.png';
+                    a.download = siteName + '_趋势图_' + new Date().toLocaleDateString('zh-CN').replace(/\//g,'-') + '.png';
                     a.click();
                     showToast('浏览器不支持直接复制，已自动下载');
                 });
-            } catch(e) {
-                showToast('复制失败：' + e.message);
-            }
+            } catch(e) { showToast('复制失败：' + e.message); }
         }, 'image/png');
-    }).catch(function(e) { showToast('截图失败：' + e.message); });
+    };
+    chartImg.src = chartImgSrc;
 }
 
 // ── 质检维度分析：复制当前tab表格到剪贴板（HTML table，可粘贴到Word）──
 function zbCopyDimTable() {
     var tab = window._zbDimTab || 'person';
-    var panelId = tab === 'issue' ? 'zbDimPanelIssue' : 'zbDimPanelPerson';
-    var panel = document.getElementById(panelId);
-    if (!panel) { showToast('未找到面板'); return; }
-    var tbls = panel.querySelectorAll('table');
-    var tbl = null;
-    for (var i = 0; i < tbls.length; i++) {
-        if (tbls[i].rows.length > 1) { tbl = tbls[i]; break; }
+    var titleEl = document.getElementById('siteDetailTitle');
+    var siteName = titleEl ? titleEl.textContent.replace(' · 站点详情','').trim() : '站点';
+
+    // 周区间标签
+    var lastStart = (document.getElementById('siteWeekLastStart')||{}).value||'';
+    var lastEnd   = (document.getElementById('siteWeekLastEnd')||{}).value||'';
+    var curStart  = (document.getElementById('siteWeekCurStart')||{}).value||'';
+    var curEnd    = (document.getElementById('siteWeekCurEnd')||{}).value||'';
+    function fmtWk(s,e){
+        if(!s||!e) return '—';
+        function f(d){ var p=d.split('-'); return (p[1]|0)+'/'+(p[2]|0); }
+        return f(s)+'–'+f(e);
     }
-    if (!tbl) { showToast('表格暂无数据'); return; }
-    // 构造干净的HTML table（去掉SVG、进度条等，只保留文字）
-    var html = '<table border="1" cellpadding="4" cellspacing="0" style="border-collapse:collapse;font-family:sans-serif;font-size:12px;">';
-    for (var r = 0; r < tbl.rows.length; r++) {
-        html += '<tr>';
-        var row = tbl.rows[r];
-        for (var c = 0; c < row.cells.length; c++) {
-            var cell = row.cells[c];
-            var tag = (r === 0 || cell.tagName === 'TH') ? 'th' : 'td';
-            var text = cell.innerText.replace(/\s+/g,' ').trim();
-            html += '<' + tag + ' style="padding:4px 8px;border:1px solid #ccc;">' + text + '</' + tag + '>';
+    var curLabel  = fmtWk(curStart, curEnd);
+    var lastLabel = fmtWk(lastStart, lastEnd);
+
+    // 通用样式常量
+    var S = {
+        table:  'width:100%;border-collapse:collapse;font-family:PingFang SC,Microsoft YaHei,sans-serif;font-size:13px;',
+        th:     'padding:7px 12px;background:#f8fafc;color:#64748b;font-weight:500;text-align:center;border:1px solid #e2e8f0;',
+        thL:    'padding:7px 12px;background:#f8fafc;color:#64748b;font-weight:500;text-align:left;border:1px solid #e2e8f0;',
+        secCur: 'padding:5px 12px;background:#dbeafe;color:#1e40af;font-weight:500;font-size:12px;border:1px solid #bfdbfe;text-align:left;',
+        secPrv: 'padding:5px 12px;background:#dcfce7;color:#166534;font-weight:500;font-size:12px;border:1px solid #bbf7d0;text-align:left;',
+        tdCur:  'padding:6px 12px;text-align:center;border:1px solid #e9eff6;background:#f5f9ff;color:#1e293b;',
+        tdPrv:  'padding:6px 12px;text-align:center;border:1px solid #e9eff6;background:#f5fdf6;color:#1e293b;',
+        tdCurL: 'padding:6px 12px;text-align:left;border:1px solid #e9eff6;background:#f5f9ff;color:#1e293b;',
+        tdPrvL: 'padding:6px 12px;text-align:left;border:1px solid #e9eff6;background:#f5fdf6;color:#1e293b;',
+        up:     'color:#dc2626;font-weight:500;',
+        down:   'color:#16a34a;font-weight:500;',
+        flat:   'color:#94a3b8;',
+    };
+
+    function deltaHtml(n, tdStyle) {
+        var txt = n > 0 ? '↑ +'+n : n < 0 ? '↓ '+n : '—';
+        var col = n > 0 ? S.up : n < 0 ? S.down : S.flat;
+        return '<td style="'+tdStyle+'"><span style="'+col+'">'+txt+'</span></td>';
+    }
+
+    var html = '';
+
+    if (tab === 'person') {
+        // ── 人维度 ──
+        var personData = window._sitePersonData || [];
+        var isCompare  = !!window._zbCompareOpen;
+
+        function inPeriod(date, s, e){ if(!s||!e) return false; return date>=s&&date<=e; }
+
+        // 本周列表：按本周差异量降序
+        var curMap = {}, prvMap = {};
+        personData.forEach(function(d){
+            var dt = d.date ? d.date.split(' ')[0] : '';
+            var p  = d.person || '未知';
+            if (inPeriod(dt, curStart, curEnd))  curMap[p] = (curMap[p]||0) + 1;
+            if (inPeriod(dt, lastStart, lastEnd)) prvMap[p] = (prvMap[p]||0) + 1;
+        });
+
+        var curList = Object.keys(curMap).map(function(n){ return {name:n, cur:curMap[n], prv:prvMap[n]||0}; });
+        curList.sort(function(a,b){ return b.cur - a.cur || b.prv - a.prv; });
+
+        var prvList = Object.keys(prvMap).map(function(n){ return {name:n, prv:prvMap[n], cur:curMap[n]||0}; });
+        prvList.sort(function(a,b){ return b.prv - a.prv || b.cur - a.cur; });
+
+        if (!curList.length && !prvList.length) { showToast('暂无数据，请先开启「对比数据」并设置周区间'); return; }
+
+        html = '<table style="'+S.table+'">'
+            + '<tr>'
+            + '<th style="'+S.thL+'">质检人员</th>'
+            + '<th style="'+S.th+'">上周差异数量（'+lastLabel+'）</th>'
+            + '<th style="'+S.th+'">本周差异数量（'+curLabel+'）</th>'
+            + '<th style="'+S.th+'">变化</th>'
+            + '</tr>';
+
+        // 本周分组
+        if (curList.length) {
+            html += '<tr><td colspan="4" style="'+S.secCur+'">本周失误人明细 · '+curLabel+'</td></tr>';
+            curList.forEach(function(p){
+                var delta = p.cur - p.prv;
+                html += '<tr>'
+                    + '<td style="'+S.tdCurL+'">'+p.name+'</td>'
+                    + '<td style="'+S.tdCur+'">'+(p.prv||'—')+'</td>'
+                    + '<td style="'+S.tdCur+'">'+p.cur+'</td>';
+                html += deltaHtml(delta, S.tdCur);
+                html += '</tr>';
+            });
         }
-        html += '</tr>';
+
+        // 上周分组
+        if (prvList.length) {
+            html += '<tr><td colspan="4" style="'+S.secPrv+'">上周失误人明细 · '+lastLabel+'</td></tr>';
+            prvList.forEach(function(p){
+                var delta = p.cur - p.prv;
+                html += '<tr>'
+                    + '<td style="'+S.tdPrvL+'">'+p.name+'</td>'
+                    + '<td style="'+S.tdPrv+'">'+p.prv+'</td>'
+                    + '<td style="'+S.tdPrv+'">'+(p.cur||'—')+'</td>';
+                html += deltaHtml(delta, S.tdPrv);
+                html += '</tr>';
+            });
+        }
+
+        html += '</table>';
+
+    } else {
+        // ── 项维度 ──
+        var execDiff = window._sitePersonData || [];
+        // 项维度从维度面板DOM读数据（已渲染好的）
+        var panelIssue = document.getElementById('zbDimPanelIssue');
+        var tbl = panelIssue ? panelIssue.querySelector('table') : null;
+        if (!tbl || tbl.rows.length <= 1) { showToast('项维度暂无数据'); return; }
+
+        // 读表格数据行（跳过表头）
+        var curRows = [], prvRows = [];
+        for (var ri = 1; ri < tbl.rows.length; ri++) {
+            var row = tbl.rows[ri];
+            var cells = row.cells;
+            if (cells.length < 4) continue;
+            var level3 = (cells[0].innerText||'').trim();
+            var lastV  = (cells[1].innerText||'').trim();
+            var curV   = (cells[2].innerText||'').trim();
+            var lastN  = parseInt(lastV) || 0;
+            var curN   = parseInt(curV)  || 0;
+            if (curN > 0) curRows.push({level3:level3, last:lastN, cur:curN, delta:curN-lastN});
+            else if (lastN > 0) prvRows.push({level3:level3, last:lastN, cur:curN, delta:curN-lastN});
+        }
+        // 本周按cur降序，上周按last降序
+        curRows.sort(function(a,b){ return b.cur-a.cur||b.last-a.last; });
+        prvRows.sort(function(a,b){ return b.last-a.last||b.cur-a.cur; });
+
+        if (!curRows.length && !prvRows.length) { showToast('项维度暂无数据'); return; }
+
+        html = '<table style="'+S.table+'">'
+            + '<tr>'
+            + '<th style="'+S.thL+'">质检项</th>'
+            + '<th style="'+S.th+'">上周差异数量（'+lastLabel+'）</th>'
+            + '<th style="'+S.th+'">本周差异数量（'+curLabel+'）</th>'
+            + '<th style="'+S.th+'">变化</th>'
+            + '</tr>';
+
+        if (curRows.length) {
+            html += '<tr><td colspan="4" style="'+S.secCur+'">本周失误项明细 · '+curLabel+'</td></tr>';
+            curRows.forEach(function(r){
+                html += '<tr>'
+                    + '<td style="'+S.tdCurL+'">'+r.level3+'</td>'
+                    + '<td style="'+S.tdCur+'">'+(r.last||'—')+'</td>'
+                    + '<td style="'+S.tdCur+'">'+r.cur+'</td>';
+                html += deltaHtml(r.delta, S.tdCur);
+                html += '</tr>';
+            });
+        }
+
+        if (prvRows.length) {
+            html += '<tr><td colspan="4" style="'+S.secPrv+'">上周失误项明细 · '+lastLabel+'</td></tr>';
+            prvRows.forEach(function(r){
+                html += '<tr>'
+                    + '<td style="'+S.tdPrvL+'">'+r.level3+'</td>'
+                    + '<td style="'+S.tdPrv+'">'+r.last+'</td>'
+                    + '<td style="'+S.tdPrv+'">'+(r.cur||'—')+'</td>';
+                html += deltaHtml(r.delta, S.tdPrv);
+                html += '</tr>';
+            });
+        }
+
+        html += '</table>';
     }
-    html += '</table>';
+
     try {
         var blob = new Blob([html], { type: 'text/html' });
         navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]).then(function() {
-            showToast('✓ 已复制表格，可直接粘贴到 Word');
+            showToast('✓ 已复制富文本表格，可直接粘贴到企微/Word');
         }).catch(function() {
-            navigator.clipboard.writeText(tbl.innerText).then(function(){ showToast('✓ 已复制（纯文本）'); });
+            // 降级纯文本
+            var tmp = document.createElement('div');
+            tmp.innerHTML = html;
+            navigator.clipboard.writeText(tmp.innerText||'').then(function(){
+                showToast('✓ 已复制（纯文本降级）');
+            });
         });
     } catch(e) { showToast('复制失败：' + e.message); }
 }
@@ -6610,7 +6924,12 @@ window._personRankFilterTemp = new Set();
 
 window.zbPersonRankFilterOpen = function(col, thEl) {
     var panel = document.getElementById('personRankFilterPanel');
-    // 用_lastOpenCol判断是否同列再点，避免mousedown时序问题
+    // 若距上次因点击列头触发的关闭 < 200ms，说明是同一次点击的 click 事件，忽略
+    if (window._personRankFilterCloseTs && Date.now() - window._personRankFilterCloseTs < 200) {
+        window._personRankFilterCloseTs = null;
+        return;
+    }
+    // 面板已开且是同一列，直接关闭（切换）
     if (window._personRankLastOpenCol === col && panel && panel.style.display !== 'none') {
         window._personRankLastOpenCol = null;
         zbPersonRankFilterClose();
@@ -6654,6 +6973,12 @@ window.zbPersonRankFilterOpen = function(col, thEl) {
 window.zbPersonRankFilterOutside = function(e) {
     var panel = document.getElementById('personRankFilterPanel');
     if (panel && panel.style.display !== 'none' && !panel.contains(e.target)) {
+        // 若点的是列头，记录时间戳让 click 事件忽略本次触发
+        var th = e.target.closest('th');
+        if (th && th.getAttribute('onclick') && th.getAttribute('onclick').includes('zbPersonRankFilterOpen')) {
+            window._personRankFilterCloseTs = Date.now();
+        }
+        window._personRankLastOpenCol = null;
         zbPersonRankFilterClose();
     }
 };
