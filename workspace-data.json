@@ -1,6 +1,17 @@
 {
   "tasks": [
     {
+      "id": "mpgavz86uxv",
+      "title": "主板审核明细更新&群通知",
+      "tag": null,
+      "date": "05/25",
+      "done": false,
+      "status": "todo",
+      "priority": "normal",
+      "created": 1779416915478,
+      "parentId": "mpdi0nptk8m"
+    },
+    {
       "id": "mpgap65e40b",
       "title": "统计 kappa 成绩&当天拆修任务推送",
       "tag": null,
@@ -145,7 +156,10 @@
       "priority": "normal",
       "created": 1779247492625,
       "note": "",
-      "links": []
+      "links": [],
+      "childIds": [
+        "mpgavz86uxv"
+      ]
     },
     {
       "id": "mpcjrmft91k",
