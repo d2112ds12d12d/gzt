@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.43F</title>
+    <title>培训部数据看板 v1.43G</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -619,7 +619,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43F</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43G</div>
     </div>
   </nav>
 
@@ -1753,61 +1753,66 @@
                 dtPopupCol = null;
             }
 
-            // 列筛选事件（差异明细tab已删，整块跳过）
-            if (document.getElementById('dtColList')) {
-            document.getElementById('dtColList').addEventListener('click', function(e) {
-                e.stopPropagation();
-                const item = e.target.closest('.dt-popup-item');
+            // 列筛选事件（差异明细弹窗）
+            document.addEventListener('click', function(e) {
+                // 列头筛选图标点击（virtualScroll动态生成的th）
+                const icon = e.target.closest('.dt-filter-icon');
+                if (icon) { e.stopPropagation(); dtOpenColFilter(icon.dataset.col, icon); return; }
+                // 弹出层内部点击
+                const popup = document.getElementById('dtColPopup');
+                if (!popup || popup.style.display === 'none') return;
+                if (popup.contains(e.target)) return;
+                dtClosePopup();
+            });
+            // 列表项勾选
+            document.addEventListener('click', function(e) {
+                if (!document.getElementById('dtColPopup') || document.getElementById('dtColPopup').style.display==='none') return;
+                const item = e.target.closest('#dtColList .dt-popup-item');
                 if (!item) return;
+                e.stopPropagation();
                 const v = item.dataset.val;
                 if (dtPopupSelected.has(v)) dtPopupSelected.delete(v);
                 else dtPopupSelected.add(v);
-                dtRenderPopupList(document.getElementById('dtColSearch').value);
+                dtRenderPopupList((document.getElementById('dtColSearch')||{}).value||'');
             });
-            document.getElementById('dtColList').addEventListener('mouseover', function(e) {
-                const item = e.target.closest('.dt-popup-item');
-                if (item) item.style.background = 'rgba(59,130,246,0.06)';
+            // 搜索框
+            document.addEventListener('input', function(e) {
+                if (e.target && e.target.id === 'dtColSearch') dtRenderPopupList(e.target.value);
             });
-            document.getElementById('dtColList').addEventListener('mouseout', function(e) {
-                const item = e.target.closest('.dt-popup-item');
-                if (item) item.style.background = '';
-            });
-            document.getElementById('dtColSearch').addEventListener('input', function() { dtRenderPopupList(this.value); });
-            document.getElementById('dtColSearch').addEventListener('click', function(e) { e.stopPropagation(); });
-            document.getElementById('dtColSelAll').addEventListener('click', function(e) {
-                e.stopPropagation();
-                dtAllVals.forEach(function(v){ dtPopupSelected.add(v); });
-                dtRenderPopupList(document.getElementById('dtColSearch').value);
-            });
-            document.getElementById('dtColClearSel').addEventListener('click', function(e) {
-                e.stopPropagation();
-                dtPopupSelected.clear();
-                dtRenderPopupList(document.getElementById('dtColSearch').value);
-            });
-            document.getElementById('dtColConfirm').addEventListener('click', function(e) {
-                e.stopPropagation();
-                if (dtPopupCol) {
-                    if (dtPopupSelected.size === dtAllVals.length) {
-                        delete dtColFilters[dtPopupCol];
-                    } else {
-                        dtColFilters[dtPopupCol] = new Set(dtPopupSelected);
-                    }
-                    dtCurrentPage = 1;
-                    renderDetailTable();
+            // 全选
+            document.addEventListener('click', function(e) {
+                if (e.target && e.target.id === 'dtSelectAll') {
+                    e.stopPropagation();
+                    dtAllVals.forEach(function(v){ dtPopupSelected.add(v); });
+                    dtRenderPopupList((document.getElementById('dtColSearch')||{}).value||'');
                 }
-                dtClosePopup();
             });
-            document.getElementById('dtColCancel').addEventListener('click', function(e) {
-                e.stopPropagation();
-                dtClosePopup();
+            // 清除
+            document.addEventListener('click', function(e) {
+                if (e.target && e.target.id === 'dtClearAll') {
+                    e.stopPropagation();
+                    dtPopupSelected.clear();
+                    dtRenderPopupList((document.getElementById('dtColSearch')||{}).value||'');
+                }
             });
-            document.getElementById('detailTableHead').addEventListener('click', function(e) {
-                const icon = e.target.closest('.dt-filter-icon');
-                if (!icon) return;
-                e.stopPropagation();
-                dtOpenColFilter(icon.dataset.col, icon);
+            // 确认
+            document.addEventListener('click', function(e) {
+                if (e.target && e.target.id === 'dtApplyFilter') {
+                    e.stopPropagation();
+                    if (dtPopupCol) {
+                        var allSelected = dtAllVals.every(function(v){ return dtPopupSelected.has(v); });
+                        if (allSelected) delete dtColFilters[dtPopupCol];
+                        else dtColFilters[dtPopupCol] = new Set(dtPopupSelected);
+                        renderModalTableVirtual();
+                        dtUpdateFilterIcons();
+                    }
+                    dtClosePopup();
+                }
             });
-            } // end dtColList guard
+            // 取消
+            document.addEventListener('click', function(e) {
+                if (e.target && e.target.id === 'dtCancelFilter') { e.stopPropagation(); dtClosePopup(); }
+            });
 
             // 单元格编辑：事件委托
             var _dtBody = document.getElementById('detailTableBody');
@@ -1901,7 +1906,10 @@
                     this.table.style.width = '100%';
 
                     const thead = document.createElement('thead');
-                    thead.innerHTML = `<tr>${this.columnDef.map(c => `<th>${c}</th>`).join('')}</tr>`;
+                    thead.innerHTML = `<tr>${this.columnKeys.map((key, i) => {
+                        const label = this.columnDef[i] || key;
+                        return `<th style="white-space:nowrap;">${label}<span class="dt-filter-icon" data-col="${key}" onclick="event.stopPropagation();dtOpenColFilter('${key}',this)">⏷</span></th>`;
+                    }).join('')}</tr>`;
                     this.table.appendChild(thead);
                     this.tbody = document.createElement('tbody');
                     this.table.appendChild(this.tbody);
@@ -1957,10 +1965,22 @@
 
                 var filtered = currentModalRecords.filter(function(d) {
                     var subjVal = modalSubjObjFilter ? modalSubjObjFilter.value : 'ALL';
-                    if (!subjVal || subjVal === 'ALL') return true; // 空字符串也当全部
-                    var subjMatch = subjVal==='OBJ' ? isObjective(d.category) : isSubjective(d.category);
-                    var issueMatch = !modalIssueTypeFilter || modalIssueTypeFilter.value==='__ALL__'||!modalIssueTypeFilter.value||d.issueType===modalIssueTypeFilter.value;
-                    return subjMatch && issueMatch;
+                    if (subjVal && subjVal !== 'ALL') {
+                        var subjMatch = subjVal==='OBJ' ? isObjective(d.category) : isSubjective(d.category);
+                        var issueMatch = !modalIssueTypeFilter || modalIssueTypeFilter.value==='__ALL__'||!modalIssueTypeFilter.value||d.issueType===modalIssueTypeFilter.value;
+                        if (!subjMatch || !issueMatch) return false;
+                    }
+                    // 列筛选
+                    if (Object.keys(dtColFilters).length) {
+                        var pass = Object.keys(dtColFilters).every(function(col) {
+                            var f = dtColFilters[col];
+                            if (!f || f.size === 0) return true;
+                            var val = (d[col] || '—');
+                            return f.has(val);
+                        });
+                        if (!pass) return false;
+                    }
+                    return true;
                 });
 
                 // 更新徽章
@@ -7242,6 +7262,21 @@ document.addEventListener('DOMContentLoaded', function(){
     <div style="padding:6px 10px;border-top:0.5px solid #e2e8f0;display:flex;gap:6px;">
         <button onclick="zbPersonRankFilterApply()" style="flex:1;height:26px;font-size:12px;border-radius:6px;border:none;background:#2563eb;color:#fff;cursor:pointer;font-weight:500;">确认</button>
         <button onclick="zbPersonRankFilterClose()" style="height:26px;padding:0 10px;font-size:12px;border-radius:6px;border:0.5px solid #e2e8f0;background:transparent;color:#64748b;cursor:pointer;">取消</button>
+    </div>
+</div>
+<!-- 差异明细列筛选面板 -->
+<div id="dtColPopup" style="display:none;position:fixed;z-index:10000;background:#fff;border:0.5px solid #e2e8f0;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.16);min-width:200px;max-width:260px;flex-direction:column;">
+    <div style="padding:8px 10px;border-bottom:0.5px solid #e2e8f0;">
+        <input id="dtColSearch" type="text" placeholder="搜索…" style="width:100%;height:26px;border:0.5px solid #e2e8f0;border-radius:6px;font-size:12px;padding:0 8px;background:#f8fafc;color:#0f172a;outline:none;">
+    </div>
+    <div style="display:flex;gap:6px;padding:6px 10px;border-bottom:0.5px solid #e2e8f0;">
+        <button id="dtSelectAll" style="flex:1;height:22px;font-size:11px;border-radius:5px;border:0.5px solid #e2e8f0;background:transparent;color:#64748b;cursor:pointer;">全选</button>
+        <button id="dtClearAll" style="flex:1;height:22px;font-size:11px;border-radius:5px;border:0.5px solid #e2e8f0;background:transparent;color:#64748b;cursor:pointer;">清除</button>
+    </div>
+    <div id="dtColList" style="max-height:200px;overflow-y:auto;padding:4px 0;"></div>
+    <div style="padding:6px 10px;border-top:0.5px solid #e2e8f0;display:flex;gap:6px;">
+        <button id="dtApplyFilter" style="flex:1;height:26px;font-size:12px;border-radius:6px;border:none;background:#2563eb;color:#fff;cursor:pointer;font-weight:500;">确认</button>
+        <button id="dtCancelFilter" style="height:26px;padding:0 10px;font-size:12px;border-radius:6px;border:0.5px solid #e2e8f0;background:transparent;color:#64748b;cursor:pointer;">取消</button>
     </div>
 </div>
 </body>
