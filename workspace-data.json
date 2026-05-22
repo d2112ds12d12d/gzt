@@ -1,14 +1,50 @@
 {
   "tasks": [
     {
-      "id": "mpf4n7hz38o",
-      "title": "数据准确性调研？",
+      "id": "mpfdzjqbg7p",
+      "title": "推送0522晚上的拆修专项 和 kappa 考试；kappa 考试答案怎么展示？",
       "tag": null,
-      "date": "05/21",
+      "date": "05/22",
+      "done": true,
+      "status": "done",
+      "priority": "normal",
+      "created": 1779361654691,
+      "parentId": "mpe18zv8oeo"
+    },
+    {
+      "id": "mpfbqozat1r",
+      "title": "复测新人训（拆修第三节）15:30-18:00",
+      "tag": null,
+      "date": "05/22",
       "done": false,
       "status": "todo",
       "priority": "normal",
-      "created": 1779345962423
+      "created": 1779357882358,
+      "parentId": "mpdxlqzw7r5",
+      "note": "",
+      "links": []
+    },
+    {
+      "id": "mpfbpv34fds",
+      "title": "星级尾部训",
+      "tag": null,
+      "date": "05/21",
+      "done": true,
+      "status": "done",
+      "priority": "normal",
+      "created": 1779357843616
+    },
+    {
+      "id": "mpf4n7hz38o",
+      "title": "晨辉的数据准确性调研？",
+      "tag": null,
+      "date": "05/21",
+      "done": true,
+      "status": "done",
+      "priority": "normal",
+      "created": 1779345962423,
+      "note": "",
+      "links": []
     },
     {
       "id": "mpe1b1y4yvi",
@@ -27,8 +63,8 @@
       "title": "￼\n @所有人 @曾权  ⁠@王礼宇⁠  @李广洲 @周榆清 @潘天一 \n由于卖场标准反馈手机听筒网溢胶的情况近期拦截率较高，手机现象值标准【外屏-有胶水溢出/撬痕】标准第4条听筒网溢胶的变更标准需要提前上线，推送通知5.21上线。\n中心仓老师早会上宣导下，大仓老师在现场讲一下。",
       "tag": null,
       "date": "05/21",
-      "done": false,
-      "status": "todo",
+      "done": true,
+      "status": "done",
       "priority": "normal",
       "created": 1779279849827
     },
@@ -37,11 +73,14 @@
       "title": "推送0521晚上的拆修专项",
       "tag": null,
       "date": "05/21",
-      "done": false,
-      "status": "todo",
+      "done": true,
+      "status": "done",
       "priority": "normal",
       "created": 1779279794324,
-      "parentId": "mpcj8q77q7v"
+      "parentId": "mpcj8q77q7v",
+      "childIds": [
+        "mpfdzjqbg7p"
+      ]
     },
     {
       "id": "mpdxn6019ci",
@@ -58,13 +97,16 @@
       "title": "复测新人训（拆修第二节）15:30-18:00",
       "tag": null,
       "date": "05/21",
-      "done": false,
-      "status": "todo",
+      "done": true,
+      "status": "done",
       "priority": "normal",
       "created": 1779273670892,
       "parentId": "mpcjrmft91k",
       "note": "",
-      "links": []
+      "links": [],
+      "childIds": [
+        "mpfbqozat1r"
+      ]
     },
     {
       "id": "mpdj3whco3w",
@@ -83,7 +125,7 @@
       "id": "mpdi0nptk8m",
       "title": "主板审核明细更新&群通知",
       "tag": null,
-      "date": "05/21",
+      "date": "05/22",
       "done": false,
       "status": "todo",
       "priority": "normal",
