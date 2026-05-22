@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.43A</title>
+    <title>培训部数据看板 v1.43B</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -618,7 +618,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43A</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43B</div>
     </div>
   </nav>
 
@@ -774,21 +774,6 @@
                     </thead>
                     <tbody id="rankBoardPerson"></tbody>
                 </table>
-                <!-- 列筛选下拉面板 -->
-                <div id="personRankFilterPanel" style="display:none;position:fixed;z-index:9999;background:var(--color-background-primary,#fff);border:0.5px solid var(--border-color);border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.12);min-width:200px;max-width:260px;">
-                    <div style="padding:8px 10px;border-bottom:0.5px solid var(--border-color);">
-                        <input id="personRankFilterSearch" type="text" placeholder="搜索…" oninput="zbPersonRankFilterSearch()" style="width:100%;height:26px;border:0.5px solid var(--border-color);border-radius:6px;font-size:12px;padding:0 8px;background:var(--filter-input-bg);color:var(--text-primary);outline:none;">
-                    </div>
-                    <div style="display:flex;gap:6px;padding:6px 10px;border-bottom:0.5px solid var(--border-color);">
-                        <button onclick="zbPersonRankFilterSelectAll()" style="flex:1;height:22px;font-size:11px;border-radius:5px;border:0.5px solid var(--border-color);background:transparent;color:var(--text-secondary);cursor:pointer;">全选</button>
-                        <button onclick="zbPersonRankFilterClear()" style="flex:1;height:22px;font-size:11px;border-radius:5px;border:0.5px solid var(--border-color);background:transparent;color:var(--text-secondary);cursor:pointer;">清除</button>
-                    </div>
-                    <div id="personRankFilterList" style="max-height:200px;overflow-y:auto;padding:4px 0;"></div>
-                    <div style="padding:6px 10px;border-top:0.5px solid var(--border-color);display:flex;gap:6px;">
-                        <button onclick="zbPersonRankFilterApply()" style="flex:1;height:26px;font-size:12px;border-radius:6px;border:none;background:#2563eb;color:#fff;cursor:pointer;font-weight:500;">确认</button>
-                        <button onclick="zbPersonRankFilterClose()" style="height:26px;padding:0 10px;font-size:12px;border-radius:6px;border:0.5px solid var(--border-color);background:transparent;color:var(--text-secondary);cursor:pointer;">取消</button>
-                    </div>
-                </div>
                 <div id="personRankPager" style="display:flex;align-items:center;justify-content:flex-end;gap:4px;padding:8px 16px;border-top:0.5px solid var(--border-color);font-size:11px;"></div>
             </div>
 
@@ -6557,13 +6542,13 @@ window.zbPersonRankFilterClear = function() {
 window.zbPersonRankFilterApply = function() {
     var col = window._personRankFilterCol;
     var allVals = window._personRankFilterAllVals || [];
-    // 全选时等同不过滤
-    var isAll = allVals.length === window._personRankFilterTemp.size;
+    // 真正全选：filterTemp包含所有值
+    var isAll = allVals.every(function(v){ return window._personRankFilterTemp.has(v); });
     window._personRankFilters[col] = isAll ? null : new Set(window._personRankFilterTemp);
     // 更新列头角标
     var badgeId = {person:'personFilterBadge',wh:'whFilterBadge',type:'typeFilterBadge'}[col];
     var badge = document.getElementById(badgeId);
-    if (badge) badge.style.display = isAll ? 'none' : '';
+    if (badge) badge.style.display = (isAll || window._personRankFilters[col] === null) ? 'none' : '';
     window._personRankPage = 1;
     zbPersonRankRender();
     zbPersonRankFilterClose();
@@ -7234,5 +7219,20 @@ document.addEventListener('DOMContentLoaded', function(){
   if (btn) btn.onclick = function(e){ e.stopPropagation(); zbOpenUpload(); };
 });
 </script>
+<!-- 质检人排名列筛选面板（挂body下避免fixed错位）-->
+<div id="personRankFilterPanel" style="display:none;position:fixed;z-index:9999;background:#fff;border:0.5px solid #e2e8f0;border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.14);min-width:200px;max-width:260px;">
+    <div style="padding:8px 10px;border-bottom:0.5px solid #e2e8f0;">
+        <input id="personRankFilterSearch" type="text" placeholder="搜索…" oninput="zbPersonRankFilterSearch()" style="width:100%;height:26px;border:0.5px solid #e2e8f0;border-radius:6px;font-size:12px;padding:0 8px;background:#f8fafc;color:#0f172a;outline:none;">
+    </div>
+    <div style="display:flex;gap:6px;padding:6px 10px;border-bottom:0.5px solid #e2e8f0;">
+        <button onclick="zbPersonRankFilterSelectAll()" style="flex:1;height:22px;font-size:11px;border-radius:5px;border:0.5px solid #e2e8f0;background:transparent;color:#64748b;cursor:pointer;">全选</button>
+        <button onclick="zbPersonRankFilterClear()" style="flex:1;height:22px;font-size:11px;border-radius:5px;border:0.5px solid #e2e8f0;background:transparent;color:#64748b;cursor:pointer;">清除</button>
+    </div>
+    <div id="personRankFilterList" style="max-height:200px;overflow-y:auto;padding:4px 0;"></div>
+    <div style="padding:6px 10px;border-top:0.5px solid #e2e8f0;display:flex;gap:6px;">
+        <button onclick="zbPersonRankFilterApply()" style="flex:1;height:26px;font-size:12px;border-radius:6px;border:none;background:#2563eb;color:#fff;cursor:pointer;font-weight:500;">确认</button>
+        <button onclick="zbPersonRankFilterClose()" style="height:26px;padding:0 10px;font-size:12px;border-radius:6px;border:0.5px solid #e2e8f0;background:transparent;color:#64748b;cursor:pointer;">取消</button>
+    </div>
+</div>
 </body>
 </html>
