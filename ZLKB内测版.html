@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.43D</title>
+    <title>培训部数据看板 v1.43E</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -483,7 +483,7 @@
         .rank-col-scroll::-webkit-scrollbar-thumb { background:var(--border-color); border-radius:2px; }
         .rank-col-scroll:hover::-webkit-scrollbar-thumb { background:#b0bec9; }
         .rank-row {
-            display:grid; grid-template-columns:24px 1fr 80px 48px 52px 50px;
+            display:grid; grid-template-columns:22px minmax(0,1fr) 70px 46px minmax(0,1fr) 50px;
             align-items:center; gap:4px;
             padding:7px 6px; border-radius:0;
             background:transparent; margin-bottom:0;
@@ -619,7 +619,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43D</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43E</div>
     </div>
   </nav>
 
@@ -5241,8 +5241,8 @@ function zbRenderSitePersonList() {
         topArr.sort(function(a,b){ return b.cnt-a.cnt; });
         var maxCnt = topArr.length ? topArr[0].cnt : 0;
         var kpiHtml = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
-            + '<div style="background:var(--kpi-bg);border-radius:10px;padding:10px 12px;cursor:pointer;" onclick="(function(){var d=window._sitePersonData||[];if(typeof openDetailWithData===\'function\')openDetailWithData(d,\'质检维度·涉及质检人（\'+d.length+\'条）\',false);})()" title="点击查看明细"><div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px;">涉及质检人</div><div style="font-size:17px;font-weight:500;color:#2563eb;">'+topArr.length+'</div></div>'
-            + '<div style="background:var(--kpi-bg);border-radius:10px;padding:10px 12px;cursor:pointer;" onclick="(function(){var d=window._sitePersonData||[];if(typeof openDetailWithData===\'function\')openDetailWithData(d,\'质检维度·差异台数合计（\'+totalDiff+\'条）\',false);})()" title="点击查看明细"><div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px;">差异台数合计</div><div style="font-size:17px;font-weight:500;color:#dc2626;">'+totalDiff+'</div></div>'
+            + '<div style="background:var(--kpi-bg);border-radius:10px;padding:10px 12px;cursor:pointer;" onclick="(function(){var d=window._sitePersonData||[];if(typeof openDetailWithData===\'function\')openDetailWithData(d,\'质检维度·全部差异（\'+d.length+\'条）\',false);})()" title="点击查看明细"><div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px;">涉及质检人</div><div style="font-size:17px;font-weight:500;color:#2563eb;">'+topArr.length+'</div></div>'
+            + '<div style="background:var(--kpi-bg);border-radius:10px;padding:10px 12px;cursor:pointer;" onclick="(function(){var d=window._sitePersonData||[];if(typeof openDetailWithData===\'function\')openDetailWithData(d,\'质检维度·全部差异（\'+d.length+\'条）\',false);})()" title="点击查看明细"><div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px;">差异台数合计</div><div style="font-size:17px;font-weight:500;color:#dc2626;">'+totalDiff+'</div></div>'
             + '<div style="background:var(--kpi-bg);border-radius:10px;padding:10px 12px;"><div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px;">最高个人差异</div><div style="font-size:17px;font-weight:500;">'+maxCnt+'台</div></div>'
             + '</div>';
         var dateLabel = (topStart&&topEnd) ? fmtShort(topStart)+'—'+fmtShort(topEnd)+'·累计' : '累计';
@@ -6883,7 +6883,7 @@ async function zbRefreshCloudManual() {
 
     var startTime = Date.now();
     try {
-        await zbLoadCloudData(true);  // 手动刷新走 API，绕过 CDN 缓存
+        await zbLoadCloudData(false);  // 走 raw CDN + 时间戳绕缓存，比 API 更快
         var elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
         zbSetCloudStatus('ok');
         // 更新刷新提示
