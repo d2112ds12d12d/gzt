@@ -1,6 +1,16 @@
 {
   "tasks": [
     {
+      "id": "mpgt7i7z4w4",
+      "title": "深圳大仓刘文超新人理论考试的成绩计算",
+      "tag": null,
+      "date": "05/22",
+      "done": false,
+      "status": "todo",
+      "priority": "normal",
+      "created": 1779447686399
+    },
+    {
       "id": "mpgjx1cqq6x",
       "title": "课件滞后性有点高啊（有效的标准是 5月13 日上线的 ，但是ppt 到了 22 号还没有改）",
       "tag": null,
