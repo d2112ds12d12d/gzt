@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.43J</title>
+    <title>培训部数据看板 v1.43L</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -619,7 +619,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43J</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43L</div>
     </div>
   </nav>
 
@@ -4134,8 +4134,8 @@ const ZB_TRAINER_MAP = {
     '转转-深圳智能验机中心': { '手机': ['曾权','王礼宇'], '四品类': ['李翊豪'] },
     '转转-青岛智能验机中心': { '手机': ['李广洲','秦震磊'], '四品类': ['李正浩'] },
     '转转-成都智能验机中心': { '手机': ['周榆清','潘天一'], '四品类': ['暂定'] },
-    '青岛后验中心仓':        { '手机': ['曾权','王礼宇'], '四品类': ['李翊豪'] },
-    '深圳后验中心仓':        { '手机': ['李广洲','秦震磊'], '四品类': ['李正浩'] },
+    '青岛后验中心仓':        { '手机': ['李广洲','秦震磊'], '四品类': ['李正浩'] },
+    '深圳后验中心仓':        { '手机': ['曾权','王礼宇'], '四品类': ['李翊豪'] },
     '成都后验中心仓':        { '手机': ['周榆清','潘天一'], '四品类': ['暂定'] },
     '南昌库':    { '全部': ['张永童'] },
     '襄阳中心仓':{ '全部': ['程襄荆'] },
@@ -6180,10 +6180,13 @@ function zbEditRenderTable() {
     var html = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">'
         + '<span style="font-size:11px;color:#64748b;">找到 <b>'+results.length+'</b> 条记录'
         + (pendingEdit?' · <span style="color:#2563eb;">'+pendingEdit+'条有改动</span>':'')
-        + (pendingDel?' · <span style="color:#dc2626;">'+pendingDel+'条待删除</span>':'')
+        + (pendingDel?' · <span style="color:#dc2626;font-weight:500;">'+pendingDel+'条待删除</span>':'')
         + '</span>'
         + '<div style="display:flex;gap:6px;">'
         + '<button onclick="zbEditClearAll()" style="height:32px;padding:0 12px;border-radius:8px;background:transparent;color:#64748b;border:1px solid #dce6f5;font-size:12px;cursor:pointer;">重置</button>'
+        + (pendingDel > 0
+            ? '<button onclick="zbEditSavePush()" style="height:32px;padding:0 14px;border-radius:8px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:12px;cursor:pointer;font-weight:500;display:flex;align-items:center;gap:5px;"><svg width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\'><polyline points=\'3 6 5 6 21 6\'/><path d=\'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2\'/></svg>删除勾选（'+pendingDel+'）</button>'
+            : '<button disabled style="height:32px;padding:0 14px;border-radius:8px;background:#f8fafc;color:#94a3b8;border:1px solid #e2e8f0;font-size:12px;cursor:not-allowed;display:flex;align-items:center;gap:5px;"><svg width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\'><polyline points=\'3 6 5 6 21 6\'/><path d=\'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2\'/></svg>删除勾选（0）</button>')
         + '<button onclick="zbEditSavePush()" style="height:32px;padding:0 14px;border-radius:8px;background:#2563eb;color:#fff;border:none;font-size:12px;cursor:pointer;font-weight:500;">💾 保存并推送</button>'
         + '</div></div>';
 
@@ -6333,8 +6336,23 @@ function _doEditSave() {
     delArr.forEach(function(i){ allDiff.splice(i,1); });
     window._allDiffData = allDiff;
 
-    // 记录撤回快照到localStorage
-    var snap = { ts:Date.now(), edits:Object.keys(_zbEditChanges).length, deletes:_zbEditDeletes.size, code:(_zbEditResults[0]||{}).code||'', canRevert:true };
+    // 记录撤回快照到localStorage，含字段级改前改后
+    var fieldDiffs = [];
+    Object.keys(_zbEditChanges).forEach(function(key) {
+        var idx = parseInt(key.split('_')[0]);
+        var origRow = _zbEditResults[idx];
+        if (!origRow) return;
+        var changes = _zbEditChanges[key];
+        Object.keys(changes).forEach(function(field) {
+            fieldDiffs.push({
+                code: origRow.code || key,
+                field: (typeof ZB_EDIT_LABELS !== 'undefined' && ZB_EDIT_LABELS[field]) || field,
+                from: origRow[field] || '—',
+                to: changes[field] || '—'
+            });
+        });
+    });
+    var snap = { ts:Date.now(), edits:Object.keys(_zbEditChanges).length, deletes:_zbEditDeletes.size, code:(_zbEditResults[0]||{}).code||'', canRevert:true, fieldDiffs: fieldDiffs };
     var editLog = JSON.parse(localStorage.getItem('zb_edit_log')||'[]');
     editLog.push(snap);
     localStorage.setItem('zb_edit_log', JSON.stringify(editLog.slice(-50)));
@@ -6997,15 +7015,20 @@ function _zbRenderLog(){
     var realIdx = editLog.length - 1 - idx;
     var ts = new Date(log.ts);
     var tStr = ts.getFullYear()+'/'+(ts.getMonth()+1)+'/'+ts.getDate()+' '+('0'+ts.getHours()).slice(-2)+':'+('0'+ts.getMinutes()).slice(-2);
-    eHtml += '<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:0.5px solid var(--border-color);">'
-      +'<div style="flex:1;font-size:11px;color:var(--text-primary);">'
-      +'<span style="color:var(--text-secondary);">'+tStr+'</span>'
-      +(log.edits?' &nbsp;修改 <b>'+log.edits+'</b> 条':'')
-      +(log.deletes?' &nbsp;删除 <b>'+log.deletes+'</b> 条':'')
-      +(log.code?' &nbsp;<span style="color:#94a3b8;font-size:10px;">'+log.code+'</span>':'')
-      +'</div>'
-      +'<button onclick="zbRevertEdit('+realIdx+')" style="height:26px;padding:0 10px;border-radius:6px;border:0.5px solid #fca5a5;background:#fef2f2;color:#dc2626;font-size:11px;cursor:pointer;flex-shrink:0;">↩ 撤回</button>'
-      +'</div>';
+    var diffTagsHtml = '';
+    if (log.fieldDiffs && log.fieldDiffs.length) {
+        diffTagsHtml = '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;">'
+            + log.fieldDiffs.map(function(d) {
+                return '<div style="display:flex;align-items:center;gap:3px;font-size:11px;padding:2px 7px;background:#f8fafc;border-radius:6px;border:0.5px solid #e2e8f0;">'
+                    + '<span style="color:#64748b;">' + d.field + '</span>'
+                    + '&nbsp;<span style="color:#dc2626;text-decoration:line-through;">' + d.from + '</span>'
+                    + '&nbsp;<span style="color:#94a3b8;">→</span>&nbsp;'
+                    + '<span style="color:#16a34a;">' + d.to + '</span>'
+                    + '</div>';
+            }).join('')
+            + '</div>';
+    }
+    eHtml += '<div style="padding:7px 0;border-bottom:0.5px solid var(--border-color);">'      +'<div style="display:flex;align-items:center;gap:8px;">'      +'<div style="flex:1;font-size:11px;color:var(--text-primary);">'      +'<span style="color:var(--text-secondary);">'+tStr+'</span>'      +(log.edits?' &nbsp;修改 <b>'+log.edits+'</b> 条':'')      +(log.deletes?' &nbsp;删除 <b>'+log.deletes+'</b> 条':'')      +(log.code?' &nbsp;<span style="color:#2563eb;background:#eff6ff;padding:1px 6px;border-radius:10px;font-size:10px;">'+log.code+'</span>':'')      +'</div>'      +'<button onclick="zbRevertEdit('+realIdx+')" style="height:26px;padding:0 10px;border-radius:6px;border:0.5px solid #fca5a5;background:#fef2f2;color:#dc2626;font-size:11px;cursor:pointer;flex-shrink:0;">↩ 撤回</button>'      +'</div>'      +diffTagsHtml      +'</div>';
   });
   eHtml += '</div>';
   editLogEl.innerHTML = eHtml;
