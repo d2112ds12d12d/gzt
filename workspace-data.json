@@ -2,13 +2,15 @@
   "tasks": [
     {
       "id": "mpgjx1cqq6x",
-      "title": "课件滞后性有点高啊（有效的标准改了，但是ppt）",
+      "title": "课件滞后性有点高啊（有效的标准是 5月13 日上线的 ，但是ppt 到了 22 号还没有改）",
       "tag": null,
       "date": "05/22",
       "done": false,
       "status": "todo",
       "priority": "normal",
-      "created": 1779432081434
+      "created": 1779432081434,
+      "note": "",
+      "links": []
     },
     {
       "id": "mpggw5dqjso",
