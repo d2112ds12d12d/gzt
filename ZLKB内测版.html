@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.42</title>
+    <title>培训部数据看板 v1.43</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -618,7 +618,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.42</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43</div>
     </div>
   </nav>
 
@@ -765,7 +765,7 @@
                 <table style="width:100%;border-collapse:collapse;">
                     <thead>
                         <tr style="background:var(--kpi-bg);border-bottom:0.5px solid var(--border-color);">
-                            <th style="padding:8px 16px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);width:48px;">#</th>
+                            <th style="padding:8px 16px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);width:80px;">全国 / 仓内</th>
                             <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);cursor:pointer;user-select:none;" onclick="zbPersonRankFilterOpen('person',this)">质检人 <span id="personFilterBadge" style="font-size:10px;color:#2563eb;display:none;">▾</span> <span style="font-size:10px;color:var(--text-tertiary);">▾</span></th>
                             <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);cursor:pointer;user-select:none;" onclick="zbPersonRankFilterOpen('wh',this)">所属仓 <span id="whFilterBadge" style="font-size:10px;color:#2563eb;display:none;">▾</span> <span style="font-size:10px;color:var(--text-tertiary);">▾</span></th>
                             <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);cursor:pointer;user-select:none;" onclick="zbPersonRankFilterOpen('type',this)">站点类型 <span id="typeFilterBadge" style="font-size:10px;color:#2563eb;display:none;">▾</span> <span style="font-size:10px;color:var(--text-tertiary);">▾</span></th>
@@ -2299,12 +2299,19 @@
                         const noTxt = r.isFixed ? '—' : String(i+1);
                         const color = rateColor(r.rate);
                         const pct = maxRate > 0 && r.rate !== null ? (r.rate / maxRate * 100).toFixed(0) : 0;
+                        const trainers = (typeof ZB_TRAINER_MAP !== 'undefined' && ZB_TRAINER_MAP[r.site]) ? ZB_TRAINER_MAP[r.site] : [];
+                        const trainerHtml = trainers.length
+                            ? `<div style="font-size:10px;color:#2563eb;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">培训师：${trainers.join('/')}</div>`
+                            : '';
                         const metaHtml = (r.checks !== undefined)
                             ? `<div style="font-size:10px;color:var(--text-secondary);line-height:1.6;text-align:right;white-space:nowrap;min-width:90px;">大盘 ${r.checks}台 · 客观执行 ${r.execDiff}台</div>`
                             : '';
                         return `<div class="rank-row" data-site="${r.site}" onclick="zbClickRankSite(this)" style="cursor:pointer;">
                             <div class="rank-no ${noCls}">${noTxt}</div>
-                            <div class="rank-name" title="${r.site}">${r.site}</div>
+                            <div class="rank-name" title="${r.site}" style="min-width:0;overflow:hidden;">
+                                <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.site}</div>
+                                ${trainerHtml}
+                            </div>
                             <div class="rank-bar-wrap"><div class="rank-bar-inner" style="width:${pct}%;background:${color}"></div></div>
                             <div class="rank-rate" style="color:${color}">${r.rate !== null ? r.rate.toFixed(2)+'%' : '—'}</div>
                             ${metaHtml}
@@ -2315,12 +2322,13 @@
 
                 const zxMax = Math.max(...zxDynRows.map(r=>r.rate||0), 0.001);
                 const dwMax = Math.max(...dwDynRows.map(r=>r.rate||0), ...dwFixRows.map(r=>r.rate||0), 0.001);
-                document.getElementById('rankBoardDW').innerHTML = renderRows(dwDynRows, dwMax);
+                const globalMax = Math.max(zxMax, dwMax);
+                document.getElementById('rankBoardDW').innerHTML = renderRows(dwDynRows, globalMax);
                 var houyanEl = document.getElementById('rankBoardHouyan');
                 var houyanLabel = document.getElementById('rankHouyanLabel');
-                if (houyanEl) houyanEl.innerHTML = dwFixRows.length ? renderRows(dwFixRows, dwMax) : '';
+                if (houyanEl) houyanEl.innerHTML = dwFixRows.length ? renderRows(dwFixRows, globalMax) : '';
                 if (houyanLabel) houyanLabel.style.display = dwFixRows.length ? '' : 'none';
-                document.getElementById('rankBoardZX').innerHTML = renderRows(zxDynRows, zxMax);
+                document.getElementById('rankBoardZX').innerHTML = renderRows(zxDynRows, globalMax);
 
                 // 站点类型联动：控制大仓/中心仓区块显隐
                 (function applyRankSiteTypeFilter() {
@@ -2398,16 +2406,26 @@
                     var map = {};
                     rows.forEach(function(d) {
                         var key = (d.level3||'未知') + '||' + (d.level1||'');
-                        if (!map[key]) map[key] = { level3: d.level3||'未知', level1: d.level1||'', codes: new Set() };
+                        if (!map[key]) map[key] = { level3: d.level3||'未知', level1: d.level1||'', level2: d.level2||'', codes: new Set() };
                         if (d.code) map[key].codes.add(d.code);
                     });
                     var result = {};
                     Object.keys(map).forEach(function(k){ result[k] = map[k].codes.size; });
                     return result;
                 }
+                // 同时建level2映射
+                function buildLevel2Map(rows) {
+                    var map = {};
+                    rows.forEach(function(d) {
+                        var key = (d.level3||'未知') + '||' + (d.level1||'');
+                        if (!map[key]) map[key] = d.level2||'';
+                    });
+                    return map;
+                }
 
                 var thisMap = groupByItem(thisWeek);
                 var lastMap = groupByItem(lastWeek);
+                var level2Map = buildLevel2Map(thisWeek.concat(lastWeek));
                 var allKeys = new Set(Object.keys(thisMap).concat(Object.keys(lastMap)));
 
                 // 构建行数据
@@ -2415,7 +2433,7 @@
                 allKeys.forEach(function(key) {
                     var parts = key.split('||');
                     var tw = thisMap[key]||0, lw = lastMap[key]||0;
-                    rows.push({ key:key, level3:parts[0], level1:parts[1], thisWeek:tw, lastWeek:lw, delta:tw-lw });
+                    rows.push({ key:key, level3:parts[0], level1:parts[1], level2: level2Map[key]||'', thisWeek:tw, lastWeek:lw, delta:tw-lw });
                 });
                 // 排序：本周数量降序，本周0的按上周降序
                 rows.sort(function(a,b){
@@ -2607,11 +2625,11 @@
                         var dt = (d.date||'').split(' ')[0];
                         if (dt < s || dt > e) return;
                         var key = d.level3 || '未知';
-                        if (!map[key]) map[key] = { level3: key, level1: d.level1||'', codes: new Set() };
+                        if (!map[key]) map[key] = { level3: key, level1: d.level1||'', level2: d.level2||'', codes: new Set() };
                         if (d.code) map[key].codes.add(d.code);
                         else map[key].codes.add(Math.random()); // 无码时按行计
                     });
-                    return Object.values(map).map(function(v){ return { level3: v.level3, level1: v.level1, cnt: v.codes.size }; });
+                    return Object.values(map).map(function(v){ return { level3: v.level3, level1: v.level1, level2: v.level2, cnt: v.codes.size }; });
                 }
 
                 var curItems  = aggregateByLevel3(base, curStart, curEnd);
@@ -2632,6 +2650,7 @@
                     merged.push({
                         level3: key,
                         level1: curItem ? curItem.level1 : (prevItems.find(function(v){ return v.level3 === key; })||{}).level1||'',
+                        level2: curItem ? curItem.level2 : (prevItems.find(function(v){ return v.level3 === key; })||{}).level2||'',
                         prev: prevCnt,
                         cur:  curCnt,
                         delta: delta,
@@ -2722,7 +2741,7 @@
 
                         html += '<tr style="border-bottom:0.5px solid #f1f5f9;cursor:pointer;transition:background 0.12s;" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'\'" onclick="zbNavToHotspotDetail(\'' + level3Escaped + '\',\'' + level1Escaped + '\',\'' + deltaEscaped + '\')">'
                             + '<td style="padding:6px 7px;"><span style="width:20px;height:20px;border-radius:5px;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;background:' + rkBg + ';color:' + rkColor + ';">' + rank + '</span></td>'
-                            + '<td style="padding:6px 7px;font-size:12px;font-weight:' + (v.delta > 0 ? '500' : '400') + ';">' + (v.level3||'未知') + newTag + '</td>'
+                            + '<td style="padding:6px 7px;font-size:12px;font-weight:' + (v.delta > 0 ? '500' : '400') + ';">' + (v.level2 ? v.level2 + '-' + (v.level3||'未知') : (v.level3||'未知')) + newTag + '</td>'
                             + '<td style="padding:6px 7px;"><span style="font-size:10px;padding:1px 5px;border-radius:4px;border:0.5px solid #e2e8f0;color:#64748b;background:#f8fafc;">' + (v.level1||'—') + '</span></td>'
                             + '<td style="text-align:center;padding:6px 7px;color:#94a3b8;font-size:11px;">' + (v.prev || '—') + '</td>'
                             + '<td style="text-align:center;padding:6px 7px;font-weight:500;color:' + curColor + ';font-size:12px;">' + v.cur + '</td>'
@@ -3384,10 +3403,23 @@
                 window._personRankPage = page;
                 var pageList = list.slice((page-1)*pageSize, page*pageSize);
                 var noClsMap = ['top1','top2','top3'];
+                // 计算仓内排名：按whName分组，组内按total降序排
+                var whRankMap = {}; // personName -> 仓内第几名
+                var whGroups = {};
+                list.forEach(function(p) {
+                    var wh = Array.from(p.whs||[])[0] || '—';
+                    if (!whGroups[wh]) whGroups[wh] = [];
+                    whGroups[wh].push(p);
+                });
+                Object.keys(whGroups).forEach(function(wh) {
+                    whGroups[wh].sort(function(a,b){ return b.total - a.total; });
+                    whGroups[wh].forEach(function(p, i){ whRankMap[p.name] = i + 1; });
+                });
                 el.innerHTML = pageList.map(function(p, idx) {
                     var globalIdx = (page-1)*pageSize + idx;
                     var rankNo = globalIdx + 1;
-                    // 排名圆圈样式
+                    var whRank = whRankMap[p.name] || 1;
+                    // 全国排名圆圈样式
                     var noBg = rankNo===1?'#FAC775':rankNo===2?'#D3D1C7':rankNo===3?'#F5C4B3':'var(--kpi-bg)';
                     var noColor = rankNo===1?'#633806':rankNo===2?'#2C2C2A':rankNo===3?'#4A1B0C':'var(--text-tertiary)';
                     var noWeight = rankNo<=3?'600':'400';
@@ -3406,7 +3438,11 @@
                     var typeColor = siteType === 'DW' ? '#633806' : '#0F6E56';
                     return '<tr style="border-top:0.5px solid var(--border-color);" data-person="' + p.name.replace(/"/g,'&quot;') + '">'
                         + '<td style="padding:10px 16px;">'
-                          + '<div style="width:24px;height:24px;border-radius:50%;background:'+noBg+';color:'+noColor+';font-size:11px;font-weight:'+noWeight+';display:flex;align-items:center;justify-content:center;">' + rankNo + '</div>'
+                          + '<div style="display:flex;align-items:center;gap:4px;">'
+                            + '<div style="width:24px;height:24px;border-radius:50%;background:'+noBg+';color:'+noColor+';font-size:11px;font-weight:'+noWeight+';display:flex;align-items:center;justify-content:center;flex-shrink:0;">' + rankNo + '</div>'
+                            + '<span style="font-size:10px;color:#94a3b8;">/</span>'
+                            + '<span style="font-size:10px;color:#94a3b8;background:var(--kpi-bg);padding:1px 5px;border-radius:4px;white-space:nowrap;">仓#'+whRank+'</span>'
+                          + '</div>'
                         + '</td>'
                         + '<td style="padding:10px 12px;font-size:13px;font-weight:'+(rankNo<=3?'500':'400')+';color:var(--text-primary);">' + p.name + '</td>'
                         + '<td style="padding:10px 12px;font-size:12px;color:var(--text-secondary);">' + whName + '</td>'
@@ -4033,6 +4069,33 @@
 // GitHub 云端配置
 // ══════════════════════════════════════════
 const GH_USER = 'd2112ds12d12d', GH_REPO = 'Qgkb', GH_FOLDER = 'QGZLdata';
+
+// 培训师对应关系（固定数据）
+const ZB_TRAINER_MAP = {
+    '转转-深圳智能验机中心': ['曾权','王礼宇','李翊豪'],
+    '转转-青岛智能验机中心': ['李广洲','秦震磊','李正浩'],
+    '转转-成都智能验机中心': ['周榆清','潘天一','暂定'],
+    '青岛后验中心仓':        ['曾权','王礼宇','李翊豪'],
+    '深圳后验中心仓':        ['李广洲','秦震磊','李正浩'],
+    '成都后验中心仓':        ['周榆清','潘天一','暂定'],
+    '南昌库':    ['张永童'],
+    '襄阳中心仓':['程襄荆'],
+    '武汉库':    ['宗飞飞'],
+    '济南库':    ['赵圣林'],
+    '石家庄库':  ['韩子申'],
+    '杭州库':    ['韩昊'],
+    '长沙库':    ['李忠'],
+    '重庆库':    ['何袁袁'],
+    '郑州库':    ['陈中民'],
+    '合肥库':    ['袁续'],
+    '深圳中心仓':['杨佳丹'],
+    '西安库':    ['左成龙'],
+    '福州库':    ['岳丰平'],
+    '沈阳库':    ['孟德强'],
+    '昆明库':    ['田睿'],
+    '南京库':    ['付轲'],
+    '成都库':    ['张兴']
+};
 const GH_FILES = {
     qa:       'qa_diff_rate.json',
     diff5:    'phone_diff_detail.json',
@@ -5602,16 +5665,16 @@ document.addEventListener('DOMContentLoaded', function() {
         siteKpiRow.addEventListener('click', function(e) {
             var item = e.target.closest('[data-site-kpi]');
             if (!item) return;
-            var kpiType = item.dataset.siteKpi;
+            var filterKey = item.dataset.siteKpi;
             var diff = siteKpiRow._siteDiff || [];
             var sn   = siteKpiRow._siteName || '';
-            var typeMap = { '总差异量':'total','客观差异量':'obj','主观差异量':'subj','客观执行差异率':'exec','涉及质检人数':'person' };
             var filters = siteKpiRow._filters || {};
-            var fn = filters[typeMap[kpiType]];
+            var fn = filters[filterKey];
             if (!fn) return;
             var filtered = diff.filter(fn);
+            var labelMap = { total:'全部差异', obj:'客观差异', subj:'主观差异', exec:'客观执行差异', person:'涉及质检人' };
             if (typeof openDetailWithData === 'function') {
-                openDetailWithData(filtered, '🏢 ' + sn + ' · ' + kpiType + '（' + filtered.length + '条）', false);
+                openDetailWithData(filtered, '🏢 ' + sn + ' · ' + (labelMap[filterKey]||filterKey) + '（' + filtered.length + '条）', false);
             }
         });
     }
@@ -6436,8 +6499,11 @@ window.zbPersonRankFilterOpen = function(col, thEl) {
     zbPersonRankFilterSearch();
     // 定位面板到列头下方
     var rect = thEl.getBoundingClientRect();
-    panel.style.top = (rect.bottom + 4) + 'px';
-    panel.style.left = Math.min(rect.left, window.innerWidth - 270) + 'px';
+    var panelH = 300; // 估算面板高度
+    var topPos = rect.bottom + 4;
+    if (topPos + panelH > window.innerHeight) topPos = rect.top - panelH - 4;
+    panel.style.top = Math.max(8, topPos) + 'px';
+    panel.style.left = Math.min(Math.max(8, rect.left), window.innerWidth - 270) + 'px';
     panel.style.display = '';
     // 点其他地方关闭
     setTimeout(function() {
