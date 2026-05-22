@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.43</title>
+    <title>培训部数据看板 v1.43A</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -618,7 +618,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43A</div>
     </div>
   </nav>
 
@@ -2299,9 +2299,10 @@
                         const noTxt = r.isFixed ? '—' : String(i+1);
                         const color = rateColor(r.rate);
                         const pct = maxRate > 0 && r.rate !== null ? (r.rate / maxRate * 100).toFixed(0) : 0;
-                        const trainers = (typeof ZB_TRAINER_MAP !== 'undefined' && ZB_TRAINER_MAP[r.site]) ? ZB_TRAINER_MAP[r.site] : [];
+                        const activeCat = window._activeCat || '';
+                        const trainers = (typeof zbGetTrainers === 'function') ? zbGetTrainers(r.site, activeCat) : [];
                         const trainerHtml = trainers.length
-                            ? `<div style="font-size:10px;color:#2563eb;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">培训师：${trainers.join('/')}</div>`
+                            ? `<div style="font-size:10px;color:#94a3b8;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">培训师：${trainers.join('/')}</div>`
                             : '';
                         const metaHtml = (r.checks !== undefined)
                             ? `<div style="font-size:10px;color:var(--text-secondary);line-height:1.6;text-align:right;white-space:nowrap;min-width:90px;">大盘 ${r.checks}台 · 客观执行 ${r.execDiff}台</div>`
@@ -4070,32 +4071,46 @@
 // ══════════════════════════════════════════
 const GH_USER = 'd2112ds12d12d', GH_REPO = 'Qgkb', GH_FOLDER = 'QGZLdata';
 
-// 培训师对应关系（固定数据）
+// 培训师对应关系（固定数据）格式：{ 站点: { 手机: [...], 四品类: [...] } }
 const ZB_TRAINER_MAP = {
-    '转转-深圳智能验机中心': ['曾权','王礼宇','李翊豪'],
-    '转转-青岛智能验机中心': ['李广洲','秦震磊','李正浩'],
-    '转转-成都智能验机中心': ['周榆清','潘天一','暂定'],
-    '青岛后验中心仓':        ['曾权','王礼宇','李翊豪'],
-    '深圳后验中心仓':        ['李广洲','秦震磊','李正浩'],
-    '成都后验中心仓':        ['周榆清','潘天一','暂定'],
-    '南昌库':    ['张永童'],
-    '襄阳中心仓':['程襄荆'],
-    '武汉库':    ['宗飞飞'],
-    '济南库':    ['赵圣林'],
-    '石家庄库':  ['韩子申'],
-    '杭州库':    ['韩昊'],
-    '长沙库':    ['李忠'],
-    '重庆库':    ['何袁袁'],
-    '郑州库':    ['陈中民'],
-    '合肥库':    ['袁续'],
-    '深圳中心仓':['杨佳丹'],
-    '西安库':    ['左成龙'],
-    '福州库':    ['岳丰平'],
-    '沈阳库':    ['孟德强'],
-    '昆明库':    ['田睿'],
-    '南京库':    ['付轲'],
-    '成都库':    ['张兴']
+    '转转-深圳智能验机中心': { '手机': ['曾权'], '四品类': ['王礼宇','李翊豪'] },
+    '转转-青岛智能验机中心': { '手机': ['李广洲'], '四品类': ['秦震磊','李正浩'] },
+    '转转-成都智能验机中心': { '手机': ['周榆清'], '四品类': ['潘天一','暂定'] },
+    '青岛后验中心仓':        { '手机': ['曾权'], '四品类': ['王礼宇','李翊豪'] },
+    '深圳后验中心仓':        { '手机': ['李广洲'], '四品类': ['秦震磊','李正浩'] },
+    '成都后验中心仓':        { '手机': ['周榆清'], '四品类': ['潘天一','暂定'] },
+    '南昌库':    { '全部': ['张永童'] },
+    '襄阳中心仓':{ '全部': ['程襄荆'] },
+    '武汉库':    { '全部': ['宗飞飞'] },
+    '济南库':    { '全部': ['赵圣林'] },
+    '石家庄库':  { '全部': ['韩子申'] },
+    '杭州库':    { '全部': ['韩昊'] },
+    '长沙库':    { '全部': ['李忠'] },
+    '重庆库':    { '全部': ['何袁袁'] },
+    '郑州库':    { '全部': ['陈中民'] },
+    '合肥库':    { '全部': ['袁续'] },
+    '深圳中心仓':{ '全部': ['杨佳丹'] },
+    '西安库':    { '全部': ['左成龙'] },
+    '福州库':    { '全部': ['岳丰平'] },
+    '沈阳库':    { '全部': ['孟德强'] },
+    '昆明库':    { '全部': ['田睿'] },
+    '南京库':    { '全部': ['付轲'] },
+    '成都库':    { '全部': ['张兴'] }
 };
+// 按当前品类取培训师名单
+function zbGetTrainers(siteName, cat) {
+    var map = ZB_TRAINER_MAP[siteName];
+    if (!map) return [];
+    if (map['全部']) return map['全部'];
+    // 大仓按品类匹配
+    var isMobile = !cat || cat === '手机';
+    if (isMobile && map['手机']) return map['手机'];
+    if (!isMobile && map['四品类']) return map['四品类'];
+    // 全部品类时都显示
+    var all = [];
+    Object.values(map).forEach(function(arr){ arr.forEach(function(t){ if(all.indexOf(t)===-1) all.push(t); }); });
+    return all;
+}
 const GH_FILES = {
     qa:       'qa_diff_rate.json',
     diff5:    'phone_diff_detail.json',
