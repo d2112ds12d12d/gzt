@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.43I</title>
+    <title>培训部数据看板 v1.43J</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -619,7 +619,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43I</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43J</div>
     </div>
   </nav>
 
@@ -905,16 +905,6 @@
                 <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
                   <button id="siteBackBtn" style="display:inline-flex;align-items:center;gap:6px;padding:7px 16px;border-radius:20px;border:1px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);font-size:12px;font-weight:600;cursor:pointer;transition:all 0.15s;">← 返回总览</button>
                   <div id="siteDetailTitle" style="font-size:1.1rem;font-weight:700;color:var(--text-primary);">站点详情</div>
-                  <div style="margin-left:auto;display:flex;align-items:center;gap:10px;">
-                    <span style="font-size:12px;color:var(--text-secondary);font-weight:500;">数据口径</span>
-                    <div id="siteDataScopeTab" style="display:flex;background:var(--kpi-bg);border-radius:9px;padding:2px;gap:2px;border:0.5px solid var(--border-color);">
-                      <button data-scope="exec"  style="font-size:12px;padding:5px 14px;border-radius:7px;border:none;cursor:pointer;background:#fff;color:#2563eb;font-weight:600;box-shadow:0 1px 4px rgba(100,120,180,0.12);">客观执行</button>
-                      <button data-scope="obj"   style="font-size:12px;padding:5px 14px;border-radius:7px;border:none;cursor:pointer;background:transparent;color:var(--text-secondary);">客观整体</button>
-                      <button data-scope="subj"  style="font-size:12px;padding:5px 14px;border-radius:7px;border:none;cursor:pointer;background:transparent;color:var(--text-secondary);">主观</button>
-                      <button data-scope="all"   style="font-size:12px;padding:5px 14px;border-radius:7px;border:none;cursor:pointer;background:transparent;color:var(--text-secondary);">全部</button>
-                    </div>
-                    <div style="font-size:11px;color:#2563eb;background:#eff6ff;border-radius:6px;padding:4px 10px;border:0.5px solid #bfdbfe;" id="siteDataScopeHint">当前：客观执行 · 全页联动</div>
-                  </div>
                 </div>
               </div>
               <!-- KPI 小卡片行 -->
@@ -6568,11 +6558,13 @@ window._personRankFilterTemp = new Set();
 
 window.zbPersonRankFilterOpen = function(col, thEl) {
     var panel = document.getElementById('personRankFilterPanel');
-    // 已经打开且是同一列 → 关闭
-    if (panel && panel.style.display !== 'none' && window._personRankFilterCol === col) {
+    // 用_lastOpenCol判断是否同列再点，避免mousedown时序问题
+    if (window._personRankLastOpenCol === col && panel && panel.style.display !== 'none') {
+        window._personRankLastOpenCol = null;
         zbPersonRankFilterClose();
         return;
     }
+    window._personRankLastOpenCol = col;
     window._personRankFilterCol = col;
     var data = window._personRankData || [];
     var vals = new Set();
@@ -6655,6 +6647,7 @@ window.zbPersonRankFilterApply = function() {
 window.zbPersonRankFilterClose = function() {
     var panel = document.getElementById('personRankFilterPanel');
     if (panel) panel.style.display = 'none';
+    window._personRankLastOpenCol = null;
     document.removeEventListener('mousedown', zbPersonRankFilterOutside);
 };
 
