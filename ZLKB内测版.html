@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.43G</title>
+    <title>培训部数据看板 v1.43H</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -619,7 +619,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43G</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43H</div>
     </div>
   </nav>
 
@@ -702,7 +702,35 @@
                     <span class="cat-tab" id="globalSiteType-DW" data-site-type="DW">大仓</span>
                     <span class="cat-tab" id="globalSiteType-ZX" data-site-type="ZX" id="siteTypeGroup">中心仓</span>
                     <div class="sticky-divider"></div>
+                    <!-- 口径折叠标签 -->
+                    <div id="zbKouJingTag" onclick="zbToggleKouJingDropdown()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;background:#eff6ff;border:0.5px solid #bfdbfe;cursor:pointer;flex-shrink:0;user-select:none;white-space:nowrap;">
+                        <div id="zbKouJingDot" style="width:6px;height:6px;border-radius:50%;background:#2563eb;flex-shrink:0;"></div>
+                        <span id="zbKouJingLabel" style="font-size:11px;color:#1d4ed8;font-weight:500;">口径：客观执行</span>
+                        <svg id="zbKouJingArrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5" style="flex-shrink:0;transition:transform .2s;"><polyline points="6 9 12 15 18 9"/></svg>
+                    </div>
+                    <div class="sticky-divider"></div>
                     <button id="zbQueryBtn" onclick="zbDoQuery()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:500;background:#fff;color:#2563eb;border:1.5px solid #2563eb;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;" onmouseenter="this.style.background='#eff6ff'" onmouseleave="this.style.background='#fff'">→ 查询</button>
+                </div>
+            </div>
+            <!-- 口径下拉面板 -->
+            <div id="zbKouJingDropdown" style="display:none;position:fixed;z-index:9000;background:#fff;border:0.5px solid #e2e8f0;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,.12);min-width:160px;padding:6px;">
+                <div style="font-size:10px;color:#94a3b8;padding:4px 8px 6px;letter-spacing:.04em;">选择数据口径</div>
+                <div class="zb-kj-item" data-kj="exec" data-color="#2563eb" data-bg="#eff6ff" data-border="#bfdbfe" data-label="客观执行" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;background:#eff6ff;cursor:pointer;border:0.5px solid #bfdbfe;">
+                    <div style="width:6px;height:6px;border-radius:50%;background:#2563eb;flex-shrink:0;"></div>
+                    <span style="font-size:12px;color:#1d4ed8;font-weight:500;flex:1;">客观执行</span>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                </div>
+                <div class="zb-kj-item" data-kj="obj" data-color="#0f6e56" data-bg="#e1f5ee" data-border="#9fe1cb" data-label="客观整体" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;cursor:pointer;">
+                    <div style="width:6px;height:6px;border-radius:50%;background:#10b981;flex-shrink:0;"></div>
+                    <span style="font-size:12px;color:var(--text-primary);flex:1;">客观整体</span>
+                </div>
+                <div class="zb-kj-item" data-kj="subj" data-color="#b45309" data-bg="#faeeda" data-border="#fac775" data-label="主观" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;cursor:pointer;">
+                    <div style="width:6px;height:6px;border-radius:50%;background:#f59e0b;flex-shrink:0;"></div>
+                    <span style="font-size:12px;color:var(--text-primary);flex:1;">主观</span>
+                </div>
+                <div class="zb-kj-item" data-kj="all" data-color="#64748b" data-bg="#f1f5f9" data-border="#e2e8f0" data-label="全部" style="display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:7px;cursor:pointer;">
+                    <div style="width:6px;height:6px;border-radius:50%;background:#94a3b8;flex-shrink:0;"></div>
+                    <span style="font-size:12px;color:var(--text-primary);flex:1;">全部</span>
                 </div>
             </div>
             <!-- 第二行：其他筛选 -->
@@ -5815,7 +5843,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- 日志弹窗 -->
 <div id="zbLogModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.45);z-index:800;align-items:center;justify-content:center;backdrop-filter:blur(6px);" onclick="if(event.target===this)zbCloseLog()">
-  <div style="background:var(--bg-card,#fff);border-radius:18px;width:680px;max-width:94vw;max-height:84vh;display:flex;flex-direction:column;border:1px solid var(--border-color);box-shadow:0 20px 40px rgba(0,0,0,0.2);overflow:hidden;">
+  <div style="background:var(--bg-card,#fff);border-radius:18px;width:960px;max-width:96vw;max-height:90vh;display:flex;flex-direction:column;border:1px solid var(--border-color);box-shadow:0 20px 40px rgba(0,0,0,0.2);overflow:hidden;">
     <!-- 头部 -->
     <div style="padding:16px 20px 0;flex-shrink:0;border-bottom:1px solid var(--border-color);">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
@@ -6121,7 +6149,7 @@ function zbEditRenderTable() {
         var hasEdit = !!_zbEditChanges[key];
         var rowBg = isDel ? 'background:#fef2f2;' : hasEdit ? 'background:#eff6ff;' : '';
         html += '<tr style="'+rowBg+'">'
-            + '<td style="text-align:center;padding:6px 8px;border-bottom:0.5px solid var(--border-color);"><input type="checkbox" class="zb-edit-chk" data-key="'+key+'" '+(isDel?'checked':'')+' onchange="zbEditMarkDel(\''+key+'\',this.checked)"></td>'
+            + '<td style="text-align:center;padding:6px 8px;border-bottom:0.5px solid var(--border-color);"><input type="checkbox" class="zb-edit-chk" data-key="'+key+'" '+(isDel?'checked':'')+' onchange="zbEditMarkDelByEl(this)"></td>'
             + '<td style="padding:6px 8px;border-bottom:0.5px solid var(--border-color);color:#94a3b8;white-space:nowrap;">'+( row.code||'—')+'</td>';
         FIELDS.forEach(function(f){
             var cur = (_zbEditChanges[key]&&_zbEditChanges[key][f]!==undefined) ? _zbEditChanges[key][f] : (row[f]||'');
@@ -6151,6 +6179,14 @@ function zbEditFieldChange(key, field, val) {
             +(pe?' · <span style="color:#2563eb;">'+pe+'条有改动</span>':'')
             +(pd?' · <span style="color:#dc2626;">'+pd+'条待删除</span>':'');
     }
+}
+
+function zbEditMarkDelByEl(el) {
+    var key = el.getAttribute('data-key');
+    if (!key) return;
+    if (el.checked) _zbEditDeletes.add(key);
+    else _zbEditDeletes.delete(key);
+    zbEditRenderTable();
 }
 
 function zbEditMarkDel(key, checked) {
@@ -6504,6 +6540,12 @@ window._personRankFilterCol = null;
 window._personRankFilterTemp = new Set();
 
 window.zbPersonRankFilterOpen = function(col, thEl) {
+    var panel = document.getElementById('personRankFilterPanel');
+    // 已经打开且是同一列 → 关闭
+    if (panel && panel.style.display !== 'none' && window._personRankFilterCol === col) {
+        zbPersonRankFilterClose();
+        return;
+    }
     window._personRankFilterCol = col;
     var data = window._personRankData || [];
     var vals = new Set();
@@ -6588,6 +6630,105 @@ window.zbPersonRankFilterClose = function() {
     if (panel) panel.style.display = 'none';
     document.removeEventListener('mousedown', zbPersonRankFilterOutside);
 };
+
+// ── 顶部口径折叠标签 ──
+window._zbGlobalKouJing = 'exec'; // 默认客观执行
+
+window.zbToggleKouJingDropdown = function() {
+    var dd = document.getElementById('zbKouJingDropdown');
+    var tag = document.getElementById('zbKouJingTag');
+    var arrow = document.getElementById('zbKouJingArrow');
+    if (!dd) return;
+    var isOpen = dd.style.display !== 'none';
+    if (isOpen) {
+        dd.style.display = 'none';
+        if (arrow) arrow.style.transform = '';
+        return;
+    }
+    // 定位到tag下方
+    var rect = tag ? tag.getBoundingClientRect() : { bottom: 60, left: 200 };
+    dd.style.top = (rect.bottom + 4) + 'px';
+    dd.style.left = Math.min(rect.left, window.innerWidth - 180) + 'px';
+    dd.style.display = 'block';
+    if (arrow) arrow.style.transform = 'rotate(180deg)';
+    setTimeout(function() {
+        document.addEventListener('mousedown', zbKouJingOutside);
+    }, 30);
+};
+
+window.zbKouJingOutside = function(e) {
+    var dd = document.getElementById('zbKouJingDropdown');
+    var tag = document.getElementById('zbKouJingTag');
+    if (dd && !dd.contains(e.target) && tag && !tag.contains(e.target)) {
+        dd.style.display = 'none';
+        var arrow = document.getElementById('zbKouJingArrow');
+        if (arrow) arrow.style.transform = '';
+        document.removeEventListener('mousedown', zbKouJingOutside);
+    }
+};
+
+// 点击口径选项
+document.addEventListener('click', function(e) {
+    var item = e.target.closest('.zb-kj-item');
+    if (!item) return;
+    var kj = item.dataset.kj;
+    var label = item.dataset.label;
+    var color = item.dataset.color || '#2563eb';
+    var bg = item.dataset.bg || '#eff6ff';
+    var border = item.dataset.border || '#bfdbfe';
+    window._zbGlobalKouJing = kj;
+
+    // 更新标签样式
+    var tag = document.getElementById('zbKouJingTag');
+    var dot = document.getElementById('zbKouJingDot');
+    var lbl = document.getElementById('zbKouJingLabel');
+    if (tag) { tag.style.background = bg; tag.style.borderColor = border; }
+    if (dot) dot.style.background = color;
+    if (lbl) { lbl.style.color = color; lbl.textContent = '口径：' + label; }
+    var arrow = document.getElementById('zbKouJingArrow');
+    if (arrow) { arrow.setAttribute('stroke', color); arrow.style.transform = ''; }
+
+    // 更新下拉选中状态
+    document.querySelectorAll('.zb-kj-item').forEach(function(el) {
+        var isActive = el.dataset.kj === kj;
+        el.style.background = isActive ? el.dataset.bg : '';
+        el.style.border = isActive ? '0.5px solid ' + el.dataset.border : '0.5px solid transparent';
+        var span = el.querySelector('span');
+        if (span) span.style.fontWeight = isActive ? '500' : '400';
+        var chk = el.querySelector('svg');
+        if (chk) chk.style.display = isActive ? '' : 'none';
+    });
+
+    // 关闭下拉
+    var dd = document.getElementById('zbKouJingDropdown');
+    if (dd) dd.style.display = 'none';
+    document.removeEventListener('mousedown', zbKouJingOutside);
+
+    // 阶段二：联动站点页面口径
+    var siteKJMap = { exec: '客观执行', obj: '客观整体', subj: '主观', all: '全部' };
+    var siteKJLabel = siteKJMap[kj] || '客观执行';
+    // 找站点页口径按钮并激活对应项
+    document.querySelectorAll('[onclick*="zbSwitchSiteKouJing"],[onclick*="zbSwitchKouJing"],[data-scope]').forEach(function(btn) {
+        var txt = btn.textContent.trim();
+        if (txt === siteKJLabel || btn.dataset.scope === kj) {
+            btn.click();
+        }
+    });
+    // 同步 window._siteDataScope
+    var scopeMap = { exec: 'exec', obj: 'obj_all', subj: 'subj', all: 'all' };
+    if (typeof window._siteDataScope !== 'undefined') {
+        window._siteDataScope = scopeMap[kj] || 'exec';
+    }
+    // 如果当前在站点页，重新渲染
+    var sitePage = document.getElementById('zb-page-site');
+    if (sitePage && sitePage.classList.contains('active')) {
+        var titleEl = document.getElementById('siteDetailTitle');
+        if (titleEl && typeof zbRenderSiteDetail === 'function') {
+            var sn = titleEl.textContent.replace(/\s*·\s*站点详情/, '').trim();
+            if (sn) zbRenderSiteDetail(sn);
+        }
+    }
+});
 
 function zbAddLog(entry) {
     if (!entry) return;
