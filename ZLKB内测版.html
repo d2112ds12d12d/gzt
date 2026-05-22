@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.43E</title>
+    <title>培训部数据看板 v1.43F</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -619,7 +619,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43E</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43F</div>
     </div>
   </nav>
 
@@ -5243,12 +5243,13 @@ function zbRenderSitePersonList() {
         var kpiHtml = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
             + '<div style="background:var(--kpi-bg);border-radius:10px;padding:10px 12px;cursor:pointer;" onclick="(function(){var d=window._sitePersonData||[];if(typeof openDetailWithData===\'function\')openDetailWithData(d,\'质检维度·全部差异（\'+d.length+\'条）\',false);})()" title="点击查看明细"><div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px;">涉及质检人</div><div style="font-size:17px;font-weight:500;color:#2563eb;">'+topArr.length+'</div></div>'
             + '<div style="background:var(--kpi-bg);border-radius:10px;padding:10px 12px;cursor:pointer;" onclick="(function(){var d=window._sitePersonData||[];if(typeof openDetailWithData===\'function\')openDetailWithData(d,\'质检维度·全部差异（\'+d.length+\'条）\',false);})()" title="点击查看明细"><div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px;">差异台数合计</div><div style="font-size:17px;font-weight:500;color:#dc2626;">'+totalDiff+'</div></div>'
-            + '<div style="background:var(--kpi-bg);border-radius:10px;padding:10px 12px;"><div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px;">最高个人差异</div><div style="font-size:17px;font-weight:500;">'+maxCnt+'台</div></div>'
+            + '<div style="background:var(--kpi-bg);border-radius:10px;padding:10px 12px;cursor:pointer;" onclick="(function(){var top=(window._sitePersonTopArr||[]);if(!top.length)return;var name=top[0].name;var d=(window._sitePersonData||[]).filter(function(r){return r.person===name;});if(typeof openDetailWithData===\'function\')openDetailWithData(d,\'👤 \'+name+\' · 最高个人差异（\'+d.length+\'条）\',false);})()" title="点击查看最高差异人明细"><div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px;">最高个人差异</div><div style="font-size:17px;font-weight:500;">'+maxCnt+'台</div></div>'
             + '</div>';
         var dateLabel = (topStart&&topEnd) ? fmtShort(topStart)+'—'+fmtShort(topEnd)+'·累计' : '累计';
         if (headEl) headEl.innerHTML = '<tr><th style="width:50px;">排名</th><th>质检人员</th><th style="text-align:center;color:#2563eb;width:140px;">差异台数（'+dateLabel+'）</th><th style="text-align:center;width:90px;">占比</th></tr>';
         var kpiWrap = document.getElementById('zbPersonKpiWrap');
         if (!kpiWrap) { kpiWrap=document.createElement('div'); kpiWrap.id='zbPersonKpiWrap'; var tw=bodyEl.closest('table'); if(tw) tw.parentNode.insertBefore(kpiWrap,tw); }
+        window._sitePersonTopArr = topArr; // 供最高个人差异色块点击用
         kpiWrap.innerHTML = kpiHtml;
         var pageSize=window._zbPersonPageSize||10, page=window._zbPersonPage||1;
         var totalPages=Math.max(1,Math.ceil(topArr.length/pageSize));
@@ -5680,13 +5681,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // 站点详情页：质检人列表点击 → 跳转质检人详情页（记录来源站点）
+    // 站点详情页：质检人列表点击 → 弹该质检人差异明细
     var sitePersonTable = document.getElementById('sitePersonTable');
     if (sitePersonTable) {
         sitePersonTable.addEventListener('click', function(e) {
             var tr = e.target.closest('tr[data-person]');
             if (!tr) return;
-            zbNavToPerson(tr.dataset.person, siteName);
+            var pName = tr.dataset.person;
+            var diff = (window._sitePersonData || []).filter(function(d){ return d.person === pName; });
+            if (diff.length && typeof openDetailWithData === 'function') {
+                openDetailWithData(diff, '👤 ' + pName + ' · 差异明细（' + diff.length + '条）', false);
+            }
         });
     }
 
