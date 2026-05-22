@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.43H</title>
+    <title>培训部数据看板 v1.43I</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -619,7 +619,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43H</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43I</div>
     </div>
   </nav>
 
@@ -4661,16 +4661,44 @@ function zbRenderSiteDetail(siteName) {
         if (!siteDiff.length) {
             kpiEl.innerHTML = '<div class="stats-item" style="grid-column:1/-1;text-align:center;color:var(--text-secondary);">暂无数据</div>';
         } else {
-            var totalDiff = new Set(scopedDiff.map(function(d){return d.code;})).size;
-            var objDiff   = new Set(scopedDiff.filter(function(d){return d.category&&d.category.includes('客观');}).map(function(d){return d.code;})).size;
-            var subjDiff  = new Set(scopedDiff.filter(function(d){return d.category&&d.category.includes('主观');}).map(function(d){return d.code;})).size;
-            var personCnt = new Set(scopedDiff.map(function(d){return d.person;})).size;
-            var execSet   = new Set(siteDiff.filter(function(d){ return isObjective(d.category) && isExecutionIssue(d.judgedIssueType) && d.code; }).map(function(d){return d.code;}));
-            var execDiff  = execSet.size;
+            // 读当前口径
+            var kjScope = window._siteDataScope || 'exec';
+
+            // 总抽检量
             var siteChecks = 0;
             var _sumData = window._getSummaryData ? window._getSummaryData() : [];
             _sumData.forEach(function(s){ if(s.siteName === siteName) siteChecks += (s.totalChecks||0); });
-            var execRate = siteChecks ? (execDiff / siteChecks * 100).toFixed(2) + '%' : '—';
+
+            // 按口径计算差异量
+            var diffFilter;
+            var kjLabel;
+            if (kjScope === 'exec') {
+                diffFilter = function(d){ return isObjective(d.category) && isExecutionIssue(d.judgedIssueType); };
+                kjLabel = '客观执行';
+            } else if (kjScope === 'obj_all' || kjScope === 'obj') {
+                diffFilter = function(d){ return isObjective(d.category); };
+                kjLabel = '客观整体';
+            } else if (kjScope === 'subj') {
+                diffFilter = function(d){ return d.category && d.category.includes('主观'); };
+                kjLabel = '主观';
+            } else {
+                diffFilter = function(){ return true; };
+                kjLabel = '全部';
+            }
+
+            var diffSet = new Set(siteDiff.filter(diffFilter).filter(function(d){return d.code;}).map(function(d){return d.code;}));
+            var diffCnt = diffSet.size;
+            var diffRate = siteChecks ? (diffCnt / siteChecks * 100).toFixed(2) + '%' : '—';
+
+            // 色块颜色按口径
+            var kjColorMap = {
+                exec: { side:'#8b5cf6', num:'#6d28d9' },
+                obj_all: { side:'#10b981', num:'#047857' },
+                obj: { side:'#10b981', num:'#047857' },
+                subj: { side:'#f59e0b', num:'#b45309' },
+                all: { side:'#64748b', num:'#334155' }
+            };
+            var kjColor = kjColorMap[kjScope] || kjColorMap['exec'];
 
             var mk = function(label, val, filterKey, title, color, numColor) {
                 return '<div class="stats-item" style="cursor:pointer;" '
@@ -4681,21 +4709,18 @@ function zbRenderSiteDetail(siteName) {
                     + '<div class="stats-number" style="color:' + (numColor||'#1d4ed8') + ';">' + val + '</div>'
                     + '</div></div>';
             };
-            kpiEl.innerHTML =
-                mk('差异量（'+( {exec:'客观执行',obj:'客观',subj:'主观',all:'全部'}[scope]||scope )+'）', totalDiff, 'total', null, '#64748b','#334155') +
-                mk('客观差异量',     objDiff,   'obj',    null,      '#10b981', '#047857') +
-                mk('主观差异量',     subjDiff,  'subj',   null,      '#f59e0b', '#b45309') +
-                mk('客观执行差异率', execRate,  'exec',   '客观执行','#8b5cf6', '#6d28d9') +
-                mk('涉及质检人数',   personCnt, 'person', null,      '#2563eb', '#1d4ed8');
 
-            kpiEl._siteDiff  = scopedDiff;
+            kpiEl.innerHTML =
+                mk('总抽检量', siteChecks || '—', 'checks', '抽检量', '#2563eb', '#1d4ed8') +
+                mk('差异量（' + kjLabel + '）', diffCnt, 'diff', kjLabel + '差异', kjColor.side, kjColor.num) +
+                mk('差异率（' + kjLabel + '）', diffRate, 'rate', kjLabel + '差异率', kjColor.side, kjColor.num);
+
+            kpiEl._siteDiff  = siteDiff.filter(diffFilter);
             kpiEl._siteName  = siteName;
             kpiEl._filters   = {
-                total:  function(d){ return true; },
-                obj:    function(d){ return d.category && d.category.includes('客观'); },
-                subj:   function(d){ return d.category && d.category.includes('主观'); },
-                exec:   function(d){ return isObjective(d.category) && isExecutionIssue(d.judgedIssueType); },
-                person: function(d){ return true; }
+                checks: function(){ return []; }, // 抽检量无明细
+                diff:   diffFilter,
+                rate:   diffFilter
             };
         }
     }
@@ -5716,15 +5741,17 @@ document.addEventListener('DOMContentLoaded', function() {
             var item = e.target.closest('[data-site-kpi]');
             if (!item) return;
             var filterKey = item.dataset.siteKpi;
+            if (filterKey === 'checks') return; // 抽检量无明细
             var diff = siteKpiRow._siteDiff || [];
-            var sn   = siteKpiRow._siteName || '';
-            var filters = siteKpiRow._filters || {};
-            var fn = filters[filterKey];
+            var fn = (siteKpiRow._filters || {})[filterKey];
             if (!fn) return;
             var filtered = diff.filter(fn);
-            var labelMap = { total:'全部差异', obj:'客观差异', subj:'主观差异', exec:'客观执行差异', person:'涉及质检人' };
-            if (typeof openDetailWithData === 'function') {
-                openDetailWithData(filtered, '🏢 ' + sn + ' · ' + (labelMap[filterKey]||filterKey) + '（' + filtered.length + '条）', false);
+            var sn = siteKpiRow._siteName || '';
+            var labelMap = { diff:'差异', rate:'差异', checks:'抽检量' };
+            if (typeof openDetailWithData === 'function' && filtered.length) {
+                openDetailWithData(filtered, '🏢 ' + sn + ' · ' + (labelMap[filterKey]||filterKey) + '明细（' + filtered.length + '条）', false);
+            } else if (!filtered.length) {
+                showToast('暂无明细数据');
             }
         });
     }
