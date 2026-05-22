@@ -3505,6 +3505,18 @@
             function zbRenderNationalTrend() {
                 var el = document.getElementById('nationalTrendChart');
                 if (!el || typeof echarts === 'undefined') return;
+                // 若容器宽度异常（首次加载布局未稳定），销毁旧实例强制重建
+                if (_nationalTrendChart && el.offsetWidth > 0) {
+                    var inst = echarts.getInstanceByDom(el);
+                    if (inst) {
+                        var w = el.offsetWidth;
+                        var chartW = inst.getWidth ? inst.getWidth() : 0;
+                        if (chartW < w * 0.5) {
+                            inst.dispose();
+                            _nationalTrendChart = null;
+                        }
+                    }
+                }
                 if (!_nationalTrendChart) _nationalTrendChart = echarts.init(el);
 
                 // 读顶部日期筛选范围
@@ -3611,6 +3623,10 @@
                     }, true);
                 }
                 _nationalTrendChart.resize();
+                // 首次加载时容器宽度可能尚未稳定，延迟再 resize 一次确保图表撑满
+                var _chart = _nationalTrendChart;
+                setTimeout(function() { if (_chart) _chart.resize(); }, 150);
+                setTimeout(function() { if (_chart) _chart.resize(); }, 400);
             }
 
             // fullRefresh 后同步刷新质检人排行和趋势图
@@ -3621,6 +3637,24 @@
                     buildPersonRankBoard();
                     zbRenderNationalTrend();
                 }, 100);
+                // 兜底：若100ms时容器宽度还未就绪，用ResizeObserver等宽度稳定后再渲染一次
+                setTimeout(function() {
+                    var el = document.getElementById('nationalTrendChart');
+                    if (!el) return;
+                    if (el.offsetWidth > 0) {
+                        zbRenderNationalTrend();
+                    } else if (typeof ResizeObserver !== 'undefined') {
+                        var once = new ResizeObserver(function(entries) {
+                            for (var entry of entries) {
+                                if (entry.contentRect.width > 0) {
+                                    once.disconnect();
+                                    zbRenderNationalTrend();
+                                }
+                            }
+                        });
+                        once.observe(el);
+                    }
+                }, 300);
             };
         }
 
