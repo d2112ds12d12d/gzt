@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.43B</title>
+    <title>培训部数据看板 v1.43C</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -618,7 +618,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43B</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43C</div>
     </div>
   </nav>
 
@@ -4058,12 +4058,12 @@ const GH_USER = 'd2112ds12d12d', GH_REPO = 'Qgkb', GH_FOLDER = 'QGZLdata';
 
 // 培训师对应关系（固定数据）格式：{ 站点: { 手机: [...], 四品类: [...] } }
 const ZB_TRAINER_MAP = {
-    '转转-深圳智能验机中心': { '手机': ['曾权'], '四品类': ['王礼宇','李翊豪'] },
-    '转转-青岛智能验机中心': { '手机': ['李广洲'], '四品类': ['秦震磊','李正浩'] },
-    '转转-成都智能验机中心': { '手机': ['周榆清'], '四品类': ['潘天一','暂定'] },
-    '青岛后验中心仓':        { '手机': ['曾权'], '四品类': ['王礼宇','李翊豪'] },
-    '深圳后验中心仓':        { '手机': ['李广洲'], '四品类': ['秦震磊','李正浩'] },
-    '成都后验中心仓':        { '手机': ['周榆清'], '四品类': ['潘天一','暂定'] },
+    '转转-深圳智能验机中心': { '手机': ['曾权','王礼宇'], '四品类': ['李翊豪'] },
+    '转转-青岛智能验机中心': { '手机': ['李广洲','秦震磊'], '四品类': ['李正浩'] },
+    '转转-成都智能验机中心': { '手机': ['周榆清','潘天一'], '四品类': ['暂定'] },
+    '青岛后验中心仓':        { '手机': ['曾权','王礼宇'], '四品类': ['李翊豪'] },
+    '深圳后验中心仓':        { '手机': ['李广洲','秦震磊'], '四品类': ['李正浩'] },
+    '成都后验中心仓':        { '手机': ['周榆清','潘天一'], '四品类': ['暂定'] },
     '南昌库':    { '全部': ['张永童'] },
     '襄阳中心仓':{ '全部': ['程襄荆'] },
     '武汉库':    { '全部': ['宗飞飞'] },
@@ -6490,6 +6490,8 @@ window.zbPersonRankFilterOpen = function(col, thEl) {
             });
         }
     });
+    // 站点类型兜底
+    if (col === 'type' && vals.size === 0) { vals.add('大仓'); vals.add('中心仓'); }
     var current = window._personRankFilters[col];
     window._personRankFilterTemp = current ? new Set(current) : new Set(vals);
     window._personRankFilterAllVals = Array.from(vals).sort();
@@ -6505,14 +6507,16 @@ window.zbPersonRankFilterOpen = function(col, thEl) {
     panel.style.top = Math.max(8, topPos) + 'px';
     panel.style.left = Math.min(Math.max(8, rect.left), window.innerWidth - 270) + 'px';
     panel.style.display = '';
-    // 点其他地方关闭
+    // 用mousedown而不是click，避免与列头click事件冲突
     setTimeout(function() {
-        document.addEventListener('click', zbPersonRankFilterOutside, { once: true });
-    }, 10);
+        document.addEventListener('mousedown', zbPersonRankFilterOutside);
+    }, 50);
 };
 window.zbPersonRankFilterOutside = function(e) {
     var panel = document.getElementById('personRankFilterPanel');
-    if (panel && !panel.contains(e.target)) zbPersonRankFilterClose();
+    if (panel && panel.style.display !== 'none' && !panel.contains(e.target)) {
+        zbPersonRankFilterClose();
+    }
 };
 window.zbPersonRankFilterSearch = function() {
     var kw = (document.getElementById('personRankFilterSearch').value || '').trim();
@@ -6556,7 +6560,7 @@ window.zbPersonRankFilterApply = function() {
 window.zbPersonRankFilterClose = function() {
     var panel = document.getElementById('personRankFilterPanel');
     if (panel) panel.style.display = 'none';
-    document.removeEventListener('click', zbPersonRankFilterOutside);
+    document.removeEventListener('mousedown', zbPersonRankFilterOutside);
 };
 
 function zbAddLog(entry) {
