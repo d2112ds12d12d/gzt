@@ -1,6 +1,17 @@
 {
   "tasks": [
     {
+      "id": "mpgap65e40b",
+      "title": "统计 kappa 成绩&当天拆修任务推送",
+      "tag": null,
+      "date": "05/25",
+      "done": false,
+      "status": "todo",
+      "priority": "normal",
+      "created": 1779416597858,
+      "parentId": "mpfdzjqbg7p"
+    },
+    {
       "id": "mpfdzjqbg7p",
       "title": "推送0522晚上的拆修专项 和 kappa 考试；kappa 考试答案怎么展示？",
       "tag": null,
@@ -9,7 +20,10 @@
       "status": "done",
       "priority": "normal",
       "created": 1779361654691,
-      "parentId": "mpe18zv8oeo"
+      "parentId": "mpe18zv8oeo",
+      "childIds": [
+        "mpgap65e40b"
+      ]
     },
     {
       "id": "mpfbqozat1r",
