@@ -1732,7 +1732,7 @@
             /* ── 列筛选浮层 ── */
             function dtOpenColFilter(col, iconEl) {
                 dtPopupCol = col;
-                const allRows = dtGetAllRows();
+                const allRows = currentModalRecords && currentModalRecords.length ? currentModalRecords : dtGetAllRows();
                 const valCounts = {};
                 allRows.forEach(function(d) {
                     const v = dtGetVal(d, col);
@@ -1743,8 +1743,11 @@
                 const popup = document.getElementById('dtColPopup');
                 const rect = iconEl.getBoundingClientRect();
                 popup.style.display = 'flex';
-                popup.style.top = (rect.bottom + 4 + window.scrollY) + 'px';
-                popup.style.left = Math.min(rect.left, window.innerWidth - 210) + 'px';
+                // position:fixed 不加 scrollY，直接用 viewport 坐标
+                var topPos = rect.bottom + 4;
+                if (topPos + 300 > window.innerHeight) topPos = rect.top - 300 - 4;
+                popup.style.top = Math.max(8, topPos) + 'px';
+                popup.style.left = Math.min(Math.max(8, rect.left), window.innerWidth - 220) + 'px';
                 document.getElementById('dtColSearch').value = '';
                 dtRenderPopupList('');
                 document.getElementById('dtColSearch').focus();
