@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.43N</title>
+    <title>培训部数据看板 v1.43O</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -619,7 +619,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43N</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43O</div>
     </div>
   </nav>
 
@@ -795,9 +795,9 @@
                     <thead>
                         <tr style="background:var(--kpi-bg);border-bottom:0.5px solid var(--border-color);">
                             <th style="padding:8px 16px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);width:80px;">全国 / 仓内</th>
-                            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);cursor:pointer;user-select:none;" onclick="window._personRankOpenEvent=event;zbPersonRankFilterOpen('person',this)">质检人 <span id="personFilterBadge" style="font-size:10px;color:#2563eb;display:none;">▾</span> <span style="font-size:10px;color:var(--text-tertiary);">▾</span></th>
-                            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);cursor:pointer;user-select:none;" onclick="window._personRankOpenEvent=event;zbPersonRankFilterOpen('wh',this)">所属仓 <span id="whFilterBadge" style="font-size:10px;color:#2563eb;display:none;">▾</span> <span style="font-size:10px;color:var(--text-tertiary);">▾</span></th>
-                            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);cursor:pointer;user-select:none;" onclick="window._personRankOpenEvent=event;zbPersonRankFilterOpen('type',this)">站点类型 <span id="typeFilterBadge" style="font-size:10px;color:#2563eb;display:none;">▾</span> <span style="font-size:10px;color:var(--text-tertiary);">▾</span></th>
+                            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);cursor:pointer;user-select:none;" onclick="event.stopPropagation();zbPersonRankFilterOpen('person',this)">质检人 <span id="personFilterBadge" style="font-size:10px;color:#2563eb;display:none;">▾</span> <span style="font-size:10px;color:var(--text-tertiary);">▾</span></th>
+                            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);cursor:pointer;user-select:none;" onclick="event.stopPropagation();zbPersonRankFilterOpen('wh',this)">所属仓 <span id="whFilterBadge" style="font-size:10px;color:#2563eb;display:none;">▾</span> <span style="font-size:10px;color:var(--text-tertiary);">▾</span></th>
+                            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);cursor:pointer;user-select:none;" onclick="event.stopPropagation();zbPersonRankFilterOpen('type',this)">站点类型 <span id="typeFilterBadge" style="font-size:10px;color:#2563eb;display:none;">▾</span> <span style="font-size:10px;color:var(--text-tertiary);">▾</span></th>
                             <th style="padding:8px 16px;text-align:right;font-size:11px;font-weight:500;color:#2563eb;cursor:pointer;" onclick="zbPersonRankToggleSort()">客观执行差异量 <span id="personRankSortIndicator">↓</span></th>
                         </tr>
                     </thead>
@@ -1929,7 +1929,7 @@
                     const thead = document.createElement('thead');
                     thead.innerHTML = `<tr>${this.columnKeys.map((key, i) => {
                         const label = this.columnDef[i] || key;
-                        return `<th style="white-space:nowrap;">${label}<span class="dt-filter-icon" data-col="${key}" onclick="event.stopPropagation();dtOpenColFilter('${key}',this)">⏷</span></th>`;
+                        return `<th style="white-space:nowrap;cursor:pointer;user-select:none;" onclick="event.stopPropagation();dtOpenColFilter('${key}',this.querySelector('.dt-filter-icon'))">${label}<span class="dt-filter-icon" data-col="${key}">⏷</span></th>`;
                     }).join('')}</tr>`;
                     this.table.appendChild(thead);
                     this.tbody = document.createElement('tbody');
