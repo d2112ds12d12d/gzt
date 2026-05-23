@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.44A</title>
+    <title>培训部数据看板 v1.44B</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -483,7 +483,7 @@
         .rank-col-scroll::-webkit-scrollbar-thumb { background:var(--border-color); border-radius:2px; }
         .rank-col-scroll:hover::-webkit-scrollbar-thumb { background:#b0bec9; }
         .rank-row {
-            display:grid; grid-template-columns:22px minmax(0,1fr) 70px 46px minmax(0,1fr) 50px;
+            display:grid; grid-template-columns:22px minmax(0,1fr) 70px 46px minmax(0,1fr) 64px 50px;
             align-items:center; gap:4px;
             padding:7px 6px; border-radius:0;
             background:transparent; margin-bottom:0;
@@ -619,7 +619,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44A</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44B</div>
     </div>
   </nav>
 
@@ -5761,6 +5761,16 @@ function zbNav(name, el) {
     // 分隔线也一起隐藏
     var dividers = document.querySelectorAll('.sticky-divider');
     if (dividers.length >= 2) dividers[1].style.display = isSiteOrPerson ? 'none' : '';
+
+    // 口径标签：站点页显示，首页/其他隐藏
+    var kouJingTag = document.getElementById('zbKouJingTag');
+    if (kouJingTag) {
+        if (name === 'site') {
+            kouJingTag.style.display = 'inline-flex';
+        } else {
+            kouJingTag.style.display = 'none';
+        }
+    }
 }
 
 // ── 最近查看记录（内存，不持久化）──
