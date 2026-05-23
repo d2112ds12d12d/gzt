@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.44C</title>
+    <title>培训部数据看板 v1.44D</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -537,7 +537,7 @@
             content:''; position:absolute; top:0; left:-80%;
             width:40%; height:100%;
             background: linear-gradient(90deg,transparent,rgba(255,255,255,0.75),transparent);
-            animation: brand-shimmer 2.8s ease-in-out infinite;
+            animation: brand-shimmer 5.6s ease-in-out infinite;
             pointer-events: none;
         }
         .zb-logo .zb-sub { font-size: 10px; color: var(--sidebar-lbl); margin-top: 3px; }
@@ -619,7 +619,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44C</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44D</div>
     </div>
   </nav>
 
@@ -986,10 +986,10 @@
                       <button id="zbIssueSwR" onclick="zbIssueChartSwitch('issueType')" style="padding:3px 10px;border-radius:18px;border:none;background:transparent;color:#6366f1;font-size:10px;cursor:pointer;transition:all .15s;">问题类型</button>
                     </div>
                   </div>
-                  <!-- 双图容器 -->
-                  <div id="zbIssueChartWrap" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;height:180px;margin-bottom:12px;">
-                    <div id="zbIssueChartLeft" style="width:100%;height:180px;"></div>
-                    <div id="zbIssueChartRight" style="width:100%;height:180px;"></div>
+                  <!-- 单图+右侧摘要 -->
+                  <div id="zbIssueChartWrap" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;height:360px;margin-bottom:12px;align-items:center;">
+                    <div id="zbIssueChartLeft" style="width:100%;height:360px;"></div>
+                    <div id="zbIssueChartRight" style="height:360px;overflow-y:auto;padding:8px 0 8px 16px;border-left:0.5px solid var(--border-color);display:flex;flex-direction:column;justify-content:center;"></div>
                   </div>
                   <div id="site-issue-analysis-root">
                     <div style="text-align:center;padding:24px;color:var(--text-secondary);font-size:13px;">点击排行榜站点后自动显示</div>
@@ -2357,7 +2357,7 @@
                         var y = (h - ((v - mn) / range * (h - 4) + 2)).toFixed(1);
                         return x + ',' + y;
                     }).join(' ');
-                    var color = changeCls === 'down' ? '#16a34a' : changeCls === 'up' ? '#E24B4A' : '#94a3b8';
+                    var color = changeCls === 'down' ? '#86efac' : changeCls === 'up' ? '#fca5a5' : '#cbd5e1';
                     return '<svg width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" style="display:block;flex-shrink:0;" aria-hidden="true">'
                         + '<polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>'
                         + '</svg>';
@@ -5489,75 +5489,88 @@ window.zbRenderIssueCharts = function(execDiff) {
     if (!leftEl || !rightEl) return;
 
     var COLORS = ['#3b82f6','#f59e0b','#10b981','#ef4444','#8b5cf6','#06b6d4','#f97316','#84cc16','#ec4899','#94a3b8','#14b8a6','#a855f7'];
-    var ISSUE_COLORS = { '外观问题':'#f59e0b', '功能问题':'#3b82f6', '拆修问题':'#10b981', '属性问题':'#8b5cf6' };
+    var ISSUE_COLORS = { '外观问题':'#f59e0b','功能问题':'#3b82f6','拆修问题':'#10b981','属性问题':'#8b5cf6','执行问题':'#06b6d4' };
+    var MEDALS = ['🥇','🥈','🥉'];
+    var mode = window._zbIssueChartMode || 'level1';
+    var total = execDiff.length || 1;
 
-    // 左图：一级项 or 问题类型（由切换按钮决定）
-    var leftMap = {};
+    // 聚合数据
+    var dataMap = {};
     execDiff.forEach(function(d) {
-        var k = window._zbIssueChartMode === 'level1' ? (d.level1||'未知') : (d.issueType||d.judgedIssueType||'未知');
-        leftMap[k] = (leftMap[k]||0) + 1;
+        var k = mode === 'level1' ? (d.level1||'未知') : (d.issueType||d.judgedIssueType||'未知');
+        dataMap[k] = (dataMap[k]||0) + 1;
     });
-    var leftData = Object.keys(leftMap).map(function(k,i) {
-        var col = window._zbIssueChartMode === 'issueType' ? (ISSUE_COLORS[k]||COLORS[i%COLORS.length]) : COLORS[i%COLORS.length];
-        return { name:k, value:leftMap[k], itemStyle:{color:col} };
+    var pieData = Object.keys(dataMap).map(function(k, i) {
+        var col = mode === 'issueType' ? (ISSUE_COLORS[k]||COLORS[i%COLORS.length]) : COLORS[i%COLORS.length];
+        return { name:k, value:dataMap[k], itemStyle:{color:col} };
     }).sort(function(a,b){ return b.value-a.value; });
 
-    // 右图：问题类型饼图（固定）
-    var rightMap = {};
-    execDiff.forEach(function(d) {
-        var k = d.issueType || d.judgedIssueType || '未知';
-        rightMap[k] = (rightMap[k]||0) + 1;
-    });
-    var rightData = Object.keys(rightMap).map(function(k,i) {
-        return { name:k, value:rightMap[k], itemStyle:{color:ISSUE_COLORS[k]||COLORS[i%COLORS.length]} };
-    }).sort(function(a,b){ return b.value-a.value; });
-
-    // 渲染左图（环形）
-    var leftInst = echarts.getInstanceByDom(leftEl);
-    if (leftInst) leftInst.dispose();
-    var lChart = echarts.init(leftEl);
-    lChart.setOption({
-        tooltip: { trigger:'item', formatter: function(p){ return p.name + '<br/>'+p.value+'条 · '+p.percent+'%'; } },
-        legend: { orient:'vertical', right:0, top:'middle', textStyle:{fontSize:9,color:'#64748b'}, itemWidth:8, itemHeight:8, formatter:function(n){ return n.length>5?n.slice(0,5)+'…':n; } },
+    // 渲染左边饼/环形图
+    var inst = echarts.getInstanceByDom(leftEl);
+    if (inst) inst.dispose();
+    var chart = echarts.init(leftEl);
+    chart.setOption({
+        tooltip: { trigger:'item', formatter:function(p){ return p.name+'<br/>'+p.value+'条 · '+p.percent+'%'; } },
+        legend: { show:false },
         series:[{
-            type:'pie', radius:['38%','65%'], center:['38%','50%'],
-            label:{ show:false },
-            emphasis:{ label:{show:true,fontSize:10} },
-            data: leftData
+            type:'pie',
+            radius: mode === 'level1' ? ['35%','62%'] : ['0%','60%'],
+            center:['50%','50%'],
+            label:{ show: mode === 'issueType', fontSize:11, formatter:'{b}\n{d}%' },
+            labelLine:{ length:8, length2:5 },
+            emphasis:{ scale:true, scaleSize:6 },
+            data: pieData
         }]
     });
-    lChart.on('click', function(p) {
-        var matched;
-        if (window._zbIssueChartMode === 'level1') {
-            matched = execDiff.filter(function(d){ return (d.level1||'未知') === p.name; });
-        } else {
-            matched = execDiff.filter(function(d){ return (d.issueType||d.judgedIssueType||'未知') === p.name; });
-        }
+    chart.on('click', function(p) {
+        var matched = execDiff.filter(function(d) {
+            var k = mode === 'level1' ? (d.level1||'未知') : (d.issueType||d.judgedIssueType||'未知');
+            return k === p.name;
+        });
         if (matched.length && typeof openDetailWithData === 'function') {
-            openDetailWithData(matched, '🔎 ' + p.name + '（'+matched.length+'条）', false);
+            openDetailWithData(matched, '🔎 '+p.name+'（'+matched.length+'条）', false);
         }
     });
 
-    // 渲染右图（饼图）
-    var rightInst = echarts.getInstanceByDom(rightEl);
-    if (rightInst) rightInst.dispose();
-    var rChart = echarts.init(rightEl);
-    rChart.setOption({
-        tooltip: { trigger:'item', formatter: function(p){ return p.name + '<br/>'+p.value+'条 · '+p.percent+'%'; } },
-        legend: { orient:'vertical', right:0, top:'middle', textStyle:{fontSize:9,color:'#64748b'}, itemWidth:8, itemHeight:8 },
-        series:[{
-            type:'pie', radius:'65%', center:['38%','50%'],
-            label:{ show:true, fontSize:9, formatter:'{b}\n{d}%' },
-            labelLine:{ length:6, length2:4 },
-            data: rightData
-        }]
-    });
-    rChart.on('click', function(p) {
-        var matched = execDiff.filter(function(d){ return (d.issueType||d.judgedIssueType||'未知') === p.name; });
-        if (matched.length && typeof openDetailWithData === 'function') {
-            openDetailWithData(matched, '🔎 ' + p.name + '（'+matched.length+'条）', false);
-        }
-    });
+    // 渲染右边文字摘要
+    var maxVal = pieData.length ? pieData[0].value : 1;
+    var summaryHtml = '';
+    if (mode === 'level1') {
+        summaryHtml += '<div style="font-size:12px;font-weight:500;color:var(--text-primary);margin-bottom:14px;">重点关注</div>';
+        pieData.forEach(function(item, i) {
+            var pct = Math.round(item.value / total * 100);
+            var barW = Math.round(item.value / maxVal * 100);
+            var medal = i < 3 ? MEDALS[i]+' ' : '';
+            summaryHtml += '<div style="margin-bottom:10px;">'
+                + '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px;">'
+                + '<span style="font-size:12px;color:var(--text-primary);">'+medal+item.name+'</span>'
+                + '<span style="font-size:12px;font-weight:500;color:'+(i===0?'#dc2626':'var(--text-primary)')+';">'+item.value+'条 <span style="font-size:10px;color:#94a3b8;font-weight:400;">'+pct+'%</span></span>'
+                + '</div>'
+                + '<div style="height:4px;background:var(--kpi-bg);border-radius:3px;overflow:hidden;">'
+                + '<div style="width:'+barW+'%;height:100%;background:'+item.itemStyle.color+';border-radius:3px;"></div>'
+                + '</div></div>';
+        });
+        summaryHtml += '<div style="font-size:10px;color:#94a3b8;margin-top:6px;">共 '+pieData.length+' 个一级项 · 点击扇形查看明细</div>';
+    } else {
+        summaryHtml += '<div style="font-size:12px;font-weight:500;color:var(--text-primary);margin-bottom:14px;">各类型分布</div>';
+        pieData.forEach(function(item) {
+            var pct = Math.round(item.value / total * 100);
+            var barW = Math.round(item.value / maxVal * 100);
+            summaryHtml += '<div style="margin-bottom:10px;">'
+                + '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">'
+                + '<span style="font-size:12px;color:var(--text-primary);display:flex;align-items:center;gap:5px;">'
+                + '<span style="width:7px;height:7px;border-radius:50%;background:'+item.itemStyle.color+';flex-shrink:0;"></span>'
+                + item.name+'</span>'
+                + '<span style="font-size:12px;color:var(--text-primary);">'+item.value+'条 <span style="font-size:10px;color:#94a3b8;">'+pct+'%</span></span>'
+                + '</div>'
+                + '<div style="height:4px;background:var(--kpi-bg);border-radius:3px;overflow:hidden;">'
+                + '<div style="width:'+barW+'%;height:100%;background:'+item.itemStyle.color+';border-radius:3px;"></div>'
+                + '</div></div>';
+        });
+        summaryHtml += '<div style="font-size:10px;color:#94a3b8;margin-top:6px;">点击扇形查看对应差异明细</div>';
+    }
+    rightEl.innerHTML = summaryHtml;
+    setTimeout(function(){ chart.resize(); }, 50);
 };
 
 function zbRenderSitePersonList() {
