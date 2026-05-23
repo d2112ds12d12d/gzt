@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.44E</title>
+    <title>培训部数据看板 v1.44F</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -619,7 +619,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44E</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44F</div>
     </div>
   </nav>
 
@@ -5385,13 +5385,21 @@ function zbRenderSiteDetail(siteName) {
 }
 
 function zbRenderSiteIssueAnalysis(execDiff, rootEl) {
-    var allDates = execDiff.map(function(d){ return d.date||''; }).filter(Boolean).sort();
+    var topStart = (document.getElementById('startDateFilter')||{}).value||'';
+    var topEnd   = (document.getElementById('endDateFilter')||{}).value||'';
+    var filtered = execDiff.filter(function(d){
+        var dt = d.date ? d.date.split(' ')[0] : '';
+        return (!topStart||dt>=topStart) && (!topEnd||dt<=topEnd);
+    });
+
+    // 用filtered计算自然周（对比展示用）
+    var allDates = filtered.map(function(d){ return d.date||''; }).filter(Boolean).sort();
     var latestDate = allDates[allDates.length-1];
     function getMon(ds) { var d=new Date(ds),day=d.getDay(),diff=(day===0)?-6:(1-day); d.setDate(d.getDate()+diff); return d.toISOString().slice(0,10); }
     function addDays(ds,n) { var d=new Date(ds); d.setDate(d.getDate()+n); return d.toISOString().slice(0,10); }
-    var thisMon=getMon(latestDate), thisSun=addDays(thisMon,6), lastMon=addDays(thisMon,-7), lastSun=addDays(thisMon,-1);
-    var thisWeek=execDiff.filter(function(d){ return d.date>=thisMon&&d.date<=thisSun; });
-    var lastWeek=execDiff.filter(function(d){ return d.date>=lastMon&&d.date<=lastSun; });
+    var thisMon=latestDate?getMon(latestDate):'', thisSun=thisMon?addDays(thisMon,6):'', lastMon=thisMon?addDays(thisMon,-7):'', lastSun=thisMon?addDays(thisMon,-1):'';
+    var thisWeek=filtered.filter(function(d){ return d.date>=thisMon&&d.date<=thisSun; });
+    var lastWeek=filtered.filter(function(d){ return d.date>=lastMon&&d.date<=lastSun; });
 
     function groupByItem(rows) {
         var map={};
@@ -5420,10 +5428,12 @@ function zbRenderSiteIssueAnalysis(execDiff, rootEl) {
         return '<span style="color:#94a3b8;">—</span>';
     }
 
-    // 存全量数据供行点击和图表点击用
-    window._siteIssueAllDiff = execDiff;
-    // 渲染双图
-    if (typeof zbRenderIssueCharts === 'function') zbRenderIssueCharts(execDiff);
+    // 存过滤后数据供点击明细和图表使用
+    window._siteIssueAllDiff = filtered;
+    // 渲染双图（用filtered）
+    if (typeof zbRenderIssueCharts === 'function') {
+        setTimeout(function(){ zbRenderIssueCharts(filtered); }, 50);
+    }
     // 更新口径提示
     var hint = document.getElementById('zbIssueScopeHint');
     if (hint && typeof zbGetScopeLabel === 'function') hint.textContent = zbGetScopeLabel(window._siteDataScope);
@@ -5571,6 +5581,8 @@ window.zbRenderIssueCharts = function(execDiff) {
     }
     rightEl.innerHTML = summaryHtml;
     setTimeout(function(){ chart.resize(); }, 50);
+    setTimeout(function(){ chart.resize(); }, 200);
+    setTimeout(function(){ chart.resize(); }, 500);
 };
 
 function zbRenderSitePersonList() {
