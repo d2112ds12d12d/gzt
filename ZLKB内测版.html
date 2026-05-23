@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.43P</title>
+    <title>培训部数据看板 v1.43Q</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -619,7 +619,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43P</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43Q</div>
     </div>
   </nav>
 
@@ -4646,6 +4646,22 @@ function zbNavToSite(siteName) {
 }
 
 function zbRenderSiteDetail(siteName) {
+    // ── 口径辅助函数 ──
+    window.zbGetScopeLabel = function(scope) {
+        scope = scope || window._siteDataScope || 'exec';
+        if (scope === 'exec')                       return '客观执行';
+        if (scope === 'obj_all' || scope === 'obj') return '客观整体';
+        if (scope === 'subj')                       return '主观';
+        return '全部';
+    };
+    window.zbGetScopeFilter = function(scope) {
+        scope = scope || window._siteDataScope || 'exec';
+        if (scope === 'exec')                       return function(d){ return isObjective(d.category) && isExecutionIssue(d.judgedIssueType); };
+        if (scope === 'obj_all' || scope === 'obj') return function(d){ return isObjective(d.category); };
+        if (scope === 'subj')                       return function(d){ return d.category && d.category.includes('主观'); };
+        return function(){ return true; };
+    };
+
     var allDiff = window._allDiffData || [];
     if (!allDiff.length && typeof diffData !== 'undefined') allDiff = diffData;
 
@@ -4809,8 +4825,9 @@ function zbRenderSiteDetail(siteName) {
         siteQA4.forEach(function(r){ if(r.cat) diffCatSet4[r.cat]=1; });
         var catList4 = Object.keys(diffCatSet4).filter(function(c){ return c && c!=='undefined' && c!=='相机'; });
         var allDiff4 = window._allDiffData || [];
+        var _scopeFilter4 = window.zbGetScopeFilter ? window.zbGetScopeFilter(window._siteDataScope) : function(d){ return isObjective(d.category) && isExecutionIssue(d.judgedIssueType); };
         var execDiff4all = allDiff4.filter(function(d){
-            return d.warehouse === siteName && d.category && d.category.includes('客观') && d.judgedIssueType && d.judgedIssueType.includes('执行');
+            return d.warehouse === siteName && _scopeFilter4(d);
         });
         var execDiff4 = execDiff4all; // 趋势图用全品类
 
@@ -4848,10 +4865,9 @@ function zbRenderSiteDetail(siteName) {
 
         // 按虚拟品类过滤差异数据（从全量数据取，不受当前站点过滤）
         function _filterExecDiffByCat4(diff, c) {
+            var sf = window.zbGetScopeFilter ? window.zbGetScopeFilter(window._siteDataScope) : function(d){ return isObjective(d.category) && isExecutionIssue(d.judgedIssueType); };
             if (!_dwPair4) return diff.filter(function(d){ return (d.cat||'')===c; });
-            var allExec = (window._allDiffData||[]).filter(function(d){
-                return d.category && d.category.includes('客观') && d.judgedIssueType && d.judgedIssueType.includes('执行');
-            });
+            var allExec = (window._allDiffData||[]).filter(sf);
             if (c === '手机-线体') return allExec.filter(function(d){ return d.cat==='手机' && d.warehouse===_dwPair4.line; });
             if (c === '手机-后验') return allExec.filter(function(d){ return d.cat==='手机' && d.warehouse===_dwPair4.post; });
             return diff.filter(function(d){ return (d.cat||'')===c; });
@@ -4889,7 +4905,8 @@ function zbRenderSiteDetail(siteName) {
             }
             var _visCatNames = FIXED_CATS.filter(function(c){ return savedVis4[c]!==false && _hasCatData4(c); });
             var _catStr = _visCatNames.length ? _visCatNames.join('/') : '';
-            trendTitleEl.textContent = _cityName + _siteType + ' ' + _catStr + ' 客观执行趋势图';
+            var _scopeLabel4 = window.zbGetScopeLabel ? window.zbGetScopeLabel(window._siteDataScope) : '客观执行';
+            trendTitleEl.textContent = _cityName + _siteType + ' ' + _catStr + ' ' + _scopeLabel4 + '趋势图';
         })();
 
         // ── 品类胶囊（固定5个，三个模式共用）──
@@ -6571,6 +6588,7 @@ function zbCopyTrendImg() {
     }
 
     // 2. 从 ECharts 实例取图表图片
+    var scopeLabel = window.zbGetScopeLabel ? window.zbGetScopeLabel(window._siteDataScope) : '客观执行';
     var chartImgSrc = window._siteChart_trend.getDataURL({
         type: 'png', pixelRatio: 2, backgroundColor: '#ffffff'
     });
@@ -6640,7 +6658,7 @@ function zbCopyTrendImg() {
     ctx.fillStyle = '#ffffff';
     ctx.font = '500 13px -apple-system, PingFang SC, Microsoft YaHei, sans-serif';
     ctx.textBaseline = 'middle';
-    ctx.fillText(siteName + ' · 客观执行差异率趋势', PAD, TOPBAR_H / 2);
+    ctx.fillText(siteName + ' · ' + scopeLabel + '差异率趋势', PAD, TOPBAR_H / 2);
 
     // 顶栏右侧周期
     ctx.fillStyle = 'rgba(255,255,255,0.75)';
@@ -6737,8 +6755,7 @@ function zbCopyDimTable() {
     var titleEl = document.getElementById('siteDetailTitle');
     var siteName = titleEl ? titleEl.textContent.replace(' · 站点详情','').trim() : '站点';
 
-    // 周区间标签
-    var lastStart = (document.getElementById('siteWeekLastStart')||{}).value||'';
+    var scopeLabel = window.zbGetScopeLabel ? window.zbGetScopeLabel(window._siteDataScope) : '客观执行';
     var lastEnd   = (document.getElementById('siteWeekLastEnd')||{}).value||'';
     var curStart  = (document.getElementById('siteWeekCurStart')||{}).value||'';
     var curEnd    = (document.getElementById('siteWeekCurEnd')||{}).value||'';
@@ -6800,7 +6817,7 @@ function zbCopyDimTable() {
 
         html = '<table style="'+S.table+'">'
             + '<tr>'
-            + '<th style="'+S.thL+'">质检人员</th>'
+            + '<th style="'+S.thL+'">质检人员（'+scopeLabel+'）</th>'
             + '<th style="'+S.th+'">上周差异数量（'+lastLabel+'）</th>'
             + '<th style="'+S.th+'">本周差异数量（'+curLabel+'）</th>'
             + '<th style="'+S.th+'">变化</th>'
@@ -6871,7 +6888,7 @@ function zbCopyDimTable() {
 
         html = '<table style="'+S.table+'">'
             + '<tr>'
-            + '<th style="'+S.thL+'">质检项</th>'
+            + '<th style="'+S.thL+'">质检项（'+scopeLabel+'）</th>'
             + '<th style="'+S.th+'">上周差异数量（'+lastLabel+'）</th>'
             + '<th style="'+S.th+'">本周差异数量（'+curLabel+'）</th>'
             + '<th style="'+S.th+'">变化</th>'
