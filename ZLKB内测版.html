@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.43V</title>
+    <title>培训部数据看板 v1.44</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -619,7 +619,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43V</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44</div>
     </div>
   </nav>
 
@@ -4364,54 +4364,102 @@ function zbLogout() { zbSidebarUserClick(); }
 async function zbLoadCloudData(useApi) {
     zbShowSkeleton();
     showToast('⏳ 正在加载云端数据…');
-    const keyMap = { qa:'qa', diff5:'diff5', sum:'sum', diff4:'diff4' };
     const token = zbGetToken();
-    // 有 Token 且指定 useApi 时走 Contents API（绕过CDN，近实时）；否则走 raw CDN（快、省限额）
     const viaApi = !!(useApi && token);
-    let loaded = 0;
-    for (const [key, fname] of Object.entries(GH_FILES)) {
-        if (!keyMap[key]) continue;
+
+    // 辅助：拉取单个文件并返回 json（API优先，失败降级raw CDN）
+    async function fetchFile(fname) {
         try {
-            let json = null;
             if (viaApi) {
-                json = await ghApiFetch(fname, token);
-                // Contents API 有 1MB 限制，大文件会返回 null，自动降级走 raw CDN
-                if (!json) {
-                    console.warn('API加载失败（可能超1MB），降级走raw CDN:', fname);
-                    const r = await fetch(ghRaw(fname));
-                    if (r.ok) json = await r.json();
-                }
-            } else {
-                const r = await fetch(ghRaw(fname));
-                if (r.ok) json = await r.json();
+                const json = await ghApiFetch(fname, token);
+                if (json) return json;
+                console.warn('API加载失败，降级raw CDN:', fname);
             }
-            if (json && json.rows && json.rows.length > 0) {
-                window._DATA[keyMap[key]] = json.rows;
-                loaded++;
-            } else if (json && json.rows && json.rows.length === 0) {
-                // 云端返回空数组：只有当本地也没数据时才清空，避免误覆盖
-                if (!window._DATA[keyMap[key]] || !window._DATA[keyMap[key]].length) {
-                    window._DATA[keyMap[key]] = [];
-                } else {
-                    console.warn('云端返回空数组但本地有数据，跳过覆盖:', fname);
-                }
-            }
+            const r = await fetch(ghRaw(fname));
+            if (r.ok) return await r.json();
         } catch(e) { console.warn('云端加载失败:', fname, e); }
+        return null;
     }
+
+    // 辅助：计算日期范围涉及的月份列表 ["2026-04","2026-05",...]
+    function getMonthsInRange(startD, endD) {
+        const months = [];
+        if (!startD || !endD) {
+            // 无筛选范围：取最近3个月
+            const now = new Date();
+            for (let i = 2; i >= 0; i--) {
+                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                months.push(d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'));
+            }
+            return months;
+        }
+        const s = new Date(startD), e = new Date(endD);
+        const cur = new Date(s.getFullYear(), s.getMonth(), 1);
+        while (cur <= e) {
+            months.push(cur.getFullYear() + '-' + String(cur.getMonth()+1).padStart(2,'0'));
+            cur.setMonth(cur.getMonth() + 1);
+        }
+        return months;
+    }
+
+    // 加载分片文件（diff5/diff4），合并所有月份数据
+    async function loadSharded(prefix) {
+        const startD = (document.getElementById('startDateFilter')||{}).value || '';
+        const endD   = (document.getElementById('endDateFilter')||{}).value || '';
+        const months = getMonthsInRange(startD, endD);
+        let merged = [];
+        for (const ym of months) {
+            const fname = prefix + ym + '.json';
+            const json = await fetchFile(fname);
+            if (json && json.rows && json.rows.length > 0) {
+                merged = merged.concat(json.rows);
+            }
+            // 文件不存在（404）属正常情况，静默跳过
+        }
+        // 兜底：若月度文件全部为空，尝试旧的整体文件（兼容迁移期）
+        if (!merged.length) {
+            const legacyName = prefix === 'phone_diff_' ? 'phone_diff_detail.json' : 'five_cat_detail.json';
+            console.warn('月度文件无数据，尝试旧文件兜底:', legacyName);
+            const json = await fetchFile(legacyName);
+            if (json && json.rows) merged = json.rows;
+        }
+        return merged;
+    }
+
+    let loaded = 0;
+    if (!window._DATA) window._DATA = {};
+
+    // 加载 qa / sum（小文件，原逻辑不变）
+    for (const key of ['qa', 'sum']) {
+        const fname = GH_FILES[key];
+        if (!fname) continue;
+        const json = await fetchFile(fname);
+        if (json && json.rows && json.rows.length > 0) {
+            window._DATA[key] = json.rows; loaded++;
+        } else if (json && json.rows && json.rows.length === 0) {
+            if (!window._DATA[key] || !window._DATA[key].length) window._DATA[key] = [];
+            else console.warn('云端返回空数组但本地有数据，跳过覆盖:', fname);
+        }
+    }
+
+    // 加载 diff5 / diff4（按月分片）
+    const diff5 = await loadSharded('phone_diff_');
+    if (diff5.length > 0) { window._DATA.diff5 = diff5; loaded++; }
+    const diff4 = await loadSharded('five_cat_');
+    if (diff4.length > 0) { window._DATA.diff4 = diff4; loaded++; }
+
     // 加载修改记录
     try {
-        let json = null;
-        if (viaApi) { json = await ghApiFetch(GH_FILES.inspector, token); }
-        else { const r = await fetch(ghRaw(GH_FILES.inspector)); if (r.ok) json = await r.json(); }
+        const json = viaApi ? await ghApiFetch(GH_FILES.inspector, token) : await fetchFile(GH_FILES.inspector);
         if (json && json.edits) { try { dtEdits = json.edits; } catch(e) {} }
     } catch(e) {}
+
     // 加载日志
     try {
-        let json = null;
-        if (viaApi) { json = await ghApiFetch(GH_FILES.log, token); }
-        else { const r = await fetch(ghRaw(GH_FILES.log)); if (r.ok) json = await r.json(); }
+        const json = await fetchFile(GH_FILES.log);
         if (json && json.logs) { _zbLog = json.logs; localStorage.setItem('zb_upload_log', JSON.stringify(_zbLog)); }
     } catch(e) {}
+
     if (loaded > 0) {
         const src = viaApi ? '（API直连）' : '';
         showToast('✅ 云端数据已加载（' + loaded + '/4）' + src);
@@ -4523,14 +4571,44 @@ async function zbPushAllWithProgress() {
 async function zbPushToGitHub(tableType, force) {
     if (zbRole !== 'admin' && zbRole !== 'super') return false;
     const token = zbGetToken();
-    const fname = GH_FILES[tableType];
-    if (!fname || !window._DATA) return false;
+    if (!window._DATA) return false;
     const keyMap = { qa:'qa', diff5:'diff5', sum:'sum', diff4:'diff4' };
     const dataKey = keyMap[tableType] || tableType;
-    const rows = window._DATA[dataKey] || [];
-    // 安全检查：非强制模式下拒绝推送空数组，避免误清空云端数据
-    if (!rows.length && !force) { console.warn('zbPushToGitHub: 拒绝推送空数组，保护云端数据安全 -', tableType); return false; }
-    const content = { rows: rows, updated: new Date().toISOString() };
+    const allRows = window._DATA[dataKey] || [];
+    if (!allRows.length && !force) { console.warn('zbPushToGitHub: 拒绝推送空数组，保护云端数据安全 -', tableType); return false; }
+
+    // diff5/diff4 按月分片：找出本次数据涉及的所有月份，逐月推送
+    if (tableType === 'diff5' || tableType === 'diff4') {
+        const prefix = tableType === 'diff5' ? 'phone_diff_' : 'five_cat_';
+        // 按月分组
+        const monthMap = {};
+        allRows.forEach(function(r) {
+            const d = (r.date||'').split(' ')[0];
+            const ym = d.slice(0,7); // "2026-05"
+            if (!ym || ym.length < 7) return;
+            if (!monthMap[ym]) monthMap[ym] = [];
+            monthMap[ym].push(r);
+        });
+        const months = Object.keys(monthMap).sort();
+        if (!months.length) { console.warn('zbPushToGitHub: 无有效日期数据 -', tableType); return false; }
+        let allOk = true;
+        for (const ym of months) {
+            const fname = prefix + ym + '.json';
+            const ok = await _zbPushFile(fname, { rows: monthMap[ym], updated: new Date().toISOString() }, token);
+            if (!ok) { allOk = false; console.error('月度文件推送失败:', fname); }
+        }
+        return allOk;
+    }
+
+    // 其余文件（qa/sum）原逻辑不变
+    const fname = GH_FILES[tableType];
+    if (!fname) return false;
+    const content = { rows: allRows, updated: new Date().toISOString() };
+    return await _zbPushFile(fname, content, token);
+}
+
+// 通用文件推送（获取SHA + PUT）
+async function _zbPushFile(fname, content, token) {
     let b64 = '';
     try {
         const jsonStr = JSON.stringify(content, null, 0);
@@ -4540,13 +4618,12 @@ async function zbPushToGitHub(tableType, force) {
         b64 = btoa(binary);
     } catch(e) { console.error('base64编码失败:', e); return false; }
     let sha = '';
-    // 每次推送前重新获取最新SHA，避免409冲突
     for (let retry = 0; retry < 3; retry++) {
         try {
             const r = await fetch(ghUrl(fname) + '?t=' + Date.now(), { headers: { Authorization: 'token ' + token } });
             if (r.ok) { const j = await r.json(); sha = j.sha || ''; break; }
-            else { console.warn('获取SHA失败:', r.status, fname); break; }
-        } catch(e) { console.warn('获取SHA异常:', e); break; }
+            else { break; }
+        } catch(e) { break; }
     }
     const body = { message: 'Update ' + fname + ' via dashboard', content: b64 };
     if (sha) body.sha = sha;
