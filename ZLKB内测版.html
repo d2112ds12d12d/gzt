@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.43U</title>
+    <title>培训部数据看板 v1.43V</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -619,7 +619,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43U</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43V</div>
     </div>
   </nav>
 
@@ -697,18 +697,16 @@
                     <span class="cat-tab" id="globalCat-手表">手表</span>
                     <span class="cat-tab" id="globalCat-耳机">耳机</span>
                     <div class="sticky-divider"></div>
-                    <span style="font-size:11px;font-weight:600;color:var(--text-secondary);flex-shrink:0;" id="siteTypeLbl">站点类型</span>
-                    <span class="cat-tab active" id="globalSiteType-ALL" data-site-type="ALL">全部</span>
-                    <span class="cat-tab" id="globalSiteType-DW" data-site-type="DW">大仓</span>
-                    <span class="cat-tab" id="globalSiteType-ZX" data-site-type="ZX" id="siteTypeGroup">中心仓</span>
-                    <div class="sticky-divider"></div>
-                    <!-- 口径折叠标签 -->
-                    <div id="zbKouJingTag" onclick="zbToggleKouJingDropdown()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;background:#eff6ff;border:0.5px solid #bfdbfe;cursor:pointer;flex-shrink:0;user-select:none;white-space:nowrap;">
+                    <span style="font-size:11px;font-weight:600;color:var(--text-secondary);flex-shrink:0;display:none;" id="siteTypeLbl">站点类型</span>
+                    <span class="cat-tab active" id="globalSiteType-ALL" data-site-type="ALL" style="display:none;">全部</span>
+                    <span class="cat-tab" id="globalSiteType-DW" data-site-type="DW" style="display:none;">大仓</span>
+                    <span class="cat-tab" id="globalSiteType-ZX" data-site-type="ZX" id="siteTypeGroup" style="display:none;">中心仓</span>
+                    <!-- 口径折叠标签（首页隐藏，站点页保留联动） -->
+                    <div id="zbKouJingTag" onclick="zbToggleKouJingDropdown()" style="display:none;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;background:#eff6ff;border:0.5px solid #bfdbfe;cursor:pointer;flex-shrink:0;user-select:none;white-space:nowrap;">
                         <div id="zbKouJingDot" style="width:6px;height:6px;border-radius:50%;background:#2563eb;flex-shrink:0;"></div>
                         <span id="zbKouJingLabel" style="font-size:11px;color:#1d4ed8;font-weight:500;">口径：客观执行</span>
                         <svg id="zbKouJingArrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5" style="flex-shrink:0;transition:transform .2s;"><polyline points="6 9 12 15 18 9"/></svg>
                     </div>
-                    <div class="sticky-divider"></div>
                     <button id="zbQueryBtn" onclick="zbDoQuery()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:500;background:#fff;color:#2563eb;border:1.5px solid #2563eb;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;" onmouseenter="this.style.background='#eff6ff'" onmouseleave="this.style.background='#fff'">→ 查询</button>
                 </div>
             </div>
