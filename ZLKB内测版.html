@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.44</title>
+    <title>培训部数据看板 v1.44A</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -619,7 +619,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44A</div>
     </div>
   </nav>
 
@@ -2323,6 +2323,33 @@
                     return '#16a34a';
                 }
 
+                // 预计算每个站点近15天每日差异率（用于火花图）
+                function calcSparkData(site, cat) {
+                    var days = [];
+                    var sorted = allDates.slice(-15);
+                    sorted.forEach(function(d) {
+                        var r = calcSiteRate(site, cat, function(dd){ return dd === d; });
+                        days.push(r !== null ? r : 0);
+                    });
+                    return days;
+                }
+
+                function sparkSVG(data, changeCls) {
+                    if (!data || data.length < 2) return '';
+                    var w = 60, h = 24;
+                    var mn = Math.min.apply(null, data), mx = Math.max.apply(null, data);
+                    var range = mx - mn || 0.01;
+                    var pts = data.map(function(v, i) {
+                        var x = (i / (data.length - 1) * w).toFixed(1);
+                        var y = (h - ((v - mn) / range * (h - 4) + 2)).toFixed(1);
+                        return x + ',' + y;
+                    }).join(' ');
+                    var color = changeCls === 'down' ? '#16a34a' : changeCls === 'up' ? '#E24B4A' : '#94a3b8';
+                    return '<svg width="'+w+'" height="'+h+'" viewBox="0 0 '+w+' '+h+'" style="display:block;flex-shrink:0;" aria-hidden="true">'
+                        + '<polyline points="'+pts+'" fill="none" stroke="'+color+'" stroke-width="1.5" stroke-linejoin="round" stroke-linecap="round"/>'
+                        + '</svg>';
+                }
+
                 function renderRows(rows, maxRate) {
                     return rows.map((r, i) => {
                         const noCls = r.isFixed ? 'fixed' : (i===0?'top1':i===1?'top2':i===2?'top3':'normal');
@@ -2337,6 +2364,8 @@
                         const metaHtml = (r.checks !== undefined)
                             ? `<div style="font-size:10px;color:var(--text-secondary);line-height:1.6;text-align:right;white-space:nowrap;min-width:90px;">大盘 ${r.checks}台 · 客观执行 ${r.execDiff}台</div>`
                             : '';
+                        const sparkData = calcSparkData(r.site, cat);
+                        const spark = sparkSVG(sparkData, r.changeCls);
                         return `<div class="rank-row" data-site="${r.site}" onclick="zbClickRankSite(this)" style="cursor:pointer;">
                             <div class="rank-no ${noCls}">${noTxt}</div>
                             <div class="rank-name" title="${r.site}" style="min-width:0;overflow:hidden;">
@@ -2346,6 +2375,7 @@
                             <div class="rank-bar-wrap"><div class="rank-bar-inner" style="width:${pct}%;background:${color}"></div></div>
                             <div class="rank-rate" style="color:${color}">${r.rate !== null ? r.rate.toFixed(2)+'%' : '—'}</div>
                             ${metaHtml}
+                            <div style="display:flex;align-items:center;justify-content:center;width:68px;flex-shrink:0;" title="近${sparkData.length}天趋势">${spark}</div>
                             <div class="rank-change ${r.changeCls}">${r.change}</div>
                         </div>`;
                     }).join('');
@@ -5471,6 +5501,66 @@ function zbRenderSitePersonList() {
         if (!kpiWrap) { kpiWrap=document.createElement('div'); kpiWrap.id='zbPersonKpiWrap'; var tw=bodyEl.closest('table'); if(tw) tw.parentNode.insertBefore(kpiWrap,tw); }
         window._sitePersonTopArr = topArr; // 供最高个人差异色块点击用
         kpiWrap.innerHTML = kpiHtml;
+
+        // ── 柱状图（插在KPI和排名表之间）──
+        var barWrapId = 'zbPersonBarWrap';
+        var barWrap = document.getElementById(barWrapId);
+        if (!barWrap) {
+            barWrap = document.createElement('div');
+            barWrap.id = barWrapId;
+            barWrap.style.cssText = 'margin-bottom:14px;';
+            var tw0 = bodyEl.closest('table');
+            if (tw0) tw0.parentNode.insertBefore(barWrap, tw0);
+        }
+        if (topArr.length > 0) {
+            var avgCnt = topArr.reduce(function(s,p){ return s+p.cnt; }, 0) / topArr.length;
+            barWrap.innerHTML = '<div id="zbPersonBarChart" style="width:100%;height:'+(Math.max(160, topArr.length*28))+'px;"></div>';
+            setTimeout(function() {
+                var el = document.getElementById('zbPersonBarChart');
+                if (!el || typeof echarts === 'undefined') return;
+                var inst = echarts.getInstanceByDom(el);
+                if (inst) inst.dispose();
+                var chart = echarts.init(el);
+                var names = topArr.map(function(p){ return p.name; });
+                var vals  = topArr.map(function(p){ return p.cnt; });
+                var colors = vals.map(function(v){ return v > avgCnt ? '#E24B4A' : '#378ADD'; });
+                chart.setOption({
+                    grid: { top:10, bottom:24, left:70, right:60, containLabel:false },
+                    tooltip: {
+                        trigger:'axis',
+                        axisPointer:{type:'none'},
+                        formatter: function(params) {
+                            var v = params[0].value;
+                            return params[0].name + '：' + v + ' 台' + (v > avgCnt ? '（超出均值）' : '');
+                        }
+                    },
+                    xAxis: {
+                        type:'value', splitLine:{ lineStyle:{color:'#f1f5f9'} },
+                        axisLabel:{ formatter:'{value}台', fontSize:10, color:'#94a3b8' },
+                        axisLine:{show:false}, axisTick:{show:false}
+                    },
+                    yAxis: {
+                        type:'category', data:names.slice().reverse(),
+                        axisLabel:{ fontSize:11, color:'#334155' },
+                        axisLine:{show:false}, axisTick:{show:false}
+                    },
+                    series: [{
+                        type:'bar', data:vals.slice().reverse(),
+                        barMaxWidth:18, borderRadius:3,
+                        itemStyle:{ color: function(params){ return colors[vals.length-1-params.dataIndex]; } },
+                        label:{ show:true, position:'right', fontSize:10, color:'#64748b', formatter:'{c}台' },
+                        markLine:{
+                            silent:true, symbol:'none',
+                            lineStyle:{ color:'#f59e0b', type:'dashed', width:1 },
+                            data:[{ xAxis: avgCnt, label:{ formatter:'均值 '+avgCnt.toFixed(1), fontSize:9, color:'#f59e0b' } }]
+                        }
+                    }]
+                });
+                setTimeout(function(){ chart.resize(); }, 50);
+            }, 0);
+        } else {
+            barWrap.innerHTML = '';
+        }
         var pageSize=window._zbPersonPageSize||10, page=window._zbPersonPage||1;
         var totalPages=Math.max(1,Math.ceil(topArr.length/pageSize));
         if(page>totalPages) page=window._zbPersonPage=1;
