@@ -6798,16 +6798,19 @@ function zbCopyDimTable() {
             + '<th style="'+S.th+'">变化</th>'
             + '</tr>';
 
+        var tdN = 'padding:6px 12px;text-align:center;border:1px solid #e9eff6;color:#1e293b;';
+        var tdL = 'padding:6px 12px;text-align:left;border:1px solid #e9eff6;color:#1e293b;';
+
         // 本周分组
         if (curList.length) {
             html += '<tr><td colspan="4" style="'+S.secCur+'">本周失误人明细 · '+curLabel+'</td></tr>';
             curList.forEach(function(p){
                 var delta = p.cur - p.prv;
                 html += '<tr>'
-                    + '<td style="'+S.tdCurL+'">'+p.name+'</td>'
-                    + '<td style="'+S.tdCur+'">'+(p.prv||'—')+'</td>'
-                    + '<td style="'+S.tdCur+'">'+p.cur+'</td>';
-                html += deltaHtml(delta, S.tdCur);
+                    + '<td style="'+tdL+'">'+p.name+'</td>'
+                    + '<td style="'+tdN+'">'+(p.prv||'—')+'</td>'
+                    + '<td style="'+tdN+'">'+p.cur+'</td>';
+                html += deltaHtml(delta, tdN);
                 html += '</tr>';
             });
         }
@@ -6818,10 +6821,10 @@ function zbCopyDimTable() {
             prvList.forEach(function(p){
                 var delta = p.cur - p.prv;
                 html += '<tr>'
-                    + '<td style="'+S.tdPrvL+'">'+p.name+'</td>'
-                    + '<td style="'+S.tdPrv+'">'+p.prv+'</td>'
-                    + '<td style="'+S.tdPrv+'">'+(p.cur||'—')+'</td>';
-                html += deltaHtml(delta, S.tdPrv);
+                    + '<td style="'+tdL+'">'+p.name+'</td>'
+                    + '<td style="'+tdN+'">'+p.prv+'</td>'
+                    + '<td style="'+tdN+'">'+(p.cur||'—')+'</td>';
+                html += deltaHtml(delta, tdN);
                 html += '</tr>';
             });
         }
@@ -6829,32 +6832,34 @@ function zbCopyDimTable() {
         html += '</table>';
 
     } else {
-        // ── 项维度 ──
-        var execDiff = window._sitePersonData || [];
-        // 项维度从维度面板DOM读数据（已渲染好的）
-        var panelIssue = document.getElementById('zbDimPanelIssue');
-        var tbl = panelIssue ? panelIssue.querySelector('table') : null;
-        if (!tbl || tbl.rows.length <= 1) { showToast('项维度暂无数据'); return; }
+        // ── 项维度：从_siteExecDiff按对比区间重新聚合 ──
+        var execDiff2 = window._siteExecDiff || [];
+        if (!execDiff2.length) { showToast('项维度暂无数据'); return; }
 
-        // 读表格数据行（跳过表头）
+        function inPrd(date, s, e){ if(!s||!e) return false; return date>=s&&date<=e; }
+        var curItemMap = {}, prvItemMap = {};
+        execDiff2.forEach(function(d){
+            var dt = d.date ? d.date.split(' ')[0] : '';
+            var k  = d.level3 || '未知';
+            if (inPrd(dt, curStart,  curEnd))  curItemMap[k] = (curItemMap[k]||0) + 1;
+            if (inPrd(dt, lastStart, lastEnd))  prvItemMap[k] = (prvItemMap[k]||0) + 1;
+        });
+
+        var allItemKeys = new Set(Object.keys(curItemMap).concat(Object.keys(prvItemMap)));
         var curRows = [], prvRows = [];
-        for (var ri = 1; ri < tbl.rows.length; ri++) {
-            var row = tbl.rows[ri];
-            var cells = row.cells;
-            if (cells.length < 4) continue;
-            var level3 = (cells[0].innerText||'').trim();
-            var lastV  = (cells[1].innerText||'').trim();
-            var curV   = (cells[2].innerText||'').trim();
-            var lastN  = parseInt(lastV) || 0;
-            var curN   = parseInt(curV)  || 0;
-            if (curN > 0) curRows.push({level3:level3, last:lastN, cur:curN, delta:curN-lastN});
-            else if (lastN > 0) prvRows.push({level3:level3, last:lastN, cur:curN, delta:curN-lastN});
-        }
-        // 本周按cur降序，上周按last降序
+        allItemKeys.forEach(function(k){
+            var c = curItemMap[k]||0, p = prvItemMap[k]||0;
+            if (c > 0) curRows.push({level3:k, cur:c, last:p, delta:c-p});
+            else        prvRows.push({level3:k, cur:c, last:p, delta:c-p});
+        });
         curRows.sort(function(a,b){ return b.cur-a.cur||b.last-a.last; });
         prvRows.sort(function(a,b){ return b.last-a.last||b.cur-a.cur; });
 
-        if (!curRows.length && !prvRows.length) { showToast('项维度暂无数据'); return; }
+        if (!curRows.length && !prvRows.length) { showToast('项维度暂无数据，请先开启「对比数据」'); return; }
+
+        // 数据行白底，只有分组标题行有底色
+        var tdN = 'padding:6px 12px;text-align:center;border:1px solid #e9eff6;color:#1e293b;';
+        var tdL = 'padding:6px 12px;text-align:left;border:1px solid #e9eff6;color:#1e293b;';
 
         html = '<table style="'+S.table+'">'
             + '<tr>'
@@ -6868,10 +6873,10 @@ function zbCopyDimTable() {
             html += '<tr><td colspan="4" style="'+S.secCur+'">本周失误项明细 · '+curLabel+'</td></tr>';
             curRows.forEach(function(r){
                 html += '<tr>'
-                    + '<td style="'+S.tdCurL+'">'+r.level3+'</td>'
-                    + '<td style="'+S.tdCur+'">'+(r.last||'—')+'</td>'
-                    + '<td style="'+S.tdCur+'">'+r.cur+'</td>';
-                html += deltaHtml(r.delta, S.tdCur);
+                    + '<td style="'+tdL+'">'+r.level3+'</td>'
+                    + '<td style="'+tdN+'">'+(r.last||'—')+'</td>'
+                    + '<td style="'+tdN+'">'+r.cur+'</td>';
+                html += deltaHtml(r.delta, tdN);
                 html += '</tr>';
             });
         }
@@ -6880,10 +6885,10 @@ function zbCopyDimTable() {
             html += '<tr><td colspan="4" style="'+S.secPrv+'">上周失误项明细 · '+lastLabel+'</td></tr>';
             prvRows.forEach(function(r){
                 html += '<tr>'
-                    + '<td style="'+S.tdPrvL+'">'+r.level3+'</td>'
-                    + '<td style="'+S.tdPrv+'">'+r.last+'</td>'
-                    + '<td style="'+S.tdPrv+'">'+(r.cur||'—')+'</td>';
-                html += deltaHtml(r.delta, S.tdPrv);
+                    + '<td style="'+tdL+'">'+r.level3+'</td>'
+                    + '<td style="'+tdN+'">'+r.last+'</td>'
+                    + '<td style="'+tdN+'">'+(r.cur||'—')+'</td>';
+                html += deltaHtml(r.delta, tdN);
                 html += '</tr>';
             });
         }
