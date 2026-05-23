@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.43T</title>
+    <title>培训部数据看板 v1.43U</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -619,7 +619,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43T</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.43U</div>
     </div>
   </nav>
 
@@ -5465,37 +5465,48 @@ function zbRenderSiteIssueAnalysis(execDiff, rootEl) {
         });
         var itemMap = {};
         filtered.forEach(function(d){
-            var k = d.level3||'未知';
-            itemMap[k] = (itemMap[k]||0) + 1;
+            var k = (d.level3||'未知')+'||'+(d.level1||'')+'||'+(d.level2||'');
+            if (!itemMap[k]) itemMap[k] = {level1:d.level1||'',level2:d.level2||'',level3:d.level3||'未知',cnt:0};
+            itemMap[k].cnt++;
         });
-        var rows = Object.keys(itemMap).map(function(k){ return {level3:k, cnt:itemMap[k]}; });
+        var rows = Object.keys(itemMap).map(function(k){ return itemMap[k]; });
         rows.sort(function(a,b){ return b.cnt-a.cnt; });
         var totalCnt = rows.reduce(function(s,r){ return s+r.cnt; }, 0);
+        var top1label = rows.length ? ([rows[0].level1,rows[0].level2,rows[0].level3].filter(Boolean).join('—')) : '';
         var top1 = rows.length ? rows[0].level3 : '';
         var top1cnt = rows.length ? rows[0].cnt : 0;
 
         // KPI
         if (kpiWrap) kpiWrap.innerHTML = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">'
             + '<div style="background:var(--kpi-bg);border-radius:10px;padding:9px 12px;"><div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px;">涉及质检项</div><div style="font-size:16px;font-weight:500;color:#2563eb;">'+rows.length+'</div></div>'
-            + '<div style="background:var(--kpi-bg);border-radius:10px;padding:9px 12px;"><div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px;">最高频质检项</div><div style="font-size:11px;font-weight:500;padding-top:3px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+top1+'">'+top1+'</div></div>'
+            + '<div style="background:var(--kpi-bg);border-radius:10px;padding:9px 12px;"><div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px;">最高频质检项</div><div style="font-size:11px;font-weight:500;padding-top:3px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+top1label+'">'+top1label+'</div></div>'
             + '<div style="background:var(--kpi-bg);border-radius:10px;padding:9px 12px;"><div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px;">最高频出现次数</div><div style="font-size:16px;font-weight:500;color:#dc2626;">'+top1cnt+'次</div></div>'
             + '</div>';
 
         if (!rows.length) { rootEl.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-secondary);font-size:13px;">该时段暂无数据</div>'; return; }
 
+        window._siteIssueAllDiff = execDiff;
         var pageSize = window._zbIssuePageSize||10, page = window._zbIssuePage||1;
         var totalPages = Math.max(1,Math.ceil(rows.length/pageSize));
         if(page>totalPages) page=window._zbIssuePage=1;
         var sliced = rows.slice((page-1)*pageSize, page*pageSize);
 
         rootEl.innerHTML = '<div style="overflow-x:auto;"><table class="rank-table" style="width:100%;table-layout:fixed;">'
-            + '<thead><tr><th style="width:50px;">排名</th><th>三级项</th><th style="text-align:center;color:#2563eb;width:120px;">出现次数</th><th style="text-align:center;width:80px;">占比</th></tr></thead><tbody>'
+            + '<thead><tr><th style="width:50px;">排名</th><th>质检项</th><th style="text-align:center;color:#2563eb;width:120px;">出现次数</th><th style="text-align:center;width:80px;">占比</th></tr></thead><tbody>'
             + sliced.map(function(r,idx){
                 var rank=(page-1)*pageSize+idx+1;
                 var rc=rank===1?'background:#fca5a5;color:#7f1d1d;':rank===2?'background:#fed7aa;color:#7c2d12;':rank===3?'background:#fde68a;color:#78350f;':'background:var(--kpi-bg);color:var(--text-secondary);';
                 var pct=totalCnt?Math.round(r.cnt/totalCnt*100):0;
                 var prog='<div style="display:flex;align-items:center;gap:4px;justify-content:center;"><div style="width:36px;height:4px;background:var(--kpi-bg);border-radius:3px;overflow:hidden;"><div style="width:'+pct+'%;height:100%;background:#2563eb;border-radius:3px;"></div></div><span style="font-size:11px;">'+pct+'%</span></div>';
-                return '<tr><td style="text-align:center;"><div style="width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;'+rc+'margin:auto;">'+rank+'</div></td><td style="cursor:pointer;" data-issue-item="'+r.level3.replace(/"/g,'&quot;')+'">'+r.level3+'</td><td style="text-align:center;font-weight:500;color:#dc2626;">'+r.cnt+'</td><td>'+prog+'</td></tr>';
+                var itemLabel = [r.level1,r.level2,r.level3].filter(Boolean).join('—');
+                var l1=(r.level1||'').replace(/'/g,"\\'"), l2=(r.level2||'').replace(/'/g,"\\'"), l3=(r.level3||'').replace(/'/g,"\\'");
+                var labelEsc=itemLabel.replace(/'/g,"\\'");
+                return '<tr style="cursor:pointer;" onclick="zbIssueRowClick(\''+l1+'\',\''+l2+'\',\''+l3+'\',\''+labelEsc+'\')">'
+                    +'<td style="text-align:center;"><div style="width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;'+rc+'margin:auto;">'+rank+'</div></td>'
+                    +'<td>'+itemLabel+'</td>'
+                    +'<td style="text-align:center;font-weight:500;color:#dc2626;">'+r.cnt+'</td>'
+                    +'<td>'+prog+'</td>'
+                    +'</tr>';
             }).join('')
             + '</tbody></table></div>';
 
@@ -5507,37 +5518,50 @@ function zbRenderSiteIssueAnalysis(execDiff, rootEl) {
         var diffB = execDiff.filter(function(d){ return d.date && inPeriod(d.date.split(' ')[0],curStart,curEnd); });
         function groupByItem(rows){
             var map={};
-            rows.forEach(function(d){ var k=d.level3||'未知'; map[k]=(map[k]||0)+1; });
+            rows.forEach(function(d){
+                var k=(d.level3||'未知')+'||'+(d.level1||'')+'||'+(d.level2||'');
+                if(!map[k]) map[k]={level1:d.level1||'',level2:d.level2||'',level3:d.level3||'未知',cnt:0};
+                map[k].cnt++;
+            });
             return map;
         }
         var mapA=groupByItem(diffA), mapB=groupByItem(diffB);
         var allKeys=new Set(Object.keys(mapA).concat(Object.keys(mapB)));
         var rows=[];
-        allKeys.forEach(function(k){ rows.push({level3:k,a:mapA[k]||0,b:mapB[k]||0,delta:(mapB[k]||0)-(mapA[k]||0)}); });
+        allKeys.forEach(function(k){
+            var infoA=mapA[k], infoB=mapB[k], info=infoA||infoB;
+            rows.push({level1:info.level1,level2:info.level2,level3:info.level3,a:infoA?infoA.cnt:0,b:infoB?infoB.cnt:0,delta:(infoB?infoB.cnt:0)-(infoA?infoA.cnt:0)});
+        });
         rows.sort(function(a,b){ return b.delta!==a.delta?b.delta-a.delta:b.b-a.b; });
 
-        var top1=rows.length?rows[0].level3:'', top1cnt=rows.length?rows[0].b:0;
+        var top1info=rows.length?rows[0]:{};
+        var top1label=[top1info.level1,top1info.level2,top1info.level3].filter(Boolean).join('—');
+        var top1cnt=rows.length?rows[0].b:0;
         if (kpiWrap) kpiWrap.innerHTML = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">'
             + '<div style="background:var(--kpi-bg);border-radius:10px;padding:9px 12px;"><div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px;">涉及质检项</div><div style="font-size:16px;font-weight:500;color:#2563eb;">'+rows.length+'</div></div>'
-            + '<div style="background:var(--kpi-bg);border-radius:10px;padding:9px 12px;"><div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px;">本期最高频</div><div style="font-size:11px;font-weight:500;padding-top:3px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+top1+'">'+top1+'</div></div>'
+            + '<div style="background:var(--kpi-bg);border-radius:10px;padding:9px 12px;"><div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px;">本期最高频</div><div style="font-size:11px;font-weight:500;padding-top:3px;line-height:1.4;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+top1label+'">'+top1label+'</div></div>'
             + '<div style="background:var(--kpi-bg);border-radius:10px;padding:9px 12px;"><div style="font-size:10px;color:var(--text-secondary);margin-bottom:3px;">本期最高频次数</div><div style="font-size:16px;font-weight:500;color:#dc2626;">'+top1cnt+'次</div></div>'
             + '</div>';
 
         if (!rows.length) { rootEl.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-secondary);font-size:13px;">该时段暂无数据</div>'; return; }
 
+        window._siteIssueAllDiff = execDiff;
         var pageSize=window._zbIssuePageSize||10, page=window._zbIssuePage||1;
         var totalPages=Math.max(1,Math.ceil(rows.length/pageSize));
         if(page>totalPages) page=window._zbIssuePage=1;
         var sliced=rows.slice((page-1)*pageSize,page*pageSize);
 
         rootEl.innerHTML = '<div style="overflow-x:auto;"><table class="rank-table" style="width:100%;table-layout:fixed;">'
-            + '<thead><tr><th style="width:50px;">排名</th><th>三级项</th><th style="text-align:center;width:110px;">'+labelA+'</th><th style="text-align:center;color:#2563eb;width:110px;">'+labelB+'</th><th style="text-align:center;width:80px;">变化</th></tr></thead><tbody>'
+            + '<thead><tr><th style="width:50px;">排名</th><th>质检项</th><th style="text-align:center;width:110px;">'+labelA+'</th><th style="text-align:center;color:#2563eb;width:110px;">'+labelB+'</th><th style="text-align:center;width:80px;">变化</th></tr></thead><tbody>'
             + sliced.map(function(r,idx){
                 var rank=(page-1)*pageSize+idx+1;
                 var isRed=rank===1&&r.delta>0;
                 var rowBg=isRed?'background:#fef2f2;':'';
                 var rc=isRed?'background:#fca5a5;color:#7f1d1d;':'background:var(--kpi-bg);color:var(--text-secondary);';
-                return '<tr style="'+rowBg+'" data-issue-item="'+r.level3.replace(/"/g,'&quot;')+'"><td style="text-align:center;"><div style="width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;'+rc+'margin:auto;">'+rank+'</div></td><td>'+r.level3+'</td><td style="text-align:center;">'+(r.a||'—')+'</td><td style="text-align:center;font-weight:500;'+(isRed?'color:#dc2626;':'')+'"> '+(r.b||'—')+'</td><td style="text-align:center;">'+fmtDelta(r.delta)+'</td></tr>';
+                var itemLabel=[r.level1,r.level2,r.level3].filter(Boolean).join('—');
+                var l1=(r.level1||'').replace(/'/g,"\\'"),l2=(r.level2||'').replace(/'/g,"\\'"),l3=(r.level3||'').replace(/'/g,"\\'");
+                var labelEsc=itemLabel.replace(/'/g,"\\'");
+                return '<tr style="'+rowBg+';cursor:pointer;" onclick="zbIssueRowClick(\''+l1+'\',\''+l2+'\',\''+l3+'\',\''+labelEsc+'\')"><td style="text-align:center;"><div style="width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;'+rc+'margin:auto;">'+rank+'</div></td><td>'+itemLabel+'</td><td style="text-align:center;">'+(r.a||'—')+'</td><td style="text-align:center;font-weight:500;'+(isRed?'color:#dc2626;':'')+'"> '+(r.b||'—')+'</td><td style="text-align:center;">'+fmtDelta(r.delta)+'</td></tr>';
             }).join('')
             + '</tbody></table></div>';
     }
