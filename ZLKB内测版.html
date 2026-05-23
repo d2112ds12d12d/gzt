@@ -795,9 +795,9 @@
                     <thead>
                         <tr style="background:var(--kpi-bg);border-bottom:0.5px solid var(--border-color);">
                             <th style="padding:8px 16px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);width:80px;">全国 / 仓内</th>
-                            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);cursor:pointer;user-select:none;" onclick="zbPersonRankFilterOpen('person',this)">质检人 <span id="personFilterBadge" style="font-size:10px;color:#2563eb;display:none;">▾</span> <span style="font-size:10px;color:var(--text-tertiary);">▾</span></th>
-                            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);cursor:pointer;user-select:none;" onclick="zbPersonRankFilterOpen('wh',this)">所属仓 <span id="whFilterBadge" style="font-size:10px;color:#2563eb;display:none;">▾</span> <span style="font-size:10px;color:var(--text-tertiary);">▾</span></th>
-                            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);cursor:pointer;user-select:none;" onclick="zbPersonRankFilterOpen('type',this)">站点类型 <span id="typeFilterBadge" style="font-size:10px;color:#2563eb;display:none;">▾</span> <span style="font-size:10px;color:var(--text-tertiary);">▾</span></th>
+                            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);cursor:pointer;user-select:none;" onclick="window._personRankOpenEvent=event;zbPersonRankFilterOpen('person',this)">质检人 <span id="personFilterBadge" style="font-size:10px;color:#2563eb;display:none;">▾</span> <span style="font-size:10px;color:var(--text-tertiary);">▾</span></th>
+                            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);cursor:pointer;user-select:none;" onclick="window._personRankOpenEvent=event;zbPersonRankFilterOpen('wh',this)">所属仓 <span id="whFilterBadge" style="font-size:10px;color:#2563eb;display:none;">▾</span> <span style="font-size:10px;color:var(--text-tertiary);">▾</span></th>
+                            <th style="padding:8px 12px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);cursor:pointer;user-select:none;" onclick="window._personRankOpenEvent=event;zbPersonRankFilterOpen('type',this)">站点类型 <span id="typeFilterBadge" style="font-size:10px;color:#2563eb;display:none;">▾</span> <span style="font-size:10px;color:var(--text-tertiary);">▾</span></th>
                             <th style="padding:8px 16px;text-align:right;font-size:11px;font-weight:500;color:#2563eb;cursor:pointer;" onclick="zbPersonRankToggleSort()">客观执行差异量 <span id="personRankSortIndicator">↓</span></th>
                         </tr>
                     </thead>
@@ -6931,13 +6931,16 @@ window._personRankFilterCol = null;
 window._personRankFilterTemp = new Set();
 
 window.zbPersonRankFilterOpen = function(col, thEl) {
+    // 确保 thEl 是 th 元素（点到内部 span 时往上找）
+    var th = (thEl && thEl.tagName === 'TH') ? thEl : (thEl && thEl.closest('th')) || thEl;
     var panel = document.getElementById('personRankFilterPanel');
-    // 若距上次因点击列头触发的关闭 < 200ms，说明是同一次点击的 click 事件，忽略
-    if (window._personRankFilterCloseTs && Date.now() - window._personRankFilterCloseTs < 200) {
-        window._personRankFilterCloseTs = null;
-        return;
+
+    // 阻止本次 click 冒泡到 document（防止 document 监听把面板关掉）
+    if (window._personRankOpenEvent) {
+        window._personRankOpenEvent.stopPropagation();
     }
-    // 面板已开且是同一列，直接关闭（切换）
+
+    // 面板已开且是同一列 → 关闭（切换）
     if (window._personRankLastOpenCol === col && panel && panel.style.display !== 'none') {
         window._personRankLastOpenCol = null;
         zbPersonRankFilterClose();
@@ -6956,39 +6959,36 @@ window.zbPersonRankFilterOpen = function(col, thEl) {
             });
         }
     });
-    // 站点类型兜底
     if (col === 'type' && vals.size === 0) { vals.add('大仓'); vals.add('中心仓'); }
     var current = window._personRankFilters[col];
     window._personRankFilterTemp = current ? new Set(current) : new Set(vals);
     window._personRankFilterAllVals = Array.from(vals).sort();
-    var panel = document.getElementById('personRankFilterPanel');
     if (!panel) return;
     document.getElementById('personRankFilterSearch').value = '';
     zbPersonRankFilterSearch();
     // 定位面板到列头下方
-    var rect = thEl.getBoundingClientRect();
-    var panelH = 300; // 估算面板高度
+    var rect = th.getBoundingClientRect();
+    var panelH = 300;
     var topPos = rect.bottom + 4;
     if (topPos + panelH > window.innerHeight) topPos = rect.top - panelH - 4;
     panel.style.top = Math.max(8, topPos) + 'px';
     panel.style.left = Math.min(Math.max(8, rect.left), window.innerWidth - 270) + 'px';
     panel.style.display = '';
-    // 用mousedown而不是click，避免与列头click事件冲突
+    // document click 监听关闭（click 已被 stopPropagation 阻断，不会立即触发）
     setTimeout(function() {
-        document.addEventListener('mousedown', zbPersonRankFilterOutside);
-    }, 50);
+        document.addEventListener('click', zbPersonRankFilterOutside);
+    }, 0);
 };
 window.zbPersonRankFilterOutside = function(e) {
     var panel = document.getElementById('personRankFilterPanel');
-    if (panel && panel.style.display !== 'none' && !panel.contains(e.target)) {
-        // 若点的是列头，记录时间戳让 click 事件忽略本次触发
-        var th = e.target.closest('th');
-        if (th && th.getAttribute('onclick') && th.getAttribute('onclick').includes('zbPersonRankFilterOpen')) {
-            window._personRankFilterCloseTs = Date.now();
-        }
-        window._personRankLastOpenCol = null;
-        zbPersonRankFilterClose();
+    if (!panel || panel.style.display === 'none') {
+        document.removeEventListener('click', zbPersonRankFilterOutside);
+        return;
     }
+    if (panel.contains(e.target)) return;
+    window._personRankLastOpenCol = null;
+    zbPersonRankFilterClose();
+    document.removeEventListener('click', zbPersonRankFilterOutside);
 };
 window.zbPersonRankFilterSearch = function() {
     var kw = (document.getElementById('personRankFilterSearch').value || '').trim();
