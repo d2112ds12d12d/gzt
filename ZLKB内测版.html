@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.44O</title>
+    <title>培训部数据看板 v1.44P</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -750,7 +750,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44O</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44P</div>
     </div>
   </nav>
 
@@ -7430,11 +7430,19 @@ window.zbSearchQuery = function(q) {
     }
 
     var html = '';
+    window._zbSearchResultCache = [];
+
+    function addResult(type, r) {
+        var idx = window._zbSearchResultCache.length;
+        window._zbSearchResultCache.push({ type: type, data: r });
+        return idx;
+    }
 
     if (results.code.length) {
         html += '<div style="font-size:10px;color:#94a3b8;padding:8px 16px 3px;background:#f8fafc;letter-spacing:.05em;font-weight:500;">🔢 质检码 · ' + results.code.length + '条</div>';
         results.code.slice(0,5).forEach(function(r) {
-            html += '<div class="zb-search-item" style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid #f8fafc;cursor:pointer;transition:background .1s;" onclick="zbSearchAction(\'code\','+JSON.stringify(r)+')" onmouseenter="this.style.background=\'#f8fafc\'" onmouseleave="this.style.background=\'\'">'
+            var idx = addResult('code', r);
+            html += '<div class="zb-search-item" style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid #f8fafc;cursor:pointer;transition:background .1s;" onclick="zbSearchActionByIdx('+idx+')" onmouseenter="this.style.background=\'#f8fafc\'" onmouseleave="this.style.background=\'\'">'
                 + '<div style="width:28px;height:28px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">📋</div>'
                 + '<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:500;color:#0f172a;">'+hl(r.code)+' · '+r.site+'</div><div style="font-size:10px;color:#94a3b8;margin-top:1px;">'+r.date+' · '+r.level1+' · '+r.cnt+'条差异</div></div>'
                 + '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#eff6ff;color:#2563eb;font-weight:500;flex-shrink:0;">弹明细</span>'
@@ -7446,7 +7454,8 @@ window.zbSearchQuery = function(q) {
     if (results.person.length) {
         html += '<div style="font-size:10px;color:#94a3b8;padding:8px 16px 3px;background:#f8fafc;letter-spacing:.05em;font-weight:500;">👤 质检人员 · ' + results.person.length + '条</div>';
         results.person.slice(0,3).forEach(function(r) {
-            html += '<div class="zb-search-item" style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid #f8fafc;cursor:pointer;transition:background .1s;" onclick="zbSearchAction(\'person\','+JSON.stringify(r)+')" onmouseenter="this.style.background=\'#f8fafc\'" onmouseleave="this.style.background=\'\'">'
+            var idx = addResult('person', r);
+            html += '<div class="zb-search-item" style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid #f8fafc;cursor:pointer;transition:background .1s;" onclick="zbSearchActionByIdx('+idx+')" onmouseenter="this.style.background=\'#f8fafc\'" onmouseleave="this.style.background=\'\'">'
                 + '<div style="width:28px;height:28px;border-radius:8px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">👤</div>'
                 + '<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:500;color:#0f172a;">'+hl(r.name)+' · '+r.site+'</div><div style="font-size:10px;color:#94a3b8;margin-top:1px;">本期差异 '+r.cnt+' 条</div></div>'
                 + '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#f0fdf4;color:#16a34a;font-weight:500;flex-shrink:0;">跳转人维度</span>'
@@ -7457,7 +7466,8 @@ window.zbSearchQuery = function(q) {
     if (results.site.length) {
         html += '<div style="font-size:10px;color:#94a3b8;padding:8px 16px 3px;background:#f8fafc;letter-spacing:.05em;font-weight:500;">🏪 站点 · ' + results.site.length + '条</div>';
         results.site.slice(0,3).forEach(function(r) {
-            html += '<div class="zb-search-item" style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid #f8fafc;cursor:pointer;transition:background .1s;" onclick="zbSearchAction(\'site\','+JSON.stringify(r)+')" onmouseenter="this.style.background=\'#f8fafc\'" onmouseleave="this.style.background=\'\'">'
+            var idx = addResult('site', r);
+            html += '<div class="zb-search-item" style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid #f8fafc;cursor:pointer;transition:background .1s;" onclick="zbSearchActionByIdx('+idx+')" onmouseenter="this.style.background=\'#f8fafc\'" onmouseleave="this.style.background=\'\'">'
                 + '<div style="width:28px;height:28px;border-radius:8px;background:#fdf4ff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🏪</div>'
                 + '<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:500;color:#0f172a;">'+hl(r.site)+'</div><div style="font-size:10px;color:#94a3b8;margin-top:1px;">本期 '+r.cnt+' 条差异</div></div>'
                 + '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#fdf4ff;color:#9333ea;font-weight:500;flex-shrink:0;">跳转站点</span>'
@@ -7468,7 +7478,8 @@ window.zbSearchQuery = function(q) {
     if (results.item.length) {
         html += '<div style="font-size:10px;color:#94a3b8;padding:8px 16px 3px;background:#f8fafc;letter-spacing:.05em;font-weight:500;">🔍 质检项 · ' + results.item.length + '条</div>';
         results.item.slice(0,5).forEach(function(r) {
-            html += '<div class="zb-search-item" style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid #f8fafc;cursor:pointer;transition:background .1s;" onclick="zbSearchAction(\'item\','+JSON.stringify(r)+')" onmouseenter="this.style.background=\'#f8fafc\'" onmouseleave="this.style.background=\'\'">'
+            var idx = addResult('item', r);
+            html += '<div class="zb-search-item" style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid #f8fafc;cursor:pointer;transition:background .1s;" onclick="zbSearchActionByIdx('+idx+')" onmouseenter="this.style.background=\'#f8fafc\'" onmouseleave="this.style.background=\'\'">'
                 + '<div style="width:28px;height:28px;border-radius:8px;background:#fff7ed;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🔍</div>'
                 + '<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:500;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+hl(r.label)+'</div><div style="font-size:10px;color:#94a3b8;margin-top:1px;">'+r.sites+'个站点 · 共'+r.cnt+'条差异</div></div>'
                 + '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#fff7ed;color:#d97706;font-weight:500;flex-shrink:0;">弹明细</span>'
@@ -7477,6 +7488,12 @@ window.zbSearchQuery = function(q) {
     }
 
     el.innerHTML = html;
+};
+
+window.zbSearchActionByIdx = function(idx) {
+    var cache = window._zbSearchResultCache || [];
+    if (!cache[idx]) return;
+    zbSearchAction(cache[idx].type, cache[idx].data);
 };
 
 window.zbSearchAction = function(type, r) {
