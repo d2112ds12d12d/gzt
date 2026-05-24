@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.44Z</title>
+    <title>培训部数据看板 v1.44AA</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -750,7 +750,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44Z</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44AA</div>
     </div>
   </nav>
 
@@ -9203,42 +9203,123 @@ function zbCloseUpload() {
 
 <!-- 上传弹窗HTML -->
 <div id="zbUploadModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.45);z-index:800;align-items:center;justify-content:center;backdrop-filter:blur(6px);" onclick="if(event.target===this)zbCloseUpload()">
-  <div style="background:var(--bg-card,#fff);border-radius:20px;width:520px;max-width:92vw;padding:24px;border:1px solid var(--border-color);box-shadow:0 8px 24px rgba(0,0,0,0.12);">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
+  <div style="background:var(--bg-card,#fff);border-radius:20px;width:580px;max-width:94vw;padding:24px;border:1px solid var(--border-color);box-shadow:0 8px 32px rgba(0,0,0,0.14);">
+    <!-- 标题 -->
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
       <div style="font-size:14px;font-weight:700;color:var(--text-primary);">📁 上传数据文件</div>
       <span onclick="zbCloseUpload()" style="cursor:pointer;font-size:20px;color:var(--text-secondary);padding:0 6px;line-height:1;">✕</span>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
-      <!-- 手机区域 -->
-      <label for="zbPhoneInput" style="border:2px dashed #2563eb60;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.18s;background:#eff6ff;display:block;">
-        <div style="font-size:28px;margin-bottom:8px;">📱</div>
-        <div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:4px;">手机数据</div>
-        <div style="font-size:11px;color:#64748b;line-height:1.7;">QA差异率表<br>手机差异明细表</div>
-        <div style="font-size:10px;color:#2563eb;margin-top:8px;">👆 点击选择文件</div>
-      </label>
-      <!-- 五品类区域 -->
-      <label for="zbFiveCatInput" style="border:2px dashed #05996960;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.18s;background:#ecfdf5;display:block;">
-        <div style="font-size:28px;margin-bottom:8px;">📦</div>
-        <div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:4px;">五品类数据</div>
-        <div style="font-size:11px;color:#64748b;line-height:1.7;">日汇总表<br>五品类差异明细表</div>
-        <div style="font-size:10px;color:#059669;margin-top:8px;">👆 点击选择文件</div>
-      </label>
+    <div style="font-size:11px;color:#94a3b8;margin-bottom:18px;">选择文件后点击「开始上传」，未选择的框会跳过，不影响已有数据</div>
+
+    <!-- 三个上传框 -->
+    <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+
+      <!-- 框1：手机 -->
+      <div style="border:1.5px dashed #bfdbfe;border-radius:12px;padding:14px 16px;background:#f8fbff;transition:all .15s;position:relative;" id="zbUpBox1">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:40px;height:40px;border-radius:10px;background:#eff6ff;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">📱</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;color:#1e293b;">手机数据</div>
+            <div style="font-size:11px;color:#64748b;margin-top:1px;">QA差异率表 · 手机差异明细表</div>
+            <div id="zbUpFile1Name" style="font-size:11px;color:#2563eb;margin-top:4px;display:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
+          </div>
+          <label for="zbPhoneInput" style="padding:6px 14px;border-radius:8px;background:#2563eb;color:#fff;font-size:12px;font-weight:500;cursor:pointer;flex-shrink:0;white-space:nowrap;">选择文件</label>
+        </div>
+      </div>
+
+      <!-- 框2：五品类 -->
+      <div style="border:1.5px dashed #a7f3d0;border-radius:12px;padding:14px 16px;background:#f8fdfb;transition:all .15s;position:relative;" id="zbUpBox2">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:40px;height:40px;border-radius:10px;background:#ecfdf5;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">📦</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;color:#1e293b;">五品类数据</div>
+            <div style="font-size:11px;color:#64748b;margin-top:1px;">日汇总表 · 五品类差异明细表</div>
+            <div id="zbUpFile2Name" style="font-size:11px;color:#059669;margin-top:4px;display:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
+          </div>
+          <label for="zbFiveCatInput" style="padding:6px 14px;border-radius:8px;background:#059669;color:#fff;font-size:12px;font-weight:500;cursor:pointer;flex-shrink:0;white-space:nowrap;">选择文件</label>
+        </div>
+      </div>
+
+      <!-- 框3：备用 -->
+      <div style="border:1.5px dashed #e2e8f0;border-radius:12px;padding:14px 16px;background:#f8fafc;transition:all .15s;position:relative;opacity:0.6;" id="zbUpBox3">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:40px;height:40px;border-radius:10px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">📋</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;color:#94a3b8;">备用（即将开放）</div>
+            <div style="font-size:11px;color:#94a3b8;margin-top:1px;">待配置</div>
+          </div>
+          <div style="padding:6px 14px;border-radius:8px;background:#e2e8f0;color:#94a3b8;font-size:12px;font-weight:500;flex-shrink:0;white-space:nowrap;cursor:not-allowed;">暂未开放</div>
+        </div>
+      </div>
+
     </div>
-    <div style="font-size:11px;color:var(--text-secondary);text-align:center;">可同时选多个文件 · 自动识别表类型 · 增量上传不覆盖历史</div>
+
+    <!-- 提示 + 按钮 -->
+    <div id="zbUploadHint" style="font-size:11px;color:#f59e0b;margin-bottom:12px;display:none;padding:8px 12px;background:#fffbeb;border-radius:8px;border:0.5px solid #fde68a;">⚠️ 请至少选择一个文件后再上传</div>
+    <div style="display:flex;gap:10px;align-items:center;">
+      <button onclick="zbConfirmUpload()" style="flex:1;padding:10px;border-radius:10px;background:#2563eb;color:#fff;font-size:13px;font-weight:600;border:none;cursor:pointer;transition:all .15s;" onmouseenter="this.style.background='#1d4ed8'" onmouseleave="this.style.background='#2563eb'">
+        ✦ 开始上传
+      </button>
+      <button onclick="zbCloseUpload()" style="padding:10px 20px;border-radius:10px;background:transparent;color:#64748b;font-size:13px;border:1px solid #e2e8f0;cursor:pointer;">取消</button>
+    </div>
   </div>
 </div>
-<input type="file" id="zbPhoneInput" style="display:none;" accept=".xlsx,.xls" multiple>
-<input type="file" id="zbFiveCatInput" style="display:none;" accept=".xlsx,.xls" multiple>
+<input type="file" id="zbPhoneInput" style="display:none;" accept=".xlsx,.xls">
+<input type="file" id="zbFiveCatInput" style="display:none;" accept=".xlsx,.xls">
 <script>
-// file input change事件
+// 文件选择预览
 document.getElementById('zbPhoneInput').addEventListener('change', function(e){
-  if(e.target.files.length && typeof processExcelFiles==='function') processExcelFiles(e.target.files);
-  e.target.value=''; zbCloseUpload();
+  var f = e.target.files[0];
+  if (!f) return;
+  var nameEl = document.getElementById('zbUpFile1Name');
+  var box = document.getElementById('zbUpBox1');
+  nameEl.textContent = '✓ ' + f.name;
+  nameEl.style.display = 'block';
+  box.style.borderColor = '#2563eb';
+  box.style.background = '#eff6ff';
 });
 document.getElementById('zbFiveCatInput').addEventListener('change', function(e){
-  if(e.target.files.length && typeof processExcelFiles==='function') processExcelFiles(e.target.files);
-  e.target.value=''; zbCloseUpload();
+  var f = e.target.files[0];
+  if (!f) return;
+  var nameEl = document.getElementById('zbUpFile2Name');
+  var box = document.getElementById('zbUpBox2');
+  nameEl.textContent = '✓ ' + f.name;
+  nameEl.style.display = 'block';
+  box.style.borderColor = '#059669';
+  box.style.background = '#ecfdf5';
 });
+
+// 确认上传
+window.zbConfirmUpload = function() {
+  var f1 = document.getElementById('zbPhoneInput').files[0];
+  var f2 = document.getElementById('zbFiveCatInput').files[0];
+  var hint = document.getElementById('zbUploadHint');
+  if (!f1 && !f2) {
+    hint.style.display = 'block';
+    return;
+  }
+  hint.style.display = 'none';
+  zbCloseUpload();
+  // 重置预览
+  var files = [];
+  if (f1) files.push(f1);
+  if (f2) files.push(f2);
+  // 清空input
+  document.getElementById('zbPhoneInput').value = '';
+  document.getElementById('zbFiveCatInput').value = '';
+  document.getElementById('zbUpFile1Name').style.display = 'none';
+  document.getElementById('zbUpFile2Name').style.display = 'none';
+  document.getElementById('zbUpBox1').style.borderColor = '#bfdbfe';
+  document.getElementById('zbUpBox1').style.background = '#f8fbff';
+  document.getElementById('zbUpBox2').style.borderColor = '#a7f3d0';
+  document.getElementById('zbUpBox2').style.background = '#f8fdfb';
+  // 开始处理
+  if (typeof processExcelFiles === 'function') {
+    var dt = new DataTransfer();
+    files.forEach(function(f){ dt.items.add(f); });
+    processExcelFiles(dt.files);
+  }
+};
 
 // 把原上传按钮改成打开弹窗
 document.addEventListener('DOMContentLoaded', function(){
