@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.44P</title>
+    <title>培训部数据看板 v1.44R</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -750,7 +750,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44P</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44R</div>
     </div>
   </nav>
 
@@ -1442,7 +1442,99 @@
                 return true;
             }
 
-            function zbOpenSettings(){ zbShowToast('⚙️ 设置页面开发中，敬请期待'); }
+            // 表格链接配置（内存缓存）
+            window._zbTableLinks = {}; // { "2026-05": { "手机": "url", "笔记本": "url" } }
+            const TABLE_CATS = ['手机','笔记本','平板','手表','耳机'];
+
+            // 加载表格链接配置
+            async function zbLoadTableLinks() {
+                try {
+                    const r = await fetch(ghRaw(GH_FILES.tableLinks));
+                    if (r.ok) { window._zbTableLinks = await r.json(); }
+                } catch(e) { window._zbTableLinks = {}; }
+            }
+            zbLoadTableLinks();
+
+            // 获取某行对应的表格链接
+            window.zbGetTableLink = function(date, cat) {
+                if (!date || !cat) return null;
+                var ym = date.slice(0,7); // "2026-05"
+                var links = window._zbTableLinks || {};
+                return (links[ym] && links[ym][cat]) || null;
+            };
+
+            // 保存表格链接配置到GitHub
+            async function zbSaveTableLinks() {
+                var token = zbGetToken();
+                if (!token) { showToast('需要管理员Token才能保存'); return; }
+                var ok = await _zbPushFile(GH_FILES.tableLinks, window._zbTableLinks, token);
+                if (ok) showToast('✅ 表格链接配置已保存');
+                else showToast('❌ 保存失败，请检查权限');
+            }
+
+            function zbOpenSettings() {
+                var canEdit = (zbRole === 'admin' || zbRole === 'super');
+                // 渲染设置页面
+                var overlay = document.createElement('div');
+                overlay.id = 'zbSettingsOverlay';
+                overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.4);backdrop-filter:blur(6px);z-index:98000;display:flex;align-items:center;justify-content:center;';
+                overlay.onclick = function(e){ if(e.target===overlay) overlay.remove(); };
+
+                var months = Object.keys(window._zbTableLinks||{}).sort().reverse();
+                // 确保有当前月
+                var now = new Date();
+                var curYm = now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+                if (!months.includes(curYm)) months.unshift(curYm);
+
+                function renderTable() {
+                    var rows = months.map(function(ym) {
+                        var cells = TABLE_CATS.map(function(cat) {
+                            var val = (window._zbTableLinks[ym]&&window._zbTableLinks[ym][cat])||'';
+                            var filled = val ? 'border-color:#bbf7d0;background:#f0fdf4;color:#059669;' : '';
+                            if (!canEdit) return '<td style="padding:7px 10px;border:1px solid #e2e8f0;"><span style="font-size:11px;color:'+(val?'#059669':'#94a3b8')+'">'+(val?'✓ 已配置':'未配置')+'</span></td>';
+                            return '<td style="padding:6px 8px;border:1px solid #e2e8f0;">'
+                                + '<div style="display:flex;gap:4px;align-items:center;">'
+                                + '<input data-ym="'+ym+'" data-cat="'+cat+'" value="'+val+'" placeholder="粘贴企业微信表格链接..." '
+                                + 'style="flex:1;padding:4px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;outline:none;'+filled+'" '
+                                + 'oninput="if(!window._zbTableLinks[\''+ym+'\'])window._zbTableLinks[\''+ym+'\']={}; window._zbTableLinks[\''+ym+'\'][\''+cat+'\']=this.value; this.style.borderColor=this.value?\'#bbf7d0\':\'#e2e8f0\'; this.style.background=this.value?\'#f0fdf4\':\'#f8fafc\'; this.style.color=this.value?\'#059669\':\'\';">'
+                                + (val ? '<button onclick="window._zbTableLinks[\''+ym+'\'][\''+cat+'\']=\'\'; document.getElementById(\'zbSettingsTableBody\').innerHTML=renderSettingsRows();" style="padding:2px 6px;border:1px solid #e2e8f0;border-radius:5px;background:#fff;color:#94a3b8;font-size:10px;cursor:pointer;flex-shrink:0;">✕</button>' : '')
+                                + '</div></td>';
+                        }).join('');
+                        return '<tr><td style="padding:7px 10px;border:1px solid #e2e8f0;background:#f8fafc;font-weight:500;color:#0f172a;white-space:nowrap;">'+ym+'</td>'+cells+'</tr>';
+                    }).join('');
+                    return rows;
+                }
+
+                var thCells = TABLE_CATS.map(function(c){ return '<th style="padding:7px 10px;background:#f8fafc;border:1px solid #e2e8f0;font-size:11px;color:#64748b;font-weight:500;">'+c+'</th>'; }).join('');
+
+                overlay.innerHTML = '<div style="width:min(800px,94vw);background:#fff;border-radius:16px;box-shadow:0 16px 48px rgba(0,0,0,0.16);overflow:hidden;max-height:90vh;display:flex;flex-direction:column;" onclick="event.stopPropagation()">'
+                    + '<div style="padding:16px 20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px;">'
+                    + '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>'
+                    + '<div><div style="font-size:14px;font-weight:600;color:#0f172a;">原始表格链接配置</div>'
+                    + '<div style="font-size:11px;color:#94a3b8;margin-top:1px;">配置每月各品类对应的企业微信表格，培训师查看差异明细时可一键跳转并自动复制质检码</div></div>'
+                    + '<button onclick="document.getElementById(\'zbSettingsOverlay\').remove()" style="margin-left:auto;width:28px;height:28px;border-radius:8px;border:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</button>'
+                    + '</div>'
+                    + '<div style="padding:12px 20px;background:#fffbeb;border-bottom:1px solid #fde68a;font-size:11px;color:#92400e;display:flex;align-items:center;gap:8px;">'
+                    + '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
+                    + '请填写企业微信表格的分享链接（doc.weixin.qq.com/...），确保团队成员有访问权限。'+(canEdit?'':'当前角色无编辑权限。')
+                    + '</div>'
+                    + '<div style="flex:1;overflow-y:auto;padding:16px 20px;">'
+                    + '<div style="overflow-x:auto;">'
+                    + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
+                    + '<thead><tr><th style="padding:7px 10px;background:#f8fafc;border:1px solid #e2e8f0;font-size:11px;color:#64748b;font-weight:500;white-space:nowrap;">月份</th>'+thCells+'</tr></thead>'
+                    + '<tbody id="zbSettingsTableBody">'+renderTable()+'</tbody>'
+                    + '</table></div>'
+                    + (canEdit ? '<button onclick="var d=new Date();var n=d.getFullYear()+\'-\'+String(d.getMonth()+1).padStart(2,\'0\');if(window._zbTableLinks[n]){showToast(\'当前月份已存在\')}else{window._zbTableLinks[n]={};months.unshift(n);document.getElementById(\'zbSettingsTableBody\').innerHTML=\''+renderTable()+'\';}" style="display:flex;align-items:center;gap:6px;margin-top:10px;padding:7px 14px;border:1.5px dashed #e2e8f0;border-radius:8px;background:transparent;color:#94a3b8;font-size:12px;cursor:pointer;transition:all .15s;" onmouseenter="this.style.borderColor=\'#2563eb\';this.style.color=\'#2563eb\'" onmouseleave="this.style.borderColor=\'#e2e8f0\';this.style.color=\'#94a3b8\'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>添加月份</button>' : '')
+                    + '</div>'
+                    + (canEdit ? '<div style="padding:12px 20px;border-top:1px solid #f1f5f9;display:flex;align-items:center;gap:10px;">'
+                    + '<button onclick="zbSaveTableLinks()" style="padding:8px 20px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px;"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>保存配置</button>'
+                    + '<span style="font-size:11px;color:#94a3b8;">保存后立即生效，差异明细里会自动出现跳转图标</span>'
+                    + '</div>' : '')
+                    + '</div>';
+
+                overlay.id = 'zbSettingsOverlay';
+                document.body.appendChild(overlay);
+            }
             function updatePageHeader() {
                 var el1=document.getElementById('zbPageTitle'), el2=document.getElementById('zbPageSubTitle');
                 if(!el1||!el2) return;
@@ -2137,6 +2229,63 @@
                                     badge.textContent = '×' + row._groupCount + '条';
                                     td.appendChild(badge);
                                 }
+                                // 跳转图标
+                                var rowDate = row['date']||'';
+                                var rowCat  = row['cat']||'';
+                                var link = typeof zbGetTableLink === 'function' ? zbGetTableLink(rowDate, rowCat) : null;
+                                if (link && val && val !== '—') {
+                                    const icon = document.createElement('span');
+                                    icon.title = '复制质检码并跳转原始表格';
+                                    icon.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:4px;background:#eff6ff;border:1px solid #bfdbfe;color:#2563eb;cursor:pointer;margin-left:5px;opacity:0;transition:opacity .15s,transform .15s;vertical-align:middle;';
+                                    icon.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+                                    icon.onclick = function(e) {
+                                        e.stopPropagation();
+                                        try { navigator.clipboard.writeText(val); } catch(err) {}
+                                        icon.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
+                                        icon.style.background = '#f0fdf4';
+                                        icon.style.borderColor = '#bbf7d0';
+                                        showToast('✅ 已复制质检码 ' + val + '，正在跳转原始表格');
+                                        setTimeout(function(){ window.open(link, '_blank'); }, 300);
+                                        setTimeout(function(){
+                                            icon.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+                                            icon.style.background = '#eff6ff';
+                                            icon.style.borderColor = '#bfdbfe';
+                                        }, 2500);
+                                    };
+                                    tr.addEventListener('mouseenter', function(){ icon.style.opacity='1'; });
+                                    tr.addEventListener('mouseleave', function(){ icon.style.opacity='0'; });
+                                    td.appendChild(icon);
+                                }
+                            } else if (key === 'code') {
+                                td.style.cssText += 'font-weight:500;color:#2563eb;';
+                                td.textContent = val;
+                                // 跳转图标（普通行）
+                                var rowDate2 = row['date']||'';
+                                var rowCat2  = row['cat']||'';
+                                var link2 = typeof zbGetTableLink === 'function' ? zbGetTableLink(rowDate2, rowCat2) : null;
+                                if (link2 && val && val !== '—') {
+                                    const icon2 = document.createElement('span');
+                                    icon2.title = '复制质检码并跳转原始表格';
+                                    icon2.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:4px;background:#eff6ff;border:1px solid #bfdbfe;color:#2563eb;cursor:pointer;margin-left:5px;opacity:0;transition:opacity .15s;vertical-align:middle;';
+                                    icon2.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+                                    icon2.onclick = function(e) {
+                                        e.stopPropagation();
+                                        try { navigator.clipboard.writeText(val); } catch(err) {}
+                                        icon2.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
+                                        icon2.style.background = '#f0fdf4';
+                                        icon2.style.borderColor = '#bbf7d0';
+                                        showToast('✅ 已复制质检码 ' + val + '，正在跳转原始表格');
+                                        setTimeout(function(){ window.open(link2, '_blank'); }, 300);
+                                        setTimeout(function(){
+                                            icon2.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
+                                            icon2.style.background = '#eff6ff';
+                                            icon2.style.borderColor = '#bfdbfe';
+                                        }, 2500);
+                                    };
+                                    tr.addEventListener('mouseenter', function(){ icon2.style.opacity='1'; });
+                                    tr.addEventListener('mouseleave', function(){ icon2.style.opacity='0'; });
+                                    td.appendChild(icon2);
+                                }
                             } else {
                                 td.textContent = val;
                             }
@@ -2242,8 +2391,8 @@
                 }
 
                 // 字段顺序
-                var columnKeys  = ['date','code','cat','brand','model','level1','level2','level3_orig','level3','person','category','issueType','judgedIssueType'];
-                var columnNames = ['抽检日期','质检码','品类','品牌','型号','一级项','二级项','原三级项','新三级项','原操作人','主客观分类','问题类型','责任类型'];
+                var columnKeys  = ['date','warehouse','code','cat','brand','model','level1','level2','level3_orig','level3','person','category','issueType','judgedIssueType'];
+                var columnNames = ['抽检日期','站点','质检码','品类','品牌','型号','一级项','二级项','原三级项','新三级项','原操作人','主客观分类','问题类型','责任类型'];
                 if (!showCat) {
                     var ci=columnKeys.indexOf('cat'); if(ci>-1){columnKeys.splice(ci,1);columnNames.splice(ci,1);}
                 }
@@ -4433,7 +4582,8 @@ const GH_FILES = {
     diff4:    'five_cat_detail.json',
     auth:     'auth_users.json',
     inspector:'inspector_override.json',
-    log:      'upload_log.json'
+    log:      'upload_log.json',
+    tableLinks: 'table_links.json'
 };
 // 超管Token拆分混淆（运行时拼接，防扫描）
 const _t = ['github_pat_','11BMTOZFI0G','67AmhNTKdx','9_61r7lGZj','dA0QOl4taJ','Vg4EkqLHv7','nTiSFJmaJ0','DOSQHUGQMm'];
@@ -7458,7 +7608,7 @@ window.zbSearchQuery = function(q) {
             html += '<div class="zb-search-item" style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid #f8fafc;cursor:pointer;transition:background .1s;" onclick="zbSearchActionByIdx('+idx+')" onmouseenter="this.style.background=\'#f8fafc\'" onmouseleave="this.style.background=\'\'">'
                 + '<div style="width:28px;height:28px;border-radius:8px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">👤</div>'
                 + '<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:500;color:#0f172a;">'+hl(r.name)+' · '+r.site+'</div><div style="font-size:10px;color:#94a3b8;margin-top:1px;">本期差异 '+r.cnt+' 条</div></div>'
-                + '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#f0fdf4;color:#16a34a;font-weight:500;flex-shrink:0;">跳转人维度</span>'
+                + '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#f0fdf4;color:#16a34a;font-weight:500;flex-shrink:0;">弹差异明细</span>'
                 + '</div>';
         });
     }
@@ -7506,12 +7656,12 @@ window.zbSearchAction = function(type, r) {
             openDetailWithData(matched, '📋 ' + r.code + '（' + matched.length + '条）', false);
         }
     } else if (type === 'person') {
-        if (typeof zbNavToSite === 'function') {
-            zbNavToSite(r.site);
-            setTimeout(function(){
-                var tab = document.getElementById('zbTabPerson');
-                if (tab) tab.click();
-            }, 400);
+        var matched = (window._allDiffData||[]).filter(function(d){
+            return (d.person||d['质检人']||d.inspector||'') === r.name &&
+                   (d.warehouse||d.site||'') === r.site;
+        });
+        if (matched.length && typeof openDetailWithData === 'function') {
+            openDetailWithData(matched, '👤 ' + r.name + ' · ' + r.site + '（' + matched.length + '条）', false);
         }
     } else if (type === 'site') {
         if (typeof zbNavToSite === 'function') {
