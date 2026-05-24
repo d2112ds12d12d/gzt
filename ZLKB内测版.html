@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.44R</title>
+    <title>培训部数据看板 v1.44T</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -750,7 +750,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44R</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44T</div>
     </div>
   </nav>
 
@@ -1445,6 +1445,7 @@
             // 表格链接配置（内存缓存）
             window._zbTableLinks = {}; // { "2026-05": { "手机": "url", "笔记本": "url" } }
             const TABLE_CATS = ['手机','笔记本','平板','手表','耳机'];
+            const SITE_TYPES = ['大仓','中心仓','后验中心仓'];
 
             // 加载表格链接配置
             async function zbLoadTableLinks() {
@@ -1455,16 +1456,27 @@
             }
             zbLoadTableLinks();
 
+            // 根据站点名判断站点类型
+            window.zbGetSiteType = function(siteName) {
+                if (!siteName) return '中心仓';
+                if (siteName.includes('后验')) return '后验中心仓';
+                if (siteName.includes('智能验机') || siteName.includes('转转')) return '大仓';
+                return '中心仓';
+            };
+
             // 获取某行对应的表格链接
-            window.zbGetTableLink = function(date, cat) {
+            window.zbGetTableLink = function(date, cat, site) {
                 if (!date || !cat) return null;
-                var ym = date.slice(0,7); // "2026-05"
+                var ym = date.slice(0,7);
+                var siteType = window.zbGetSiteType(site||'');
                 var links = window._zbTableLinks || {};
-                return (links[ym] && links[ym][cat]) || null;
+                var catLinks = links[ym] && links[ym][cat];
+                if (!catLinks) return null;
+                return catLinks[siteType] || null;
             };
 
             // 保存表格链接配置到GitHub
-            async function zbSaveTableLinks() {
+            window.zbSaveTableLinks = async function zbSaveTableLinks() {
                 var token = zbGetToken();
                 if (!token) { showToast('需要管理员Token才能保存'); return; }
                 var ok = await _zbPushFile(GH_FILES.tableLinks, window._zbTableLinks, token);
@@ -1472,7 +1484,7 @@
                 else showToast('❌ 保存失败，请检查权限');
             }
 
-            function zbOpenSettings() {
+            window.zbOpenSettings = function zbOpenSettings() {
                 var canEdit = (zbRole === 'admin' || zbRole === 'super');
                 // 渲染设置页面
                 var overlay = document.createElement('div');
@@ -1488,24 +1500,54 @@
 
                 function renderTable() {
                     var rows = months.map(function(ym) {
-                        var cells = TABLE_CATS.map(function(cat) {
-                            var val = (window._zbTableLinks[ym]&&window._zbTableLinks[ym][cat])||'';
-                            var filled = val ? 'border-color:#bbf7d0;background:#f0fdf4;color:#059669;' : '';
-                            if (!canEdit) return '<td style="padding:7px 10px;border:1px solid #e2e8f0;"><span style="font-size:11px;color:'+(val?'#059669':'#94a3b8')+'">'+(val?'✓ 已配置':'未配置')+'</span></td>';
-                            return '<td style="padding:6px 8px;border:1px solid #e2e8f0;">'
-                                + '<div style="display:flex;gap:4px;align-items:center;">'
-                                + '<input data-ym="'+ym+'" data-cat="'+cat+'" value="'+val+'" placeholder="粘贴企业微信表格链接..." '
-                                + 'style="flex:1;padding:4px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;outline:none;'+filled+'" '
-                                + 'oninput="if(!window._zbTableLinks[\''+ym+'\'])window._zbTableLinks[\''+ym+'\']={}; window._zbTableLinks[\''+ym+'\'][\''+cat+'\']=this.value; this.style.borderColor=this.value?\'#bbf7d0\':\'#e2e8f0\'; this.style.background=this.value?\'#f0fdf4\':\'#f8fafc\'; this.style.color=this.value?\'#059669\':\'\';">'
-                                + (val ? '<button onclick="window._zbTableLinks[\''+ym+'\'][\''+cat+'\']=\'\'; document.getElementById(\'zbSettingsTableBody\').innerHTML=renderSettingsRows();" style="padding:2px 6px;border:1px solid #e2e8f0;border-radius:5px;background:#fff;color:#94a3b8;font-size:10px;cursor:pointer;flex-shrink:0;">✕</button>' : '')
-                                + '</div></td>';
+                        // 每个月份展开为3个站点类型子行
+                        return SITE_TYPES.map(function(st, si) {
+                            var cells = TABLE_CATS.map(function(cat) {
+                                var val = (window._zbTableLinks[ym] && window._zbTableLinks[ym][cat] && window._zbTableLinks[ym][cat][st]) || '';
+                                var filled = val ? 'border-color:#bbf7d0;background:#f0fdf4;color:#059669;' : '';
+                                var ymEsc = ym.replace(/-/g,'_');
+                                var catEsc = cat;
+                                var stEsc = st.replace(/\//g,'_');
+                                if (!canEdit) return '<td style="padding:6px 10px;border:1px solid #e2e8f0;font-size:11px;color:'+(val?'#059669':'#94a3b8')+'">'+(val?'✓ 已配置':'—')+'</td>';
+                                return '<td style="padding:5px 8px;border:1px solid #e2e8f0;">'
+                                    + '<div style="display:flex;gap:4px;align-items:center;">'
+                                    + '<input data-ym="'+ym+'" data-cat="'+cat+'" data-st="'+st+'" value="'+val+'" placeholder="粘贴链接..." '
+                                    + 'style="flex:1;min-width:0;padding:4px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:11px;outline:none;'+filled+'" '
+                                    + 'oninput="'
+                                    + 'var d=window._zbTableLinks;'
+                                    + 'if(!d[\''+ym+'\'])d[\''+ym+'\']={}; '
+                                    + 'if(!d[\''+ym+'\'][\''+cat+'\'])d[\''+ym+'\'][\''+cat+'\']={};'
+                                    + 'd[\''+ym+'\'][\''+cat+'\'][\''+st+'\']=this.value;'
+                                    + 'this.style.borderColor=this.value?\'#bbf7d0\':\'#e2e8f0\';'
+                                    + 'this.style.background=this.value?\'#f0fdf4\':\'#f8fafc\';'
+                                    + 'this.style.color=this.value?\'#059669\':\'\';'
+                                    + '">'
+                                    + (val ? '<button onclick="'
+                                        + 'var d=window._zbTableLinks;'
+                                        + 'if(d[\''+ym+'\']&&d[\''+ym+'\'][\''+cat+'\'])d[\''+ym+'\'][\''+cat+'\'][\''+st+'\']=\'\';'
+                                        + 'this.closest(\'td\').querySelector(\'input\').value=\'\';'
+                                        + 'this.closest(\'td\').querySelector(\'input\').style.borderColor=\'#e2e8f0\';'
+                                        + 'this.closest(\'td\').querySelector(\'input\').style.background=\'#f8fafc\';'
+                                        + 'this.remove();" '
+                                        + 'style="padding:2px 6px;border:1px solid #e2e8f0;border-radius:5px;background:#fff;color:#94a3b8;font-size:10px;cursor:pointer;flex-shrink:0;">✕</button>' : '')
+                                    + '</div></td>';
+                            }).join('');
+
+                            var monthCell = si === 0
+                                ? '<td rowspan="3" style="padding:7px 10px;border:1px solid #e2e8f0;background:#f8fafc;font-weight:500;color:#0f172a;white-space:nowrap;vertical-align:middle;text-align:center;">'+ym+'</td>'
+                                : '';
+                            var stColor = st==='大仓'?'#2563eb':st==='中心仓'?'#7c3aed':'#059669';
+                            var stBg = st==='大仓'?'#eff6ff':st==='中心仓'?'#f5f3ff':'#f0fdf4';
+                            return '<tr>'+monthCell
+                                + '<td style="padding:5px 10px;border:1px solid #e2e8f0;background:'+stBg+';white-space:nowrap;">'
+                                + '<span style="font-size:10px;font-weight:500;color:'+stColor+';padding:2px 6px;border-radius:10px;background:'+stBg+';">'+st+'</span>'
+                                + '</td>'+cells+'</tr>';
                         }).join('');
-                        return '<tr><td style="padding:7px 10px;border:1px solid #e2e8f0;background:#f8fafc;font-weight:500;color:#0f172a;white-space:nowrap;">'+ym+'</td>'+cells+'</tr>';
                     }).join('');
                     return rows;
                 }
 
-                var thCells = TABLE_CATS.map(function(c){ return '<th style="padding:7px 10px;background:#f8fafc;border:1px solid #e2e8f0;font-size:11px;color:#64748b;font-weight:500;">'+c+'</th>'; }).join('');
+                var thCells = TABLE_CATS.map(function(c){ return '<th style="padding:7px 10px;background:#f8fafc;border:1px solid #e2e8f0;font-size:11px;color:#64748b;font-weight:500;min-width:180px;">'+c+'</th>'; }).join('');
 
                 overlay.innerHTML = '<div style="width:min(800px,94vw);background:#fff;border-radius:16px;box-shadow:0 16px 48px rgba(0,0,0,0.16);overflow:hidden;max-height:90vh;display:flex;flex-direction:column;" onclick="event.stopPropagation()">'
                     + '<div style="padding:16px 20px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:10px;">'
@@ -1521,7 +1563,7 @@
                     + '<div style="flex:1;overflow-y:auto;padding:16px 20px;">'
                     + '<div style="overflow-x:auto;">'
                     + '<table style="width:100%;border-collapse:collapse;font-size:12px;">'
-                    + '<thead><tr><th style="padding:7px 10px;background:#f8fafc;border:1px solid #e2e8f0;font-size:11px;color:#64748b;font-weight:500;white-space:nowrap;">月份</th>'+thCells+'</tr></thead>'
+                    + '<thead><tr><th style="padding:7px 10px;background:#f8fafc;border:1px solid #e2e8f0;font-size:11px;color:#64748b;font-weight:500;white-space:nowrap;">月份</th><th style="padding:7px 10px;background:#f8fafc;border:1px solid #e2e8f0;font-size:11px;color:#64748b;font-weight:500;white-space:nowrap;">站点类型</th>'+thCells+'</tr></thead>'
                     + '<tbody id="zbSettingsTableBody">'+renderTable()+'</tbody>'
                     + '</table></div>'
                     + (canEdit ? '<button onclick="var d=new Date();var n=d.getFullYear()+\'-\'+String(d.getMonth()+1).padStart(2,\'0\');if(window._zbTableLinks[n]){showToast(\'当前月份已存在\')}else{window._zbTableLinks[n]={};months.unshift(n);document.getElementById(\'zbSettingsTableBody\').innerHTML=\''+renderTable()+'\';}" style="display:flex;align-items:center;gap:6px;margin-top:10px;padding:7px 14px;border:1.5px dashed #e2e8f0;border-radius:8px;background:transparent;color:#94a3b8;font-size:12px;cursor:pointer;transition:all .15s;" onmouseenter="this.style.borderColor=\'#2563eb\';this.style.color=\'#2563eb\'" onmouseleave="this.style.borderColor=\'#e2e8f0\';this.style.color=\'#94a3b8\'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>添加月份</button>' : '')
@@ -2232,7 +2274,8 @@
                                 // 跳转图标
                                 var rowDate = row['date']||'';
                                 var rowCat  = row['cat']||'';
-                                var link = typeof zbGetTableLink === 'function' ? zbGetTableLink(rowDate, rowCat) : null;
+                                var rowSite = row['warehouse']||'';
+                                var link = typeof zbGetTableLink === 'function' ? zbGetTableLink(rowDate, rowCat, rowSite) : null;
                                 if (link && val && val !== '—') {
                                     const icon = document.createElement('span');
                                     icon.title = '复制质检码并跳转原始表格';
@@ -2262,7 +2305,8 @@
                                 // 跳转图标（普通行）
                                 var rowDate2 = row['date']||'';
                                 var rowCat2  = row['cat']||'';
-                                var link2 = typeof zbGetTableLink === 'function' ? zbGetTableLink(rowDate2, rowCat2) : null;
+                                var rowSite2 = row['warehouse']||'';
+                                var link2 = typeof zbGetTableLink === 'function' ? zbGetTableLink(rowDate2, rowCat2, rowSite2) : null;
                                 if (link2 && val && val !== '—') {
                                     const icon2 = document.createElement('span');
                                     icon2.title = '复制质检码并跳转原始表格';
