@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.44I</title>
+    <title>培训部数据看板 v1.44J</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -184,7 +184,7 @@
             padding: 20px 24px; margin-bottom: 18px;
             transition: transform 0.18s, box-shadow 0.18s;
         }
-        .card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(100,120,180,0.13); }
+        .card:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.10); }
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
         .card-title { font-size: 14px; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 6px; padding-left: 0; border-left: none; }
         .card-title-bar { width: 3px; height: 15px; border-radius: 0; flex-shrink: 0; background: #3b82f6; }
@@ -212,7 +212,7 @@
         .stats-item:nth-child(2){animation-delay:.08s}
         .stats-item:nth-child(3){animation-delay:.12s}
         .stats-item:nth-child(4){animation-delay:.16s}
-        .stats-item:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(100,120,180,0.15); }
+        .stats-item:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.10); cursor:pointer; }
         .stats-item-side { width: 5px; flex-shrink: 0; }
         .stats-item-body { padding: 12px 13px; flex: 1; }
         .stats-number { font-size: 26px; font-weight: 800; line-height: 1.15; margin: 5px 0 3px; }
@@ -226,6 +226,11 @@
         .obj-rank-table th, .obj-rank-table td { border: 1px solid var(--border-color); padding: 10px 8px; text-align: center; }
         .obj-rank-table th { background: var(--table-header-bg); position: sticky; top: 0; z-index: 10; }
         .obj-rank-table tr:hover { background: var(--table-hover); cursor: pointer; }
+        /* 全局方案二 hover：上浮+轻投影 */
+        .rank-table tbody tr, .modal-table tbody tr { transition: transform 0.15s, box-shadow 0.15s, background 0.15s; }
+        .rank-table tbody tr:hover, .modal-table tbody tr:hover { background: var(--bg-card); box-shadow: 0 2px 12px rgba(0,0,0,0.08); transform: translateY(-1px); position: relative; z-index: 2; cursor: pointer; }
+        .stats-item, .card { transition: transform 0.15s, box-shadow 0.15s; }
+        .kpi-card, [class*="kpi"] { transition: transform 0.15s, box-shadow 0.15s; }
         .rank-1 { background-color: #fde8e8 ; } .rank-2 { background-color: #e8f5e9 ; } .rank-3 { background-color: #e6f2ff ; }
         body.dark .rank-1 { background-color: #7f4a4acc ; } body.dark .rank-2 { background-color: #2d5a2dcc ; } body.dark .rank-3 { background-color: #2c4c6bcc ; }
         .reset-hint { font-size: 11px; color: var(--text-secondary); margin-top: 14px; text-align: center; cursor: pointer; padding: 6px 16px; border-radius: 40px; background: var(--kpi-bg); width: fit-content; align-self: center; border: 1px solid var(--border-color); transition: 0.2s; }
@@ -251,11 +256,11 @@
         @media (max-width: 1000px) { .insight-grid { grid-template-columns: 1fr 1fr; } .right-chart-container { grid-column: span 1; } }
         /* hover 动效全面铺开 */
         .rank-row { transition: background 0.12s, transform 0.12s; }
-        .rank-row:hover { background: var(--kpi-bg); transform: translateX(2px); }
+        .rank-row:hover { background:#fff; box-shadow: 0 2px 16px rgba(0,0,0,0.08); border-radius:8px; transform: translateY(-1px); border-bottom-color:transparent; position:relative; z-index:2; }
         .cat-tab { transition: all 0.15s; }
         .cat-tab:hover:not(.active) { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(37,99,235,0.12); }
         .stats-item { transition: transform 0.15s, box-shadow 0.15s; }
-        .stats-item:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(100,120,180,0.15); }
+        .stats-item:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.10); cursor:pointer; }
         .zb-nav-item { transition: all 0.15s; }
         .zb-nav-item:hover:not(.active) { background: rgba(37,99,235,0.07); color: #1e40af; padding-left: 20px; }
         .rank-col-box { transition: box-shadow 0.18s; }
@@ -491,7 +496,7 @@
             transition:background 0.12s;
         }
         .rank-row:last-child { border-bottom:none; }
-        .rank-row:hover { background:var(--kpi-bg); }
+        .rank-row:hover { background:#fff; box-shadow:0 2px 16px rgba(0,0,0,0.08); border-radius:8px; transform:translateY(-1px); border-bottom-color:transparent; position:relative; z-index:2; }
         .rank-no {
             width:20px; height:20px; border-radius:6px; flex-shrink:0;
             display:flex; align-items:center; justify-content:center;
@@ -619,7 +624,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44I</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44J</div>
     </div>
   </nav>
 
