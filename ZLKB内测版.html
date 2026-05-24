@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.44L</title>
+    <title>培训部数据看板 v1.44M</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -750,7 +750,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44L</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44M</div>
     </div>
   </nav>
 
@@ -839,6 +839,12 @@
                         <svg id="zbKouJingArrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5" style="flex-shrink:0;transition:transform .2s;"><polyline points="6 9 12 15 18 9"/></svg>
                     </div>
                     <button id="zbQueryBtn" onclick="zbDoQuery();zbRipple(this,event)" style="display:inline-flex;align-items:center;gap:5px;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:500;background:#fff;color:#2563eb;border:1.5px solid #2563eb;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;overflow:hidden;position:relative;" onmouseenter="this.style.background='#eff6ff'" onmouseleave="this.style.background='#fff'">→ 查询</button>
+                    <!-- 全局搜索按钮 -->
+                    <div onclick="zbOpenSearch()" title="全局搜索 (Ctrl+K)" style="display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:11px;color:#64748b;border:1px solid #e2e8f0;background:#f8fafc;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;user-select:none;" onmouseenter="this.style.background='#f1f5f9'" onmouseleave="this.style.background='#f8fafc'">
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                      搜索
+                      <span style="font-size:9px;background:#e2e8f0;padding:1px 5px;border-radius:3px;color:#94a3b8;">Ctrl K</span>
+                    </div>
                 </div>
             </div>
             <!-- 口径下拉面板 -->
@@ -7234,7 +7240,270 @@ function zbMarkQueryPending() {
   btn.style.color = '#92400e';
   btn.textContent = '! 查询';
 }
-// ── 波纹动效 ──
+// ══ 全局搜索 ══
+window._zbSearchScope = 'current'; // 'current' | 'all'
+window._zbSearchFocusIdx = -1;
+
+window.zbOpenSearch = function() {
+    var overlay = document.getElementById('zbSearchOverlay');
+    if (!overlay) return;
+    overlay.style.display = 'flex';
+    setTimeout(function(){ document.getElementById('zbSearchInput').focus(); }, 50);
+    zbUpdateSearchScopeHint();
+    zbSearchQuery('');
+};
+
+window.zbCloseSearch = function(e) {
+    if (e && e.target !== document.getElementById('zbSearchOverlay')) return;
+    var overlay = document.getElementById('zbSearchOverlay');
+    if (overlay) overlay.style.display = 'none';
+    var input = document.getElementById('zbSearchInput');
+    if (input) input.value = '';
+    window._zbSearchFocusIdx = -1;
+};
+
+// Ctrl+K 快捷键
+document.addEventListener('keydown', function(e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); zbOpenSearch(); }
+    if (e.key === 'Escape') {
+        var overlay = document.getElementById('zbSearchOverlay');
+        if (overlay && overlay.style.display !== 'none') { overlay.style.display = 'none'; }
+    }
+    if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+        var overlay = document.getElementById('zbSearchOverlay');
+        if (!overlay || overlay.style.display === 'none') return;
+        var items = document.querySelectorAll('.zb-search-item');
+        if (!items.length) return;
+        e.preventDefault();
+        if (e.key === 'ArrowDown') window._zbSearchFocusIdx = Math.min(window._zbSearchFocusIdx + 1, items.length - 1);
+        else window._zbSearchFocusIdx = Math.max(window._zbSearchFocusIdx - 1, 0);
+        items.forEach(function(el, i){ el.style.background = i === window._zbSearchFocusIdx ? '#f8fafc' : ''; });
+        items[window._zbSearchFocusIdx].scrollIntoView({ block: 'nearest' });
+    }
+    if (e.key === 'Enter') {
+        var overlay = document.getElementById('zbSearchOverlay');
+        if (!overlay || overlay.style.display === 'none') return;
+        var items = document.querySelectorAll('.zb-search-item');
+        if (window._zbSearchFocusIdx >= 0 && items[window._zbSearchFocusIdx]) items[window._zbSearchFocusIdx].click();
+    }
+});
+
+window.zbToggleSearchScope = function() {
+    window._zbSearchScope = window._zbSearchScope === 'current' ? 'all' : 'current';
+    var track = document.getElementById('zbSearchScopeTrack');
+    var thumb = document.getElementById('zbSearchScopeThumb');
+    var label = document.getElementById('zbSearchScopeLabel');
+    if (window._zbSearchScope === 'all') {
+        if (track) { track.style.background = '#dbeafe'; }
+        if (thumb) { thumb.style.left = '14px'; thumb.style.background = '#2563eb'; }
+        if (label) { label.style.color = '#2563eb'; label.textContent = '全量搜索'; }
+    } else {
+        if (track) { track.style.background = '#e2e8f0'; }
+        if (thumb) { thumb.style.left = '2px'; thumb.style.background = '#94a3b8'; }
+        if (label) { label.style.color = '#64748b'; label.textContent = '当前范围'; }
+    }
+    zbUpdateSearchScopeHint();
+    var input = document.getElementById('zbSearchInput');
+    if (input) zbSearchQuery(input.value);
+};
+
+window.zbUpdateSearchScopeHint = function() {
+    var hint = document.getElementById('zbSearchScopeHint');
+    var dot  = document.getElementById('zbSearchScopeHintDot');
+    var txt  = document.getElementById('zbSearchScopeHintText');
+    if (!hint) return;
+    if (window._zbSearchScope === 'all') {
+        hint.style.background = '#fff9f0';
+        if (dot) dot.style.background = '#f59e0b';
+        if (txt) txt.textContent = '全量搜索：所有日期 · 所有品类 · 不限口径';
+    } else {
+        hint.style.background = '#f8fafc';
+        if (dot) dot.style.background = '#2563eb';
+        var startEl = document.getElementById('startDateFilter');
+        var endEl   = document.getElementById('endDateFilter');
+        var s = startEl ? startEl.value : '';
+        var end2 = endEl ? endEl.value : '';
+        var catEl = document.querySelector('.cat-tab.active');
+        var cat = catEl ? catEl.textContent.trim() : '全部';
+        if (txt) txt.textContent = '当前范围：' + (s||'--') + ' — ' + (end2||'--') + ' · ' + cat;
+    }
+};
+
+window.zbSearchQuery = function(q) {
+    q = (q || '').trim();
+    var el = document.getElementById('zbSearchResults');
+    var countEl = document.getElementById('zbSearchResultCount');
+    if (!el) return;
+    window._zbSearchFocusIdx = -1;
+
+    // 数据源
+    var all = window._allDiffData || [];
+    var data = all;
+    if (window._zbSearchScope === 'current') {
+        var startEl = document.getElementById('startDateFilter');
+        var endEl   = document.getElementById('endDateFilter');
+        var s = startEl ? startEl.value : '';
+        var e = endEl   ? endEl.value   : '';
+        var catEl = document.querySelector('.cat-tab.active');
+        var cat = catEl ? catEl.textContent.trim() : '';
+        data = all.filter(function(d) {
+            var dt = (d.date||'').split(' ')[0];
+            var inDate = (!s||dt>=s) && (!e||dt<=e);
+            var inCat  = !cat || cat === '全部' || (d.category||d.cat||'') === cat || (d.productType||'') === cat;
+            return inDate && inCat;
+        });
+    }
+
+    if (!q) {
+        el.innerHTML = '<div style="padding:24px;text-align:center;font-size:12px;color:#94a3b8;">输入关键词开始搜索</div>';
+        if (countEl) countEl.textContent = '';
+        return;
+    }
+
+    var ql = q.toLowerCase();
+    var results = { code:[], person:[], site:[], item:[] };
+
+    // 质检码
+    var codeSeen = {};
+    data.forEach(function(d) {
+        var code = d.code || d['质检码'] || '';
+        if (code && code.toLowerCase().includes(ql) && !codeSeen[code]) {
+            codeSeen[code] = true;
+            results.code.push({ code:code, site:d.warehouse||d.site||'', date:d.date||'', level1:d.level1||'', cnt:1 });
+        }
+    });
+    // 合并同码
+    Object.keys(codeSeen).forEach(function(code) {
+        var rows = data.filter(function(d){ return (d.code||d['质检码']||'') === code; });
+        var idx = results.code.findIndex(function(r){ return r.code === code; });
+        if (idx >= 0) results.code[idx].cnt = rows.length;
+    });
+
+    // 质检人
+    var personSeen = {};
+    data.forEach(function(d) {
+        var p = d.person || d['质检人'] || d.inspector || '';
+        var site = d.warehouse || d.site || '';
+        var key = p + '|' + site;
+        if (p && p.includes(q) && !personSeen[key]) {
+            personSeen[key] = true;
+            var cnt = data.filter(function(r){ return (r.person||r['质检人']||r.inspector||'') === p && (r.warehouse||r.site||'') === site; }).length;
+            results.person.push({ name:p, site:site, cnt:cnt });
+        }
+    });
+
+    // 站点
+    var siteSeen = {};
+    data.forEach(function(d) {
+        var site = d.warehouse || d.site || '';
+        if (site && site.includes(q) && !siteSeen[site]) {
+            siteSeen[site] = true;
+            var cnt = data.filter(function(r){ return (r.warehouse||r.site||'') === site; }).length;
+            results.site.push({ site:site, cnt:cnt });
+        }
+    });
+
+    // 质检项
+    var itemSeen = {};
+    data.forEach(function(d) {
+        var label = [d.level1,d.level2,d.level3].filter(Boolean).join('—');
+        var key = label;
+        if (label && label.includes(q) && !itemSeen[key]) {
+            itemSeen[key] = true;
+            var rows = data.filter(function(r){ return [r.level1,r.level2,r.level3].filter(Boolean).join('—') === label; });
+            var sites = new Set(rows.map(function(r){ return r.warehouse||r.site||''; })).size;
+            results.item.push({ label:label, cnt:rows.length, sites:sites });
+        }
+    });
+
+    var total = results.code.length + results.person.length + results.site.length + results.item.length;
+    if (countEl) countEl.textContent = '共 ' + total + ' 条结果';
+
+    if (!total) {
+        el.innerHTML = '<div style="padding:24px;text-align:center;font-size:12px;color:#94a3b8;">未找到匹配结果</div>';
+        return;
+    }
+
+    function hl(str) {
+        if (!q) return str;
+        return str.replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'gi'), function(m){ return '<mark style="background:none;color:#2563eb;font-weight:600;">'+m+'</mark>'; });
+    }
+
+    var html = '';
+
+    if (results.code.length) {
+        html += '<div style="font-size:10px;color:#94a3b8;padding:8px 16px 3px;background:#f8fafc;letter-spacing:.05em;font-weight:500;">🔢 质检码 · ' + results.code.length + '条</div>';
+        results.code.slice(0,5).forEach(function(r) {
+            html += '<div class="zb-search-item" style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid #f8fafc;cursor:pointer;transition:background .1s;" onclick="zbSearchAction(\'code\','+JSON.stringify(r)+')" onmouseenter="this.style.background=\'#f8fafc\'" onmouseleave="this.style.background=\'\'">'
+                + '<div style="width:28px;height:28px;border-radius:8px;background:#eff6ff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">📋</div>'
+                + '<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:500;color:#0f172a;">'+hl(r.code)+' · '+r.site+'</div><div style="font-size:10px;color:#94a3b8;margin-top:1px;">'+r.date+' · '+r.level1+' · '+r.cnt+'条差异</div></div>'
+                + '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#eff6ff;color:#2563eb;font-weight:500;flex-shrink:0;">弹明细</span>'
+                + '</div>';
+        });
+        if (results.code.length > 5) html += '<div style="font-size:11px;color:#94a3b8;padding:6px 16px;text-align:center;cursor:pointer;">查看全部 '+results.code.length+' 条 →</div>';
+    }
+
+    if (results.person.length) {
+        html += '<div style="font-size:10px;color:#94a3b8;padding:8px 16px 3px;background:#f8fafc;letter-spacing:.05em;font-weight:500;">👤 质检人员 · ' + results.person.length + '条</div>';
+        results.person.slice(0,3).forEach(function(r) {
+            html += '<div class="zb-search-item" style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid #f8fafc;cursor:pointer;transition:background .1s;" onclick="zbSearchAction(\'person\','+JSON.stringify(r)+')" onmouseenter="this.style.background=\'#f8fafc\'" onmouseleave="this.style.background=\'\'">'
+                + '<div style="width:28px;height:28px;border-radius:8px;background:#f0fdf4;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">👤</div>'
+                + '<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:500;color:#0f172a;">'+hl(r.name)+' · '+r.site+'</div><div style="font-size:10px;color:#94a3b8;margin-top:1px;">本期差异 '+r.cnt+' 条</div></div>'
+                + '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#f0fdf4;color:#16a34a;font-weight:500;flex-shrink:0;">跳转人维度</span>'
+                + '</div>';
+        });
+    }
+
+    if (results.site.length) {
+        html += '<div style="font-size:10px;color:#94a3b8;padding:8px 16px 3px;background:#f8fafc;letter-spacing:.05em;font-weight:500;">🏪 站点 · ' + results.site.length + '条</div>';
+        results.site.slice(0,3).forEach(function(r) {
+            html += '<div class="zb-search-item" style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid #f8fafc;cursor:pointer;transition:background .1s;" onclick="zbSearchAction(\'site\','+JSON.stringify(r)+')" onmouseenter="this.style.background=\'#f8fafc\'" onmouseleave="this.style.background=\'\'">'
+                + '<div style="width:28px;height:28px;border-radius:8px;background:#fdf4ff;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🏪</div>'
+                + '<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:500;color:#0f172a;">'+hl(r.site)+'</div><div style="font-size:10px;color:#94a3b8;margin-top:1px;">本期 '+r.cnt+' 条差异</div></div>'
+                + '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#fdf4ff;color:#9333ea;font-weight:500;flex-shrink:0;">跳转站点</span>'
+                + '</div>';
+        });
+    }
+
+    if (results.item.length) {
+        html += '<div style="font-size:10px;color:#94a3b8;padding:8px 16px 3px;background:#f8fafc;letter-spacing:.05em;font-weight:500;">🔍 质检项 · ' + results.item.length + '条</div>';
+        results.item.slice(0,5).forEach(function(r) {
+            html += '<div class="zb-search-item" style="display:flex;align-items:center;gap:10px;padding:9px 16px;border-bottom:1px solid #f8fafc;cursor:pointer;transition:background .1s;" onclick="zbSearchAction(\'item\','+JSON.stringify(r)+')" onmouseenter="this.style.background=\'#f8fafc\'" onmouseleave="this.style.background=\'\'">'
+                + '<div style="width:28px;height:28px;border-radius:8px;background:#fff7ed;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">🔍</div>'
+                + '<div style="flex:1;min-width:0;"><div style="font-size:12px;font-weight:500;color:#0f172a;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+hl(r.label)+'</div><div style="font-size:10px;color:#94a3b8;margin-top:1px;">'+r.sites+'个站点 · 共'+r.cnt+'条差异</div></div>'
+                + '<span style="font-size:10px;padding:2px 8px;border-radius:10px;background:#fff7ed;color:#d97706;font-weight:500;flex-shrink:0;">弹明细</span>'
+                + '</div>';
+        });
+    }
+
+    el.innerHTML = html;
+};
+
+window.zbSearchAction = function(type, r) {
+    var overlay = document.getElementById('zbSearchOverlay');
+    if (overlay) overlay.style.display = 'none';
+
+    if (type === 'code') {
+        var matched = (window._allDiffData||[]).filter(function(d){ return (d.code||d['质检码']||'') === r.code; });
+        if (matched.length && typeof openDetailWithData === 'function') {
+            openDetailWithData(matched, '📋 ' + r.code + '（' + matched.length + '条）', false);
+        }
+    } else if (type === 'person') {
+        // 跳转站点页人维度
+        var siteEl = document.querySelector('[data-site="'+r.site+'"]');
+        if (siteEl) { siteEl.click(); setTimeout(function(){ var tab = document.getElementById('zbTabPerson'); if(tab) tab.click(); }, 300); }
+        else if (typeof zbClickRankSite === 'function') zbClickRankSite({ dataset:{ site: r.site } });
+    } else if (type === 'site') {
+        var siteEl2 = document.querySelector('[data-site="'+r.site+'"]');
+        if (siteEl2) siteEl2.click();
+        else if (typeof zbClickRankSite === 'function') zbClickRankSite({ dataset:{ site: r.site } });
+    } else if (type === 'item') {
+        var matched2 = (window._allDiffData||[]).filter(function(d){ return [d.level1,d.level2,d.level3].filter(Boolean).join('—') === r.label; });
+        if (matched2.length && typeof openDetailWithData === 'function') {
+            openDetailWithData(matched2, '🔍 ' + r.label + '（' + matched2.length + '条）', false);
+        }
+    }
+};
 window.zbRipple = function(btn, e) {
     var rect = btn.getBoundingClientRect();
     var ripple = document.createElement('span');
@@ -8635,5 +8904,38 @@ document.addEventListener('DOMContentLoaded', function(){
         <button id="dtCancelFilter" style="height:26px;padding:0 10px;font-size:12px;border-radius:6px;border:0.5px solid #e2e8f0;background:transparent;color:#64748b;cursor:pointer;">取消</button>
     </div>
 </div>
+<!-- 全局搜索弹窗 -->
+<div id="zbSearchOverlay" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.3);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);z-index:99000;align-items:flex-start;justify-content:center;padding-top:80px;" onclick="zbCloseSearch(event)">
+  <div style="width:min(600px,90vw);background:#fff;border-radius:16px;box-shadow:0 16px 48px rgba(0,0,0,0.16);overflow:hidden;" onclick="event.stopPropagation()">
+    <!-- 搜索框 -->
+    <div style="padding:14px 16px;display:flex;align-items:center;gap:10px;border-bottom:1px solid #f1f5f9;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2" style="flex-shrink:0;"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="zbSearchInput" placeholder="搜索质检码、质检人、站点、质检项..." style="flex:1;font-size:13px;color:#0f172a;border:none;outline:none;background:transparent;" oninput="zbSearchQuery(this.value)">
+      <!-- Toggle E样式 -->
+      <div id="zbSearchScopeWrap" onclick="zbToggleSearchScope()" style="display:flex;align-items:center;gap:6px;cursor:pointer;flex-shrink:0;user-select:none;">
+        <div id="zbSearchScopeTrack" style="width:28px;height:16px;border-radius:8px;background:#e2e8f0;position:relative;transition:background .2s;flex-shrink:0;">
+          <div id="zbSearchScopeThumb" style="width:12px;height:12px;border-radius:50%;background:#94a3b8;position:absolute;top:2px;left:2px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.15);"></div>
+        </div>
+        <span id="zbSearchScopeLabel" style="font-size:11px;color:#64748b;transition:color .2s;white-space:nowrap;">当前范围</span>
+      </div>
+      <span onclick="zbCloseSearch()" style="font-size:10px;color:#94a3b8;background:#f1f5f9;padding:2px 7px;border-radius:4px;border:1px solid #e2e8f0;cursor:pointer;flex-shrink:0;">ESC</span>
+    </div>
+    <!-- 范围提示条 -->
+    <div id="zbSearchScopeHint" style="padding:5px 16px;font-size:11px;color:#64748b;background:#f8fafc;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:6px;">
+      <div id="zbSearchScopeHintDot" style="width:5px;height:5px;border-radius:50%;background:#2563eb;flex-shrink:0;"></div>
+      <span id="zbSearchScopeHintText">当前范围：加载中...</span>
+    </div>
+    <!-- 结果区 -->
+    <div id="zbSearchResults" style="max-height:380px;overflow-y:auto;"></div>
+    <!-- 底部快捷键 -->
+    <div style="padding:8px 16px;display:flex;align-items:center;gap:12px;border-top:1px solid #f1f5f9;">
+      <span style="font-size:10px;color:#94a3b8;display:flex;align-items:center;gap:4px;"><kbd style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:3px;padding:1px 5px;font-size:9px;">↑↓</kbd> 选择</span>
+      <span style="font-size:10px;color:#94a3b8;display:flex;align-items:center;gap:4px;"><kbd style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:3px;padding:1px 5px;font-size:9px;">↵</kbd> 确认</span>
+      <span style="font-size:10px;color:#94a3b8;display:flex;align-items:center;gap:4px;"><kbd style="background:#f1f5f9;border:1px solid #e2e8f0;border-radius:3px;padding:1px 5px;font-size:9px;">ESC</kbd> 关闭</span>
+      <span style="margin-left:auto;font-size:10px;color:#94a3b8;" id="zbSearchResultCount"></span>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
