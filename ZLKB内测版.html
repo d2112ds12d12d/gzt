@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.44X</title>
+    <title>培训部数据看板 v1.44Y</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -750,7 +750,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44X</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44Y</div>
     </div>
   </nav>
 
@@ -5371,35 +5371,46 @@ function zbRenderSiteDetail(siteName) {
 
             // ── 计算小组排名并插入细长色块 ──
             (function() {
-                var siteType = typeof zbGetSiteType === 'function' ? zbGetSiteType(siteName) : '中心仓';
-                // 直接从summaryData里取差异率，和排行榜口径一致
-                var scopeFilter = diffFilter;
-                var allData = window._allDiffData || [];
+                if (!window._DATA) return;
+                var DATA = window._DATA;
+                var cat = window._activeCat || (window.currentRankCat) || '手机';
                 var topStart = (document.getElementById('startDateFilter')||{}).value||'';
                 var topEnd   = (document.getElementById('endDateFilter')||{}).value||'';
-                // 跳过数据为空的站点（总条数为0）
+                var inRange = function(d){ if(!d)return false; if(topStart&&d<topStart)return false; if(topEnd&&d>topEnd)return false; return true; };
+                var siteType = typeof zbGetSiteType === 'function' ? zbGetSiteType(siteName) : '中心仓';
                 var SKIP_SITES = ['成都后验中心仓'];
-                var groupSites = {};
-                allData.forEach(function(d) {
-                    var s = d.warehouse || d.site || '';
-                    if (!s) return;
-                    if (SKIP_SITES.indexOf(s) >= 0) return;
-                    var st = typeof zbGetSiteType === 'function' ? zbGetSiteType(s) : '中心仓';
-                    if (st !== siteType) return;
-                    var dt = (d.date||'').split(' ')[0];
-                    if (topStart && dt < topStart) return;
-                    if (topEnd   && dt > topEnd)   return;
-                    if (!groupSites[s]) groupSites[s] = { total:0, diff:0 };
-                    groupSites[s].total++;
-                    if (scopeFilter(d)) groupSites[s].diff++;
+
+                // 和排行榜calcSiteRate完全一致的计算逻辑
+                function calcRate(site) {
+                    var checks = 0, execDiff = 0;
+                    if (cat === '手机') {
+                        var qaRows = (DATA.qa||[]).filter(function(r){ return r.site===site && r.cat===cat && inRange(r.date); });
+                        checks = qaRows.reduce(function(s,r){ return s+(r.checks||0); }, 0);
+                        var diffRows = (DATA.diff5||[]).filter(function(r){ return r.site===site && r.cat===cat && r.strategy==='大盘评估/站点' && r.subjobj && r.subjobj.includes('客观') && r.judgedType==='执行问题' && inRange(r.date); });
+                        execDiff = new Set(diffRows.map(function(r){ return r.code; }).filter(Boolean)).size;
+                    } else {
+                        var smRows = (DATA.sum||[]).filter(function(r){ return r.site===site && r.cat===cat && inRange(r.date); });
+                        checks = smRows.reduce(function(s,r){ return s+(r.checks||0); }, 0);
+                        var diffRows2 = (DATA.diff4||[]).filter(function(r){ return r.site===site && r.cat===cat && r.subjobj && r.subjobj.includes('客观') && r.judgedType==='执行问题' && inRange(r.date); });
+                        execDiff = new Set(diffRows2.map(function(r){ return r.code; }).filter(Boolean)).size;
+                    }
+                    return checks > 0 ? (execDiff / checks * 100) : null;
+                }
+
+                // 获取同组所有站点
+                var allSites = Array.from(new Set(
+                    [(DATA.qa||[]), (DATA.sum||[])].reduce(function(a,arr){ return a.concat(arr.map(function(r){ return r.site; })); }, []).filter(Boolean)
+                ));
+                var groupSites = allSites.filter(function(s) {
+                    if (SKIP_SITES.indexOf(s) >= 0) return false;
+                    return typeof zbGetSiteType === 'function' ? zbGetSiteType(s) === siteType : true;
                 });
-                // 过滤掉总数为0的站点
-                var ranked = Object.keys(groupSites)
-                    .filter(function(s){ return groupSites[s].total > 0; })
-                    .map(function(s) {
-                        var r = groupSites[s].diff / groupSites[s].total * 100;
-                        return { site:s, rate:r };
-                    }).sort(function(a,b){ return a.rate - b.rate; });
+
+                var ranked = groupSites.map(function(s) {
+                    return { site:s, rate: calcRate(s) };
+                }).filter(function(r){ return r.rate !== null; })
+                  .sort(function(a,b){ return a.rate - b.rate; });
+
                 var myIdx = ranked.findIndex(function(r){ return r.site === siteName; });
                 if (myIdx < 0) return;
                 var rank = myIdx + 1, total = ranked.length;
@@ -5407,9 +5418,8 @@ function zbRenderSiteDetail(siteName) {
                 var prevRate = myIdx > 0 ? ranked[myIdx-1].rate : null;
                 var nextRate = myIdx < total-1 ? ranked[myIdx+1].rate : null;
                 var isFirst = rank === 1;
-                // 统一浅蓝色，第1名加深
-                var barBg = isFirst ? 'linear-gradient(90deg,#dbeafe,#eff6ff)' : '#f0f6ff';
-                var textColor = isFirst ? '#1d4ed8' : '#2563eb';
+                var barBg = '#f0f6ff';
+                var textColor = '#2563eb';
                 var borderColor = '#bfdbfe';
                 var gapText = isFirst && nextRate !== null
                     ? '↓ 领先第2名 ' + Math.abs(nextRate - myRate).toFixed(2) + '%'
