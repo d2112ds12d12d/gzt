@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.44M</title>
+    <title>培训部数据看板 v1.44N</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -750,7 +750,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44M</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44N</div>
     </div>
   </nav>
 
@@ -7321,11 +7321,10 @@ window.zbUpdateSearchScopeHint = function() {
         if (dot) dot.style.background = '#2563eb';
         var startEl = document.getElementById('startDateFilter');
         var endEl   = document.getElementById('endDateFilter');
-        var s = startEl ? startEl.value : '';
-        var end2 = endEl ? endEl.value : '';
-        var catEl = document.querySelector('.cat-tab.active');
-        var cat = catEl ? catEl.textContent.trim() : '全部';
-        if (txt) txt.textContent = '当前范围：' + (s||'--') + ' — ' + (end2||'--') + ' · ' + cat;
+        var s2 = startEl ? startEl.value : '';
+        var e2 = endEl   ? endEl.value   : '';
+        var cat2 = window._activeCat || '全部';
+        if (txt) txt.textContent = '当前范围：' + (s2||'--') + ' — ' + (e2||'--') + ' · ' + cat2;
     }
 };
 
@@ -7349,7 +7348,8 @@ window.zbSearchQuery = function(q) {
         data = all.filter(function(d) {
             var dt = (d.date||'').split(' ')[0];
             var inDate = (!s||dt>=s) && (!e||dt<=e);
-            var inCat  = !cat || cat === '全部' || (d.category||d.cat||'') === cat || (d.productType||'') === cat;
+            var activeCat = window._activeCat || '';
+            var inCat = !activeCat || activeCat === '全部' || activeCat === 'ALL' || (d.cat||'') === activeCat;
             return inDate && inCat;
         });
     }
