@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.44AA</title>
+    <title>培训部数据看板 v1.44AB</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -750,7 +750,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44AA</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44AB</div>
     </div>
   </nav>
 
@@ -2403,9 +2403,9 @@
                                     td.appendChild(badge);
                                 }
                                 // 跳转图标
-                                var rowDate = row['date']||'';
-                                var rowCat  = row['cat']||'';
-                                var rowSite = row['warehouse']||'';
+                                var rowDate = row['_date']||row['date']||'';
+                                var rowCat  = row['_cat'] ||row['cat'] ||'';
+                                var rowSite = row['_warehouse']||row['warehouse']||'';
                                 var link = typeof zbGetTableLink === 'function' ? zbGetTableLink(rowDate, rowCat, rowSite) : null;
                                 if (link && val && val !== '—') {
                                     const icon = document.createElement('span');
@@ -2434,9 +2434,9 @@
                                 td.style.cssText += 'font-weight:500;color:#2563eb;';
                                 td.textContent = val;
                                 // 跳转图标（普通行）
-                                var rowDate2 = row['date']||'';
-                                var rowCat2  = row['cat']||'';
-                                var rowSite2 = row['warehouse']||'';
+                                var rowDate2 = row['_date']||row['date']||'';
+                                var rowCat2  = row['_cat'] ||row['cat'] ||'';
+                                var rowSite2 = row['_warehouse']||row['warehouse']||'';
                                 var link2 = typeof zbGetTableLink === 'function' ? zbGetTableLink(rowDate2, rowCat2, rowSite2) : null;
                                 if (link2 && val && val !== '—') {
                                     const icon2 = document.createElement('span');
@@ -2578,6 +2578,10 @@
                     filteredWithGroup.map(function(r){
                         var obj={};
                         columnKeys.forEach(function(key){ obj[key]=r[key]||'—'; });
+                        // 跳转图标需要这三个字段，不管columnKeys有没有都保留原始值
+                        obj._cat       = r.cat       || '';
+                        obj._date      = r.date      || '';
+                        obj._warehouse = r.warehouse || r.site || '';
                         obj._groupIdx   = r._groupIdx;
                         obj._isFirst    = r._isFirst;
                         obj._groupCount = r._groupCount;
