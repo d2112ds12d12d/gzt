@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.44AC</title>
+    <title>培训部数据看板 v1.44AD</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -750,7 +750,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44AC</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44AD</div>
     </div>
   </nav>
 
@@ -9268,26 +9268,28 @@ function zbCloseUpload() {
     </div>
   </div>
 </div>
-<input type="file" id="zbPhoneInput" style="display:none;" accept=".xlsx,.xls">
-<input type="file" id="zbFiveCatInput" style="display:none;" accept=".xlsx,.xls">
+<input type="file" id="zbPhoneInput" style="display:none;" accept=".xlsx,.xls" multiple>
+<input type="file" id="zbFiveCatInput" style="display:none;" accept=".xlsx,.xls" multiple>
 <script>
 // 文件选择预览
 document.getElementById('zbPhoneInput').addEventListener('change', function(e){
-  var f = e.target.files[0];
-  if (!f) return;
+  var files = e.target.files;
+  if (!files.length) return;
   var nameEl = document.getElementById('zbUpFile1Name');
   var box = document.getElementById('zbUpBox1');
-  nameEl.textContent = '✓ ' + f.name;
+  var names = Array.from(files).map(function(f){ return f.name; }).join('、');
+  nameEl.textContent = '✓ ' + names;
   nameEl.style.display = 'block';
   box.style.borderColor = '#2563eb';
   box.style.background = '#eff6ff';
 });
 document.getElementById('zbFiveCatInput').addEventListener('change', function(e){
-  var f = e.target.files[0];
-  if (!f) return;
+  var files = e.target.files;
+  if (!files.length) return;
   var nameEl = document.getElementById('zbUpFile2Name');
   var box = document.getElementById('zbUpBox2');
-  nameEl.textContent = '✓ ' + f.name;
+  var names = Array.from(files).map(function(f){ return f.name; }).join('、');
+  nameEl.textContent = '✓ ' + names;
   nameEl.style.display = 'block';
   box.style.borderColor = '#059669';
   box.style.background = '#ecfdf5';
@@ -9295,20 +9297,20 @@ document.getElementById('zbFiveCatInput').addEventListener('change', function(e)
 
 // 确认上传
 window.zbConfirmUpload = function() {
-  var f1 = document.getElementById('zbPhoneInput').files[0];
-  var f2 = document.getElementById('zbFiveCatInput').files[0];
+  var f1 = document.getElementById('zbPhoneInput').files;
+  var f2 = document.getElementById('zbFiveCatInput').files;
   var hint = document.getElementById('zbUploadHint');
-  if (!f1 && !f2) {
+  if (!f1.length && !f2.length) {
     hint.style.display = 'block';
     return;
   }
   hint.style.display = 'none';
   zbCloseUpload();
+  // 合并所有文件
+  var dt = new DataTransfer();
+  Array.from(f1).forEach(function(f){ dt.items.add(f); });
+  Array.from(f2).forEach(function(f){ dt.items.add(f); });
   // 重置预览
-  var files = [];
-  if (f1) files.push(f1);
-  if (f2) files.push(f2);
-  // 清空input
   document.getElementById('zbPhoneInput').value = '';
   document.getElementById('zbFiveCatInput').value = '';
   document.getElementById('zbUpFile1Name').style.display = 'none';
@@ -9318,11 +9320,7 @@ window.zbConfirmUpload = function() {
   document.getElementById('zbUpBox2').style.borderColor = '#a7f3d0';
   document.getElementById('zbUpBox2').style.background = '#f8fdfb';
   // 开始处理
-  if (typeof processExcelFiles === 'function') {
-    var dt = new DataTransfer();
-    files.forEach(function(f){ dt.items.add(f); });
-    processExcelFiles(dt.files);
-  }
+  if (typeof processExcelFiles === 'function') processExcelFiles(dt.files);
 };
 
 // 把原上传按钮改成打开弹窗
