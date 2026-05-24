@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.44V</title>
+    <title>培训部数据看板 v1.44X</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -750,7 +750,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44V</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44X</div>
     </div>
   </nav>
 
@@ -4782,11 +4782,10 @@ async function ghApiFetch(fname, token) {
 // 角色体系：viewer（查看者）| admin（管理员）| super（超管，隐藏）
 // ══════════════════════════════════════════
 const ADMIN_PASSWORD = '质量是生命第一线 996';
-let zbRole = localStorage.getItem('zb_role') || 'viewer'; // viewer | admin | super
-let zbToken = localStorage.getItem('zb_token') || '';     // 超管Token
+let zbRole = (function(){ var r = localStorage.getItem('zb_role')||'viewer'; if(r==='super'){ localStorage.setItem('zb_role','admin'); return 'admin'; } return r; })();
+let zbToken = '';
 
 function zbGetToken() {
-    if (zbRole === 'super') return zbToken || _tk();
     return _tk();
 }
 
@@ -4810,24 +4809,6 @@ async function zbAdminLoginSubmit() {
     var v = inp.value.trim();
     if (!v) { hint.textContent = '请输入密码'; return; }
     hint.textContent = '验证中…';
-    // 超管 Token
-    if (v.startsWith('ghp_') || v.startsWith('github_pat_') || v.length > 30) {
-        try {
-            var r = await fetch('https://api.github.com/repos/' + GH_USER + '/' + GH_REPO, { headers: { Authorization: 'token ' + v } });
-            if (r.ok) {
-                zbRole = 'super'; zbToken = v;
-                localStorage.setItem('zb_role','super');
-                localStorage.setItem('zb_token', v);
-                inp.value = ''; hint.textContent = '';
-                zbCloseAdminLogin();
-                zbUpdateRoleBadge();
-                showToast('⚡ 超管模式已激活');
-                return;
-            }
-        } catch(e) {}
-        hint.textContent = 'Token无效，请重试';
-        return;
-    }
     // 管理员密码
     if (v === ADMIN_PASSWORD) {
         zbRole = 'admin';
@@ -4850,7 +4831,7 @@ document.addEventListener('keydown', function(e){
 });
 
 function zbUpdateRoleBadge() {
-    var canEdit = (zbRole === 'admin' || zbRole === 'super');
+    var canEdit = (zbRole === 'admin');
 
     // ── 上传按钮：仅管理员可见 ──
     var uploadBtn = document.getElementById('zbUploadBtnLabel');
@@ -4866,17 +4847,14 @@ function zbUpdateRoleBadge() {
     var userBlock = document.getElementById('zbUserBlock');
     if (userBlock) userBlock.style.display = canEdit ? 'flex' : 'none';
 
-    if (!canEdit) return; // 浏览者到此为止
+    if (!canEdit) return;
 
     // ── 管理员头像和名称 ──
     var avatar = document.getElementById('zbSidebarAvatar');
     var nameEl = document.getElementById('zbSidebarName');
     var roleEl = document.getElementById('zbSidebarRole');
-    if (avatar) {
-        if (zbRole === 'super') { avatar.style.background='#ede9fe'; avatar.style.color='#6d28d9'; avatar.textContent='超'; }
-        else { avatar.style.background='#dbeafe'; avatar.style.color='#1d4ed8'; avatar.textContent='管'; }
-    }
-    if (nameEl) nameEl.textContent = zbRole === 'super' ? '超级管理员' : '管理员';
+    if (avatar) { avatar.style.background='#dbeafe'; avatar.style.color='#1d4ed8'; avatar.textContent='管'; }
+    if (nameEl) nameEl.textContent = '管理员';
     if (roleEl) roleEl.style.display = 'flex';
 }
 
@@ -4889,23 +4867,6 @@ async function zbSidebarLogin() {
     var v = input.value.trim();
     if (!v) { hint.textContent = '请输入密码'; return; }
     hint.textContent = '验证中…';
-    // 超管Token
-    if (v.startsWith('ghp_') || v.startsWith('github_pat_') || v.length > 30) {
-        try {
-            var r = await fetch('https://api.github.com/repos/' + GH_USER + '/' + GH_REPO, { headers: { Authorization: 'token ' + v } });
-            if (r.ok) {
-                zbRole = 'super'; zbToken = v;
-                localStorage.setItem('zb_role', 'super');
-                localStorage.setItem('zb_token', v);
-                input.value = ''; hint.textContent = '';
-                zbUpdateRoleBadge();
-                showToast('⚡ 超管模式已激活');
-                return;
-            }
-        } catch(e) {}
-        hint.textContent = 'Token无效，请重试';
-        return;
-    }
     // 管理员密码
     if (v === ADMIN_PASSWORD) {
         zbRole = 'admin';
@@ -5411,13 +5372,18 @@ function zbRenderSiteDetail(siteName) {
             // ── 计算小组排名并插入细长色块 ──
             (function() {
                 var siteType = typeof zbGetSiteType === 'function' ? zbGetSiteType(siteName) : '中心仓';
+                // 直接从summaryData里取差异率，和排行榜口径一致
+                var scopeFilter = diffFilter;
                 var allData = window._allDiffData || [];
                 var topStart = (document.getElementById('startDateFilter')||{}).value||'';
                 var topEnd   = (document.getElementById('endDateFilter')||{}).value||'';
+                // 跳过数据为空的站点（总条数为0）
+                var SKIP_SITES = ['成都后验中心仓'];
                 var groupSites = {};
                 allData.forEach(function(d) {
                     var s = d.warehouse || d.site || '';
                     if (!s) return;
+                    if (SKIP_SITES.indexOf(s) >= 0) return;
                     var st = typeof zbGetSiteType === 'function' ? zbGetSiteType(s) : '中心仓';
                     if (st !== siteType) return;
                     var dt = (d.date||'').split(' ')[0];
@@ -5425,12 +5391,15 @@ function zbRenderSiteDetail(siteName) {
                     if (topEnd   && dt > topEnd)   return;
                     if (!groupSites[s]) groupSites[s] = { total:0, diff:0 };
                     groupSites[s].total++;
-                    if (diffFilter(d)) groupSites[s].diff++;
+                    if (scopeFilter(d)) groupSites[s].diff++;
                 });
-                var ranked = Object.keys(groupSites).map(function(s) {
-                    var r = groupSites[s].total > 0 ? groupSites[s].diff / groupSites[s].total * 100 : 0;
-                    return { site:s, rate:r };
-                }).sort(function(a,b){ return a.rate - b.rate; });
+                // 过滤掉总数为0的站点
+                var ranked = Object.keys(groupSites)
+                    .filter(function(s){ return groupSites[s].total > 0; })
+                    .map(function(s) {
+                        var r = groupSites[s].diff / groupSites[s].total * 100;
+                        return { site:s, rate:r };
+                    }).sort(function(a,b){ return a.rate - b.rate; });
                 var myIdx = ranked.findIndex(function(r){ return r.site === siteName; });
                 if (myIdx < 0) return;
                 var rank = myIdx + 1, total = ranked.length;
@@ -5438,9 +5407,10 @@ function zbRenderSiteDetail(siteName) {
                 var prevRate = myIdx > 0 ? ranked[myIdx-1].rate : null;
                 var nextRate = myIdx < total-1 ? ranked[myIdx+1].rate : null;
                 var isFirst = rank === 1;
-                var barBg = isFirst ? 'linear-gradient(90deg,#f0fdf4,#dcfce7)' : rank <= 3 ? 'linear-gradient(90deg,#eff6ff,#e0e7ff)' : 'linear-gradient(90deg,#fffbeb,#fef3c7)';
-                var textColor = isFirst ? '#059669' : rank <= 3 ? '#2563eb' : '#d97706';
-                var borderColor = isFirst ? '#bbf7d0' : rank <= 3 ? '#bfdbfe' : '#fde68a';
+                // 统一浅蓝色，第1名加深
+                var barBg = isFirst ? 'linear-gradient(90deg,#dbeafe,#eff6ff)' : '#f0f6ff';
+                var textColor = isFirst ? '#1d4ed8' : '#2563eb';
+                var borderColor = '#bfdbfe';
                 var gapText = isFirst && nextRate !== null
                     ? '↓ 领先第2名 ' + Math.abs(nextRate - myRate).toFixed(2) + '%'
                     : (!isFirst && prevRate !== null ? '↑ 距上一名差 ' + Math.abs(myRate - prevRate).toFixed(2) + '%' : '');
