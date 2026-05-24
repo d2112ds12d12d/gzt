@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.44G</title>
+    <title>培训部数据看板 v1.44I</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -619,7 +619,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44G</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44I</div>
     </div>
   </nav>
 
@@ -1043,6 +1043,7 @@
                         <h3 id="modalTitle" style="font-size:13px;font-weight:600;color:#1e3a8a;margin:0 0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">差异明细</h3>
                         <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
                             <span id="modalTotalChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,.7);color:#64748b;border:0.5px solid #bfdbfe;">共 0 条</span>
+                            <span id="modalUnitChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,.7);color:#2563eb;border:0.5px solid #bfdbfe;display:none;">0 台</span>
                             <span id="modalFilteredChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:#2563eb;color:#fff;display:none;">已筛选 0 条</span>
                             <span id="modalCatChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:#dbeafe;color:#1d4ed8;display:none;"></span>
                             <span id="modalKouJingChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:#dbeafe;color:#1d4ed8;display:none;"></span>
@@ -1969,13 +1970,35 @@
                     const startIndex = Math.max(0, Math.floor(scrollTop / this.rowHeight) - 3);
                     const endIndex = Math.min(this.data.length, startIndex + this.visibleRows + 10);
                     this.startIndex = startIndex;
+                    const GROUP_BG = ['#fff7ed','#eff6ff','#f0fdf4','#fdf4ff','#fffbeb'];
+                    const GROUP_TC = ['#d97706','#2563eb','#059669','#9333ea','#b45309'];
+                    const GROUP_BADGE_BG = ['#fef3c7','#dbeafe','#d1fae5','#ede9fe','#fef3c7'];
                     const fragment = document.createDocumentFragment();
                     for (let i = startIndex; i < endIndex; i++) {
                         const row = this.data[i];
                         const tr = document.createElement('tr');
+                        const gi = row._groupIdx !== undefined ? row._groupIdx : -1;
+                        const bg = gi >= 0 ? GROUP_BG[gi % GROUP_BG.length] : '';
+                        const tc = gi >= 0 ? GROUP_TC[gi % GROUP_TC.length] : '';
+                        const badgeBg = gi >= 0 ? GROUP_BADGE_BG[gi % GROUP_BADGE_BG.length] : '';
                         this.columnKeys.forEach(key => {
                             const td = document.createElement('td');
-                            td.textContent = row[key] || '';
+                            if (bg) td.style.background = bg;
+                            const val = row[key] || '';
+                            if (key === 'code' && gi >= 0) {
+                                const span = document.createElement('span');
+                                span.style.cssText = 'font-weight:500;color:'+tc+';';
+                                span.textContent = val;
+                                td.appendChild(span);
+                                if (row._isFirst && row._groupCount > 1) {
+                                    const badge = document.createElement('span');
+                                    badge.style.cssText = 'display:inline-block;font-size:10px;padding:0 5px;border-radius:4px;background:'+badgeBg+';color:'+tc+';font-weight:500;margin-left:4px;';
+                                    badge.textContent = '×' + row._groupCount + '条';
+                                    td.appendChild(badge);
+                                }
+                            } else {
+                                td.textContent = val;
+                            }
                             tr.appendChild(td);
                         });
                         fragment.appendChild(tr);
@@ -2029,13 +2052,47 @@
 
                 // 更新徽章
                 var totalChip = document.getElementById('modalTotalChip');
+                var unitChip  = document.getElementById('modalUnitChip');
                 var filteredChip = document.getElementById('modalFilteredChip');
                 if (totalChip) totalChip.textContent = '共 '+currentModalRecords.length+' 条';
+                // 台数=去重质检码数
+                if (unitChip) {
+                    var unitCodes = new Set(currentModalRecords.map(function(r){ return r.code||r['质检码']||''; }).filter(Boolean));
+                    var unitCount = unitCodes.size;
+                    if (unitCount > 0 && unitCount < currentModalRecords.length) {
+                        unitChip.textContent = unitCount + ' 台';
+                        unitChip.style.display = '';
+                    } else {
+                        unitChip.style.display = 'none';
+                    }
+                }
                 if (filteredChip) {
                     if (filtered.length < currentModalRecords.length) {
                         filteredChip.style.display=''; filteredChip.textContent='已筛选 '+filtered.length+' 条';
                     } else filteredChip.style.display='none';
                 }
+
+                // 方案B：同质检码分组颜色
+                var GROUP_BG = ['#fff7ed','#eff6ff','#f0fdf4','#fdf4ff','#fffbeb'];
+                var GROUP_TC = ['#d97706','#2563eb','#059669','#9333ea','#d97706'];
+                var codeGroupMap = {}; var codeGroupIdx = 0;
+                var codeCountMap = {};
+                filtered.forEach(function(r){ var c=r.code||''; if(c) codeCountMap[c]=(codeCountMap[c]||0)+1; });
+                filtered.forEach(function(r){
+                    var c = r.code||'';
+                    if (c && codeCountMap[c] > 1 && codeGroupMap[c] === undefined) {
+                        codeGroupMap[c] = codeGroupIdx % GROUP_BG.length;
+                        codeGroupIdx++;
+                    }
+                });
+                var codeFirstSeen = {};
+                var filteredWithGroup = filtered.map(function(r){
+                    var c = r.code||'';
+                    var gi = (c && codeGroupMap[c] !== undefined) ? codeGroupMap[c] : -1;
+                    var isFirst = false;
+                    if (gi >= 0) { if (!codeFirstSeen[c]) { codeFirstSeen[c]=true; isFirst=true; } }
+                    return Object.assign({}, r, { _groupIdx: gi, _isFirst: isFirst, _groupCount: codeCountMap[c]||1 });
+                });
 
                 if (!filtered.length) {
                     virtualScrollContainer.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-secondary);font-size:13px;">无匹配记录</div>';
@@ -2053,9 +2110,12 @@
                 if (!virtualScroll) { virtualScroll = new VirtualScroll(virtualScrollContainer, 36); }
                 virtualScroll.attachScroll();
                 virtualScroll.setData(
-                    filtered.map(function(r){
+                    filteredWithGroup.map(function(r){
                         var obj={};
                         columnKeys.forEach(function(key){ obj[key]=r[key]||'—'; });
+                        obj._groupIdx   = r._groupIdx;
+                        obj._isFirst    = r._isFirst;
+                        obj._groupCount = r._groupCount;
                         return obj;
                     }),
                     columnKeys, columnNames
@@ -5480,6 +5540,40 @@ window.zbIssueRowClick = function(l1, l2, l3, label) {
     }
 };
 
+window.zbPersonToggleChart = function() {
+    var inner = document.getElementById('zbPersonBarInner');
+    var btn   = document.getElementById('zbPersonCollapseBtn');
+    var icon  = document.getElementById('zbPersonCollapseIcon');
+    var text  = document.getElementById('zbPersonCollapseText');
+    if (!inner) return;
+    var isOpen = inner.style.opacity !== '0';
+    if (isOpen) {
+        inner.style.maxHeight = '0px';
+        inner.style.opacity = '0';
+        inner.style.pointerEvents = 'none';
+        if (icon) icon.style.transform = 'rotate(180deg)';
+        if (text) text.textContent = '展开';
+        if (btn)  { btn.style.background='#f8fafc'; btn.style.color='#64748b'; btn.style.borderColor='#e2e8f0'; }
+        try { localStorage.setItem('zb_person_chart_open','0'); } catch(e){}
+    } else {
+        var el = document.getElementById('zbPersonBarChart');
+        var h = el ? (el.offsetHeight || 200) : 200;
+        inner.style.maxHeight = (h + 40) + 'px';
+        inner.style.opacity = '1';
+        inner.style.pointerEvents = '';
+        if (icon) icon.style.transform = '';
+        if (text) text.textContent = '收起';
+        if (btn)  { btn.style.background='#eff6ff'; btn.style.color='#2563eb'; btn.style.borderColor='#bfdbfe'; }
+        try { localStorage.setItem('zb_person_chart_open','1'); } catch(e){}
+        setTimeout(function(){
+            if (el && typeof echarts !== 'undefined') {
+                var inst = echarts.getInstanceByDom(el);
+                if (inst) inst.resize();
+            }
+        }, 350);
+    }
+};
+
 window.zbIssueToggleChart = function() {
     var wrap = document.getElementById('zbIssueChartWrap');
     var btn  = document.getElementById('zbIssueCollapseBtn');
@@ -5720,7 +5814,21 @@ function zbRenderSitePersonList() {
         }
         if (topArr.length > 0) {
             var avgCnt = topArr.reduce(function(s,p){ return s+p.cnt; }, 0) / topArr.length;
-            barWrap.innerHTML = '<div id="zbPersonBarChart" style="width:100%;height:'+(Math.max(160, topArr.length*28))+'px;"></div>';
+            var personChartH = Math.max(160, topArr.length*28);
+            // 读localStorage决定初始折叠状态
+            var personChartOpen = '1';
+            try { personChartOpen = localStorage.getItem('zb_person_chart_open') || '1'; } catch(e) {}
+            var isPersonOpen = personChartOpen !== '0';
+            barWrap.innerHTML = ''
+                + '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">'
+                + '<span style="font-size:11px;color:var(--text-secondary);">涉及质检人分布（点击柱子查看明细）</span>'
+                + '<div id="zbPersonCollapseBtn" onclick="zbPersonToggleChart()" style="display:flex;align-items:center;gap:4px;padding:3px 10px;border-radius:6px;border:0.5px solid '+(isPersonOpen?'#bfdbfe':'#e2e8f0')+';background:'+(isPersonOpen?'#eff6ff':'#f8fafc')+';color:'+(isPersonOpen?'#2563eb':'#64748b')+';font-size:11px;cursor:pointer;user-select:none;">'
+                + '<span id="zbPersonCollapseIcon" style="font-size:10px;transition:transform .2s;transform:'+(isPersonOpen?'':'rotate(180deg)')+';">▲</span>'
+                + '<span id="zbPersonCollapseText">'+(isPersonOpen?'收起':'展开')+'</span></div>'
+                + '</div>'
+                + '<div id="zbPersonBarInner" style="overflow:hidden;transition:max-height .3s ease,opacity .25s ease;max-height:'+(isPersonOpen?personChartH+40+'px':'0px')+';opacity:'+(isPersonOpen?'1':'0')+';pointer-events:'+(isPersonOpen?'':'none')+';">'
+                + '<div id="zbPersonBarChart" style="width:100%;height:'+personChartH+'px;"></div>'
+                + '</div>';
             setTimeout(function() {
                 var el = document.getElementById('zbPersonBarChart');
                 if (!el || typeof echarts === 'undefined') return;
@@ -5889,9 +5997,8 @@ function zbRenderSiteIssueAnalysis(execDiff, rootEl) {
         var pageSize = window._zbIssuePageSize||10, page = window._zbIssuePage||1;
         var totalPages = Math.max(1,Math.ceil(rows.length/pageSize));
         if(page>totalPages) page=window._zbIssuePage=1;
+        window._zbIssueTotalRows = rows.length;
         var sliced = rows.slice((page-1)*pageSize, page*pageSize);
-
-        // 一级项颜色映射（和饼图一致）
         var L1_COLORS = ['#3b82f6','#f59e0b','#10b981','#ef4444','#8b5cf6','#06b6d4','#f97316','#84cc16','#ec4899','#94a3b8','#14b8a6','#a855f7'];
         var L1_BG     = ['#dbeafe','#fef3c7','#d1fae5','#fee2e2','#ede9fe','#cffafe','#ffedd5','#ecfccb','#fce7f3','#f1f5f9','#ccfbf1','#f3e8ff'];
         var L1_TEXT   = ['#1e40af','#92400e','#065f46','#991b1b','#5b21b6','#164e63','#9a3412','#3f6212','#9d174d','#475569','#134e4a','#6b21a8'];
@@ -5965,9 +6072,8 @@ function zbRenderSiteIssueAnalysis(execDiff, rootEl) {
         var pageSize=window._zbIssuePageSize||10, page=window._zbIssuePage||1;
         var totalPages=Math.max(1,Math.ceil(rows.length/pageSize));
         if(page>totalPages) page=window._zbIssuePage=1;
+        window._zbIssueTotalRows = rows.length;
         var sliced=rows.slice((page-1)*pageSize,page*pageSize);
-
-        rootEl.innerHTML = '<div style="overflow-x:auto;"><table class="rank-table" style="width:100%;table-layout:fixed;">'
             + '<thead><tr><th style="width:50px;">排名</th><th>质检项</th><th style="text-align:center;width:110px;">'+labelA+'</th><th style="text-align:center;color:#2563eb;width:110px;">'+labelB+'</th><th style="text-align:center;width:80px;">变化</th></tr></thead><tbody>'
             + sliced.map(function(r,idx){
                 var rank=(page-1)*pageSize+idx+1;
@@ -5984,8 +6090,7 @@ function zbRenderSiteIssueAnalysis(execDiff, rootEl) {
 
     // 分页控件
     var pageSize=window._zbIssuePageSize||10, page=window._zbIssuePage||1;
-    var rows2 = rootEl.querySelectorAll('tbody tr');
-    var totalRows = rows2.length + (page-1)*pageSize;
+    var totalRows = window._zbIssueTotalRows || 0;
     var totalPages = Math.max(1, Math.ceil(totalRows/pageSize));
     var pgWrapId='zbIssuePageCtrl', pgEl=document.getElementById(pgWrapId);
     if(!pgEl){pgEl=document.createElement('div');pgEl.id=pgWrapId;pgEl.style.cssText='display:flex;align-items:center;justify-content:flex-end;gap:5px;margin-top:8px;font-size:11px;';rootEl.parentNode.appendChild(pgEl);}
@@ -6634,6 +6739,32 @@ function zbSwitchDimTab(tab) {
     if (tabIssue) {
         tabIssue.style.borderBottom = tab==='issue' ? '2px solid #2563eb' : '2px solid transparent';
         tabIssue.style.color = tab==='issue' ? '#2563eb' : 'var(--text-secondary)';
+    }
+    // 切换后 resize 对应图表，解决 display:none 时 ECharts 尺寸为0的问题
+    if (tab === 'issue') {
+        if (typeof zbIssueChartInitState === 'function') zbIssueChartInitState();
+        setTimeout(function(){
+            var el = document.getElementById('zbIssueChartLeft');
+            if (el && typeof echarts !== 'undefined') {
+                var inst = echarts.getInstanceByDom(el);
+                if (inst) inst.resize();
+            }
+        }, 80);
+        setTimeout(function(){
+            var el = document.getElementById('zbIssueChartLeft');
+            if (el && typeof echarts !== 'undefined') {
+                var inst = echarts.getInstanceByDom(el);
+                if (inst) inst.resize();
+            }
+        }, 300);
+    } else if (tab === 'person') {
+        setTimeout(function(){
+            var el = document.getElementById('zbPersonBarChart');
+            if (el && typeof echarts !== 'undefined') {
+                var inst = echarts.getInstanceByDom(el);
+                if (inst) inst.resize();
+            }
+        }, 80);
     }
 }
 
