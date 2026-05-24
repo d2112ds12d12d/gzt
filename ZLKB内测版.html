@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.44N</title>
+    <title>培训部数据看板 v1.44O</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -750,7 +750,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44N</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44O</div>
     </div>
   </nav>
 
@@ -7489,14 +7489,17 @@ window.zbSearchAction = function(type, r) {
             openDetailWithData(matched, '📋 ' + r.code + '（' + matched.length + '条）', false);
         }
     } else if (type === 'person') {
-        // 跳转站点页人维度
-        var siteEl = document.querySelector('[data-site="'+r.site+'"]');
-        if (siteEl) { siteEl.click(); setTimeout(function(){ var tab = document.getElementById('zbTabPerson'); if(tab) tab.click(); }, 300); }
-        else if (typeof zbClickRankSite === 'function') zbClickRankSite({ dataset:{ site: r.site } });
+        if (typeof zbNavToSite === 'function') {
+            zbNavToSite(r.site);
+            setTimeout(function(){
+                var tab = document.getElementById('zbTabPerson');
+                if (tab) tab.click();
+            }, 400);
+        }
     } else if (type === 'site') {
-        var siteEl2 = document.querySelector('[data-site="'+r.site+'"]');
-        if (siteEl2) siteEl2.click();
-        else if (typeof zbClickRankSite === 'function') zbClickRankSite({ dataset:{ site: r.site } });
+        if (typeof zbNavToSite === 'function') {
+            zbNavToSite(r.site);
+        }
     } else if (type === 'item') {
         var matched2 = (window._allDiffData||[]).filter(function(d){ return [d.level1,d.level2,d.level3].filter(Boolean).join('—') === r.label; });
         if (matched2.length && typeof openDetailWithData === 'function') {
