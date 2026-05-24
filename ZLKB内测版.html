@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.44K</title>
+    <title>培训部数据看板 v1.44L</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -23,7 +23,7 @@
             --btn-hover: #1d4ed8;
             --shadow: 0 1px 4px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
             --shadow-card: 0 4px 16px rgba(0,0,0,0.08);
-            --shadow-hover: 0 8px 24px rgba(0,0,0,0.12);
+            --shadow-hover: 0 4px 16px rgba(0,0,0,0.08);
             --table-header-bg: #f8fafc;
             --table-hover: #f8fafc;
             --chart-text: #0f172a;
@@ -105,7 +105,7 @@
             backdrop-filter: blur(8px);
         }
         .password-box {
-            background: var(--bg-card); border-radius: 24px; padding: 32px; width: 360px;
+            background: var(--bg-card); border-radius: 12px; padding: 32px; width: 360px;
             text-align: center; box-shadow: 0 20px 35px rgba(0,0,0,0.3); color: var(--text-primary);
         }
         .password-box input { width: 100%; padding: 12px; margin: 15px 0; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-card); color: var(--text-primary); font-size: 16px; }
@@ -163,7 +163,7 @@
         .marquee-inner:hover { animation-play-state:paused; }
         @keyframes mq { 0%{transform:translateX(100%)} 100%{transform:translateX(-100%)} }
         .filter-bar, .modal-filter-bar {
-            background: var(--filter-bar-bg); border-radius: 20px; padding: 16px 20px;
+            background: var(--filter-bar-bg); border-radius: 20px; padding: 20px 24px;
             display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 18px;
             border: 1px solid var(--border-color); backdrop-filter: blur(8px);
         }
@@ -176,7 +176,7 @@
         }
         .reset-filter-btn {
             flex: 0 0 auto; padding: 8px 20px; background: var(--reset-btn-bg); color: var(--reset-btn-text);
-            border: 1px solid var(--border-color); border-radius: 32px; font-size: 12px; font-weight: 600;
+            border: 1px solid var(--border-color); border-radius: 16px; font-size: 12px; font-weight: 600;
             cursor: pointer; height: 36px; align-self: flex-end; transition: all 0.2s; white-space: nowrap;
         }
         .reset-filter-btn:hover { background: var(--reset-btn-hover); transform: scale(0.97); }
@@ -251,7 +251,7 @@
         .two-col { display: flex; gap: 24px; flex-wrap: wrap; } .two-col>div { flex: 1; min-width: 250px; overflow-x: auto; }
         .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--modal-overlay); z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(3px); }
         .modal.visible { display: flex; }
-        .modal-content { background: var(--bg-card); border-radius: 32px; width: 92%; max-width: 1400px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 25px 40px rgba(0,0,0,0.3); overflow: hidden; padding: 24px; }
+        .modal-content { background: var(--bg-card); border-radius: 16px; width: 92%; max-width: 1400px; max-height: 85vh; display: flex; flex-direction: column; box-shadow: 0 8px 32px rgba(0,0,0,0.14); overflow: hidden; padding: 24px; }
         .modal-header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: none; }
         .close-modal { cursor: pointer; font-size: 32px; font-weight: bold; padding: 0 12px; line-height: 1; }
         .modal-filter-bar { margin: 0 0 16px 0; padding: 12px 16px; }
@@ -389,7 +389,7 @@
         .wt-multi-panel {
             position: absolute; top: calc(100% + 4px); left: 0; z-index: 200;
             background: var(--bg-card); border: 1px solid var(--border-color);
-            border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            border-radius: 12px; box-shadow: 0 4px 16px rgba(0,0,0,0.08);
             width: 220px; overflow: hidden;
         }
         .wt-search-input {
@@ -750,13 +750,13 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44K</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44L</div>
     </div>
   </nav>
 
   <!-- ══ 管理员登录弹窗（B款） ══ -->
   <div id="zbAdminLoginModal" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(15,25,60,0.48);backdrop-filter:blur(3px);align-items:center;justify-content:center;">
-    <div style="background:#fff;border-radius:14px;width:300px;overflow:hidden;box-shadow:0 24px 64px rgba(15,40,100,0.22);" onclick="event.stopPropagation()">
+    <div style="background:#fff;border-radius:12px;width:300px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.12);" onclick="event.stopPropagation()">
       <!-- 顶部品牌蓝 -->
       <div style="background:linear-gradient(135deg,#1e40af,#2563eb);padding:20px 24px 16px;">
         <div style="font-size:15px;font-weight:700;letter-spacing:.22em;color:#fff;margin-bottom:3px;">ZHUAN</div>
@@ -766,8 +766,8 @@
       <div style="padding:20px 24px 22px;">
         <div style="font-size:11px;color:#64748b;margin-bottom:6px;">管理密码</div>
         <input type="password" id="zbAdminPwdInput" placeholder="请输入密码" lang="zh"
-          style="width:100%;box-sizing:border-box;height:38px;border:1px solid #dce6f5;border-radius:8px;padding:0 12px;font-size:13px;color:#0f172a;outline:none;margin-bottom:6px;"
-          onkeydown="if(event.key==='Enter')zbAdminLoginSubmit()" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#dce6f5'">
+          style="width:100%;box-sizing:border-box;height:38px;border:1px solid #e2e8f0;border-radius:8px;padding:0 12px;font-size:13px;color:#0f172a;outline:none;margin-bottom:6px;"
+          onkeydown="if(event.key==='Enter')zbAdminLoginSubmit()" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
         <div id="zbAdminLoginHint" style="font-size:11px;color:#dc2626;min-height:16px;margin-bottom:10px;"></div>
         <button onclick="zbAdminLoginSubmit()" style="width:100%;height:38px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;transition:background .15s;" onmouseover="this.style.background='#1d4ed8'" onmouseout="this.style.background='#2563eb'">确认登录</button>
       </div>
@@ -1119,8 +1119,8 @@
                       </div>
                       <!-- 样式A胶囊切换按钮 -->
                       <div id="zbIssueChartSwitch" style="display:inline-flex;background:#e0e7ff;border-radius:20px;padding:2px;gap:0;border:0.5px solid #c7d2fe;">
-                        <button id="zbIssueSwL" onclick="zbIssueChartSwitch('level1')" style="padding:3px 10px;border-radius:18px;border:none;background:#2563eb;color:#fff;font-size:10px;cursor:pointer;transition:all .15s;">一级项</button>
-                        <button id="zbIssueSwR" onclick="zbIssueChartSwitch('issueType')" style="padding:3px 10px;border-radius:18px;border:none;background:transparent;color:#6366f1;font-size:10px;cursor:pointer;transition:all .15s;">问题类型</button>
+                        <button id="zbIssueSwL" onclick="zbIssueChartSwitch('level1')" style="padding:3px 10px;border-radius:12px;border:none;background:#2563eb;color:#fff;font-size:10px;cursor:pointer;transition:all .15s;">一级项</button>
+                        <button id="zbIssueSwR" onclick="zbIssueChartSwitch('issueType')" style="padding:3px 10px;border-radius:12px;border:none;background:transparent;color:#6366f1;font-size:10px;cursor:pointer;transition:all .15s;">问题类型</button>
                       </div>
                     </div>
                   </div>
@@ -1189,7 +1189,7 @@
                 </div>
             </div>
             <!-- 副筛选栏：仅保留口径提示，列筛选在表头▾ -->
-            <div style="display:flex;align-items:center;gap:6px;padding:6px 16px;background:#f8faff;border-bottom:0.5px solid #e2e8f0;flex-shrink:0;">
+            <div style="display:flex;align-items:center;gap:6px;padding:6px 16px;background:#f8fafc;border-bottom:0.5px solid #e2e8f0;flex-shrink:0;">
                 <span id="modalKouJingHint" style="font-size:11px;color:#94a3b8;">数据口径：全部</span>
                 <span style="font-size:11px;color:#cbd5e1;margin-left:4px;">· 每列表头 ▾ 可独立筛选</span>
                 <!-- 保留隐藏的旧filter元素供JS引用，不展示 -->
@@ -1235,7 +1235,7 @@
           </div>
           <!-- 右：明细表 -->
           <div style="display:flex;flex-direction:column;overflow:hidden;">
-            <div style="padding:8px 16px;border-bottom:0.5px solid #e8edf5;display:flex;align-items:center;justify-content:space-between;background:#f8faff;flex-shrink:0;">
+            <div style="padding:8px 16px;border-bottom:0.5px solid #e8edf5;display:flex;align-items:center;justify-content:space-between;background:#f8fafc;flex-shrink:0;">
               <span id="hdmRightTitle" style="font-size:12px;font-weight:500;color:#1d4ed8;"></span>
               <span id="hdmRightLink" style="font-size:11px;color:#2563eb;cursor:pointer;" onclick="hdmGoToSite()">→ 跳转站点详情</span>
             </div>
@@ -6618,7 +6618,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- 登录弹窗 -->
 <div id="zbLoginModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.5);z-index:1000;align-items:center;justify-content:center;backdrop-filter:blur(6px);" onclick="if(event.target===this)zbCloseLogin()">
-  <div style="background:var(--bg-card);border-radius:20px;width:360px;max-width:92vw;padding:28px 28px 24px;border:1px solid var(--border-color);box-shadow:0 20px 40px rgba(0,0,0,0.2);">
+  <div style="background:var(--bg-card);border-radius:20px;width:360px;max-width:92vw;padding:28px 28px 24px;border:1px solid var(--border-color);box-shadow:0 8px 24px rgba(0,0,0,0.12);">
     <div style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">🔑 登录</div>
     <div style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;">管理员输入管理密码，登录后可上传数据并同步云端</div>
     <input type="password" id="zbLoginPwd" placeholder="请输入密码" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);font-size:13px;outline:none;box-sizing:border-box;margin-bottom:8px;" onkeydown="if(event.key==='Enter')zbConfirmLogin()">
@@ -6632,9 +6632,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 <!-- 日志弹窗 -->
 <div id="zbLogModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.45);z-index:800;align-items:center;justify-content:center;backdrop-filter:blur(6px);" onclick="if(event.target===this)zbCloseLog()">
-  <div style="background:var(--bg-card,#fff);border-radius:18px;width:960px;max-width:96vw;max-height:90vh;display:flex;flex-direction:column;border:1px solid var(--border-color);box-shadow:0 20px 40px rgba(0,0,0,0.2);overflow:hidden;">
+  <div style="background:var(--bg-card,#fff);border-radius:12px;width:960px;max-width:96vw;max-height:90vh;display:flex;flex-direction:column;border:1px solid var(--border-color);box-shadow:0 8px 24px rgba(0,0,0,0.12);overflow:hidden;">
     <!-- 头部 -->
-    <div style="padding:16px 20px 0;flex-shrink:0;border-bottom:1px solid var(--border-color);">
+    <div style="padding:20px 24px 0;flex-shrink:0;border-bottom:1px solid var(--border-color);">
       <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
         <div style="font-size:15px;font-weight:600;color:var(--text-primary);">操作日志</div>
         <span onclick="zbCloseLog()" style="cursor:pointer;font-size:20px;color:var(--text-secondary);padding:0 4px;line-height:1;">✕</span>
@@ -6674,7 +6674,7 @@ document.addEventListener('DOMContentLoaded', function() {
     <div id="zbEditPanel" style="display:none;flex:1;overflow-y:auto;padding:14px 20px;">
       <div style="margin-bottom:12px;font-size:11px;color:#92400e;background:#fef3c7;border-radius:8px;padding:8px 12px;border:0.5px solid #fcd34d;">⚠️ 修改操作会记录变更日志，推送后覆盖云端对应记录，原始文件不受影响</div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;">
-        <input id="zbEditSearchInput" type="text" placeholder="输入质检码，如 1000981489" style="flex:1;height:34px;border:1px solid #dce6f5;border-radius:8px;padding:0 12px;font-size:12px;outline:none;" onkeydown="if(event.key==='Enter')zbEditSearch()">
+        <input id="zbEditSearchInput" type="text" placeholder="输入质检码，如 1000981489" style="flex:1;height:34px;border:1px solid #e2e8f0;border-radius:8px;padding:0 12px;font-size:12px;outline:none;" onkeydown="if(event.key==='Enter')zbEditSearch()">
         <button onclick="zbEditSearch()" style="height:34px;padding:0 16px;border-radius:8px;background:#2563eb;color:#fff;border:none;font-size:12px;cursor:pointer;">搜索</button>
       </div>
       <div id="zbEditResult"></div>
@@ -6947,7 +6947,7 @@ function zbEditRenderTable() {
         + (pendingDel?' · <span style="color:#dc2626;font-weight:500;">'+pendingDel+'条待删除</span>':'')
         + '</span>'
         + '<div style="display:flex;gap:6px;">'
-        + '<button onclick="zbEditClearAll()" style="height:32px;padding:0 12px;border-radius:8px;background:transparent;color:#64748b;border:1px solid #dce6f5;font-size:12px;cursor:pointer;">重置</button>'
+        + '<button onclick="zbEditClearAll()" style="height:32px;padding:0 12px;border-radius:8px;background:transparent;color:#64748b;border:1px solid #e2e8f0;font-size:12px;cursor:pointer;">重置</button>'
         + (pendingDel > 0
             ? '<button onclick="zbEditSavePush()" style="height:32px;padding:0 14px;border-radius:8px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;font-size:12px;cursor:pointer;font-weight:500;display:flex;align-items:center;gap:5px;"><svg width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\'><polyline points=\'3 6 5 6 21 6\'/><path d=\'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2\'/></svg>删除勾选（'+pendingDel+'）</button>'
             : '<button disabled style="height:32px;padding:0 14px;border-radius:8px;background:#f8fafc;color:#94a3b8;border:1px solid #e2e8f0;font-size:12px;cursor:not-allowed;display:flex;align-items:center;gap:5px;"><svg width=\'12\' height=\'12\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\'><polyline points=\'3 6 5 6 21 6\'/><path d=\'M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2\'/></svg>删除勾选（0）</button>')
@@ -7040,11 +7040,11 @@ async function zbEditSavePush() {
         var overlay = document.createElement('div');
         overlay.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(15,25,60,0.45);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;';
         var box = document.createElement('div');
-        box.style.cssText='background:#fff;border-radius:14px;padding:24px 28px;width:300px;box-shadow:0 20px 60px rgba(15,40,100,0.2);text-align:center;';
+        box.style.cssText='background:#fff;border-radius:12px;padding:24px 28px;width:300px;box-shadow:0 8px 32px rgba(0,0,0,0.12);text-align:center;';
         box.innerHTML='<div style="font-size:14px;font-weight:600;color:#0f172a;margin-bottom:8px;">确认推送？</div>'
             +'<div style="font-size:12px;color:#64748b;margin-bottom:20px;">'+msg.join('、')+'<br>此操作将应用改动，不可直接撤销</div>'
             +'<div style="display:flex;gap:8px;">'
-            +'<button id="zbEditCancelBtn" style="flex:1;height:36px;border-radius:8px;border:1px solid #dce6f5;background:#fff;font-size:13px;cursor:pointer;color:#64748b;">取消</button>'
+            +'<button id="zbEditCancelBtn" style="flex:1;height:36px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;font-size:13px;cursor:pointer;color:#64748b;">取消</button>'
             +'<button id="zbEditConfirmBtn" style="flex:1;height:36px;border-radius:8px;border:none;background:#94a3b8;font-size:13px;color:#fff;cursor:not-allowed;" disabled>确认 (3)</button>'
             +'</div>';
         overlay.appendChild(box);
@@ -8182,11 +8182,11 @@ async function zbRevertEdit(logIdx) {
         var overlay=document.createElement('div');
         overlay.style.cssText='position:fixed;inset:0;z-index:10000;background:rgba(15,25,60,0.45);backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;';
         var box=document.createElement('div');
-        box.style.cssText='background:#fff;border-radius:14px;padding:24px 28px;width:300px;box-shadow:0 20px 60px rgba(15,40,100,0.2);text-align:center;';
+        box.style.cssText='background:#fff;border-radius:12px;padding:24px 28px;width:300px;box-shadow:0 8px 32px rgba(0,0,0,0.12);text-align:center;';
         box.innerHTML='<div style="font-size:14px;font-weight:600;color:#0f172a;margin-bottom:8px;">确认撤回？</div>'
             +'<div style="font-size:12px;color:#64748b;margin-bottom:20px;">将重新加载云端数据，当前内存数据会被替换</div>'
             +'<div style="display:flex;gap:8px;">'
-            +'<button id="zbRvCancelBtn" style="flex:1;height:36px;border-radius:8px;border:1px solid #dce6f5;background:#fff;font-size:13px;cursor:pointer;color:#64748b;">取消</button>'
+            +'<button id="zbRvCancelBtn" style="flex:1;height:36px;border-radius:8px;border:1px solid #e2e8f0;background:#fff;font-size:13px;cursor:pointer;color:#64748b;">取消</button>'
             +'<button id="zbRvConfirmBtn" style="flex:1;height:36px;border-radius:8px;border:none;background:#94a3b8;font-size:13px;color:#fff;cursor:not-allowed;" disabled>撤回 (3)</button>'
             +'</div>';
         overlay.appendChild(box); document.body.appendChild(overlay);
@@ -8317,7 +8317,7 @@ function _zbShowRefreshResult(success, elapsed) {
     'background:' + bg, 'border:1.5px solid ' + border,
     'padding:12px 24px', 'border-radius:50px', 'font-size:13px',
     'font-weight:600', 'z-index:9999', 'white-space:nowrap',
-    'box-shadow:0 8px 24px rgba(0,0,0,0.12)',
+    'box-shadow:0 4px 16px rgba(0,0,0,0.08)',
     'animation:zbFadeIn 0.25s ease'
   ].join(';');
   toast.textContent = msg;
@@ -8562,21 +8562,21 @@ function zbCloseUpload() {
 
 <!-- 上传弹窗HTML -->
 <div id="zbUploadModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.45);z-index:800;align-items:center;justify-content:center;backdrop-filter:blur(6px);" onclick="if(event.target===this)zbCloseUpload()">
-  <div style="background:var(--bg-card,#fff);border-radius:20px;width:520px;max-width:92vw;padding:24px;border:1px solid var(--border-color);box-shadow:0 20px 40px rgba(0,0,0,0.2);">
+  <div style="background:var(--bg-card,#fff);border-radius:20px;width:520px;max-width:92vw;padding:24px;border:1px solid var(--border-color);box-shadow:0 8px 24px rgba(0,0,0,0.12);">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">
       <div style="font-size:14px;font-weight:700;color:var(--text-primary);">📁 上传数据文件</div>
       <span onclick="zbCloseUpload()" style="cursor:pointer;font-size:20px;color:var(--text-secondary);padding:0 6px;line-height:1;">✕</span>
     </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px;">
       <!-- 手机区域 -->
-      <label for="zbPhoneInput" style="border:2px dashed #2563eb60;border-radius:14px;padding:20px;text-align:center;cursor:pointer;transition:all 0.18s;background:#eff6ff;display:block;">
+      <label for="zbPhoneInput" style="border:2px dashed #2563eb60;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.18s;background:#eff6ff;display:block;">
         <div style="font-size:28px;margin-bottom:8px;">📱</div>
         <div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:4px;">手机数据</div>
         <div style="font-size:11px;color:#64748b;line-height:1.7;">QA差异率表<br>手机差异明细表</div>
         <div style="font-size:10px;color:#2563eb;margin-top:8px;">👆 点击选择文件</div>
       </label>
       <!-- 五品类区域 -->
-      <label for="zbFiveCatInput" style="border:2px dashed #05996960;border-radius:14px;padding:20px;text-align:center;cursor:pointer;transition:all 0.18s;background:#ecfdf5;display:block;">
+      <label for="zbFiveCatInput" style="border:2px dashed #05996960;border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:all 0.18s;background:#ecfdf5;display:block;">
         <div style="font-size:28px;margin-bottom:8px;">📦</div>
         <div style="font-size:13px;font-weight:700;color:#1e293b;margin-bottom:4px;">五品类数据</div>
         <div style="font-size:11px;color:#64748b;line-height:1.7;">日汇总表<br>五品类差异明细表</div>
