@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.44U</title>
+    <title>培训部数据看板 v1.44V</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -257,7 +257,7 @@
         .modal-filter-bar { margin: 0 0 16px 0; padding: 12px 16px; }
         #modalBody { flex: 1; overflow: hidden; }
         .virtual-scroll-container { height: 60vh; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 12px; }
-        .toast-msg { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1f2937; color: #fff; padding: 10px 24px; border-radius: 60px; font-size: 13px; z-index: 2000; white-space: nowrap; box-shadow: 0 8px 20px rgba(0,0,0,0.2); font-weight: 500; }
+        .toast-msg { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: #1f2937; color: #fff; padding: 10px 24px; border-radius: 60px; font-size: 13px; z-index: 999999; white-space: nowrap; box-shadow: 0 8px 20px rgba(0,0,0,0.2); font-weight: 500; }
         @media (max-width: 1000px) { .insight-grid { grid-template-columns: 1fr 1fr; } .right-chart-container { grid-column: span 1; } }
         /* hover 动效全面铺开 */
         .rank-row { transition: background 0.12s, transform 0.12s; }
@@ -493,7 +493,7 @@
         .rank-col-scroll::-webkit-scrollbar-thumb { background:var(--border-color); border-radius:2px; }
         .rank-col-scroll:hover::-webkit-scrollbar-thumb { background:#b0bec9; }
         .rank-row {
-            display:grid; grid-template-columns:22px minmax(0,1fr) 70px 46px minmax(0,1fr) 64px 50px;
+            display:grid; grid-template-columns:22px minmax(0,1fr) 70px 46px minmax(0,1fr) 50px;
             align-items:center; gap:4px;
             padding:7px 6px; border-radius:0;
             background:transparent; margin-bottom:0;
@@ -750,7 +750,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44U</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44V</div>
     </div>
   </nav>
 
@@ -1477,7 +1477,8 @@
 
             // 保存表格链接配置到GitHub
             window.zbSaveTableLinks = async function zbSaveTableLinks() {
-                var token = zbGetToken();
+                var token = (typeof window.zbGetToken === 'function' ? window.zbGetToken() : null)
+                    || window._zbToken || window.zbToken || '';
                 if (!token) { showToast('需要管理员Token才能保存'); return; }
                 var ok = await _zbPushFile(GH_FILES.tableLinks, window._zbTableLinks, token);
                 if (ok) showToast('✅ 表格链接配置已保存');
@@ -2919,7 +2920,6 @@
                             <div class="rank-bar-wrap"><div class="rank-bar-inner" style="width:${pct}%;background:${color}"></div></div>
                             <div class="rank-rate" style="color:${color}">${r.rate !== null ? r.rate.toFixed(2)+'%' : '—'}</div>
                             ${metaHtml}
-                            <div style="display:flex;align-items:center;justify-content:center;width:68px;flex-shrink:0;" title="近${sparkData.length}天趋势">${spark}</div>
                             <div class="rank-change ${r.changeCls}">${r.change}</div>
                         </div>`;
                     }).join('');
@@ -5407,6 +5407,52 @@ function zbRenderSiteDetail(siteName) {
                     + '<div class="stats-number" style="color:' + (numColor||'#1d4ed8') + ';">' + val + '</div>'
                     + '</div></div>';
             };
+
+            // ── 计算小组排名并插入细长色块 ──
+            (function() {
+                var siteType = typeof zbGetSiteType === 'function' ? zbGetSiteType(siteName) : '中心仓';
+                var allData = window._allDiffData || [];
+                var topStart = (document.getElementById('startDateFilter')||{}).value||'';
+                var topEnd   = (document.getElementById('endDateFilter')||{}).value||'';
+                var groupSites = {};
+                allData.forEach(function(d) {
+                    var s = d.warehouse || d.site || '';
+                    if (!s) return;
+                    var st = typeof zbGetSiteType === 'function' ? zbGetSiteType(s) : '中心仓';
+                    if (st !== siteType) return;
+                    var dt = (d.date||'').split(' ')[0];
+                    if (topStart && dt < topStart) return;
+                    if (topEnd   && dt > topEnd)   return;
+                    if (!groupSites[s]) groupSites[s] = { total:0, diff:0 };
+                    groupSites[s].total++;
+                    if (diffFilter(d)) groupSites[s].diff++;
+                });
+                var ranked = Object.keys(groupSites).map(function(s) {
+                    var r = groupSites[s].total > 0 ? groupSites[s].diff / groupSites[s].total * 100 : 0;
+                    return { site:s, rate:r };
+                }).sort(function(a,b){ return a.rate - b.rate; });
+                var myIdx = ranked.findIndex(function(r){ return r.site === siteName; });
+                if (myIdx < 0) return;
+                var rank = myIdx + 1, total = ranked.length;
+                var myRate = ranked[myIdx].rate;
+                var prevRate = myIdx > 0 ? ranked[myIdx-1].rate : null;
+                var nextRate = myIdx < total-1 ? ranked[myIdx+1].rate : null;
+                var isFirst = rank === 1;
+                var barBg = isFirst ? 'linear-gradient(90deg,#f0fdf4,#dcfce7)' : rank <= 3 ? 'linear-gradient(90deg,#eff6ff,#e0e7ff)' : 'linear-gradient(90deg,#fffbeb,#fef3c7)';
+                var textColor = isFirst ? '#059669' : rank <= 3 ? '#2563eb' : '#d97706';
+                var borderColor = isFirst ? '#bbf7d0' : rank <= 3 ? '#bfdbfe' : '#fde68a';
+                var gapText = isFirst && nextRate !== null
+                    ? '↓ 领先第2名 ' + Math.abs(nextRate - myRate).toFixed(2) + '%'
+                    : (!isFirst && prevRate !== null ? '↑ 距上一名差 ' + Math.abs(myRate - prevRate).toFixed(2) + '%' : '');
+                var rankEl = document.getElementById('zbSiteRankBar');
+                if (!rankEl) { rankEl = document.createElement('div'); rankEl.id = 'zbSiteRankBar'; kpiEl.parentNode.insertBefore(rankEl, kpiEl); }
+                rankEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:7px 14px;border-radius:8px;background:'+barBg+';border:0.5px solid '+borderColor+';margin-bottom:8px;">'
+                    + '<span style="font-size:11px;color:#64748b;">'+siteType+'小组排名</span>'
+                    + '<span style="font-size:15px;font-weight:700;color:'+textColor+';">'+(isFirst?'🏆 ':'')+'第 '+rank+' 名</span>'
+                    + '<span style="font-size:11px;color:#94a3b8;">/ 共'+total+'个站点</span>'
+                    + (gapText ? '<span style="font-size:11px;color:'+textColor+';background:rgba(255,255,255,0.7);padding:2px 8px;border-radius:10px;margin-left:auto;">'+gapText+'</span>' : '')
+                    + '</div>';
+            })();
 
             kpiEl.innerHTML =
                 mk('总抽检量', siteChecks || '—', 'checks', '抽检量', '#2563eb', '#1d4ed8') +
@@ -8755,7 +8801,9 @@ function _zbRenderLog(){
   if (!editLogEl) {
     editLogEl = document.createElement('div');
     editLogEl.id = 'zbEditLogSection';
-    el.parentNode.appendChild(editLogEl);
+    var editPanel = document.getElementById('zbEditPanel');
+    if (editPanel) editPanel.appendChild(editLogEl);
+    else el.parentNode.appendChild(editLogEl);
   }
   if (!editLog.length) { editLogEl.innerHTML=''; return; }
   var eHtml = '<div style="border-top:0.5px solid var(--border-color);padding:12px 18px;">'
