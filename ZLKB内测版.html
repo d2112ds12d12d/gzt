@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.44F</title>
+    <title>培训部数据看板 v1.44G</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -619,7 +619,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44F</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44G</div>
     </div>
   </nav>
 
@@ -980,14 +980,21 @@
                       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
                       质检项分析（<span id="zbIssueScopeHint">客观执行</span>）
                     </div>
-                    <!-- 样式A胶囊切换按钮 -->
-                    <div id="zbIssueChartSwitch" style="display:inline-flex;background:#e0e7ff;border-radius:20px;padding:2px;gap:0;border:0.5px solid #c7d2fe;">
-                      <button id="zbIssueSwL" onclick="zbIssueChartSwitch('level1')" style="padding:3px 10px;border-radius:18px;border:none;background:#2563eb;color:#fff;font-size:10px;cursor:pointer;transition:all .15s;">一级项</button>
-                      <button id="zbIssueSwR" onclick="zbIssueChartSwitch('issueType')" style="padding:3px 10px;border-radius:18px;border:none;background:transparent;color:#6366f1;font-size:10px;cursor:pointer;transition:all .15s;">问题类型</button>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <!-- 折叠按钮 -->
+                      <div id="zbIssueCollapseBtn" onclick="zbIssueToggleChart()" style="display:flex;align-items:center;gap:4px;padding:3px 10px;border-radius:6px;border:0.5px solid #e2e8f0;background:#f8fafc;color:#64748b;font-size:11px;cursor:pointer;transition:all .15s;user-select:none;">
+                        <span id="zbIssueCollapseIcon" style="font-size:10px;transition:transform .2s;">▲</span>
+                        <span id="zbIssueCollapseText">收起</span>
+                      </div>
+                      <!-- 样式A胶囊切换按钮 -->
+                      <div id="zbIssueChartSwitch" style="display:inline-flex;background:#e0e7ff;border-radius:20px;padding:2px;gap:0;border:0.5px solid #c7d2fe;">
+                        <button id="zbIssueSwL" onclick="zbIssueChartSwitch('level1')" style="padding:3px 10px;border-radius:18px;border:none;background:#2563eb;color:#fff;font-size:10px;cursor:pointer;transition:all .15s;">一级项</button>
+                        <button id="zbIssueSwR" onclick="zbIssueChartSwitch('issueType')" style="padding:3px 10px;border-radius:18px;border:none;background:transparent;color:#6366f1;font-size:10px;cursor:pointer;transition:all .15s;">问题类型</button>
+                      </div>
                     </div>
                   </div>
-                  <!-- 单图+右侧摘要 -->
-                  <div id="zbIssueChartWrap" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;height:360px;margin-bottom:12px;align-items:center;">
+                  <!-- 单图+右侧摘要（可折叠） -->
+                  <div id="zbIssueChartWrap" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;height:360px;margin-bottom:12px;align-items:center;overflow:hidden;transition:max-height .3s ease,opacity .25s ease,margin .3s ease;">
                     <div id="zbIssueChartLeft" style="width:100%;height:360px;"></div>
                     <div id="zbIssueChartRight" style="height:360px;overflow-y:auto;padding:8px 0 8px 16px;border-left:0.5px solid var(--border-color);display:flex;flex-direction:column;justify-content:center;"></div>
                   </div>
@@ -5473,8 +5480,67 @@ window.zbIssueRowClick = function(l1, l2, l3, label) {
     }
 };
 
-// 当前左图维度
-window._zbIssueChartMode = 'level1';
+window.zbIssueToggleChart = function() {
+    var wrap = document.getElementById('zbIssueChartWrap');
+    var btn  = document.getElementById('zbIssueCollapseBtn');
+    var icon = document.getElementById('zbIssueCollapseIcon');
+    var text = document.getElementById('zbIssueCollapseText');
+    var seg  = document.getElementById('zbIssueChartSwitch');
+    if (!wrap) return;
+    var isOpen = wrap.style.maxHeight !== '0px' && wrap.style.display !== 'none';
+    if (isOpen) {
+        wrap.style.maxHeight = '0px';
+        wrap.style.opacity = '0';
+        wrap.style.marginBottom = '0';
+        wrap.style.pointerEvents = 'none';
+        if (icon) icon.style.transform = 'rotate(180deg)';
+        if (text) text.textContent = '展开';
+        if (btn)  { btn.style.background='#f8fafc'; btn.style.color='#64748b'; btn.style.borderColor='#e2e8f0'; }
+        if (seg)  seg.style.display = 'none';
+        try { localStorage.setItem('zb_issue_chart_open','0'); } catch(e){}
+    } else {
+        wrap.style.maxHeight = '400px';
+        wrap.style.opacity = '1';
+        wrap.style.marginBottom = '12px';
+        wrap.style.pointerEvents = '';
+        if (icon) icon.style.transform = '';
+        if (text) text.textContent = '收起';
+        if (btn)  { btn.style.background='#eff6ff'; btn.style.color='#2563eb'; btn.style.borderColor='#bfdbfe'; }
+        if (seg)  seg.style.display = '';
+        try { localStorage.setItem('zb_issue_chart_open','1'); } catch(e){}
+        // 展开后 resize 图表
+        setTimeout(function(){
+            var el = document.getElementById('zbIssueChartLeft');
+            if (el && typeof echarts !== 'undefined') { var inst = echarts.getInstanceByDom(el); if (inst) inst.resize(); }
+        }, 350);
+    }
+};
+
+// 初始化折叠状态（读localStorage）
+window.zbIssueChartInitState = function() {
+    var saved = '1';
+    try { saved = localStorage.getItem('zb_issue_chart_open') || '1'; } catch(e){}
+    var wrap = document.getElementById('zbIssueChartWrap');
+    var btn  = document.getElementById('zbIssueCollapseBtn');
+    var icon = document.getElementById('zbIssueCollapseIcon');
+    var text = document.getElementById('zbIssueCollapseText');
+    var seg  = document.getElementById('zbIssueChartSwitch');
+    if (!wrap) return;
+    if (saved === '0') {
+        wrap.style.maxHeight = '0px';
+        wrap.style.opacity = '0';
+        wrap.style.marginBottom = '0';
+        wrap.style.pointerEvents = 'none';
+        if (icon) icon.style.transform = 'rotate(180deg)';
+        if (text) text.textContent = '展开';
+        if (seg)  seg.style.display = 'none';
+    } else {
+        wrap.style.maxHeight = '400px';
+        wrap.style.opacity = '1';
+        wrap.style.marginBottom = '12px';
+        if (btn) { btn.style.background='#eff6ff'; btn.style.color='#2563eb'; btn.style.borderColor='#bfdbfe'; }
+    }
+};
 
 window.zbIssueChartSwitch = function(mode) {
     window._zbIssueChartMode = mode;
@@ -5805,11 +5871,40 @@ function zbRenderSiteIssueAnalysis(execDiff, rootEl) {
         if (!rows.length) { rootEl.innerHTML = '<div style="text-align:center;padding:24px;color:var(--text-secondary);font-size:13px;">该时段暂无数据</div>'; return; }
 
         window._siteIssueAllDiff = filtered;
-        if (typeof zbRenderIssueCharts === 'function') zbRenderIssueCharts(filtered);
+        // 延迟渲染图表，等面板显示后容器有正确尺寸
+        var _filteredSnap = filtered;
+        setTimeout(function(){
+            if (typeof zbRenderIssueCharts === 'function') {
+                zbRenderIssueCharts(_filteredSnap);
+                if (typeof zbIssueChartInitState === 'function') zbIssueChartInitState();
+                setTimeout(function(){
+                    var el = document.getElementById('zbIssueChartLeft');
+                    if (el && typeof echarts !== 'undefined') {
+                        var inst = echarts.getInstanceByDom(el);
+                        if (inst) inst.resize();
+                    }
+                }, 300);
+            }
+        }, 80);
         var pageSize = window._zbIssuePageSize||10, page = window._zbIssuePage||1;
         var totalPages = Math.max(1,Math.ceil(rows.length/pageSize));
         if(page>totalPages) page=window._zbIssuePage=1;
         var sliced = rows.slice((page-1)*pageSize, page*pageSize);
+
+        // 一级项颜色映射（和饼图一致）
+        var L1_COLORS = ['#3b82f6','#f59e0b','#10b981','#ef4444','#8b5cf6','#06b6d4','#f97316','#84cc16','#ec4899','#94a3b8','#14b8a6','#a855f7'];
+        var L1_BG     = ['#dbeafe','#fef3c7','#d1fae5','#fee2e2','#ede9fe','#cffafe','#ffedd5','#ecfccb','#fce7f3','#f1f5f9','#ccfbf1','#f3e8ff'];
+        var L1_TEXT   = ['#1e40af','#92400e','#065f46','#991b1b','#5b21b6','#164e63','#9a3412','#3f6212','#9d174d','#475569','#134e4a','#6b21a8'];
+        // 建立一级项→颜色索引映射
+        var l1List = []; var l1IdxMap = {};
+        rows.forEach(function(r){ if (r.level1 && l1IdxMap[r.level1]===undefined) { l1IdxMap[r.level1]=l1List.length; l1List.push(r.level1); } });
+
+        function getL1Tag(l1) {
+            if (!l1) return '';
+            var i = l1IdxMap[l1]||0;
+            var bg = L1_BG[i%L1_BG.length], tc = L1_TEXT[i%L1_TEXT.length];
+            return '<span style="display:inline-block;font-size:10px;padding:1px 7px;border-radius:10px;background:'+bg+';color:'+tc+';font-weight:500;flex-shrink:0;white-space:nowrap;margin-right:6px;">'+l1+'</span>';
+        }
 
         rootEl.innerHTML = '<div style="overflow-x:auto;"><table class="rank-table" style="width:100%;table-layout:fixed;">'
             + '<thead><tr><th style="width:50px;">排名</th><th>质检项</th><th style="text-align:center;color:#2563eb;width:120px;">出现次数</th><th style="text-align:center;width:80px;">占比</th></tr></thead><tbody>'
@@ -5818,12 +5913,13 @@ function zbRenderSiteIssueAnalysis(execDiff, rootEl) {
                 var rc=rank===1?'background:#fca5a5;color:#7f1d1d;':rank===2?'background:#fed7aa;color:#7c2d12;':rank===3?'background:#fde68a;color:#78350f;':'background:var(--kpi-bg);color:var(--text-secondary);';
                 var pct=totalCnt?Math.round(r.cnt/totalCnt*100):0;
                 var prog='<div style="display:flex;align-items:center;gap:4px;justify-content:center;"><div style="width:36px;height:4px;background:var(--kpi-bg);border-radius:3px;overflow:hidden;"><div style="width:'+pct+'%;height:100%;background:#2563eb;border-radius:3px;"></div></div><span style="font-size:11px;">'+pct+'%</span></div>';
-                var itemLabel = [r.level1,r.level2,r.level3].filter(Boolean).join('—');
+                var itemLabel = [r.level2,r.level3].filter(Boolean).join('—') || r.level3 || '未知';
+                var fullLabel = [r.level1,r.level2,r.level3].filter(Boolean).join('—');
                 var l1=(r.level1||'').replace(/'/g,"\\'"), l2=(r.level2||'').replace(/'/g,"\\'"), l3=(r.level3||'').replace(/'/g,"\\'");
-                var labelEsc=itemLabel.replace(/'/g,"\\'");
+                var labelEsc=fullLabel.replace(/'/g,"\\'");
                 return '<tr style="cursor:pointer;" onclick="zbIssueRowClick(\''+l1+'\',\''+l2+'\',\''+l3+'\',\''+labelEsc+'\')">'
                     +'<td style="text-align:center;"><div style="width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;'+rc+'margin:auto;">'+rank+'</div></td>'
-                    +'<td>'+itemLabel+'</td>'
+                    +'<td><div style="display:flex;align-items:center;">'+getL1Tag(r.level1)+itemLabel+'</div></td>'
                     +'<td style="text-align:center;font-weight:500;color:#dc2626;">'+r.cnt+'</td>'
                     +'<td>'+prog+'</td>'
                     +'</tr>';
