@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.44J</title>
+    <title>培训部数据看板 v1.44K</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -12,37 +12,42 @@
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
-            --bg-body: #eef3fb;
+            --bg-body: #f0f2f7;
             --bg-card: #ffffff;
             --text-primary: #0f172a;
             --text-secondary: #64748b;
-            --border-color: #dce6f5;
-            --kpi-bg: #f8faff;
+            --border-color: #e2e8f0;
+            --kpi-bg: #f8fafc;
             --header-bg: #ffffff;
-            --btn-bg: #3b82f6;
-            --btn-hover: #2563eb;
-            --shadow: 0 2px 14px rgba(30,64,175,0.07),0 1px 3px rgba(30,64,175,0.04);
-            --shadow-card: 0 4px 20px rgba(30,64,175,0.10);
-            --table-header-bg: #f3f7fe;
-            --table-hover: #fef9e3;
+            --btn-bg: #2563eb;
+            --btn-hover: #1d4ed8;
+            --shadow: 0 1px 4px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-card: 0 4px 16px rgba(0,0,0,0.08);
+            --shadow-hover: 0 8px 24px rgba(0,0,0,0.12);
+            --table-header-bg: #f8fafc;
+            --table-hover: #f8fafc;
             --chart-text: #0f172a;
-            --modal-overlay: rgba(0,0,0,0.5);
+            --modal-overlay: rgba(15,23,42,0.6);
             --filter-bar-bg: #ffffff;
-            --filter-input-bg: #f3f7fe;
-            --reset-btn-bg: #f0f4fa;
-            --reset-btn-hover: #e4eaf5;
+            --filter-input-bg: #f8fafc;
+            --reset-btn-bg: #f1f5f9;
+            --reset-btn-hover: #e2e8f0;
             --reset-btn-text: #64748b;
-            --switch-btn-bg: #eef2ff;
-            --progress-bg: #e4eaf5;
+            --switch-btn-bg: #eff6ff;
+            --progress-bg: #e2e8f0;
             --sidebar-width: 210px;
-            --card-radius: 18px;
-            --sidebar-bg: #f5f7ff;
-            --sidebar-border: #e4ecf8;
-            --sidebar-lbl: #b0bec9;
+            --card-radius: 12px;
+            --sidebar-bg: #ffffff;
+            --sidebar-border: #f1f5f9;
+            --sidebar-lbl: #94a3b8;
             --sidebar-item: #64748b;
-            --sidebar-active-bg: #ffffff;
+            --sidebar-active-bg: #eff6ff;
             --sidebar-active-color: #2563eb;
-            --sidebar-active-shadow: 0 2px 8px rgba(37,99,235,0.10);
+            --sidebar-active-shadow: 0 1px 4px rgba(37,99,235,0.12);
+            /* 动效时长 */
+            --transition-fast: 0.15s ease;
+            --transition-base: 0.25s ease;
+            --transition-slow: 0.4s ease;
         }
         body.dark {
             --bg-body: #0f172a;
@@ -590,6 +595,127 @@
             100% { background: var(--card-bg, var(--color-background-primary, #fff)); }
         }
         .zb-flashing { animation: zb-card-flash 0.8s ease forwards !important; }
+
+        /* ══ A方向升级：精致留白·动效系统 ══ */
+
+        /* 1. 页面切换淡入动效 */
+        @keyframes pageSlideIn {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .zb-page.active {
+            animation: pageSlideIn 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+        }
+
+        /* 2. 卡片加载序列淡入 */
+        @keyframes cardFadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .card {
+            animation: cardFadeIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+            border-radius: var(--card-radius) !important;
+            box-shadow: var(--shadow) !important;
+            border: 0.5px solid var(--border-color) !important;
+            transition: transform var(--transition-fast), box-shadow var(--transition-fast) !important;
+        }
+        .card:nth-child(1) { animation-delay: 0ms; }
+        .card:nth-child(2) { animation-delay: 50ms; }
+        .card:nth-child(3) { animation-delay: 100ms; }
+        .card:nth-child(4) { animation-delay: 150ms; }
+        .card:nth-child(5) { animation-delay: 200ms; }
+        .card:nth-child(6) { animation-delay: 250ms; }
+        .card:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: var(--shadow-hover) !important;
+        }
+
+        /* 3. 进度条动画 */
+        @keyframes barGrow {
+            from { width: 0 !important; }
+        }
+        .rank-bar-inner {
+            animation: barGrow 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+        }
+
+        /* 4. 查询按钮波纹+按压动效 */
+        @keyframes ripple {
+            from { transform: scale(0); opacity: 0.4; }
+            to   { transform: scale(2.5); opacity: 0; }
+        }
+        .query-btn-wrap { position: relative; overflow: hidden; border-radius: 20px; display: inline-block; }
+        .btn-ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.5);
+            width: 40px; height: 40px;
+            margin-top: -20px; margin-left: -20px;
+            animation: ripple 0.5s ease-out forwards;
+            pointer-events: none;
+        }
+
+        /* 5. 统一过渡 */
+        .stats-item {
+            transition: transform var(--transition-fast), box-shadow var(--transition-fast) !important;
+            border-radius: var(--card-radius) !important;
+        }
+        .stats-item:hover {
+            transform: translateY(-2px) !important;
+            box-shadow: var(--shadow-hover) !important;
+        }
+        .rank-row {
+            transition: transform var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast) !important;
+        }
+
+        /* 精致化：卡片标题左侧装饰线 */
+        .card-section-title {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 13px; font-weight: 600; color: var(--text-primary);
+            margin-bottom: 14px;
+        }
+        .card-section-title::before {
+            content: ''; width: 3px; height: 15px;
+            background: #2563eb; border-radius: 2px;
+            display: inline-block; flex-shrink: 0;
+        }
+
+        /* 精致化：分割线细化 */
+        .sticky-divider {
+            width: 1px !important;
+            height: 18px !important;
+            background: var(--border-color) !important;
+            flex-shrink: 0;
+        }
+
+        /* 精致化：表格头更简洁 */
+        .rank-table th, .modal-table th {
+            font-weight: 500 !important;
+            font-size: 11px !important;
+            color: var(--text-secondary) !important;
+            background: var(--table-header-bg) !important;
+            border-bottom: 1px solid var(--border-color) !important;
+            letter-spacing: 0.02em;
+        }
+
+        /* 精致化：侧边栏优化 */
+        .sidebar { box-shadow: 1px 0 0 var(--border-color) !important; }
+        .sidebar .nav-item {
+            border-radius: 8px !important;
+            margin: 1px 4px !important;
+            transition: background var(--transition-fast), color var(--transition-fast) !important;
+        }
+
+        /* 精致化：数字字重 */
+        .kpi-number, [id*="kpi"] b, .stat-value {
+            font-weight: 600 !important;
+            letter-spacing: -0.02em !important;
+        }
+
+        /* 数字滚动动效（JS配合） */
+        .zb-count-up {
+            display: inline-block;
+            transition: transform 0.1s ease;
+        }
         </style>
 </head>
 <body>
@@ -624,7 +750,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44J</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44K</div>
     </div>
   </nav>
 
@@ -712,7 +838,7 @@
                         <span id="zbKouJingLabel" style="font-size:11px;color:#1d4ed8;font-weight:500;">口径：客观执行</span>
                         <svg id="zbKouJingArrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5" style="flex-shrink:0;transition:transform .2s;"><polyline points="6 9 12 15 18 9"/></svg>
                     </div>
-                    <button id="zbQueryBtn" onclick="zbDoQuery()" style="display:inline-flex;align-items:center;gap:5px;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:500;background:#fff;color:#2563eb;border:1.5px solid #2563eb;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;" onmouseenter="this.style.background='#eff6ff'" onmouseleave="this.style.background='#fff'">→ 查询</button>
+                    <button id="zbQueryBtn" onclick="zbDoQuery();zbRipple(this,event)" style="display:inline-flex;align-items:center;gap:5px;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:500;background:#fff;color:#2563eb;border:1.5px solid #2563eb;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;overflow:hidden;position:relative;" onmouseenter="this.style.background='#eff6ff'" onmouseleave="this.style.background='#fff'">→ 查询</button>
                 </div>
             </div>
             <!-- 口径下拉面板 -->
@@ -1417,8 +1543,12 @@
                 }
                 const KPI_COLORS={total_checks:'#2563eb',subj_diff:'#f59e0b',obj_diff:'#10b981',exec_diff:'#8b5cf6'};
                 const KPI_NUM_COLORS={total_checks:'#1d4ed8',subj_diff:'#b45309',obj_diff:'#047857',exec_diff:'#6d28d9'};
-                const mk = (type, val, label, dc, yh) =>
-                    `<div class="stats-item" data-type="${type}" data-count="${dc||''}"><div class="stats-item-side" style="background:${KPI_COLORS[type]||'#2563eb'};"></div><div class="stats-item-body"><div class="stats-label">${label}</div><div class="stats-number" style="color:${KPI_NUM_COLORS[type]||'#1d4ed8'};">${val}</div>${yh||''}</div></div>`;
+                const mk = (type, val, label, dc, yh) => {
+                    var isPercent = typeof val === 'string' && val.includes('%');
+                    var numVal = parseFloat(String(val).replace('%','').replace(/,/g,'')) || 0;
+                    var countupAttr = !isNaN(numVal) ? ` data-countup="${numVal}" ${isPercent?'data-countup-percent="1"':''}` : '';
+                    return `<div class="stats-item" data-type="${type}" data-count="${dc||''}"><div class="stats-item-side" style="background:${KPI_COLORS[type]||'#2563eb'};"></div><div class="stats-item-body"><div class="stats-label">${label}</div><div class="stats-number" style="color:${KPI_NUM_COLORS[type]||'#1d4ed8'};"${countupAttr}>${val}</div>${yh||''}</div></div>`;
+                };
 
                 function kpiHtml(k, yk) {
                     var tc=k.totalChecks;
@@ -7104,6 +7234,48 @@ function zbMarkQueryPending() {
   btn.style.color = '#92400e';
   btn.textContent = '! 查询';
 }
+// ── 波纹动效 ──
+window.zbRipple = function(btn, e) {
+    var rect = btn.getBoundingClientRect();
+    var ripple = document.createElement('span');
+    ripple.className = 'btn-ripple';
+    ripple.style.left = (e.clientX - rect.left) + 'px';
+    ripple.style.top  = (e.clientY - rect.top) + 'px';
+    btn.appendChild(ripple);
+    setTimeout(function(){ ripple.remove(); }, 600);
+    // 按压动效
+    btn.style.transform = 'scale(0.96)';
+    setTimeout(function(){ btn.style.transform = ''; }, 150);
+};
+
+// ── 数字滚动动效 ──
+window.zbCountUp = function(el, target, duration, isPercent) {
+    if (!el) return;
+    var start = 0;
+    var startTime = null;
+    var suffix = isPercent ? '%' : '';
+    var decimals = isPercent ? 2 : 0;
+    function step(ts) {
+        if (!startTime) startTime = ts;
+        var progress = Math.min((ts - startTime) / duration, 1);
+        // easeOutExpo
+        var ease = progress === 1 ? 1 : 1 - Math.pow(2, -10 * progress);
+        var current = start + (target - start) * ease;
+        el.textContent = decimals > 0 ? current.toFixed(decimals) + suffix : Math.floor(current).toLocaleString('zh-CN') + suffix;
+        if (progress < 1) requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+};
+
+// ── 触发KPI数字滚动（在数据刷新后调用） ──
+window.zbTriggerCountUp = function() {
+    document.querySelectorAll('[data-countup]').forEach(function(el) {
+        var target = parseFloat(el.dataset.countup) || 0;
+        var isPercent = el.dataset.countupPercent === '1';
+        zbCountUp(el, target, 1200, isPercent);
+    });
+};
+
 function zbDoQuery() {
   var btn = document.getElementById('zbQueryBtn');
   if (btn) {
@@ -7125,6 +7297,8 @@ function zbDoQuery() {
   }
   // 刷新后闪烁提示
   setTimeout(function(){ if (typeof zbFlashCards === 'function') zbFlashCards(); }, 100);
+  // 触发数字滚动动效
+  setTimeout(function(){ if (typeof zbTriggerCountUp === 'function') zbTriggerCountUp(); }, 200);
 }
 
 // 站点趋势图范围切换（近15天/近4周/全部）
