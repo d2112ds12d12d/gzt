@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.44AD</title>
+    <title>培训部数据看板 v1.44AE</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -750,7 +750,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44AD</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44AE</div>
     </div>
   </nav>
 
@@ -9305,11 +9305,9 @@ window.zbConfirmUpload = function() {
     return;
   }
   hint.style.display = 'none';
+  // 先收集文件再关弹窗，关弹窗会reset input
+  var allFiles = Array.from(f1).concat(Array.from(f2));
   zbCloseUpload();
-  // 合并所有文件
-  var dt = new DataTransfer();
-  Array.from(f1).forEach(function(f){ dt.items.add(f); });
-  Array.from(f2).forEach(function(f){ dt.items.add(f); });
   // 重置预览
   document.getElementById('zbPhoneInput').value = '';
   document.getElementById('zbFiveCatInput').value = '';
@@ -9319,8 +9317,17 @@ window.zbConfirmUpload = function() {
   document.getElementById('zbUpBox1').style.background = '#f8fbff';
   document.getElementById('zbUpBox2').style.borderColor = '#a7f3d0';
   document.getElementById('zbUpBox2').style.background = '#f8fdfb';
-  // 开始处理
-  if (typeof processExcelFiles === 'function') processExcelFiles(dt.files);
+  // 开始处理 — 用FileList-like对象传入
+  if (typeof processExcelFiles === 'function' && allFiles.length) {
+    try {
+      var dt = new DataTransfer();
+      allFiles.forEach(function(f){ dt.items.add(f); });
+      processExcelFiles(dt.files);
+    } catch(e) {
+      // DataTransfer不支持时直接传数组（processExcelFiles内部做兼容）
+      processExcelFiles(allFiles);
+    }
+  }
 };
 
 // 把原上传按钮改成打开弹窗
