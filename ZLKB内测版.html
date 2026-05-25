@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.45B</title>
+    <title>培训部数据看板 v1.45C</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -751,7 +751,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.45B</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.45C</div>
     </div>
   </nav>
 
@@ -2377,9 +2377,9 @@
                     const startIndex = Math.max(0, Math.floor(scrollTop / this.rowHeight) - 3);
                     const endIndex = Math.min(this.data.length, startIndex + this.visibleRows + 10);
                     this.startIndex = startIndex;
-                    const GROUP_BG = ['#fff7ed','#eff6ff','#f0fdf4','#fdf4ff','#fffbeb'];
-                    const GROUP_TC = ['#d97706','#2563eb','#059669','#9333ea','#b45309'];
-                    const GROUP_BADGE_BG = ['#fef3c7','#dbeafe','#d1fae5','#ede9fe','#fef3c7'];
+                    const GROUP_BG = ['#eff6ff','#eff6ff','#eff6ff','#eff6ff','#eff6ff'];
+                    const GROUP_TC = ['#2563eb','#2563eb','#2563eb','#2563eb','#2563eb'];
+                    const GROUP_BADGE_BG = ['#dbeafe','#dbeafe','#dbeafe','#dbeafe','#dbeafe'];
                     const fragment = document.createDocumentFragment();
                     for (let i = startIndex; i < endIndex; i++) {
                         const row = this.data[i];
@@ -4827,7 +4827,7 @@ function zbGetToken() {
 }
 
 // ══════════════════════════════════════════
-// 图片功能模块 v1.45B
+// 图片功能模块 v1.45C
 // 云函数签发临时密钥 → 压缩 → 上传COS → 存image_links.json
 // ══════════════════════════════════════════
 const ZB_IMG = {
@@ -5161,11 +5161,37 @@ function zbShowImgPanel(cam, row, urls) {
         var thumbWrap = document.createElement('div');
         thumbWrap.style.cssText = 'display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;';
         urls.forEach(function(url, i) {
+            var thumbBox = document.createElement('div');
+            thumbBox.style.cssText = 'position:relative;display:inline-block;flex-shrink:0;';
             var thumb = document.createElement('img');
             thumb.src = url;
-            thumb.style.cssText = 'width:44px;height:44px;object-fit:cover;border-radius:4px;border:0.5px solid #bfdbfe;cursor:pointer;';
+            thumb.style.cssText = 'width:44px;height:44px;object-fit:cover;border-radius:4px;border:0.5px solid #bfdbfe;cursor:pointer;display:block;';
             thumb.onclick = function(){ panel.remove(); zbShowImagePreview(urls, i); };
-            thumbWrap.appendChild(thumb);
+            var delBtn = document.createElement('span');
+            delBtn.style.cssText = 'position:absolute;top:-4px;right:-4px;width:14px;height:14px;border-radius:50%;background:#ef4444;color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity .15s;line-height:1;z-index:1;';
+            delBtn.textContent = '×';
+            delBtn.title = '删除此图片';
+            thumbBox.onmouseenter = function(){ delBtn.style.opacity='1'; };
+            thumbBox.onmouseleave = function(){ delBtn.style.opacity='0'; };
+            delBtn.onclick = async function(e) {
+                e.stopPropagation();
+                if (!confirm('确定删除这张图片？')) return;
+                panel.remove();
+                showToast('⏳ 删除中…');
+                try {
+                    await zbRemoveRowImage(row, url);
+                    var newUrls = await zbGetRowImages(row);
+                    showToast('✅ 已删除');
+                    var camEl = document.querySelector('.zb-cam-icon[data-key="'+zbImgKey(row)+'"]') || document.querySelector('.zb-cam-icon');
+                    if (newUrls.length > 0) { zbShowImgPanel(camEl, row, newUrls); }
+                    if (camEl) zbRefreshCamIcon(camEl, row);
+                } catch(err) {
+                    showToast('❌ 删除失败：' + err.message);
+                }
+            };
+            thumbBox.appendChild(thumb);
+            thumbBox.appendChild(delBtn);
+            thumbWrap.appendChild(thumbBox);
         });
         panel.appendChild(thumbWrap);
         // 分隔线
@@ -6739,7 +6765,7 @@ window.zbRenderIssueCharts = function(execDiff) {
             type:'pie',
             radius: mode === 'level1' ? ['35%','62%'] : ['0%','60%'],
             center:['50%','50%'],
-            label:{ show: mode === 'issueType', fontSize:11, formatter:'{b}\n{d}%' },
+            label:{ show: true, fontSize:10, formatter: function(p){ return p.percent >= 5 ? p.name+'\n'+p.percent+'%' : ''; } },
             labelLine:{ length:8, length2:5 },
             emphasis:{ scale:true, scaleSize:6 },
             data: pieData
@@ -8134,6 +8160,13 @@ function zbToggleCompare() {
       btn.style.borderColor = '#93c5fd';
       btn.style.color = '#1d4ed8';
     }
+    // 对比模式：隐藏图表区域
+    var barWrap = document.getElementById('zbPersonBarWrap');
+    if (barWrap) barWrap.style.display = 'none';
+    var chartWrap = document.getElementById('zbIssueChartWrap');
+    if (chartWrap) { chartWrap._prevDisplay = chartWrap.style.display; chartWrap.style.display = 'none'; }
+    var chartSwitch = document.getElementById('zbIssueChartSwitch');
+    if (chartSwitch) { chartSwitch._prevDisplay = chartSwitch.style.display; chartSwitch.style.display = 'none'; }
     // 切换到双列对比模式
     if (typeof zbRenderSitePersonList === 'function') zbRenderSitePersonList();
     if (window._zbIssueRerender) window._zbIssueRerender();
@@ -8149,6 +8182,13 @@ function zbCloseCompare() {
     btn.style.borderColor = '#2563eb';
     btn.style.color = '#2563eb';
   }
+  // 退出对比：恢复图表区域
+  var barWrap = document.getElementById('zbPersonBarWrap');
+  if (barWrap) barWrap.style.display = '';
+  var chartWrap = document.getElementById('zbIssueChartWrap');
+  if (chartWrap) { chartWrap.style.display = chartWrap._prevDisplay !== undefined ? chartWrap._prevDisplay : ''; }
+  var chartSwitch = document.getElementById('zbIssueChartSwitch');
+  if (chartSwitch) { chartSwitch.style.display = chartSwitch._prevDisplay !== undefined ? chartSwitch._prevDisplay : ''; }
   // 重渲染人维度（回到单列模式）
   if (typeof zbRenderSitePersonList === 'function') zbRenderSitePersonList();
   if (window._zbIssueRerender) window._zbIssueRerender();
