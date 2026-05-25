@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.50E</title>
+    <title>培训部数据看板 v1.50F</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -770,7 +770,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.50E</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.50F</div>
     </div>
   </nav>
 
@@ -2413,6 +2413,30 @@
                     const fragment = document.createDocumentFragment();
                     for (let i = startIndex; i < endIndex; i++) {
                         const row = this.data[i];
+                        // 分组标题行
+                        if (row._isSectionHeader) {
+                            const tr = document.createElement('tr');
+                            const td = document.createElement('td');
+                            td.colSpan = this.columnKeys.length;
+                            td.style.cssText = row._secType === 'cur'
+                                ? 'padding:6px 10px;background:#eff6ff;border-bottom:0.5px solid #bfdbfe;border-left:3px solid #2563eb;'
+                                : row._secType === 'prev'
+                                ? 'padding:6px 10px;background:#f8fafc;border-bottom:0.5px solid #e2e8f0;border-left:3px solid #e2e8f0;'
+                                : 'padding:6px 10px;background:#fafafa;border-bottom:0.5px solid #e2e8f0;';
+                            const dot = row._secType === 'cur' ? '#2563eb' : row._secType === 'prev' ? '#94a3b8' : '#e2e8f0';
+                            const labelColor = row._secType === 'cur' ? '#1e40af' : '#64748b';
+                            const tagBg  = row._secType === 'cur' ? '#dbeafe' : '#f1f5f9';
+                            const tagClr = row._secType === 'cur' ? '#1e40af' : '#64748b';
+                            td.innerHTML = '<div style="display:flex;align-items:center;gap:6px;">'
+                                + '<span style="width:8px;height:8px;border-radius:50%;background:'+dot+';flex-shrink:0;display:inline-block;"></span>'
+                                + '<span style="font-size:11px;font-weight:500;color:'+labelColor+';">'+row._secLabel+'</span>'
+                                + (row._secDate ? '<span style="font-size:10px;padding:1px 7px;border-radius:10px;background:'+tagBg+';color:'+tagClr+';">'+row._secDate+'</span>' : '')
+                                + '<span style="font-size:10px;color:#94a3b8;margin-left:auto;">'+row._secCount+' 条</span>'
+                                + '</div>';
+                            tr.appendChild(td);
+                            fragment.appendChild(tr);
+                            continue;
+                        }
                         const tr = document.createElement('tr');
                         const gi = row._groupIdx !== undefined ? row._groupIdx : -1;
                         const bg = gi >= 0 ? GROUP_BG[gi % GROUP_BG.length] : '';
@@ -2601,6 +2625,39 @@
                     if (gi >= 0) { if (!codeFirstSeen[c]) { codeFirstSeen[c]=true; isFirst=true; } }
                     return Object.assign({}, r, { _groupIdx: gi, _isFirst: isFirst, _groupCount: codeCountMap[c]||1 });
                 });
+
+                // 对比模式：按本期/上期分组，插入分组标题行
+                if (window._zbCompareOpen) {
+                    var curS  = (document.getElementById('siteWeekCurStart') ||{}).value||'';
+                    var curE  = (document.getElementById('siteWeekCurEnd')   ||{}).value||'';
+                    var prvS  = (document.getElementById('siteWeekLastStart')||{}).value||'';
+                    var prvE  = (document.getElementById('siteWeekLastEnd')  ||{}).value||'';
+                    function fmtSh(s){ if(!s) return ''; var p=s.split('-'); return (p[1]|0)+'/'+(p[2]|0); }
+                    var curRows2  = filteredWithGroup.filter(function(r){ var d=(r.date||r._date||'').split(' ')[0]; return curS&&curE&&d>=curS&&d<=curE; });
+                    var prvRows2  = filteredWithGroup.filter(function(r){ var d=(r.date||r._date||'').split(' ')[0]; return prvS&&prvE&&d>=prvS&&d<=prvE; });
+                    var otherRows = filteredWithGroup.filter(function(r){
+                        var d=(r.date||r._date||'').split(' ')[0];
+                        var inCur = curS&&curE&&d>=curS&&d<=curE;
+                        var inPrv = prvS&&prvE&&d>=prvS&&d<=prvE;
+                        return !inCur && !inPrv;
+                    });
+                    var labelCur = curS ? (fmtSh(curS)+'–'+fmtSh(curE)) : '本期';
+                    var labelPrv = prvS ? (fmtSh(prvS)+'–'+fmtSh(prvE)) : '上期';
+                    var grouped = [];
+                    if (curRows2.length) {
+                        grouped.push({ _isSectionHeader:true, _secLabel:'本期差异', _secDate:labelCur, _secCount:curRows2.length, _secType:'cur' });
+                        grouped = grouped.concat(curRows2);
+                    }
+                    if (prvRows2.length) {
+                        grouped.push({ _isSectionHeader:true, _secLabel:'上期差异', _secDate:labelPrv, _secCount:prvRows2.length, _secType:'prev' });
+                        grouped = grouped.concat(prvRows2);
+                    }
+                    if (otherRows.length) {
+                        grouped.push({ _isSectionHeader:true, _secLabel:'其他', _secDate:'', _secCount:otherRows.length, _secType:'other' });
+                        grouped = grouped.concat(otherRows);
+                    }
+                    filteredWithGroup = grouped;
+                }
 
                 if (!filtered.length) {
                     virtualScrollContainer.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-secondary);font-size:13px;">无匹配记录</div>';
