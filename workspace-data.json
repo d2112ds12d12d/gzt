@@ -1,6 +1,17 @@
 {
   "tasks": [
     {
+      "id": "mpl2fydpsut",
+      "title": "主板审核明细更新&群通知",
+      "tag": null,
+      "date": "05/26",
+      "done": false,
+      "status": "todo",
+      "priority": "normal",
+      "created": 1779705061837,
+      "parentId": "mpgavz86uxv"
+    },
+    {
       "id": "mpl2alzrhp6",
       "title": "参加答疑评审会",
       "tag": null,
@@ -93,7 +104,10 @@
       "status": "done",
       "priority": "normal",
       "created": 1779416915478,
-      "parentId": "mpdi0nptk8m"
+      "parentId": "mpdi0nptk8m",
+      "childIds": [
+        "mpl2fydpsut"
+      ]
     },
     {
       "id": "mpgap65e40b",
