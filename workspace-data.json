@@ -1,6 +1,17 @@
 {
   "tasks": [
     {
+      "id": "mpl287bn43z",
+      "title": "kappa 参考率低与组长讨论",
+      "tag": null,
+      "date": "05/26",
+      "done": false,
+      "status": "todo",
+      "priority": "normal",
+      "created": 1779704700179,
+      "parentId": "mpgap65e40b"
+    },
+    {
       "id": "mpl0z3ct3uc",
       "title": "更新带教登记表和新人表",
       "tag": null,
@@ -74,7 +85,10 @@
       "parentId": "mpfdzjqbg7p",
       "pinned": true,
       "note": "",
-      "links": []
+      "links": [],
+      "childIds": [
+        "mpl287bn43z"
+      ]
     },
     {
       "id": "mpfdzjqbg7p",
