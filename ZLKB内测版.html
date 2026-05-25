@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.51</title>
+    <title>培训部数据看板 v1.51A</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -770,7 +770,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.51</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.51A</div>
     </div>
   </nav>
 
@@ -1436,13 +1436,13 @@
                 return {
                     warehouse, person,
                     cat: getField(row, ['品类名称'], ''),
-                    qaInspector: getField(row, ['新操作人名称'], ''),
+                    qaInspector: getField(row, ['新操作人名称','新质检操作人名称'], ''),
                     category: getField(row, ['主客观问题分类'], ''),
                     date: getField(row, ['日期'], ''),
-                    level1: getField(row, ['一级项名称'], ''),
-                    level2: getField(row, ['二级项名称'], ''),
-                    level3_orig: getField(row, ['原三级项名称'], ''),
-                    level3: getField(row, ['新三级项名称', '三级项名称'], ''),
+                    level1: getField(row, ['一级项名称','一级质检项名称'], ''),
+                    level2: getField(row, ['二级项名称','二级质检项名称'], ''),
+                    level3_orig: getField(row, ['原三级项名称','原三级质检项名称'], ''),
+                    level3: getField(row, ['新三级项名称','新三级质检项名称','三级项名称'], ''),
                     issueType: getField(row, ['问题类型'], ''),
                     judgedIssueType: getField(row, ['抽检判定的问题类型'], ''),
                     model: getField(row, ['型号名称'], ''),
@@ -10589,14 +10589,14 @@ async function zbProcessCorrectionFile(file) {
         var DW_SITES = ['转转-深圳智能验机中心','转转-青岛智能验机中心','转转-成都智能验机中心'];
         rows.forEach(function(r) {
             var site = String(r['站点名称']||'').trim();
-            if (!DW_SITES.includes(site)) return; // 只处理三大仓
+            if (!DW_SITES.includes(site)) return;
             var cat = String(r['品类名称']||'').trim();
-            if (cat !== '手机') return; // 只处理手机品类
+            if (cat !== '手机') return;
             var code   = String(r['质检码']||'').trim();
-            var l1     = String(r['一级项名称']||'').trim();
-            var l2     = String(r['二级项名称']||'').trim();
-            var l3orig = String(r['原三级项名称']||'').trim();
-            var l3new  = String(r['新三级项名称']||'').trim();
+            var l1     = String(r['一级质检项名称']||r['一级项名称']||'').trim();
+            var l2     = String(r['二级质检项名称']||r['二级项名称']||'').trim();
+            var l3orig = String(r['原三级质检项名称']||r['原三级项名称']||'').trim();
+            var l3new  = String(r['新三级质检项名称']||r['新三级项名称']||'').trim();
             var person = String(r['原质检操作人名称']||r['原操作人名称']||'').trim();
             if (!code || !person || person === '/') return;
             var key = [code, l1, l2, l3orig, l3new].join('|');
