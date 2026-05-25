@@ -1,6 +1,17 @@
 {
   "tasks": [
     {
+      "id": "mpl4jb8q1ds",
+      "title": "黄浩瀚上岗延期沟通",
+      "tag": null,
+      "date": "05/26",
+      "done": false,
+      "status": "todo",
+      "priority": "normal",
+      "created": 1779708577706,
+      "parentId": "mpl28v37sxz"
+    },
+    {
       "id": "mpl3gqiika8",
       "title": "复测新人数据更新上去",
       "tag": null,
@@ -41,7 +52,10 @@
       "priority": "normal",
       "created": 1779704730979,
       "parentId": "mpcjqo8ln7b",
-      "pinned": true
+      "pinned": true,
+      "childIds": [
+        "mpl4jb8q1ds"
+      ]
     },
     {
       "id": "mpl287bn43z",
