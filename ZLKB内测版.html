@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.50C</title>
+    <title>培训部数据看板 v1.50D</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -770,7 +770,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.50C</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.50D</div>
     </div>
   </nav>
 
@@ -7473,7 +7473,14 @@ function zbRenderSiteIssueAnalysis(execDiff, rootEl) {
             var infoA=mapA[k], infoB=mapB[k], info=infoA||infoB;
             rows.push({level1:info.level1,level2:info.level2,level3:info.level3,a:infoA?infoA.cnt:0,b:infoB?infoB.cnt:0,delta:(infoB?infoB.cnt:0)-(infoA?infoA.cnt:0)});
         });
-        rows.sort(function(a,b){ return b.delta!==a.delta?b.delta-a.delta:b.b-a.b; });
+        // 排序状态：'cur'=本期（默认）/ 'prev'=上期 / 'delta'=变化
+        if (window._zbIssueSortKey === undefined) window._zbIssueSortKey = 'cur';
+        var sortKey = window._zbIssueSortKey;
+        rows.sort(function(a,b){
+            if (sortKey === 'prev')  return b.a !== a.a ? b.a - a.a : b.b - a.b;
+            if (sortKey === 'delta') return b.delta !== a.delta ? b.delta - a.delta : b.b - a.b;
+            return b.b !== a.b ? b.b - a.b : b.delta - a.delta; // 默认 cur
+        });
 
         var top1info=rows.length?rows[0]:{};
         var top1label=[top1info.level1,top1info.level2,top1info.level3].filter(Boolean).join('—');
@@ -7492,8 +7499,25 @@ function zbRenderSiteIssueAnalysis(execDiff, rootEl) {
         if(page>totalPages) page=window._zbIssuePage=1;
         window._zbIssueTotalRows = rows.length;
         var sliced=rows.slice((page-1)*pageSize,page*pageSize);
+        // 列头样式
+        var thPrevStyle = sortKey==='prev'
+            ? 'text-align:center;color:#2563eb;font-weight:500;width:110px;cursor:pointer;user-select:none;'
+            : 'text-align:center;width:110px;cursor:pointer;user-select:none;';
+        var thCurStyle = sortKey==='cur'
+            ? 'text-align:center;color:#2563eb;font-weight:500;width:110px;cursor:pointer;user-select:none;'
+            : 'text-align:center;width:110px;cursor:pointer;user-select:none;';
+        var thDeltaStyle = sortKey==='delta'
+            ? 'text-align:center;color:#2563eb;font-weight:500;width:80px;cursor:pointer;user-select:none;'
+            : 'text-align:center;width:80px;cursor:pointer;user-select:none;';
+        var arrowPrev  = sortKey==='prev'  ? ' ↓' : '';
+        var arrowCur   = sortKey==='cur'   ? ' ↓' : '';
+        var arrowDelta = sortKey==='delta' ? ' ↓' : '';
         rootEl.innerHTML = '<div style="overflow-x:auto;"><table class="rank-table" style="width:100%;table-layout:fixed;">'
-            + '<thead><tr><th style="width:50px;">排名</th><th>质检项</th><th style="text-align:center;width:110px;">'+labelA+'</th><th style="text-align:center;color:#2563eb;width:110px;">'+labelB+'</th><th style="text-align:center;width:80px;">变化</th></tr></thead><tbody>'
+            + '<thead><tr><th style="width:50px;">排名</th><th>质检项</th>'
+            + '<th style="'+thPrevStyle+'" onclick="window._zbIssueSortKey=\'prev\';window._zbIssuePage=1;if(window._zbIssueRerender)window._zbIssueRerender();">'+labelA+arrowPrev+'</th>'
+            + '<th style="'+thCurStyle+'" onclick="window._zbIssueSortKey=\'cur\';window._zbIssuePage=1;if(window._zbIssueRerender)window._zbIssueRerender();">'+labelB+arrowCur+'</th>'
+            + '<th style="'+thDeltaStyle+'" onclick="window._zbIssueSortKey=\'delta\';window._zbIssuePage=1;if(window._zbIssueRerender)window._zbIssueRerender();">变化'+arrowDelta+'</th>'
+            + '</tr></thead><tbody>'
             + sliced.map(function(r,idx){
                 var rank=(page-1)*pageSize+idx+1;
                 var isRed=rank===1&&r.delta>0;
