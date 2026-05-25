@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.46</title>
+    <title>培训部数据看板 v1.47</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -751,7 +751,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.46</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.47</div>
     </div>
   </nav>
 
@@ -2584,8 +2584,8 @@
                 if (!showCat) {
                     var ci=columnKeys.indexOf('cat'); if(ci>-1){columnKeys.splice(ci,1);columnNames.splice(ci,1);}
                 }
-                // 管理员才显示备注列
-                var isAdminView = (zbRole === 'admin' || zbRole === 'super');
+                // 管理员和培训师均显示备注列
+                var isAdminView = (zbRole === 'admin' || zbRole === 'super' || zbRole === 'trainer');
                 if (isAdminView) {
                     columnKeys.push('_note');
                     columnNames.push('备注');
@@ -4840,6 +4840,17 @@ if (zbRole === 'trainer') {
 }
 let zbToken = '';
 
+// 区域权限校验：判断当前用户是否可编辑某行的图片和备注
+function zbCanEditRow(row) {
+    if (zbRole === 'admin' || zbRole === 'super') return true;
+    if (zbRole !== 'trainer' || !zbTrainerInfo) return false;
+    var rowSite = String(row['warehouse'] || row['_warehouse'] || row['site'] || '').trim();
+    var rowCat  = String(row['cat'] || row['_cat'] || '').trim();
+    var okSite  = !zbTrainerInfo.sites || zbTrainerInfo.sites.length === 0 || zbTrainerInfo.sites.includes(rowSite);
+    var okCat   = !zbTrainerInfo.cats  || zbTrainerInfo.cats.length  === 0 || zbTrainerInfo.cats.includes(rowCat);
+    return okSite && okCat;
+}
+
 function zbGetToken() {
     return _tk();
 }
@@ -5086,15 +5097,20 @@ function zbShowImagePreview(urls, startIdx) {
 
 // 给质检码td注入📷图标（权限控制：仅管理员可见）
 async function zbInjectCamIcon(td, row, linkIcon) {
-    var isAdmin = (zbRole === 'admin' || zbRole === 'super');
-    if (!isAdmin) return; // 浏览者不显示图片功能
+    if (zbRole === 'viewer') return; // 浏览者不显示图片功能
+    var canEdit = zbCanEditRow(row);
     var urls = await zbGetRowImages(row);
     var hasImg = urls.length > 0;
     var cam = document.createElement('span');
     cam.className = 'zb-cam-icon';
     // 有图常驻显示(opacity:1)，没图hover显示(opacity:0)
+    // 无权限时：无图不显示图标
+    if (!canEdit && !hasImg) return;
     var baseOpacity = hasImg ? '1' : '0';
-    cam.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:4px;cursor:pointer;margin-right:4px;opacity:' + baseOpacity + ';transition:opacity .15s;vertical-align:middle;position:relative;flex-shrink:0;' + (hasImg ? 'background:#2563eb;border:1px solid #1d4ed8;color:#fff;' : 'background:#eff6ff;border:1px solid #bfdbfe;color:#2563eb;');
+    // 无权限有图：灰色样式；有权限：蓝色样式
+    var styleHasImg = canEdit ? 'background:#2563eb;border:1px solid #1d4ed8;color:#fff;' : 'background:#94a3b8;border:1px solid #cbd5e1;color:#fff;';
+    var styleNoImg  = 'background:#eff6ff;border:1px solid #bfdbfe;color:#2563eb;';
+    cam.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:4px;cursor:pointer;margin-right:4px;opacity:' + baseOpacity + ';transition:opacity .15s;vertical-align:middle;position:relative;flex-shrink:0;' + (hasImg ? styleHasImg : styleNoImg);
     cam.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
     if (hasImg) {
         var badge = document.createElement('span');
@@ -5102,13 +5118,14 @@ async function zbInjectCamIcon(td, row, linkIcon) {
         badge.textContent = urls.length;
         cam.appendChild(badge);
     }
-    cam.title = hasImg ? '查看图片（' + urls.length + '张）' : '上传图片';
+    cam.title = !canEdit ? ('查看图片（' + urls.length + '张，无编辑权限）') : (hasImg ? '查看图片（' + urls.length + '张）' : '上传图片');
     cam.onclick = async function(e) {
         e.stopPropagation();
         var curUrls = await zbGetRowImages(row);
         if (curUrls.length > 0) {
-            zbShowImgPanel(cam, row, curUrls);
+            zbShowImgPanel(cam, row, curUrls, !canEdit);
         } else {
+            if (!canEdit) return;
             zbTriggerUpload(cam, row);
         }
     };
@@ -5168,7 +5185,7 @@ function zbMakeDropZone(cam, row, panel) {
     return zone;
 }
 
-function zbShowImgPanel(cam, row, urls) {
+function zbShowImgPanel(cam, row, urls, readOnly) {
     var existing = document.getElementById('zbImgPanel');
     if (existing) existing.remove();
     var panel = document.createElement('div');
@@ -5183,7 +5200,7 @@ function zbShowImgPanel(cam, row, urls) {
     header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;';
     var title = document.createElement('span');
     title.style.cssText = 'font-size:11px;font-weight:500;color:#1e3a8a;';
-    title.textContent = urls.length > 0 ? '已上传 ' + urls.length + ' 张' : '上传图片';
+    title.textContent = urls.length > 0 ? '已上传 ' + urls.length + ' 张' + (readOnly ? '（只读）' : '') : '上传图片';
     var closeBtn = document.createElement('span');
     closeBtn.style.cssText = 'font-size:14px;color:#94a3b8;cursor:pointer;line-height:1;padding:0 2px;';
     closeBtn.textContent = '×';
@@ -5203,54 +5220,60 @@ function zbShowImgPanel(cam, row, urls) {
             thumb.src = url;
             thumb.style.cssText = 'width:44px;height:44px;object-fit:cover;border-radius:4px;border:0.5px solid #bfdbfe;cursor:pointer;display:block;';
             thumb.onclick = function(){ panel.remove(); zbShowImagePreview(urls, i); };
-            var delBtn = document.createElement('span');
-            delBtn.style.cssText = 'position:absolute;top:-4px;right:-4px;width:14px;height:14px;border-radius:50%;background:#ef4444;color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity .15s;line-height:1;z-index:1;';
-            delBtn.textContent = '×';
-            delBtn.title = '删除此图片';
-            thumbBox.onmouseenter = function(){ delBtn.style.opacity='1'; };
-            thumbBox.onmouseleave = function(){ delBtn.style.opacity='0'; };
-            delBtn.onclick = async function(e) {
-                e.stopPropagation();
-                if (!confirm('确定删除这张图片？')) return;
-                panel.remove();
-                showToast('⏳ 删除中…');
-                try {
-                    await zbRemoveRowImage(row, url);
-                    var newUrls = await zbGetRowImages(row);
-                    showToast('✅ 已删除');
-                    var camEl = document.querySelector('.zb-cam-icon[data-key="'+zbImgKey(row)+'"]') || document.querySelector('.zb-cam-icon');
-                    if (newUrls.length > 0) { zbShowImgPanel(camEl, row, newUrls); }
-                    if (camEl) zbRefreshCamIcon(camEl, row);
-                } catch(err) {
-                    showToast('❌ 删除失败：' + err.message);
-                }
-            };
             thumbBox.appendChild(thumb);
-            thumbBox.appendChild(delBtn);
+            if (!readOnly) {
+                var delBtn = document.createElement('span');
+                delBtn.style.cssText = 'position:absolute;top:-4px;right:-4px;width:14px;height:14px;border-radius:50%;background:#ef4444;color:#fff;font-size:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;opacity:0;transition:opacity .15s;line-height:1;z-index:1;';
+                delBtn.textContent = '×';
+                delBtn.title = '删除此图片';
+                thumbBox.onmouseenter = function(){ delBtn.style.opacity='1'; };
+                thumbBox.onmouseleave = function(){ delBtn.style.opacity='0'; };
+                delBtn.onclick = async function(e) {
+                    e.stopPropagation();
+                    if (!confirm('确定删除这张图片？')) return;
+                    panel.remove();
+                    showToast('⏳ 删除中…');
+                    try {
+                        await zbRemoveRowImage(row, url);
+                        var newUrls = await zbGetRowImages(row);
+                        showToast('✅ 已删除');
+                        var camEl = document.querySelector('.zb-cam-icon[data-key="'+zbImgKey(row)+'"]') || document.querySelector('.zb-cam-icon');
+                        if (newUrls.length > 0) { zbShowImgPanel(camEl, row, newUrls); }
+                        if (camEl) zbRefreshCamIcon(camEl, row);
+                    } catch(err) {
+                        showToast('❌ 删除失败：' + err.message);
+                    }
+                };
+                thumbBox.appendChild(delBtn);
+            }
             thumbWrap.appendChild(thumbBox);
         });
         panel.appendChild(thumbWrap);
-        // 分隔线
-        var sep = document.createElement('div');
-        sep.style.cssText = 'font-size:10px;color:#94a3b8;text-align:center;margin-bottom:8px;display:flex;align-items:center;gap:6px;';
-        sep.innerHTML = '<span style="flex:1;height:0.5px;background:#e2e8f0;display:block"></span>追加上传<span style="flex:1;height:0.5px;background:#e2e8f0;display:block"></span>';
-        panel.appendChild(sep);
+        if (!readOnly) {
+            // 分隔线
+            var sep = document.createElement('div');
+            sep.style.cssText = 'font-size:10px;color:#94a3b8;text-align:center;margin-bottom:8px;display:flex;align-items:center;gap:6px;';
+            sep.innerHTML = '<span style="flex:1;height:0.5px;background:#e2e8f0;display:block"></span>追加上传<span style="flex:1;height:0.5px;background:#e2e8f0;display:block"></span>';
+            panel.appendChild(sep);
+        }
     }
 
-    // 拖拽上传区域
-    panel.appendChild(zbMakeDropZone(cam, row, panel));
+    if (!readOnly) {
+        // 拖拽上传区域
+        panel.appendChild(zbMakeDropZone(cam, row, panel));
 
-    // 点击选图按钮
-    var selBtn = document.createElement('div');
-    selBtn.style.cssText = 'text-align:center;padding:5px;border-radius:6px;background:#eff6ff;border:0.5px solid #bfdbfe;color:#2563eb;font-size:11px;cursor:pointer;';
-    selBtn.textContent = '点击选择图片';
-    selBtn.onclick = function(){
-        var input = document.createElement('input');
-        input.type='file'; input.accept='image/*'; input.multiple=true;
-        input.onchange = function(){ zbDoUploadFiles(Array.from(input.files), cam, row, panel); };
-        input.click();
-    };
-    panel.appendChild(selBtn);
+        // 点击选图按钮
+        var selBtn = document.createElement('div');
+        selBtn.style.cssText = 'text-align:center;padding:5px;border-radius:6px;background:#eff6ff;border:0.5px solid #bfdbfe;color:#2563eb;font-size:11px;cursor:pointer;';
+        selBtn.textContent = '点击选择图片';
+        selBtn.onclick = function(){
+            var input = document.createElement('input');
+            input.type='file'; input.accept='image/*'; input.multiple=true;
+            input.onchange = function(){ zbDoUploadFiles(Array.from(input.files), cam, row, panel); };
+            input.click();
+        };
+        panel.appendChild(selBtn);
+    }
 
     document.body.appendChild(panel);
     setTimeout(function(){
@@ -5265,6 +5288,7 @@ function zbShowImgPanel(cam, row, urls) {
 // ── 备注列渲染 ──────────────────────────────
 function zbRenderNoteCell(td, row) {
     td.innerHTML = '';
+    var canEdit = zbCanEditRow(row);
     zbGetRowNote(row).then(function(note) {
         var noteSpan = document.createElement('span');
         noteSpan.style.cssText = 'font-size:11px;color:#475569;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle;';
@@ -5274,9 +5298,10 @@ function zbRenderNoteCell(td, row) {
         } else {
             noteSpan.style.color = '#cbd5e1';
             noteSpan.style.fontStyle = 'italic';
-            noteSpan.textContent = '暂无备注';
+            noteSpan.textContent = canEdit ? '暂无备注' : '—';
         }
         td.appendChild(noteSpan);
+        if (!canEdit) return; // 无权限：只读，不渲染编辑图标
         var editIcon = document.createElement('span');
         editIcon.style.cssText = 'display:inline-flex;width:14px;height:14px;align-items:center;justify-content:center;color:#94a3b8;cursor:pointer;opacity:0;vertical-align:middle;margin-left:3px;transition:opacity .15s;flex-shrink:0;';
         editIcon.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
