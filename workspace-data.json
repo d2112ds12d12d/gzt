@@ -13,18 +13,6 @@
       "links": []
     },
     {
-      "id": "mpgjx1cqq6x",
-      "title": "课件滞后性有点高啊（有效的标准是 5月13 日上线的 ，但是ppt 到了 22 号还没有改）",
-      "tag": null,
-      "date": "05/22",
-      "done": false,
-      "status": "todo",
-      "priority": "normal",
-      "created": 1779432081434,
-      "note": "",
-      "links": []
-    },
-    {
       "id": "mpggw5dqjso",
       "title": "左一个感应孔拉齐认证的一个记录",
       "tag": null,
@@ -1058,6 +1046,7 @@
     "mpc35bxigke",
     "mpc3iatiws6",
     "mpcdsrwyv09",
-    "mpdecbdbs4l"
+    "mpdecbdbs4l",
+    "mpgjx1cqq6x"
   ]
 }
