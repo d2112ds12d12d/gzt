@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.50D</title>
+    <title>培训部数据看板 v1.50E</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -770,7 +770,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.50D</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.50E</div>
     </div>
   </nav>
 
@@ -3586,6 +3586,7 @@
             // ── 桥接：把你的数据倒进小田的两个桶 ──────────────
             // ── 当前选中品类（全局） ──
             let currentCat = '手机';
+            window._activeCat = currentCat; // 初始化同步，防止首次加载时_activeCat为undefined
 
             window.bridgeData = function bridgeData() {
                 const DW_INSPECTOR_SITES = ['转转-青岛智能验机中心','转转-成都智能验机中心','转转-深圳智能验机中心'];
@@ -4010,7 +4011,7 @@
                 // 顶部日期+品类过滤，口径对齐客观执行
                 var startD = (document.getElementById('startDateFilter')||{}).value || '';
                 var endD   = (document.getElementById('endDateFilter')||{}).value || '';
-                var activeCat = window._activeCat || '';
+                var activeCat = window._activeCat || (typeof currentCat !== 'undefined' ? currentCat : '') || '';
                 var filtered = allDiff.filter(function(d) {
                     if (currentSiteType !== 'ALL' && getSiteType(d.warehouse||'') !== currentSiteType) return false;
                     if (startD && d.date && d.date.split(' ')[0] < startD) return false;
@@ -4155,7 +4156,7 @@
                     var allDiff = window._allDiffData || [];
                     var startD = (document.getElementById('startDateFilter')||{}).value || '';
                     var endD   = (document.getElementById('endDateFilter')||{}).value || '';
-                    var activeCat = window._activeCat || '';
+                    var activeCat = window._activeCat || (typeof currentCat !== 'undefined' ? currentCat : '') || '';
                     var filtered = allDiff.filter(function(d) {
                         if (d.person !== personName) return false;
                         if (currentSiteType !== 'ALL' && getSiteType(d.warehouse||'') !== currentSiteType) return false;
@@ -7325,8 +7326,21 @@ function zbRenderSitePersonList() {
     } else {
         var pillTextA=lastStart?fmtShort(lastStart)+'–'+fmtShort(lastEnd):'上期';
         var pillTextB=curStart?fmtShort(curStart)+'–'+fmtShort(curEnd):'本期';
-        personList.sort(function(a,b){ return b.delta!==a.delta?b.delta-a.delta:b.pB-a.pB; });
-        if(headEl) headEl.innerHTML='<tr><th style="width:50px;">排名</th><th style="width:120px;">质检人员</th><th style="text-align:center;color:#2563eb;width:110px;">'+pillTextB+' ↓</th><th style="text-align:center;width:110px;">'+pillTextA+'</th><th style="text-align:center;width:80px;">变化</th></tr>';
+        if (window._zbPersonSortKey === undefined) window._zbPersonSortKey = 'cur';
+        var pSortKey = window._zbPersonSortKey;
+        personList.sort(function(a,b){
+            if (pSortKey === 'prev')  return b.pA !== a.pA ? b.pA - a.pA : b.pB - a.pB;
+            if (pSortKey === 'delta') return b.delta !== a.delta ? b.delta - a.delta : b.pB - a.pB;
+            return b.pB !== a.pB ? b.pB - a.pB : b.delta - a.delta;
+        });
+        var thPrevS = pSortKey==='prev'  ? 'text-align:center;color:#2563eb;font-weight:500;width:110px;cursor:pointer;user-select:none;' : 'text-align:center;width:110px;cursor:pointer;user-select:none;';
+        var thCurS  = pSortKey==='cur'   ? 'text-align:center;color:#2563eb;font-weight:500;width:110px;cursor:pointer;user-select:none;' : 'text-align:center;width:110px;cursor:pointer;user-select:none;';
+        var thDeltaS= pSortKey==='delta' ? 'text-align:center;color:#2563eb;font-weight:500;width:80px;cursor:pointer;user-select:none;'  : 'text-align:center;width:80px;cursor:pointer;user-select:none;';
+        if(headEl) headEl.innerHTML='<tr><th style="width:50px;">排名</th><th style="width:120px;">质检人员</th>'
+            +'<th style="'+thCurS+'" onclick="window._zbPersonSortKey=\'cur\';window._zbPersonPage=1;zbRenderSitePersonList();">'+pillTextB+(pSortKey==='cur'?' ↓':'')+'</th>'
+            +'<th style="'+thPrevS+'" onclick="window._zbPersonSortKey=\'prev\';window._zbPersonPage=1;zbRenderSitePersonList();">'+pillTextA+(pSortKey==='prev'?' ↓':'')+'</th>'
+            +'<th style="'+thDeltaS+'" onclick="window._zbPersonSortKey=\'delta\';window._zbPersonPage=1;zbRenderSitePersonList();">变化'+(pSortKey==='delta'?' ↓':'')+'</th>'
+            +'</tr>';
         var kpiWrap3=document.getElementById('zbPersonKpiWrap'); if(kpiWrap3) kpiWrap3.innerHTML='';
         var pageSize=window._zbPersonPageSize||10,page=window._zbPersonPage||1;
         var totalPages=Math.max(1,Math.ceil(personList.length/pageSize));
@@ -7550,22 +7564,14 @@ function zbNav(name, el) {
     if (pg) pg.classList.add('active');
     if (el) el.classList.add('active');
 
-    // 站点/质检人详情页时隐藏站点类型筛选
-    var isSiteOrPerson = (name === 'site' || name === 'person');
+    // 站点类型筛选按钮永久隐藏（功能保留但不在UI上暴露）
     var siteTypeEls = ['siteTypeLbl', 'globalSiteType-ALL', 'globalSiteType-DW', 'globalSiteType-ZX'];
     siteTypeEls.forEach(function(id) {
         var el2 = document.getElementById(id);
-        if (el2) el2.style.display = isSiteOrPerson ? 'none' : '';
+        if (el2) el2.style.display = 'none';
     });
-    // 首页切回时，若当前不是ALL则重置为ALL，避免旧值残留
-    if (!isSiteOrPerson) {
-        var curSiteType = document.querySelector('.cat-tab[data-site-type].active, .cat-tab[data-site-type].on');
-        if (curSiteType && curSiteType.dataset.siteType !== 'ALL') {
-            var allBtn = document.getElementById('globalSiteType-ALL');
-            if (allBtn && typeof allBtn.click === 'function') allBtn.click();
-        }
-    }
-    // 分隔线也一起隐藏
+    // 分隔线：站点/质检人详情页时隐藏第二条分隔线
+    var isSiteOrPerson = (name === 'site' || name === 'person');
     var dividers = document.querySelectorAll('.sticky-divider');
     if (dividers.length >= 2) dividers[1].style.display = isSiteOrPerson ? 'none' : '';
 
