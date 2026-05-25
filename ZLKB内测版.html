@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.47</title>
+    <title>培训部数据看板 v1.47A</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -751,7 +751,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.47</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.47A</div>
     </div>
   </nav>
 
@@ -761,7 +761,7 @@
       <!-- 顶部品牌蓝 -->
       <div style="background:linear-gradient(135deg,#1e40af,#2563eb);padding:20px 24px 16px;">
         <div style="font-size:15px;font-weight:700;letter-spacing:.22em;color:#fff;margin-bottom:3px;">ZHUAN</div>
-        <div style="font-size:10px;color:#93c5fd;">培训内部数据平台 · 管理员登录</div>
+        <div style="font-size:10px;color:#93c5fd;">培训内部数据平台</div>
       </div>
       <!-- 表单 -->
       <div style="padding:20px 24px 22px;">
@@ -4846,8 +4846,26 @@ function zbCanEditRow(row) {
     if (zbRole !== 'trainer' || !zbTrainerInfo) return false;
     var rowSite = String(row['warehouse'] || row['_warehouse'] || row['site'] || '').trim();
     var rowCat  = String(row['cat'] || row['_cat'] || '').trim();
-    var okSite  = !zbTrainerInfo.sites || zbTrainerInfo.sites.length === 0 || zbTrainerInfo.sites.includes(rowSite);
-    var okCat   = !zbTrainerInfo.cats  || zbTrainerInfo.cats.length  === 0 || zbTrainerInfo.cats.includes(rowCat);
+    // sites：数组精确匹配
+    var okSite = !zbTrainerInfo.sites || zbTrainerInfo.sites.length === 0 || zbTrainerInfo.sites.includes(rowSite);
+    // cats：支持两种格式
+    //   1. 数组：['手机','笔记本']
+    //   2. 字符串：'手机、笔记本、手表'（顿号或逗号分隔）
+    var okCat;
+    if (!zbTrainerInfo.cats || zbTrainerInfo.cats.length === 0) {
+        okCat = true;
+    } else if (Array.isArray(zbTrainerInfo.cats)) {
+        // 数组格式：每项可能是多品类字符串，拆开后判断
+        var catPool = [];
+        zbTrainerInfo.cats.forEach(function(c) {
+            String(c).split(/[、,，]/).forEach(function(x){ var t=x.trim(); if(t) catPool.push(t); });
+        });
+        okCat = catPool.length === 0 || catPool.includes(rowCat);
+    } else {
+        // 字符串格式（兜底）
+        var catPool2 = String(zbTrainerInfo.cats).split(/[、,，]/).map(function(x){return x.trim();}).filter(Boolean);
+        okCat = catPool2.length === 0 || catPool2.includes(rowCat);
+    }
     return okSite && okCat;
 }
 
@@ -5507,10 +5525,24 @@ function zbUpdateRoleBadge() {
 
     if (isTrainer && zbTrainerInfo) {
         var initials = zbTrainerInfo.name ? zbTrainerInfo.name.slice(-2) : '培';
-        var siteLabel = zbTrainerInfo.sites && zbTrainerInfo.sites.length ? zbTrainerInfo.sites[0] : '';
         if (avatar) { avatar.style.cssText='background:#2563eb;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0;'; avatar.textContent=initials; }
         if (nameEl) nameEl.textContent = zbTrainerInfo.name;
-        if (roleEl) { roleEl.innerHTML='<span style="width:5px;height:5px;border-radius:50%;background:#22c55e;flex-shrink:0;display:inline-block;"></span><span>'+siteLabel+'</span>'; roleEl.style.display='flex'; }
+        if (roleEl) {
+            var siteList = (zbTrainerInfo.sites && zbTrainerInfo.sites.length) ? zbTrainerInfo.sites : [];
+            if (siteList.length === 0) {
+                roleEl.innerHTML = '<span style="width:5px;height:5px;border-radius:50%;background:#22c55e;flex-shrink:0;display:inline-block;"></span><span>—</span>';
+            } else {
+                roleEl.innerHTML = siteList.map(function(s, idx) {
+                    return '<span style="display:flex;align-items:center;gap:4px;">'
+                        + (idx === 0 ? '<span style="width:5px;height:5px;border-radius:50%;background:#22c55e;flex-shrink:0;display:inline-block;"></span>' : '<span style="width:5px;height:5px;flex-shrink:0;display:inline-block;"></span>')
+                        + '<span>' + s + '</span></span>';
+                }).join('');
+                roleEl.style.flexDirection = 'column';
+                roleEl.style.alignItems = 'flex-start';
+                roleEl.style.gap = '2px';
+            }
+            roleEl.style.display = 'flex';
+        }
         return;
     }
 
@@ -9426,7 +9458,7 @@ function zbShowWelcomeToast(trainer) {
     var t = document.createElement('div');
     t.id = 'zbWelcomeToast';
     var initials = trainer.name ? trainer.name.slice(-2) : '培';
-    var site = trainer.sites && trainer.sites.length ? trainer.sites[0] : '';
+    var site = trainer.sites && trainer.sites.length ? trainer.sites.join(' / ') : '';
     t.style.cssText = 'position:fixed;right:24px;bottom:24px;z-index:99999;display:flex;align-items:center;gap:12px;background:#0f172a;border-radius:12px;padding:14px 20px;min-width:220px;opacity:0;transform:translateY(20px);transition:opacity .4s cubic-bezier(.16,1,.3,1),transform .4s cubic-bezier(.16,1,.3,1);pointer-events:none;';
     t.innerHTML = '<div style="width:3px;height:36px;background:#2563eb;border-radius:2px;flex-shrink:0;"></div>'
         + '<div style="width:36px;height:36px;border-radius:50%;background:#1d4ed8;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;color:#fff;flex-shrink:0;">'+initials+'</div>'
