@@ -9,7 +9,8 @@
       "status": "todo",
       "priority": "normal",
       "created": 1779704730979,
-      "parentId": "mpcjqo8ln7b"
+      "parentId": "mpcjqo8ln7b",
+      "pinned": true
     },
     {
       "id": "mpl287bn43z",
