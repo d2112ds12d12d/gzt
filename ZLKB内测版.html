@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.49B</title>
+    <title>培训部数据看板 v1.50</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -770,7 +770,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.49B</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.50</div>
     </div>
   </nav>
 
@@ -4018,15 +4018,16 @@
                     if (!isExecutionIssue(d.judgedIssueType)) return false;
                     return true;
                 });
-                // 聚合：人 → { total, warehouses }
+                // 聚合：人 → { total(去重质检码数), warehouses }
                 var map = {};
                 filtered.forEach(function(d) {
                     var p = d.person || '未知';
-                    if (!map[p]) map[p] = { name:p, total:0, whs:new Set() };
-                    map[p].total++;
+                    if (!map[p]) map[p] = { name:p, codes:new Set(), whs:new Set() };
+                    if (d.code) map[p].codes.add(d.code);
+                    else map[p].codes.add(d._rowId || Math.random()); // 无码按行计
                     if (d.warehouse) map[p].whs.add(d.warehouse);
                 });
-                var list = Object.keys(map).map(function(n){ return { name:n, total:map[n].total, whs:map[n].whs }; });
+                var list = Object.keys(map).map(function(n){ return { name:n, total:map[n].codes.size, whs:map[n].whs }; });
                 window._personRankData = list;
                 window._personRankPage = 1;
                 zbPersonRankRender();
@@ -4048,7 +4049,23 @@
                 var kw = '';
                 var asc = window._personRankAsc;
                 var filters = window._personRankFilters || {};
-                var list = (window._personRankData || []).filter(function(p){
+                var allData = (window._personRankData || []).sort(function(a,b){ return asc ? a.total-b.total : b.total-a.total; });
+                // 全局排名表：基于全量未筛选数据
+                var globalRankMap = {};
+                allData.forEach(function(p, i){ globalRankMap[p.name] = i + 1; });
+                // 仓内排名：也基于全量数据
+                var whRankMap = {};
+                var whGroups = {};
+                allData.forEach(function(p) {
+                    var wh = Array.from(p.whs||[])[0] || '—';
+                    if (!whGroups[wh]) whGroups[wh] = [];
+                    whGroups[wh].push(p);
+                });
+                Object.keys(whGroups).forEach(function(wh) {
+                    whGroups[wh].sort(function(a,b){ return asc ? a.total-b.total : b.total-a.total; });
+                    whGroups[wh].forEach(function(p, i){ whRankMap[p.name] = i + 1; });
+                });
+                var list = allData.filter(function(p){
                     if (filters.person && !filters.person.has(p.name)) return false;
                     if (filters.wh) {
                         var whArr = Array.from(p.whs||[]);
@@ -4060,7 +4077,7 @@
                         if (!types.some(function(t){ return filters.type.has(t); })) return false;
                     }
                     return true;
-                }).sort(function(a,b){ return asc ? a.total - b.total : b.total - a.total; });
+                });
                 var total = list.length;
                 if (cntEl) cntEl.textContent = '共 ' + total + ' 人';
                 if (!total) {
@@ -4074,21 +4091,8 @@
                 window._personRankPage = page;
                 var pageList = list.slice((page-1)*pageSize, page*pageSize);
                 var noClsMap = ['top1','top2','top3'];
-                // 计算仓内排名：按whName分组，组内按total降序排
-                var whRankMap = {}; // personName -> 仓内第几名
-                var whGroups = {};
-                list.forEach(function(p) {
-                    var wh = Array.from(p.whs||[])[0] || '—';
-                    if (!whGroups[wh]) whGroups[wh] = [];
-                    whGroups[wh].push(p);
-                });
-                Object.keys(whGroups).forEach(function(wh) {
-                    whGroups[wh].sort(function(a,b){ return b.total - a.total; });
-                    whGroups[wh].forEach(function(p, i){ whRankMap[p.name] = i + 1; });
-                });
                 el.innerHTML = pageList.map(function(p, idx) {
-                    var globalIdx = (page-1)*pageSize + idx;
-                    var rankNo = globalIdx + 1;
+                    var rankNo = globalRankMap[p.name] || ((page-1)*pageSize + idx + 1);
                     var whRank = whRankMap[p.name] || 1;
                     // 全国排名圆圈样式
                     var noBg = rankNo===1?'#FAC775':rankNo===2?'#D3D1C7':rankNo===3?'#F5C4B3':'var(--kpi-bg)';
@@ -4112,7 +4116,7 @@
                           + '<div style="display:flex;align-items:center;gap:4px;">'
                             + '<div style="width:24px;height:24px;border-radius:50%;background:'+noBg+';color:'+noColor+';font-size:11px;font-weight:'+noWeight+';display:flex;align-items:center;justify-content:center;flex-shrink:0;">' + rankNo + '</div>'
                             + '<span style="font-size:10px;color:#94a3b8;">/</span>'
-                            + '<span style="font-size:10px;color:#94a3b8;background:var(--kpi-bg);padding:1px 5px;border-radius:4px;white-space:nowrap;">仓#'+whRank+'</span>'
+                            + '<span style="font-size:10px;color:#94a3b8;background:var(--kpi-bg);padding:1px 5px;border-radius:4px;white-space:nowrap;">仓Top'+whRank+'</span>'
                           + '</div>'
                         + '</td>'
                         + '<td style="padding:10px 12px;font-size:13px;font-weight:'+(rankNo<=3?'500':'400')+';color:var(--text-primary);">' + p.name + '</td>'
@@ -4136,13 +4140,30 @@
                 }
             };
 
-            // 质检人排行榜点击 → 跳质检人详情页
+            // 质检人排行榜点击 → 打开差异明细弹窗
             var rankBoardPerson = document.getElementById('rankBoardPerson');
             if (rankBoardPerson) {
                 rankBoardPerson.addEventListener('click', function(e) {
                     var row = e.target.closest('[data-person]');
                     if (!row) return;
-                    if (typeof zbNavToPerson === 'function') zbNavToPerson(row.dataset.person);
+                    var personName = row.dataset.person;
+                    var allDiff = window._allDiffData || [];
+                    var startD = (document.getElementById('startDateFilter')||{}).value || '';
+                    var endD   = (document.getElementById('endDateFilter')||{}).value || '';
+                    var activeCat = window._activeCat || '';
+                    var filtered = allDiff.filter(function(d) {
+                        if (d.person !== personName) return false;
+                        if (currentSiteType !== 'ALL' && getSiteType(d.warehouse||'') !== currentSiteType) return false;
+                        if (startD && d.date && d.date.split(' ')[0] < startD) return false;
+                        if (endD   && d.date && d.date.split(' ')[0] > endD)   return false;
+                        if (activeCat && d.cat !== activeCat) return false;
+                        if (!isObjective(d.category)) return false;
+                        if (!isExecutionIssue(d.judgedIssueType)) return false;
+                        return true;
+                    });
+                    if (typeof openDetailWithData === 'function') {
+                        openDetailWithData(filtered, personName + ' · 客观执行差异明细（' + filtered.length + '条）');
+                    }
                 });
             }
 
@@ -7987,10 +8008,39 @@ function zbNavToHotspotDetail(level3, level1, deltaInfo) {
         badge.style.color = deltaInfo.includes('↑') ? '#dc2626' : deltaInfo.includes('↓') ? '#16a34a' : '#2563eb';
     } else { badge.textContent = ''; }
 
-    // KPI
+    // KPI — 质检码去重，只统计本期时间段内的客观执行数据
+    var curStartD = '', curEndD = '';
+    // 从快报当前时间模式取本期范围
+    (function() {
+        var allDates2 = rows.map(function(d){ return (d.date||'').split(' ')[0]; }).filter(Boolean).sort();
+        if (!allDates2.length) return;
+        var latestDate2 = allDates2[allDates2.length-1];
+        var ld2 = new Date(latestDate2);
+        var mode = window._hotspotTimeMode || 'week';
+        if (mode === 'week') {
+            var dow2 = ld2.getDay() || 7;
+            var mon2 = new Date(ld2); mon2.setDate(ld2.getDate() - (dow2-1));
+            var sun2 = new Date(mon2); sun2.setDate(mon2.getDate() + 6);
+            curStartD = mon2.toISOString().slice(0,10);
+            curEndD   = sun2.toISOString().slice(0,10);
+        } else if (mode === 'month') {
+            curStartD = new Date(ld2.getFullYear(), ld2.getMonth(), 1).toISOString().slice(0,10);
+            curEndD   = new Date(ld2.getFullYear(), ld2.getMonth()+1, 0).toISOString().slice(0,10);
+        } else {
+            curStartD = curEndD = latestDate2;
+        }
+    })();
+    var curRows = rows.filter(function(d) {
+        var dt = (d.date||'').split(' ')[0];
+        return (!curStartD || dt >= curStartD) && (!curEndD || dt <= curEndD)
+            && d.category && d.category.includes('客观')
+            && d.judgedIssueType === '执行问题';
+    });
+    var deduped = new Set(curRows.map(function(d){ return d.code; }).filter(Boolean));
+    var kpi1Val = deduped.size || curRows.length;
     var siteSet = new Set(rows.map(function(d){ return d.warehouse; }).filter(Boolean));
     var personSet = new Set(rows.map(function(d){ return d.person; }).filter(Boolean));
-    document.getElementById('hdmKpi1').textContent = rows.length;
+    document.getElementById('hdmKpi1').textContent = kpi1Val;
     document.getElementById('hdmKpi2').textContent = siteSet.size;
     document.getElementById('hdmKpi3').textContent = personSet.size;
 
