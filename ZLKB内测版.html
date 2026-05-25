@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.48</title>
+    <title>培训部数据看板 v1.49</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -158,10 +158,11 @@
         .export-btn { background: #10b981; color: white; border: none; }
         .export-btn:hover { background: #059669; }
         .right-buttons { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
-        .marquee-wrap { flex:1; min-width:0; overflow:hidden; margin:0 12px; background:rgba(59,130,246,0.06); border-radius:20px; border:1px solid rgba(59,130,246,0.15); padding:0 14px; height:30px; display:flex; align-items:center; }
-        .marquee-inner { display:inline-block; white-space:nowrap; animation:mq 32s linear infinite; font-size:12px; color:var(--btn-bg); font-weight:500; }
-        .marquee-inner:hover { animation-play-state:paused; }
-        @keyframes mq { 0%{transform:translateX(100%)} 100%{transform:translateX(-100%)} }
+        .marquee-wrap { flex:1; min-width:0; overflow:hidden; margin:0 12px; background:rgba(59,130,246,0.06); border-radius:20px; border:1px solid rgba(59,130,246,0.15); height:30px; position:relative; }
+        .marquee-inner { position:absolute; top:50%; transform:translateY(-50%) translateX(var(--mq-start,800px)); white-space:nowrap; font-size:12px; color:var(--btn-bg); font-weight:500; will-change:transform; }
+        .marquee-inner.mq-run { animation:mq var(--mq-dur,28s) linear infinite; }
+        .marquee-inner.mq-run:hover { animation-play-state:paused; }
+        @keyframes mq { from{transform:translateY(-50%) translateX(var(--mq-start,800px))} to{transform:translateY(-50%) translateX(calc(-100% - 40px))} }
         .filter-bar, .modal-filter-bar {
             background: var(--filter-bar-bg); border-radius: 20px; padding: 20px 24px;
             display: flex; flex-wrap: wrap; align-items: flex-end; gap: 12px 18px;
@@ -769,7 +770,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.48</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.49</div>
     </div>
   </nav>
 
@@ -810,7 +811,7 @@
         <div class="container">
 
             <div class="top-bar">
-                <div class="marquee-wrap">
+                <div class="marquee-wrap" id="zbMarqueeWrap">
                     <span class="marquee-inner">欢迎使用培训部数据看板 · 数据驱动，精益求精</span>
                 </div>
                 <!-- 精简按钮组 -->
@@ -952,12 +953,33 @@
 
             <!-- 全国差异率趋势图 -->
             <div class="card" id="nationalTrendCard">
-                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
                     <div class="card-title" id="nationalTrendTitle" style="margin:0;"><div class="card-title-bar" style="background:#10b981;"></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>客观执行差异率趋势 · 全国总览</div>
-                    <div style="font-size:11px;color:var(--text-secondary);">跟随顶部站点类型联动</div>
+                    <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+                        <span style="font-size:11px;color:var(--text-secondary);">站点筛选</span>
+                        <div id="zbTrendSiteFilterWrap" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;"></div>
+                        <button id="zbTrendSiteFilterBtn" onclick="zbToggleTrendSitePanel()" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;padding:3px 10px;border-radius:6px;border:0.5px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);cursor:pointer;white-space:nowrap;">
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+                            选站点
+                        </button>
+                        <button id="zbTrendSiteClearBtn" onclick="zbClearTrendSiteFilter()" style="display:none;font-size:11px;padding:3px 9px;border-radius:6px;border:0.5px solid #fca5a5;background:#fef2f2;color:#dc2626;cursor:pointer;white-space:nowrap;">清除</button>
+                        <span style="font-size:11px;color:var(--text-secondary);" id="zbTrendFollowHint">跟随顶部站点类型联动</span>
+                    </div>
+                </div>
+                <!-- 站点选择下拉面板 -->
+                <div id="zbTrendSitePanel" style="display:none;background:var(--kpi-bg);border:0.5px solid var(--border-color);border-radius:8px;padding:10px 12px;margin-bottom:10px;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;">
+                        <span style="font-size:11px;font-weight:500;color:var(--text-primary);">选择站点（可多选，折线对比）</span>
+                        <div style="display:flex;gap:6px;">
+                            <span onclick="zbTrendSiteSelectAll()" style="font-size:11px;color:#2563eb;cursor:pointer;">全选</span>
+                            <span style="color:var(--border-color);">|</span>
+                            <span onclick="zbClearTrendSiteFilter()" style="font-size:11px;color:#dc2626;cursor:pointer;">清空</span>
+                        </div>
+                    </div>
+                    <div id="zbTrendSiteChips" style="display:flex;flex-wrap:wrap;gap:5px;"></div>
                 </div>
                 <div id="nationalTrendChart" style="width:100%;height:300px;"></div>
-                <div style="font-size:10px;color:var(--text-secondary);margin-top:6px;">X轴 = 日期 · Y轴 = 差异设备数</div>
+                <div style="font-size:10px;color:var(--text-secondary);margin-top:6px;">X轴 = 日期 · Y轴 = 差异率(%) · 点击图例可单独显示/隐藏</div>
             </div>
 
             <!-- 近期客观执行差异快报 -->
@@ -4126,24 +4148,106 @@
 
             // ── 全国差异率趋势图 ──
             var _nationalTrendChart = null;
+            // 站点筛选状态：空数组=不筛选（跟随站点类型联动）
+            var _zbTrendSelectedSites = [];
+            var _zbTrendSitePanelOpen = false;
+
+            // 站点折线颜色池
+            var _ZB_TREND_COLORS = ['#2563eb','#10b981','#f59e0b','#ef4444','#8b5cf6','#06b6d4','#f97316','#84cc16','#ec4899','#6366f1','#14b8a6','#fb923c'];
+
+            function zbToggleTrendSitePanel() {
+                _zbTrendSitePanelOpen = !_zbTrendSitePanelOpen;
+                var panel = document.getElementById('zbTrendSitePanel');
+                if (panel) panel.style.display = _zbTrendSitePanelOpen ? '' : 'none';
+                if (_zbTrendSitePanelOpen) zbRenderTrendSiteChips();
+            }
+
+            function zbRenderTrendSiteChips() {
+                var wrap = document.getElementById('zbTrendSiteChips');
+                if (!wrap) return;
+                var allDiff = window._allDiffData || [];
+                var sites = Array.from(new Set(allDiff.map(function(d){ return d.warehouse||''; }).filter(Boolean))).sort();
+                wrap.innerHTML = '';
+                sites.forEach(function(s) {
+                    var on = _zbTrendSelectedSites.includes(s);
+                    var chip = document.createElement('button');
+                    chip.style.cssText = 'font-size:11px;padding:3px 10px;border-radius:14px;cursor:pointer;transition:all .15s;white-space:nowrap;'
+                        + (on ? 'background:#2563eb;color:#fff;border:0.5px solid #2563eb;' : 'background:var(--bg-card);color:var(--text-secondary);border:0.5px solid var(--border-color);');
+                    chip.textContent = s;
+                    chip.onclick = function() {
+                        var idx = _zbTrendSelectedSites.indexOf(s);
+                        if (idx >= 0) _zbTrendSelectedSites.splice(idx, 1);
+                        else _zbTrendSelectedSites.push(s);
+                        zbRenderTrendSiteChips();
+                        zbUpdateTrendSiteFilterBadge();
+                        zbRenderNationalTrend();
+                    };
+                    wrap.appendChild(chip);
+                });
+            }
+
+            function zbTrendSiteSelectAll() {
+                var allDiff = window._allDiffData || [];
+                _zbTrendSelectedSites = Array.from(new Set(allDiff.map(function(d){ return d.warehouse||''; }).filter(Boolean)));
+                zbRenderTrendSiteChips();
+                zbUpdateTrendSiteFilterBadge();
+                zbRenderNationalTrend();
+            }
+
+            function zbClearTrendSiteFilter() {
+                _zbTrendSelectedSites = [];
+                var panel = document.getElementById('zbTrendSitePanel');
+                if (panel) panel.style.display = 'none';
+                _zbTrendSitePanelOpen = false;
+                zbRenderTrendSiteChips();
+                zbUpdateTrendSiteFilterBadge();
+                zbRenderNationalTrend();
+            }
+
+            function zbUpdateTrendSiteFilterBadge() {
+                var wrap = document.getElementById('zbTrendSiteFilterWrap');
+                var clearBtn = document.getElementById('zbTrendSiteClearBtn');
+                var followHint = document.getElementById('zbTrendFollowHint');
+                var filterBtn = document.getElementById('zbTrendSiteFilterBtn');
+                var hasFilter = _zbTrendSelectedSites.length > 0;
+                if (clearBtn) clearBtn.style.display = hasFilter ? '' : 'none';
+                if (followHint) followHint.style.display = hasFilter ? 'none' : '';
+                if (filterBtn) {
+                    filterBtn.style.background = hasFilter ? '#eff6ff' : 'var(--kpi-bg)';
+                    filterBtn.style.color = hasFilter ? '#2563eb' : 'var(--text-secondary)';
+                    filterBtn.style.borderColor = hasFilter ? '#93c5fd' : 'var(--border-color)';
+                }
+                if (wrap) {
+                    wrap.innerHTML = '';
+                    var show = _zbTrendSelectedSites.slice(0, 3);
+                    show.forEach(function(s, i) {
+                        var tag = document.createElement('span');
+                        tag.style.cssText = 'font-size:10px;padding:1px 7px;border-radius:10px;background:#eff6ff;color:#1d4ed8;border:0.5px solid #bfdbfe;white-space:nowrap;';
+                        tag.textContent = s;
+                        wrap.appendChild(tag);
+                    });
+                    if (_zbTrendSelectedSites.length > 3) {
+                        var more = document.createElement('span');
+                        more.style.cssText = 'font-size:10px;color:var(--text-secondary);';
+                        more.textContent = '+' + (_zbTrendSelectedSites.length - 3) + '个';
+                        wrap.appendChild(more);
+                    }
+                }
+            }
+
             function zbRenderNationalTrend() {
                 var el = document.getElementById('nationalTrendChart');
                 if (!el || typeof echarts === 'undefined') return;
-                // 若容器宽度异常（首次加载布局未稳定），销毁旧实例强制重建
                 if (_nationalTrendChart && el.offsetWidth > 0) {
                     var inst = echarts.getInstanceByDom(el);
                     if (inst) {
                         var w = el.offsetWidth;
                         var chartW = inst.getWidth ? inst.getWidth() : 0;
-                        if (chartW < w * 0.5) {
-                            inst.dispose();
-                            _nationalTrendChart = null;
-                        }
+                        if (chartW < w * 0.5) { inst.dispose(); _nationalTrendChart = null; }
                     }
                 }
                 if (!_nationalTrendChart) _nationalTrendChart = echarts.init(el);
 
-                // 读顶部日期筛选范围
                 var _startD = (document.getElementById('startDateFilter')||{}).value || '';
                 var _endD   = (document.getElementById('endDateFilter')||{}).value || '';
                 function _inDateRange(dt) {
@@ -4161,7 +4265,6 @@
                 var axisColor = isDark ? '#475569' : '#cbd5e1';
                 var _sumData = window._getSummaryData ? window._getSummaryData() : [];
 
-                // 按日期+站点类型聚合：客观执行差异台数 / 抽检量 = 差异率
                 function calcRateByDate(diffRows, sumRows) {
                     var execByDate = {};
                     diffRows.forEach(function(d) {
@@ -4189,22 +4292,64 @@
                     return { xData: xData, yData: yData };
                 }
 
-                var showLabels = true; // 超30天不显示节点数值
+                // ── 站点筛选模式：每个站点一条折线 ──
+                if (_zbTrendSelectedSites.length > 0) {
+                    if (titleEl) titleEl.innerHTML = '<div class="card-title-bar" style="background:#10b981;"></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>客观执行差异率趋势 · 站点对比（' + _zbTrendSelectedSites.length + '个）';
+                    var allDates = new Set();
+                    var seriesData = _zbTrendSelectedSites.map(function(site, i) {
+                        var siteDiff = allDiff.filter(function(d){ return d.warehouse === site; });
+                        var siteSum  = _sumData.filter(function(r){ return r.siteName === site; });
+                        var res = calcRateByDate(siteDiff, siteSum);
+                        res.xData.forEach(function(dt){ allDates.add(dt); });
+                        return { site: site, res: res, color: _ZB_TREND_COLORS[i % _ZB_TREND_COLORS.length] };
+                    });
+                    var xData = Array.from(allDates).sort();
+                    var showLabels = xData.length <= 20;
+                    var series = seriesData.map(function(sd) {
+                        var map = {};
+                        sd.res.xData.forEach(function(dt, i){ map[dt] = sd.res.yData[i]; });
+                        return {
+                            name: sd.site,
+                            type: 'line', smooth: true, connectNulls: false,
+                            data: xData.map(function(dt){ return map[dt] !== undefined ? map[dt] : null; }),
+                            itemStyle: { color: sd.color }, lineStyle: { color: sd.color, width: 2 },
+                            areaStyle: { opacity: 0.04 },
+                            label: { show: showLabels, formatter: '{c}%', fontSize: 9, color: textColor }
+                        };
+                    });
+                    var legendData = seriesData.map(function(sd){ return sd.site; });
+                    _nationalTrendChart.setOption({
+                        tooltip: { trigger: 'axis', formatter: function(p) {
+                            var s = p[0].axisValue + '<br/>';
+                            p.forEach(function(item){ if (item.value !== null) s += item.seriesName + '：' + item.value + '%<br/>'; });
+                            return s;
+                        }},
+                        legend: { data: legendData, textStyle: { color: textColor, fontSize: 10 }, top: 0, type: 'scroll' },
+                        grid: { top: legendData.length > 4 ? 48 : 36, bottom: 60, left: 50, right: 20 },
+                        xAxis: { type: 'category', data: xData, axisLabel: { rotate: 35, color: textColor, fontSize: 10 }, axisLine: { lineStyle: { color: axisColor } } },
+                        yAxis: { type: 'value', name: '差异率(%)', nameTextStyle: { color: textColor }, axisLabel: { color: textColor, formatter: '{value}%' }, min: 0 },
+                        series: series
+                    }, true);
+                    _nationalTrendChart.resize();
+                    setTimeout(function(){ if (_nationalTrendChart) _nationalTrendChart.resize(); }, 150);
+                    return;
+                }
 
+                // ── 默认模式：跟随顶部站点类型联动 ──
+                var showLabels = true;
                 if (currentSiteType === 'ALL') {
-                    if (titleEl) titleEl.textContent = '📉 客观执行差异率趋势 · 大仓 vs 中心仓';
+                    if (titleEl) titleEl.innerHTML = '<div class="card-title-bar" style="background:#10b981;"></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>客观执行差异率趋势 · 大仓 vs 中心仓';
                     var dwDiff = allDiff.filter(function(d){ return getSiteType(d.warehouse||'') === 'DW'; });
                     var zxDiff = allDiff.filter(function(d){ return getSiteType(d.warehouse||'') === 'ZX'; });
                     var dwSum  = _sumData.filter(function(r){ return getSiteType(r.siteName||'') === 'DW'; });
                     var zxSum  = _sumData.filter(function(r){ return getSiteType(r.siteName||'') === 'ZX'; });
                     var dwResult = calcRateByDate(dwDiff, dwSum);
                     var zxResult = calcRateByDate(zxDiff, zxSum);
-                    var allDates = new Set(dwResult.xData.concat(zxResult.xData));
-                    var xData = Array.from(allDates).sort();
+                    var allDatesSet = new Set(dwResult.xData.concat(zxResult.xData));
+                    var xData = Array.from(allDatesSet).sort();
                     showLabels = xData.length <= 30;
                     var dwMap = {}; dwResult.xData.forEach(function(dt,i){ dwMap[dt]=dwResult.yData[i]; });
                     var zxMap = {}; zxResult.xData.forEach(function(dt,i){ zxMap[dt]=zxResult.yData[i]; });
-
                     function makeSeriesData(map) {
                         return xData.map(function(dt){ return map[dt] !== undefined ? map[dt] : null; });
                     }
@@ -4215,6 +4360,7 @@
                             return s;
                         }},
                         legend: { data:['大仓','中心仓'], textStyle:{ color:textColor }, top:0 },
+                        grid: { top: 36, bottom: 60, left: 50, right: 20 },
                         xAxis: { type:'category', data:xData, axisLabel:{ rotate:35, color:textColor }, axisLine:{ lineStyle:{ color:axisColor } } },
                         yAxis: { type:'value', name:'差异率(%)', nameTextStyle:{ color:textColor }, axisLabel:{ color:textColor, formatter:'{value}%' }, min:0 },
                         series: [
@@ -4229,7 +4375,7 @@
                 } else {
                     var typeLabel = currentSiteType === 'DW' ? '大仓' : '中心仓';
                     var lineColor = currentSiteType === 'DW' ? '#3b82f6' : '#10b981';
-                    if (titleEl) titleEl.textContent = '📉 客观执行差异率趋势 · ' + typeLabel + '总览';
+                    if (titleEl) titleEl.innerHTML = '<div class="card-title-bar" style="background:#10b981;"></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>客观执行差异率趋势 · ' + typeLabel + '总览';
                     var baseDiff = allDiff.filter(function(d){ return getSiteType(d.warehouse||'') === currentSiteType; });
                     var baseSum  = _sumData.filter(function(r){ return getSiteType(r.siteName||'') === currentSiteType; });
                     var result = calcRateByDate(baseDiff, baseSum);
@@ -4239,6 +4385,7 @@
                             return p[0].axisValue + '<br/>客观执行差异率：' + (p[0].value !== null ? p[0].value + '%' : '无数据');
                         }},
                         legend: { show:false },
+                        grid: { top: 16, bottom: 60, left: 50, right: 20 },
                         xAxis: { type:'category', data:result.xData, axisLabel:{ rotate:35, color:textColor }, axisLine:{ lineStyle:{ color:axisColor } } },
                         yAxis: { type:'value', name:'差异率(%)', nameTextStyle:{ color:textColor }, axisLabel:{ color:textColor, formatter:'{value}%' }, min:0 },
                         series: [{ name:typeLabel, type:'line', smooth:true, connectNulls:false, data:result.yData,
@@ -4247,7 +4394,6 @@
                     }, true);
                 }
                 _nationalTrendChart.resize();
-                // 首次加载时容器宽度可能尚未稳定，延迟再 resize 一次确保图表撑满
                 var _chart = _nationalTrendChart;
                 setTimeout(function() { if (_chart) _chart.resize(); }, 150);
                 setTimeout(function() { if (_chart) _chart.resize(); }, 400);
@@ -4982,35 +5128,57 @@ async function zbUploadToCos(file, imgKey) {
 // 格式: { "key": { images: [...], note: "" } }
 var _zbAttach = null;
 var _zbAttachLoaded = false;
+var _ZB_ATTACH_CACHE_KEY = 'zb_attach_cache';
+
+function _zbMigrateAttach(data) {
+    var migrated = {};
+    Object.keys(data).forEach(function(k) {
+        var v = data[k];
+        if (Array.isArray(v)) { migrated[k] = { images: v, note: '' }; }
+        else { migrated[k] = { images: v.images || [], note: v.note || '' }; }
+    });
+    return migrated;
+}
 
 async function zbLoadAttach() {
     if (_zbAttachLoaded) return _zbAttach || {};
+
+    // 先读 localStorage 缓存，立即可用
+    var cached = null;
+    try {
+        var raw = localStorage.getItem(_ZB_ATTACH_CACHE_KEY);
+        if (raw) cached = JSON.parse(raw);
+    } catch(e) {}
+
+    if (cached) {
+        _zbAttach = cached;
+        _zbAttachLoaded = true;
+        // 后台静默拉最新，更新缓存但不阻塞当前渲染
+        setTimeout(async function() {
+            try {
+                var token = zbGetToken();
+                var data = await ghApiFetch(GH_FILES.qcAttachments, token);
+                if (data && typeof data === 'object') {
+                    var fresh = _zbMigrateAttach(data);
+                    _zbAttach = fresh;
+                    try { localStorage.setItem(_ZB_ATTACH_CACHE_KEY, JSON.stringify(fresh)); } catch(e) {}
+                }
+            } catch(e) {}
+        }, 0);
+        return _zbAttach;
+    }
+
+    // 无缓存：正常请求，完成后写缓存
     try {
         var token = zbGetToken();
         var data = await ghApiFetch(GH_FILES.qcAttachments, token);
         if (data && typeof data === 'object') {
-            // 自动迁移旧格式 { key: [url,...] } → 新格式
-            var migrated = {};
-            Object.keys(data).forEach(function(k) {
-                var v = data[k];
-                if (Array.isArray(v)) {
-                    migrated[k] = { images: v, note: '' };
-                } else {
-                    migrated[k] = { images: v.images || [], note: v.note || '' };
-                }
-            });
-            _zbAttach = migrated;
+            _zbAttach = _zbMigrateAttach(data);
         } else {
-            // 尝试读旧文件迁移
             try {
                 var old = await ghApiFetch('image_links.json', token);
                 if (old && typeof old === 'object') {
-                    var migrated2 = {};
-                    Object.keys(old).forEach(function(k) {
-                        var v = old[k];
-                        migrated2[k] = { images: Array.isArray(v) ? v : [], note: '' };
-                    });
-                    _zbAttach = migrated2;
+                    _zbAttach = _zbMigrateAttach(old);
                 } else { _zbAttach = {}; }
             } catch(e2) { _zbAttach = {}; }
         }
@@ -5018,12 +5186,15 @@ async function zbLoadAttach() {
         _zbAttach = {};
     }
     _zbAttachLoaded = true;
+    try { localStorage.setItem(_ZB_ATTACH_CACHE_KEY, JSON.stringify(_zbAttach)); } catch(e) {}
     return _zbAttach;
 }
 
 async function zbSaveAttach() {
     var token = zbGetToken();
     await _zbPushFile(GH_FILES.qcAttachments, _zbAttach || {}, token);
+    // 保存成功后同步更新本地缓存
+    try { localStorage.setItem(_ZB_ATTACH_CACHE_KEY, JSON.stringify(_zbAttach || {})); } catch(e) {}
 }
 
 // 生成绑定key：质检码|站点|二级项|原三级项|新三级项
@@ -10202,6 +10373,23 @@ window.zbConfirmUpload = function() {
 document.addEventListener('DOMContentLoaded', function(){
   var btn = document.getElementById('uploadCombinedBtn');
   if (btn) btn.onclick = function(e){ e.stopPropagation(); zbOpenUpload(); };
+
+  // 跑马灯：从容器右边缘精准出发
+  var wrap = document.getElementById('zbMarqueeWrap');
+  var inner = wrap && wrap.querySelector('.marquee-inner');
+  if (wrap && inner) {
+    var setMq = function() {
+      var w = wrap.offsetWidth;
+      if (!w) return;
+      inner.style.setProperty('--mq-start', w + 'px');
+      // 速度按容器宽度等比调整，避免宽容器太慢
+      var dur = Math.round(w / 30) + 's';
+      inner.style.setProperty('--mq-dur', dur);
+      inner.classList.add('mq-run');
+    };
+    setMq();
+    window.addEventListener('resize', setMq);
+  }
 });
 </script>
 <!-- 质检人排名列筛选面板（挂body下避免fixed错位）-->
