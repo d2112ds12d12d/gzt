@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.50A</title>
+    <title>培训部数据看板 v1.50B</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -770,7 +770,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.50A</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.50B</div>
     </div>
   </nav>
 
@@ -3259,8 +3259,7 @@
                 var curStart, curEnd, prevStart, prevEnd, periodLabel;
 
                 if (_hotspotTimeMode === 'week') {
-                    // 本周：最新日期所在自然周（周一~周日）
-                    var dow = ld.getDay() || 7; // 1=Mon
+                    var dow = ld.getDay() || 7;
                     var mon = new Date(ld); mon.setDate(ld.getDate() - (dow - 1));
                     var sun = new Date(mon); sun.setDate(mon.getDate() + 6);
                     curStart = _fmtDate(mon); curEnd = _fmtDate(sun);
@@ -3269,19 +3268,22 @@
                     prevStart = _fmtDate(pMon); prevEnd = _fmtDate(pSun);
                     periodLabel = '上周 ' + _shortDate(pMon) + '–' + _shortDate(pSun) + ' vs 本周 ' + _shortDate(mon) + '–' + _shortDate(sun);
                 } else if (_hotspotTimeMode === 'month') {
-                    // 本月
+                    // 本月：1号 ~ 数据最新日期（不用月末）
                     curStart = _fmtDate(new Date(ld.getFullYear(), ld.getMonth(), 1));
-                    curEnd   = _fmtDate(new Date(ld.getFullYear(), ld.getMonth() + 1, 0));
+                    curEnd   = latestDate;
                     prevStart = _fmtDate(new Date(ld.getFullYear(), ld.getMonth() - 1, 1));
                     prevEnd   = _fmtDate(new Date(ld.getFullYear(), ld.getMonth(), 0));
                     periodLabel = '上月 ' + _shortDate(new Date(prevStart)) + '—' + _shortDate(new Date(prevEnd)) + ' vs 本月 ' + _shortDate(new Date(curStart)) + '—' + _shortDate(new Date(curEnd));
                 } else {
-                    // 日度：本日 vs 昨日
+                    // 日度：数据最新日期当天 vs 前一天
                     curStart = curEnd = latestDate;
                     var yd = new Date(ld); yd.setDate(ld.getDate() - 1);
                     prevStart = prevEnd = _fmtDate(yd);
                     periodLabel = _shortDate(yd) + '（昨）vs ' + _shortDate(ld) + '（今）';
                 }
+                // 存到window，供弹窗直接复用，避免重复计算基准日期
+                window._hotspotCurStart = curStart;
+                window._hotspotCurEnd   = curEnd;
 
                 document.getElementById('hotspotPeriodLabel').textContent = periodLabel;
 
@@ -4018,13 +4020,15 @@
                     if (!isExecutionIssue(d.judgedIssueType)) return false;
                     return true;
                 });
-                // 聚合：人 → { total(去重质检码数), warehouses }
+                // 聚合：人 → { total(去重质检码数), warehouses }，过滤无效人名
+                var _INVALID_P = new Set(['', '/', 'null', 'undefined', '-', '—', '未知', 'unknown']);
                 var map = {};
                 filtered.forEach(function(d) {
-                    var p = d.person || '未知';
+                    var p = (d.person || '').trim();
+                    if (!p || _INVALID_P.has(p.toLowerCase())) return;
                     if (!map[p]) map[p] = { name:p, codes:new Set(), whs:new Set() };
                     if (d.code) map[p].codes.add(d.code);
-                    else map[p].codes.add(d._rowId || Math.random()); // 无码按行计
+                    else map[p].codes.add(d._rowId || Math.random());
                     if (d.warehouse) map[p].whs.add(d.warehouse);
                 });
                 var list = Object.keys(map).map(function(n){ return { name:n, total:map[n].codes.size, whs:map[n].whs }; });
@@ -8009,28 +8013,9 @@ function zbNavToHotspotDetail(level3, level1, deltaInfo) {
         badge.style.color = deltaInfo.includes('↑') ? '#dc2626' : deltaInfo.includes('↓') ? '#16a34a' : '#2563eb';
     } else { badge.textContent = ''; }
 
-    // KPI — 质检码去重，只统计本期时间段内的客观执行数据
-    var curStartD = '', curEndD = '';
-    // 从快报当前时间模式取本期范围
-    (function() {
-        var allDates2 = rows.map(function(d){ return (d.date||'').split(' ')[0]; }).filter(Boolean).sort();
-        if (!allDates2.length) return;
-        var latestDate2 = allDates2[allDates2.length-1];
-        var ld2 = new Date(latestDate2);
-        var mode = window._hotspotTimeMode || 'week';
-        if (mode === 'week') {
-            var dow2 = ld2.getDay() || 7;
-            var mon2 = new Date(ld2); mon2.setDate(ld2.getDate() - (dow2-1));
-            var sun2 = new Date(mon2); sun2.setDate(mon2.getDate() + 6);
-            curStartD = mon2.toISOString().slice(0,10);
-            curEndD   = sun2.toISOString().slice(0,10);
-        } else if (mode === 'month') {
-            curStartD = new Date(ld2.getFullYear(), ld2.getMonth(), 1).toISOString().slice(0,10);
-            curEndD   = new Date(ld2.getFullYear(), ld2.getMonth()+1, 0).toISOString().slice(0,10);
-        } else {
-            curStartD = curEndD = latestDate2;
-        }
-    })();
+    // KPI — 质检码去重，直接复用快报已算好的本期时间窗，确保口径完全一致
+    var curStartD = window._hotspotCurStart || '';
+    var curEndD   = window._hotspotCurEnd   || '';
     var curRows = rows.filter(function(d) {
         var dt = (d.date||'').split(' ')[0];
         return (!curStartD || dt >= curStartD) && (!curEndD || dt <= curEndD)
