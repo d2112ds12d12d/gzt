@@ -1,6 +1,17 @@
 {
   "tasks": [
     {
+      "id": "mpl28v37sxz",
+      "title": "等待周奋处理转转之眼的 bug",
+      "tag": null,
+      "date": "05/25",
+      "done": false,
+      "status": "todo",
+      "priority": "normal",
+      "created": 1779704730979,
+      "parentId": "mpcjqo8ln7b"
+    },
+    {
       "id": "mpl287bn43z",
       "title": "kappa 参考率低与组长讨论",
       "tag": null,
@@ -255,7 +266,10 @@
       "priority": "normal",
       "created": 1779189919797,
       "parentId": "mpc1csbio5h",
-      "pinned": false
+      "pinned": false,
+      "childIds": [
+        "mpl28v37sxz"
+      ]
     },
     {
       "id": "mpcj8q77q7v",
