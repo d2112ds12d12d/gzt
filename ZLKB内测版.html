@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.45I</title>
+    <title>培训部数据看板 v1.46</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -751,7 +751,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.45I</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.46</div>
     </div>
   </nav>
 
@@ -4816,10 +4816,28 @@ async function ghApiFetch(fname, token) {
 }
 
 // ══════════════════════════════════════════
-// 角色体系：viewer（查看者）| admin（管理员）| super（超管，隐藏）
+// 角色体系：viewer（查看者）| trainer（培训师）| admin（管理员）| super（超管，隐藏）
+var zbTrainerInfo = null; // 当前登录的培训师信息 {id,name,sites,cats}
+
+// 从auth_users.json加载培训师列表并验证ID
+async function zbLoadAndMatchTrainer(inputId) {
+    try {
+        var token = zbGetToken();
+        var data = await ghApiFetch(GH_FILES.auth, token);
+        var trainers = (data && data.trainers) || [];
+        return trainers.find(function(t){ return t.id === inputId; }) || null;
+    } catch(e) { return null; }
+}
+
+// 角色体系：viewer（查看者）| trainer（培训师）| admin（管理员）| super（超管，隐藏）
 // ══════════════════════════════════════════
 const ADMIN_PASSWORD = '质量是生命第一线 996';
 let zbRole = (function(){ var r = localStorage.getItem('zb_role')||'viewer'; if(r==='super'){ localStorage.setItem('zb_role','admin'); return 'admin'; } return r; })();
+// 恢复培训师session
+if (zbRole === 'trainer') {
+    try { zbTrainerInfo = JSON.parse(localStorage.getItem('zb_trainer') || 'null'); } catch(e) {}
+    if (!zbTrainerInfo) { zbRole = 'viewer'; localStorage.setItem('zb_role','viewer'); }
+}
 let zbToken = '';
 
 function zbGetToken() {
@@ -4827,7 +4845,7 @@ function zbGetToken() {
 }
 
 // ══════════════════════════════════════════
-// 图片功能模块 v1.45I
+// 图片功能模块 v1.46
 // 云函数签发临时密钥 → 压缩 → 上传COS → 存image_links.json
 // ══════════════════════════════════════════
 const ZB_IMG = {
@@ -5022,6 +5040,10 @@ async function zbRemoveRowImage(row, url) {
     attach[key].images = attach[key].images.filter(function(u){ return u !== url; });
     _zbAttach = attach;
     await zbSaveAttach();
+    // 强制刷新缓存，确保下次读取拿到最新数据
+    _zbAttachLoaded = false;
+    _zbAttach = null;
+    await zbLoadAttach();
 }
 
 // 图片预览弹窗
@@ -5107,10 +5129,15 @@ async function zbDoUploadFiles(files, cam, row, panel) {
     if (panel) { panel.remove(); }
     showToast('⏳ 上传中，请稍候…');
     try {
+        var totalSizeKB = 0;
         for (var i = 0; i < files.length; i++) {
+            var blob = await zbCompressImage(files[i], 400);
+            totalSizeKB += blob.size / 1024;
             var url = await zbUploadToCos(files[i], key);
             await zbAddRowImage(row, url);
         }
+        // 记录图片操作日志
+        zbAddImageLog(row, files.length, totalSizeKB);
         showToast('✅ 上传成功，共' + files.length + '张');
         zbRefreshCamIcon(cam, row);
     } catch(err) {
@@ -5399,15 +5426,28 @@ async function zbAdminLoginSubmit() {
     hint.textContent = '验证中…';
     // 管理员密码
     if (v === ADMIN_PASSWORD) {
-        zbRole = 'admin';
+        zbRole = 'admin'; zbTrainerInfo = null;
         localStorage.setItem('zb_role','admin');
+        localStorage.removeItem('zb_trainer');
         inp.value = ''; hint.textContent = '';
         zbCloseAdminLogin();
         zbUpdateRoleBadge();
         showToast('✅ 已登录为管理员');
         return;
     }
-    hint.textContent = '密码错误';
+    // 培训师ID匹配
+    var trainer = await zbLoadAndMatchTrainer(v);
+    if (trainer) {
+        zbRole = 'trainer'; zbTrainerInfo = trainer;
+        localStorage.setItem('zb_role','trainer');
+        localStorage.setItem('zb_trainer', JSON.stringify(trainer));
+        inp.value = ''; hint.textContent = '';
+        zbCloseAdminLogin();
+        zbUpdateRoleBadge();
+        zbShowWelcomeToast(trainer);
+        return;
+    }
+    hint.textContent = '密码或ID错误';
 }
 // 点遮罩关闭
 document.addEventListener('click', function(e){
@@ -5431,16 +5471,25 @@ function zbUpdateRoleBadge() {
     if (logNav)     logNav.style.display     = canEdit ? '' : 'none';
     if (settingNav) settingNav.style.display  = canEdit ? '' : 'none';
 
-    // ── 用户块：管理员显示，浏览者隐藏 ──
+    var isTrainer = (zbRole === 'trainer');
+    // 用户块：管理员或培训师显示，浏览者隐藏
     var userBlock = document.getElementById('zbUserBlock');
-    if (userBlock) userBlock.style.display = canEdit ? 'flex' : 'none';
+    if (userBlock) userBlock.style.display = (canEdit || isTrainer) ? 'flex' : 'none';
 
-    if (!canEdit) return;
-
-    // ── 管理员头像和名称 ──
     var avatar = document.getElementById('zbSidebarAvatar');
     var nameEl = document.getElementById('zbSidebarName');
     var roleEl = document.getElementById('zbSidebarRole');
+
+    if (isTrainer && zbTrainerInfo) {
+        var initials = zbTrainerInfo.name ? zbTrainerInfo.name.slice(-2) : '培';
+        var siteLabel = zbTrainerInfo.sites && zbTrainerInfo.sites.length ? zbTrainerInfo.sites[0] : '';
+        if (avatar) { avatar.style.cssText='background:#2563eb;color:#fff;border-radius:50%;width:28px;height:28px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;flex-shrink:0;'; avatar.textContent=initials; }
+        if (nameEl) nameEl.textContent = zbTrainerInfo.name;
+        if (roleEl) { roleEl.innerHTML='<span style="width:5px;height:5px;border-radius:50%;background:#22c55e;flex-shrink:0;display:inline-block;"></span><span>'+siteLabel+'</span>'; roleEl.style.display='flex'; }
+        return;
+    }
+
+    if (!canEdit) return;
     if (avatar) { avatar.style.background='#dbeafe'; avatar.style.color='#1d4ed8'; avatar.textContent='管'; }
     if (nameEl) nameEl.textContent = '管理员';
     if (roleEl) roleEl.style.display = 'flex';
@@ -5455,24 +5504,35 @@ async function zbSidebarLogin() {
     var v = input.value.trim();
     if (!v) { hint.textContent = '请输入密码'; return; }
     hint.textContent = '验证中…';
-    // 管理员密码
     if (v === ADMIN_PASSWORD) {
-        zbRole = 'admin';
+        zbRole = 'admin'; zbTrainerInfo = null;
         localStorage.setItem('zb_role', 'admin');
+        localStorage.removeItem('zb_trainer');
         input.value = ''; hint.textContent = '';
         zbUpdateRoleBadge();
         showToast('✅ 已登录为管理员');
         return;
     }
-    hint.textContent = '密码错误';
+    var trainer = await zbLoadAndMatchTrainer(v);
+    if (trainer) {
+        zbRole = 'trainer'; zbTrainerInfo = trainer;
+        localStorage.setItem('zb_role','trainer');
+        localStorage.setItem('zb_trainer', JSON.stringify(trainer));
+        input.value = ''; hint.textContent = '';
+        zbUpdateRoleBadge();
+        zbShowWelcomeToast(trainer);
+        return;
+    }
+    hint.textContent = '密码或ID错误';
 }
 
 // ── 侧边栏头像点击（退出） ──
 function zbSidebarUserClick() {
     if (!confirm('确认退出登录？')) return;
-    zbRole = 'viewer'; zbToken = '';
+    zbRole = 'viewer'; zbToken = ''; zbTrainerInfo = null;
     localStorage.removeItem('zb_role');
     localStorage.removeItem('zb_token');
+    localStorage.removeItem('zb_trainer');
     zbUpdateRoleBadge();
     showToast('已退出登录');
 }
@@ -7607,6 +7667,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <button id="zbTabLog" onclick="zbSwitchLogTab('log')" style="padding:7px 16px;font-size:12px;font-weight:600;background:transparent;color:#3b82f6;border:none;border-bottom:2px solid #3b82f6;cursor:pointer;">📋 上传日志</button>
         <button id="zbTabCloud" onclick="zbSwitchLogTab('cloud')" style="padding:7px 16px;font-size:12px;font-weight:600;background:transparent;color:var(--text-secondary);border:none;border-bottom:2px solid transparent;cursor:pointer;">☁️ 云端管理</button>
         <button id="zbTabEdit" onclick="zbSwitchLogTab('edit')" style="padding:7px 16px;font-size:12px;font-weight:600;background:transparent;color:var(--text-secondary);border:none;border-bottom:2px solid transparent;cursor:pointer;">✏️ 记录编辑</button>
+        <button id="zbTabImage" onclick="zbSwitchLogTab('image')" style="padding:7px 16px;font-size:12px;font-weight:600;background:transparent;color:var(--text-secondary);border:none;border-bottom:2px solid transparent;cursor:pointer;">🖼️ 图片操作</button>
       </div>
     </div>
     <!-- 统计行 -->
@@ -7644,6 +7705,9 @@ document.addEventListener('DOMContentLoaded', function() {
       <div id="zbEditResult"></div>
     </div>
     <!-- 底部 -->
+    <div id="zbImagePanel" style="display:none;flex:1;overflow-y:auto;padding:14px 20px;">
+      <div id="zbImageLogList"></div>
+    </div>
     <div id="zbLogFooter" style="padding:10px 20px;border-top:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
       <div id="zbLogFooterTxt" style="font-size:11px;color:var(--text-secondary);"></div>
     </div>
@@ -9262,6 +9326,103 @@ function zbCheckDataHealth() {
         + '</div></div>';
 }
 
+// ── 图片操作日志（存localStorage，30分钟合并） ──
+var _zbImageLog = (function(){
+    try { return JSON.parse(localStorage.getItem('zb_image_log')||'[]'); } catch(e){ return []; }
+})();
+
+function zbAddImageLog(row, fileCount, totalSizeKB) {
+    var key = zbImgKey(row);
+    var code = String(row['code']||row['质检码']||'').trim();
+    var site = String(row['warehouse']||row['站点名称']||row['_warehouse']||'').trim();
+    var operator = (zbTrainerInfo && zbTrainerInfo.name) || (zbRole==='admin'?'管理员':'未知');
+    var now = Date.now();
+    var windowMs = 30 * 60 * 1000;
+    // 查找30分钟内同人同质检码的记录
+    var existing = _zbImageLog.find(function(l){
+        return l.key===key && l.operator===operator && (now - l.lastTs) < windowMs;
+    });
+    if (existing) {
+        existing.count += fileCount;
+        existing.sizeKB = Math.round((existing.sizeKB||0) + totalSizeKB);
+        existing.lastTs = now;
+        existing.lastTime = new Date(now).toLocaleString('zh-CN',{hour12:false});
+    } else {
+        _zbImageLog.unshift({
+            key: key, code: code, site: site,
+            operator: operator,
+            count: fileCount,
+            sizeKB: Math.round(totalSizeKB),
+            firstTime: new Date(now).toLocaleString('zh-CN',{hour12:false}),
+            lastTime: new Date(now).toLocaleString('zh-CN',{hour12:false}),
+            lastTs: now
+        });
+        if (_zbImageLog.length > 300) _zbImageLog = _zbImageLog.slice(0, 300);
+    }
+    try { localStorage.setItem('zb_image_log', JSON.stringify(_zbImageLog)); } catch(e) {}
+}
+
+function zbRenderImageLog() {
+    var el = document.getElementById('zbImageLogList');
+    if (!el) return;
+    if (!_zbImageLog.length) {
+        el.innerHTML = '<div style="text-align:center;color:#94a3b8;padding:40px;font-size:12px;">暂无图片操作记录</div>';
+        return;
+    }
+    var html = '<table style="width:100%;border-collapse:collapse;font-size:11px;">'
+        + '<thead><tr style="border-bottom:0.5px solid #e2e8f0;">'
+        + '<th style="padding:7px 10px;text-align:left;color:#94a3b8;font-weight:500;">时间</th>'
+        + '<th style="padding:7px 10px;text-align:left;color:#94a3b8;font-weight:500;">操作人</th>'
+        + '<th style="padding:7px 10px;text-align:left;color:#94a3b8;font-weight:500;">质检码</th>'
+        + '<th style="padding:7px 10px;text-align:left;color:#94a3b8;font-weight:500;">站点</th>'
+        + '<th style="padding:7px 10px;text-align:center;color:#94a3b8;font-weight:500;">张数</th>'
+        + '<th style="padding:7px 10px;text-align:center;color:#94a3b8;font-weight:500;">大小</th>'
+        + '</tr></thead><tbody>';
+    _zbImageLog.forEach(function(l, i) {
+        var bg = i%2===0?'':'background:#f8fafc;';
+        var sizeStr = l.sizeKB >= 1024 ? (l.sizeKB/1024).toFixed(1)+'MB' : l.sizeKB+'KB';
+        html += '<tr style="border-bottom:0.5px solid #f1f5f9;'+bg+'">'
+            + '<td style="padding:6px 10px;color:#64748b;">' + (l.lastTime||l.firstTime||'') + '</td>'
+            + '<td style="padding:6px 10px;font-weight:500;color:#1e293b;">' + (l.operator||'') + '</td>'
+            + '<td style="padding:6px 10px;font-family:monospace;color:#2563eb;">' + (l.code||'') + '</td>'
+            + '<td style="padding:6px 10px;color:#64748b;">' + (l.site||'') + '</td>'
+            + '<td style="padding:6px 10px;text-align:center;color:#1e293b;">' + (l.count||0) + '张</td>'
+            + '<td style="padding:6px 10px;text-align:center;color:#64748b;">' + sizeStr + '</td>'
+            + '</tr>';
+    });
+    html += '</tbody></table>';
+    el.innerHTML = html;
+}
+
+// ── 培训师欢迎Toast ──
+function zbShowWelcomeToast(trainer) {
+    var existing = document.getElementById('zbWelcomeToast');
+    if (existing) existing.remove();
+    var t = document.createElement('div');
+    t.id = 'zbWelcomeToast';
+    var initials = trainer.name ? trainer.name.slice(-2) : '培';
+    var site = trainer.sites && trainer.sites.length ? trainer.sites[0] : '';
+    t.style.cssText = 'position:fixed;right:24px;bottom:24px;z-index:99999;display:flex;align-items:center;gap:12px;background:#0f172a;border-radius:12px;padding:14px 20px;min-width:220px;opacity:0;transform:translateY(20px);transition:opacity .4s cubic-bezier(.16,1,.3,1),transform .4s cubic-bezier(.16,1,.3,1);pointer-events:none;';
+    t.innerHTML = '<div style="width:3px;height:36px;background:#2563eb;border-radius:2px;flex-shrink:0;"></div>'
+        + '<div style="width:36px;height:36px;border-radius:50%;background:#1d4ed8;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:500;color:#fff;flex-shrink:0;">'+initials+'</div>'
+        + '<div style="display:flex;flex-direction:column;gap:3px;">'
+        + '<span style="font-size:11px;color:#64748b;">'+site+' · 培训师</span>'
+        + '<span style="font-size:15px;font-weight:500;color:#f1f5f9;letter-spacing:.01em;">你好，'+trainer.name+'</span>'
+        + '</div>';
+    document.body.appendChild(t);
+    requestAnimationFrame(function(){
+        requestAnimationFrame(function(){
+            t.style.opacity = '1';
+            t.style.transform = 'translateY(0)';
+        });
+    });
+    setTimeout(function(){
+        t.style.opacity = '0';
+        t.style.transform = 'translateY(8px)';
+        setTimeout(function(){ if(t.parentNode) t.remove(); }, 400);
+    }, 3000);
+}
+
 function zbOpenLog(){
   var m=document.getElementById('zbLogModal');
   if(m){ m.style.display='flex'; zbSwitchLogTab(_zbCurrentLogTab); }
@@ -9280,10 +9441,12 @@ function zbSwitchLogTab(tab){
   var tabLog     = document.getElementById('zbTabLog');
   var tabCloud   = document.getElementById('zbTabCloud');
   var tabEdit    = document.getElementById('zbTabEdit');
+  var tabImage   = document.getElementById('zbTabImage');
+  var imagePanel = document.getElementById('zbImagePanel');
 
   // 重置所有tab样式
-  [tabLog,tabCloud,tabEdit].forEach(function(t){ if(t){ t.style.color='var(--text-secondary)'; t.style.borderBottom='2px solid transparent'; t.style.fontWeight='400'; }});
-  [logPanel,cloudPanel,editPanel].forEach(function(p){ if(p) p.style.display='none'; });
+  [tabLog,tabCloud,tabEdit,tabImage].forEach(function(t){ if(t){ t.style.color='var(--text-secondary)'; t.style.borderBottom='2px solid transparent'; t.style.fontWeight='400'; }});
+  [logPanel,cloudPanel,editPanel,imagePanel].forEach(function(p){ if(p) p.style.display='none'; });
   if(logStats) logStats.style.display='none';
   if(logFooter) logFooter.style.display='none';
 
@@ -9300,6 +9463,10 @@ function zbSwitchLogTab(tab){
   } else if(tab==='edit'){
     if(editPanel) editPanel.style.display='';
     if(tabEdit){ tabEdit.style.color='#3b82f6'; tabEdit.style.borderBottom='2px solid #3b82f6'; tabEdit.style.fontWeight='600'; }
+  } else if(tab==='image'){
+    if(imagePanel) imagePanel.style.display='';
+    if(tabImage){ tabImage.style.color='#3b82f6'; tabImage.style.borderBottom='2px solid #3b82f6'; tabImage.style.fontWeight='600'; }
+    zbRenderImageLog();
   }
 }
 
