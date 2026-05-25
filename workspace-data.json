@@ -225,7 +225,8 @@
       "status": "todo",
       "priority": "normal",
       "created": 1779189919797,
-      "parentId": "mpc1csbio5h"
+      "parentId": "mpc1csbio5h",
+      "pinned": true
     },
     {
       "id": "mpcj8q77q7v",
