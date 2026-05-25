@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.45A</title>
+    <title>培训部数据看板 v1.45B</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -751,7 +751,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.45A</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.45B</div>
     </div>
   </nav>
 
@@ -2469,6 +2469,11 @@
                                 } else {
                                     zbInjectCamIcon(td, row, null);
                                 }
+                            } else if (key === '_note') {
+                                // 备注列：显示内容+编辑图标（仅管理员）
+                                td.style.cssText += 'min-width:80px;max-width:160px;';
+                                var rawRow = row._rawRow || row;
+                                zbRenderNoteCell(td, rawRow);
                             } else {
                                 td.textContent = val;
                             }
@@ -2579,6 +2584,12 @@
                 if (!showCat) {
                     var ci=columnKeys.indexOf('cat'); if(ci>-1){columnKeys.splice(ci,1);columnNames.splice(ci,1);}
                 }
+                // 管理员才显示备注列
+                var isAdminView = (zbRole === 'admin' || zbRole === 'super');
+                if (isAdminView) {
+                    columnKeys.push('_note');
+                    columnNames.push('备注');
+                }
 
                 if (!virtualScroll) { virtualScroll = new VirtualScroll(virtualScrollContainer, 36); }
                 virtualScroll.attachScroll();
@@ -2593,6 +2604,7 @@
                         obj._groupIdx   = r._groupIdx;
                         obj._isFirst    = r._isFirst;
                         obj._groupCount = r._groupCount;
+                        obj._rawRow     = r; // 保留原始行数据供备注使用
                         return obj;
                     }),
                     columnKeys, columnNames
@@ -4782,7 +4794,7 @@ const GH_FILES = {
     inspector:'inspector_override.json',
     log:      'upload_log.json',
     tableLinks: 'table_links.json',
-    imageLinks: 'image_links.json'
+    qcAttachments: 'qc_attachments.json'
 };
 // 超管Token拆分混淆（运行时拼接，防扫描）
 const _t = ['github_pat_','11BMTOZFI0','c1Zh3zsjA4','ep_3DbEX3c','8xDGxNPAwa','IOB4RsDKRd','tI0VtxSQwM','b6yrkRBGWH','2AOJbL2jHnWF'];
@@ -4815,7 +4827,7 @@ function zbGetToken() {
 }
 
 // ══════════════════════════════════════════
-// 图片功能模块 v1.45A
+// 图片功能模块 v1.45B
 // 云函数签发临时密钥 → 压缩 → 上传COS → 存image_links.json
 // ══════════════════════════════════════════
 const ZB_IMG = {
@@ -4911,53 +4923,96 @@ async function zbUploadToCos(file, imgKey) {
     });
 }
 
-// image_links.json 内存缓存
-var _zbImgLinks = null;
-var _zbImgLinksLoaded = false;
+// qc_attachments.json 缓存（合并图片+备注）
+// 格式: { "key": { images: [...], note: "" } }
+var _zbAttach = null;
+var _zbAttachLoaded = false;
 
-async function zbLoadImageLinks() {
-    if (_zbImgLinksLoaded) return _zbImgLinks || {};
+async function zbLoadAttach() {
+    if (_zbAttachLoaded) return _zbAttach || {};
     try {
         var token = zbGetToken();
-        var data = await ghApiFetch(GH_FILES.imageLinks, token);
-        _zbImgLinks = data || {};
+        var data = await ghApiFetch(GH_FILES.qcAttachments, token);
+        if (data && typeof data === 'object') {
+            // 自动迁移旧格式 { key: [url,...] } → 新格式
+            var migrated = {};
+            Object.keys(data).forEach(function(k) {
+                var v = data[k];
+                if (Array.isArray(v)) {
+                    migrated[k] = { images: v, note: '' };
+                } else {
+                    migrated[k] = { images: v.images || [], note: v.note || '' };
+                }
+            });
+            _zbAttach = migrated;
+        } else {
+            // 尝试读旧文件迁移
+            try {
+                var old = await ghApiFetch('image_links.json', token);
+                if (old && typeof old === 'object') {
+                    var migrated2 = {};
+                    Object.keys(old).forEach(function(k) {
+                        var v = old[k];
+                        migrated2[k] = { images: Array.isArray(v) ? v : [], note: '' };
+                    });
+                    _zbAttach = migrated2;
+                } else { _zbAttach = {}; }
+            } catch(e2) { _zbAttach = {}; }
+        }
     } catch(e) {
-        _zbImgLinks = {};
+        _zbAttach = {};
     }
-    _zbImgLinksLoaded = true;
-    return _zbImgLinks;
+    _zbAttachLoaded = true;
+    return _zbAttach;
 }
 
-async function zbSaveImageLinks() {
+async function zbSaveAttach() {
     var token = zbGetToken();
-    await _zbPushFile(GH_FILES.imageLinks, _zbImgLinks || {}, token);
+    await _zbPushFile(GH_FILES.qcAttachments, _zbAttach || {}, token);
 }
 
 // 生成绑定key：质检码|站点|二级项|原三级项|新三级项
 function zbImgKey(row) {
-    var code    = String(row['code']    || row['质检码']   || '').trim();
-    var site    = String(row['warehouse']|| row['站点名称'] || row['_warehouse'] || '').trim();
-    var level2  = String(row['level2']  || row['二级项']   || '').trim();
-    var l3orig  = String(row['level3_orig'] || row['原三级项'] || '').trim();
-    var l3new   = String(row['level3']  || row['level3_new'] || row['新三级项'] || '').trim();
+    var code   = String(row['code']    || row['质检码']   || '').trim();
+    var site   = String(row['warehouse']|| row['站点名称'] || row['_warehouse'] || '').trim();
+    var level2 = String(row['level2']  || row['二级项']   || '').trim();
+    var l3orig = String(row['level3_orig'] || row['原三级项'] || '').trim();
+    var l3new  = String(row['level3']  || row['level3_new'] || row['新三级项'] || '').trim();
     return [code, site, level2, l3orig, l3new].join('|');
 }
 
-// 获取某行的图片列表
+// 获取某行图片列表
 async function zbGetRowImages(row) {
-    var links = await zbLoadImageLinks();
+    var attach = await zbLoadAttach();
     var key = zbImgKey(row);
-    return links[key] || [];
+    return (attach[key] && attach[key].images) || [];
+}
+
+// 获取某行备注
+async function zbGetRowNote(row) {
+    var attach = await zbLoadAttach();
+    var key = zbImgKey(row);
+    return (attach[key] && attach[key].note) || '';
 }
 
 // 追加图片URL到某行
 async function zbAddRowImage(row, url) {
-    var links = await zbLoadImageLinks();
+    var attach = await zbLoadAttach();
     var key = zbImgKey(row);
-    if (!links[key]) links[key] = [];
-    links[key].push(url);
-    _zbImgLinks = links;
-    await zbSaveImageLinks();
+    if (!attach[key]) attach[key] = { images: [], note: '' };
+    attach[key].images.push(url);
+    _zbAttach = attach;
+    await zbSaveAttach();
+}
+
+// 保存备注
+async function zbSaveRowNote(row, note) {
+    var attach = await zbLoadAttach();
+    var key = zbImgKey(row);
+    if (!attach[key]) attach[key] = { images: [], note: '' };
+    attach[key].note = note;
+    _zbAttach = attach;
+    await zbSaveAttach();
 }
 
 // 图片预览弹窗
@@ -4998,13 +5053,17 @@ function zbShowImagePreview(urls, startIdx) {
     document.body.appendChild(overlay);
 }
 
-// 给质检码td注入📷图标（在现有链接图标左边）
+// 给质检码td注入📷图标（权限控制：仅管理员可见）
 async function zbInjectCamIcon(td, row, linkIcon) {
+    var isAdmin = (zbRole === 'admin' || zbRole === 'super');
+    if (!isAdmin) return; // 浏览者不显示图片功能
     var urls = await zbGetRowImages(row);
     var hasImg = urls.length > 0;
     var cam = document.createElement('span');
     cam.className = 'zb-cam-icon';
-    cam.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:4px;cursor:pointer;margin-left:4px;opacity:0;transition:opacity .15s;vertical-align:middle;position:relative;flex-shrink:0;' + (hasImg ? 'background:#2563eb;border:1px solid #1d4ed8;color:#fff;' : 'background:#eff6ff;border:1px solid #bfdbfe;color:#2563eb;');
+    // 有图常驻显示(opacity:1)，没图hover显示(opacity:0)
+    var baseOpacity = hasImg ? '1' : '0';
+    cam.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:4px;cursor:pointer;margin-right:4px;opacity:' + baseOpacity + ';transition:opacity .15s;vertical-align:middle;position:relative;flex-shrink:0;' + (hasImg ? 'background:#2563eb;border:1px solid #1d4ed8;color:#fff;' : 'background:#eff6ff;border:1px solid #bfdbfe;color:#2563eb;');
     cam.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>';
     if (hasImg) {
         var badge = document.createElement('span');
@@ -5023,16 +5082,12 @@ async function zbInjectCamIcon(td, row, linkIcon) {
         }
     };
     var tr = td.closest('tr');
-    if (tr) {
+    if (tr && !hasImg) {
         tr.addEventListener('mouseenter', function(){ cam.style.opacity='1'; });
         tr.addEventListener('mouseleave', function(){ cam.style.opacity='0'; });
     }
-    // 插到链接图标左边（或追加到td末尾）
-    if (linkIcon && linkIcon.parentNode === td) {
-        td.insertBefore(cam, linkIcon);
-    } else {
-        td.appendChild(cam);
-    }
+    // 📷图标插到质检码文字左边（插到td最前面）
+    td.insertBefore(cam, td.firstChild);
 }
 
 // 图片面板（有图时展示缩略图+追加按钮）
@@ -5144,6 +5199,118 @@ function zbShowImgPanel(cam, row, urls) {
 }
 
 // 触发文件上传（无图时直接弹面板）
+
+// ── 备注列渲染 ──────────────────────────────
+function zbRenderNoteCell(td, row) {
+    td.innerHTML = '';
+    zbGetRowNote(row).then(function(note) {
+        var noteSpan = document.createElement('span');
+        noteSpan.style.cssText = 'font-size:11px;color:#475569;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:inline-block;vertical-align:middle;';
+        if (note) {
+            noteSpan.textContent = note;
+            noteSpan.title = note;
+        } else {
+            noteSpan.style.color = '#cbd5e1';
+            noteSpan.style.fontStyle = 'italic';
+            noteSpan.textContent = '暂无备注';
+        }
+        td.appendChild(noteSpan);
+        var editIcon = document.createElement('span');
+        editIcon.style.cssText = 'display:inline-flex;width:14px;height:14px;align-items:center;justify-content:center;color:#94a3b8;cursor:pointer;opacity:0;vertical-align:middle;margin-left:3px;transition:opacity .15s;flex-shrink:0;';
+        editIcon.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+        editIcon.title = '编辑备注';
+        editIcon.onclick = function(e) {
+            e.stopPropagation();
+            zbShowNotePanel(editIcon, row, note, function(newNote) {
+                zbRenderNoteCell(td, row);
+            });
+        };
+        var tr = td.closest('tr');
+        if (tr) {
+            tr.addEventListener('mouseenter', function(){ editIcon.style.opacity='1'; });
+            tr.addEventListener('mouseleave', function(){ editIcon.style.opacity='0'; });
+        }
+        td.appendChild(editIcon);
+    });
+}
+
+function zbShowNotePanel(anchor, row, currentNote, onSaved) {
+    var existing = document.getElementById('zbNotePanel');
+    if (existing) existing.remove();
+    var panel = document.createElement('div');
+    panel.id = 'zbNotePanel';
+    var rect = anchor.getBoundingClientRect();
+    panel.style.cssText = 'position:fixed;z-index:9999;background:#fff;border:0.5px solid #bfdbfe;border-radius:10px;box-shadow:0 2px 16px rgba(0,0,0,0.1);padding:12px;width:220px;';
+    panel.style.top  = (rect.bottom + 6) + 'px';
+    panel.style.left = Math.max(8, rect.left - 100) + 'px';
+
+    var header = document.createElement('div');
+    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;';
+    var title = document.createElement('span');
+    title.style.cssText = 'font-size:11px;font-weight:500;color:#1e3a8a;';
+    title.textContent = '编辑备注';
+    var closeBtn = document.createElement('span');
+    closeBtn.style.cssText = 'font-size:14px;color:#94a3b8;cursor:pointer;line-height:1;';
+    closeBtn.textContent = '×';
+    closeBtn.onclick = function(){ panel.remove(); };
+    header.appendChild(title);
+    header.appendChild(closeBtn);
+    panel.appendChild(header);
+
+    var textarea = document.createElement('textarea');
+    textarea.value = currentNote || '';
+    textarea.placeholder = '输入备注内容…';
+    textarea.maxLength = 200;
+    textarea.style.cssText = 'width:100%;height:72px;border:0.5px solid #bfdbfe;border-radius:6px;padding:7px 8px;font-size:11px;color:#475569;resize:none;outline:none;background:#f8faff;line-height:1.5;box-sizing:border-box;font-family:inherit;';
+    textarea.addEventListener('focus', function(){ this.style.borderColor='#2563eb'; this.style.background='#fff'; });
+    textarea.addEventListener('blur', function(){ this.style.borderColor='#bfdbfe'; this.style.background='#f8faff'; });
+    panel.appendChild(textarea);
+
+    var hint = document.createElement('div');
+    hint.style.cssText = 'font-size:9px;color:#94a3b8;text-align:right;margin:3px 0 8px;';
+    hint.textContent = '最多 200 字';
+    panel.appendChild(hint);
+
+    var btnRow = document.createElement('div');
+    btnRow.style.cssText = 'display:flex;gap:6px;justify-content:flex-end;';
+    var cancelBtn = document.createElement('span');
+    cancelBtn.style.cssText = 'font-size:10px;padding:4px 10px;border-radius:5px;border:0.5px solid #e2e8f0;background:#fff;color:#64748b;cursor:pointer;';
+    cancelBtn.textContent = '取消';
+    cancelBtn.onclick = function(){ panel.remove(); };
+    var saveBtn = document.createElement('span');
+    saveBtn.style.cssText = 'font-size:10px;padding:4px 10px;border-radius:5px;background:#2563eb;color:#fff;cursor:pointer;';
+    saveBtn.textContent = '保存';
+    saveBtn.onclick = async function() {
+        var newNote = textarea.value.trim();
+        saveBtn.textContent = '保存中…';
+        saveBtn.style.opacity = '0.6';
+        try {
+            await zbSaveRowNote(row, newNote);
+            panel.remove();
+            if (onSaved) onSaved(newNote);
+            showToast('✅ 备注已保存');
+        } catch(err) {
+            saveBtn.textContent = '保存';
+            saveBtn.style.opacity = '1';
+            showToast('❌ 保存失败：' + err.message);
+        }
+    };
+    btnRow.appendChild(cancelBtn);
+    btnRow.appendChild(saveBtn);
+    panel.appendChild(btnRow);
+
+    document.body.appendChild(panel);
+    textarea.focus();
+    setTimeout(function(){
+        document.addEventListener('click', function handler(e){
+            if (!panel.contains(e.target) && e.target !== anchor) {
+                panel.remove();
+                document.removeEventListener('click', handler);
+            }
+        });
+    }, 50);
+}
+
 function zbTriggerUpload(cam, row) {
     zbShowImgPanel(cam, row, []);
 }
