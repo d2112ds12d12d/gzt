@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.47A</title>
+    <title>培训部数据看板 v1.48</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -272,6 +272,11 @@
         .rank-col-box:hover { box-shadow: 0 4px 16px rgba(100,120,180,0.12); }
         ::-webkit-scrollbar { width: 4px; height: 4px; } ::-webkit-scrollbar-track { background: transparent; } ::-webkit-scrollbar-thumb { background: transparent; border-radius: 4px; transition: background .2s; } *:hover::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.5); } ::-webkit-scrollbar-thumb:hover { background: rgba(148,163,184,0.8) !important; }
         @keyframes zbSpin { to { transform: rotate(360deg); } }
+        @keyframes zbBtnPop { 0%{transform:scale(.7);opacity:0} 60%{transform:scale(1.15)} 100%{transform:scale(1);opacity:1} }
+        #zbSidebarActionRow button:hover { background: var(--sidebar-active-bg); color: var(--sidebar-active-color); }
+        #zbRefreshBtn.zb-loading { color:#2563eb; background:var(--sidebar-active-bg); pointer-events:none; }
+        #zbRefreshBtn.zb-ok  { color:#15803d; background:#f0fdf4; }
+        #zbRefreshBtn.zb-err { color:#dc2626; background:#fef2f2; }
 
         /* ── 周度趋势模块 ── */
         .wt-toolbar {
@@ -739,6 +744,19 @@
     <div class="zb-nav-item" onclick="zbOpenLog()" style="cursor:pointer;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> 日志</div>
     <div class="zb-nav-item" id="zb-nav-settings" onclick="zbOpenSettings()" style="cursor:pointer;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> 设置</div>
     <div class="zb-sidebar-footer" id="zbSidebarFooter">
+      <!-- 操作图标行：刷新 / 上传（仅管理员）/ 导出 -->
+      <div id="zbSidebarActionRow" style="display:flex;align-items:center;gap:2px;padding:10px 10px 4px;">
+        <button id="zbRefreshBtn" onclick="zbRefreshCloudManual()" title="刷新数据" aria-label="刷新数据" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:7px;border:none;background:transparent;color:var(--sidebar-item);cursor:pointer;transition:background .15s,color .15s;flex-shrink:0;">
+          <svg id="zbRefreshIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
+        </button>
+        <button id="zbUploadBtnLabel" onclick="zbOpenUpload()" title="上传数据" aria-label="上传数据" style="display:none;align-items:center;justify-content:center;width:28px;height:28px;border-radius:7px;border:none;background:transparent;color:var(--sidebar-item);cursor:pointer;transition:background .15s,color .15s;flex-shrink:0;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        </button>
+        <button id="zbExportSideBtn" onclick="zbOpenExportPanel()" title="导出数据" aria-label="导出数据" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:7px;border:none;background:transparent;color:var(--sidebar-item);cursor:pointer;transition:background .15s,color .15s;flex-shrink:0;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </button>
+        <span id="zbRefreshHint" style="font-size:10px;color:var(--sidebar-lbl);margin-left:3px;display:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;"></span>
+      </div>
       <!-- 已登录：显示用户信息（管理员） -->
       <div id="zbUserBlock" class="zb-user-block" style="display:none;" onclick="zbSidebarUserClick()">
         <div id="zbSidebarAvatar" class="zb-avatar viewer">
@@ -751,7 +769,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.47A</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.48</div>
     </div>
   </nav>
 
@@ -797,16 +815,6 @@
                 </div>
                 <!-- 精简按钮组 -->
                 <div class="right-buttons" style="display:flex;align-items:center;gap:6px;">
-                    <div onclick="zbRefreshCloudManual()" id="zbRefreshBtn" style="display:flex;align-items:center;gap:5px;font-size:11px;padding:5px 12px;border-radius:20px;border:1px solid rgba(200,210,230,0.7);background:rgba(255,255,255,0.5);color:#64748b;cursor:pointer;transition:all .15s;white-space:nowrap;" onmouseover="this.style.background='rgba(37,99,235,0.06)';this.style.color='#2563eb';this.style.borderColor='rgba(37,99,235,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.5)';this.style.color='#64748b';this.style.borderColor='rgba(200,210,230,0.7)'">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>刷新
-                    </div>
-                    <div id="zbUploadBtnLabel" onclick="zbOpenUpload()" style="display:flex;align-items:center;gap:5px;font-size:11px;padding:5px 12px;border-radius:20px;border:1px solid rgba(37,99,235,0.4);background:rgba(37,99,235,0.06);color:#2563eb;cursor:pointer;transition:all .15s;white-space:nowrap;" onmouseover="this.style.background='#2563eb';this.style.color='#fff'" onmouseout="this.style.background='rgba(37,99,235,0.06)';this.style.color='#2563eb'">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>上传
-                    </div>
-                    <div onclick="zbOpenExportPanel()" id="exportDataBtn" style="display:flex;align-items:center;gap:5px;font-size:11px;padding:5px 12px;border-radius:20px;border:1px solid rgba(200,210,230,0.7);background:rgba(255,255,255,0.5);color:#64748b;cursor:pointer;transition:all .15s;white-space:nowrap;" onmouseover="this.style.background='rgba(37,99,235,0.06)';this.style.color='#2563eb';this.style.borderColor='rgba(37,99,235,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.5)';this.style.color='#64748b';this.style.borderColor='rgba(200,210,230,0.7)'">
-                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>导出
-                    </div>
-                    <span id="zbRefreshHint" style="font-size:10px;color:var(--text-secondary);opacity:0.7;display:none;"></span>
                     <span id="zbCloudStatus" style="display:none;"></span>
                     <button id="themeToggleBtn" style="display:none;">🌙 夜间模式</button>
                 </div>
@@ -5504,9 +5512,9 @@ document.addEventListener('keydown', function(e){
 function zbUpdateRoleBadge() {
     var canEdit = (zbRole === 'admin');
 
-    // ── 上传按钮：仅管理员可见 ──
+    // ── 上传按钮：仅管理员可见（侧边栏图标行）──
     var uploadBtn = document.getElementById('zbUploadBtnLabel');
-    if (uploadBtn) uploadBtn.style.display = canEdit ? '' : 'none';
+    if (uploadBtn) uploadBtn.style.display = canEdit ? 'inline-flex' : 'none';
 
     // ── 日志、设置侧边栏入口 ──
     var logNav     = document.querySelector('[onclick*="zbOpenLog"]');
@@ -9732,53 +9740,71 @@ function zbSetCloudStatus(status) {
 
 // ── 手动刷新按钮 ──
 async function zbRefreshCloudManual() {
-  var btn = document.getElementById('zbRefreshBtn');
-  if (btn) {
-    btn.disabled = true;
-    btn.style.opacity = '0.6';
-    btn.style.cursor = 'not-allowed';
-    btn.innerHTML = '<span style="display:inline-block;animation:zbSpin 0.8s linear infinite;">🔄</span>&nbsp;加载中…';
-  }
+  var btn  = document.getElementById('zbRefreshBtn');
+  var icon = document.getElementById('zbRefreshIcon');
+  var hint = document.getElementById('zbRefreshHint');
+  if (btn && btn.classList.contains('zb-loading')) return; // 防重复点击
+
+  // ── 加载中状态 ──
+  if (btn)  { btn.classList.remove('zb-ok','zb-err'); btn.classList.add('zb-loading'); btn.disabled = true; }
+  if (icon) { icon.style.animation = 'zbSpin .7s linear infinite'; }
+  if (hint) { hint.style.display = ''; hint.style.color = '#2563eb'; hint.textContent = '加载中…'; }
   zbSetCloudStatus('loading');
 
-  // 注入旋转动画（仅首次）
-  if (!document.getElementById('zbSpinStyle')) {
-    var s = document.createElement('style');
-    s.id = 'zbSpinStyle';
-    s.textContent = '@keyframes zbSpin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}';
-    document.head.appendChild(s);
-  }
+  var startTime = Date.now();
+  try {
+    await zbLoadCloudData(false);
+    zbSetCloudStatus('ok');
 
-    var startTime = Date.now();
-    try {
-        await zbLoadCloudData(false);  // 走 raw CDN + 时间戳绕缓存，比 API 更快
-        var elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-        zbSetCloudStatus('ok');
-        // 更新刷新提示
-        var hint = document.getElementById('zbRefreshHint');
-        if (hint) {
-            var now = new Date();
-            var timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-            // 找最新数据日期
-            var latestDate = '';
-            if (window._allDiffData && window._allDiffData.length) {
-                var dates = window._allDiffData.map(function(d){ return (d.date||'').split(' ')[0]; }).filter(Boolean).sort();
-                latestDate = dates[dates.length-1] || '';
-            }
-            hint.textContent = '上次刷新 ' + timeStr + (latestDate ? ' · 数据至 ' + latestDate : '');
-            hint.style.display = '';
-        }
-        _zbShowRefreshResult(true, elapsed);
-    } catch(e) {
-        zbSetCloudStatus('err');
-        _zbShowRefreshResult(false, null);
-    } finally {
-    if (btn) {
-      btn.disabled = false;
-      btn.style.opacity = '1';
-      btn.style.cursor = 'pointer';
-      btn.innerHTML = '🔄 刷新云端';
+    // 计算时间戳和最新数据日期
+    var now = new Date();
+    var timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
+    var latestDate = '';
+    if (window._allDiffData && window._allDiffData.length) {
+      var dates = window._allDiffData.map(function(d){ return (d.date||'').split(' ')[0]; }).filter(Boolean).sort();
+      latestDate = dates[dates.length-1] || '';
     }
+    // 日期只显示 MM-DD 更简洁
+    var dateShort = latestDate ? latestDate.slice(5) : '';
+
+    // ── 成功状态：打勾图标 ──
+    if (btn)  { btn.classList.remove('zb-loading'); btn.classList.add('zb-ok'); btn.disabled = false; }
+    if (icon) {
+      icon.style.animation = 'zbBtnPop .3s ease';
+      icon.innerHTML = '<polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/>';
+    }
+    if (hint) { hint.style.color = '#15803d'; hint.textContent = timeStr + (dateShort ? ' · ' + dateShort : ''); }
+
+    // 2s 后复原
+    setTimeout(function() {
+      if (btn)  { btn.classList.remove('zb-ok'); }
+      if (icon) {
+        icon.style.animation = '';
+        icon.innerHTML = '<polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/>';
+      }
+      if (hint) { hint.style.color = 'var(--sidebar-lbl)'; }
+    }, 2000);
+
+  } catch(e) {
+    zbSetCloudStatus('err');
+
+    // ── 失败状态：叉图标 ──
+    if (btn)  { btn.classList.remove('zb-loading'); btn.classList.add('zb-err'); btn.disabled = false; }
+    if (icon) {
+      icon.style.animation = 'zbBtnPop .3s ease';
+      icon.innerHTML = '<line x1="18" y1="6" x2="6" y2="18" stroke-linecap="round"/><line x1="6" y1="6" x2="18" y2="18" stroke-linecap="round"/>';
+    }
+    if (hint) { hint.style.color = '#dc2626'; hint.textContent = '失败，请重试'; }
+
+    // 3s 后复原
+    setTimeout(function() {
+      if (btn)  { btn.classList.remove('zb-err'); }
+      if (icon) {
+        icon.style.animation = '';
+        icon.innerHTML = '<polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/>';
+      }
+      if (hint) { hint.style.color = 'var(--sidebar-lbl)'; }
+    }, 3000);
   }
 }
 
