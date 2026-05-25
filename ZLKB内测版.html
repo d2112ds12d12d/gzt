@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.45D</title>
+    <title>培训部数据看板 v1.45E</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -751,7 +751,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.45D</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.45E</div>
     </div>
   </nav>
 
@@ -1132,9 +1132,9 @@
                     </div>
                   </div>
                   <!-- 单图+右侧摘要（可折叠） -->
-                  <div id="zbIssueChartWrap" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;height:360px;margin-bottom:12px;align-items:center;overflow:hidden;transition:max-height .3s ease,opacity .25s ease,margin .3s ease;">
-                    <div id="zbIssueChartLeft" style="width:100%;height:360px;"></div>
-                    <div id="zbIssueChartRight" style="height:360px;overflow-y:auto;padding:8px 0 8px 16px;border-left:0.5px solid var(--border-color);display:flex;flex-direction:column;justify-content:center;"></div>
+                  <div id="zbIssueChartWrap" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;height:420px;margin-bottom:12px;align-items:center;overflow:visible;transition:max-height .3s ease,opacity .25s ease,margin .3s ease;">
+                    <div id="zbIssueChartLeft" style="width:100%;height:420px;"></div>
+                    <div id="zbIssueChartRight" style="height:420px;overflow-y:auto;padding:8px 0 8px 16px;border-left:0.5px solid var(--border-color);display:flex;flex-direction:column;justify-content:center;"></div>
                   </div>
                   <div id="site-issue-analysis-root">
                     <div style="text-align:center;padding:24px;color:var(--text-secondary);font-size:13px;">点击排行榜站点后自动显示</div>
@@ -4827,7 +4827,7 @@ function zbGetToken() {
 }
 
 // ══════════════════════════════════════════
-// 图片功能模块 v1.45D
+// 图片功能模块 v1.45E
 // 云函数签发临时密钥 → 压缩 → 上传COS → 存image_links.json
 // ══════════════════════════════════════════
 const ZB_IMG = {
@@ -6914,7 +6914,7 @@ function zbRenderSitePersonList() {
                 + '<span id="zbPersonCollapseIcon" style="font-size:10px;transition:transform .2s;transform:'+(isPersonOpen?'':'rotate(180deg)')+';">▲</span>'
                 + '<span id="zbPersonCollapseText">'+(isPersonOpen?'收起':'展开')+'</span></div>'
                 + '</div>'
-                + '<div id="zbPersonBarInner" style="overflow:hidden;transition:max-height .3s ease,opacity .25s ease;max-height:'+(isPersonOpen?personChartH+40+'px':'0px')+';opacity:'+(isPersonOpen?'1':'0')+';pointer-events:'+(isPersonOpen?'':'none')+';">'
+                + '<div id="zbPersonBarInner" style="overflow:visible;transition:max-height .3s ease,opacity .25s ease;max-height:'+(isPersonOpen?personChartH+80+'px':'0px')+';opacity:'+(isPersonOpen?'1':'0')+';pointer-events:'+(isPersonOpen?'':'none')+';">'
                 + '<div id="zbPersonBarChart" style="width:100%;height:'+personChartH+'px;"></div>'
                 + '</div>';
             setTimeout(function() {
