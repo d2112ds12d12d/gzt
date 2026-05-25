@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.45</title>
+    <title>培训部数据看板 v1.45A</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -717,6 +717,7 @@
             transition: transform 0.1s ease;
         }
         </style>
+    <script src="https://cdn.jsdelivr.net/npm/cos-js-sdk-v5/dist/cos-js-sdk-v5.min.js"></script>
 </head>
 <body>
 <div id="zb-layout">
@@ -750,7 +751,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.45</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.45A</div>
     </div>
   </nav>
 
@@ -4814,7 +4815,7 @@ function zbGetToken() {
 }
 
 // ══════════════════════════════════════════
-// 图片功能模块 v1.45
+// 图片功能模块 v1.45A
 // 云函数签发临时密钥 → 压缩 → 上传COS → 存image_links.json
 // ══════════════════════════════════════════
 const ZB_IMG = {
@@ -4884,33 +4885,30 @@ async function zbUploadToCos(file, imgKey) {
     var ext  = (file.name.match(/\.[^.]+$/) || ['.jpg'])[0].toLowerCase();
     var fileName = imgKey.replace(/[|\/\\:*?"<>]/g, '_') + '_' + Date.now() + ext;
     var cosKey = 'qc-images/' + fileName;
-    var url = 'https://' + ZB_IMG.bucket + '.cos.' + ZB_IMG.region + '.myqcloud.com/' + cosKey;
-    var date = new Date().toUTCString();
-    var strToSign = 'PUT\n\n' + blob.type + '\n' + date + '\nx-cos-security-token:' + sts.sessionToken + '\n/' + ZB_IMG.bucket + '/' + cosKey;
-    // 使用SubResource签名方式（简化版，依赖临时密钥）
-    var putRes = await fetch(url, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': blob.type,
-            'x-cos-security-token': sts.sessionToken,
-            'Authorization': await zbCosSign(sts, 'PUT', cosKey, blob.type, date)
-        },
-        body: blob
+    return new Promise(function(resolve, reject) {
+        if (!window.COS) { reject(new Error('COS SDK未加载')); return; }
+        var cos = new window.COS({
+            getAuthorization: function(options, callback) {
+                callback({
+                    TmpSecretId:   sts.tmpSecretId,
+                    TmpSecretKey:  sts.tmpSecretKey,
+                    SecurityToken: sts.sessionToken,
+                    ExpiredTime:   sts.expiredTime,
+                    StartTime:     sts.startTime
+                });
+            }
+        });
+        cos.uploadFile({
+            Bucket: ZB_IMG.bucket,
+            Region: ZB_IMG.region,
+            Key:    cosKey,
+            Body:   blob,
+            onProgress: function() {}
+        }, function(err, data) {
+            if (err) { reject(new Error('上传COS失败: ' + (err.message || err.statusCode || JSON.stringify(err)))); return; }
+            resolve(ZB_IMG.cosBase + '/' + cosKey);
+        });
     });
-    if (!putRes.ok) throw new Error('上传COS失败: ' + putRes.status);
-    return ZB_IMG.cosBase + '/' + cosKey;
-}
-
-// COS HMAC-SHA1签名（临时密钥版）
-async function zbCosSign(sts, method, cosKey, contentType, date) {
-    var strToSign = method + '\n\n' + contentType + '\n' + date + '\n' + 'x-cos-security-token:' + sts.sessionToken + '\n/' + ZB_IMG.bucket + '/' + cosKey;
-    var encoder = new TextEncoder();
-    var keyData = encoder.encode(sts.tmpSecretKey);
-    var msgData = encoder.encode(strToSign);
-    var cryptoKey = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']);
-    var sigBuffer = await crypto.subtle.sign('HMAC', cryptoKey, msgData);
-    var sigBase64 = btoa(String.fromCharCode(...new Uint8Array(sigBuffer)));
-    return 'q-sign-algorithm=sha1&q-ak=' + sts.tmpSecretId + '&q-sign-time=' + sts.startTime + ';' + sts.expiredTime + '&q-key-time=' + sts.startTime + ';' + sts.expiredTime + '&q-header-list=content-type;x-cos-security-token&q-url-param-list=&q-signature=' + sigBase64;
 }
 
 // image_links.json 内存缓存
@@ -5038,37 +5036,105 @@ async function zbInjectCamIcon(td, row, linkIcon) {
 }
 
 // 图片面板（有图时展示缩略图+追加按钮）
+// 上传多文件核心逻辑
+async function zbDoUploadFiles(files, cam, row, panel) {
+    if (!files.length) return;
+    var key = zbImgKey(row);
+    if (panel) { panel.remove(); }
+    showToast('⏳ 上传中，请稍候…');
+    try {
+        for (var i = 0; i < files.length; i++) {
+            var url = await zbUploadToCos(files[i], key);
+            await zbAddRowImage(row, url);
+        }
+        showToast('✅ 上传成功，共' + files.length + '张');
+        zbRefreshCamIcon(cam, row);
+    } catch(err) {
+        console.error('图片上传失败', err);
+        showToast('❌ 上传失败：' + err.message);
+    }
+}
+
+// 创建拖拽上传区域
+function zbMakeDropZone(cam, row, panel) {
+    var zone = document.createElement('div');
+    zone.style.cssText = 'border:1.5px dashed #bfdbfe;border-radius:8px;padding:14px 10px;text-align:center;background:#f8faff;cursor:pointer;transition:background .15s;margin-bottom:8px;';
+    zone.innerHTML = '<div style="font-size:10px;color:#64748b;line-height:1.6">拖拽图片到此处<br><span style="color:#94a3b8;font-size:9px">支持 JPG、PNG，自动压缩至 400KB</span></div>';
+    zone.ondragover = function(e){ e.preventDefault(); zone.style.background='#eff6ff'; };
+    zone.ondragleave = function(){ zone.style.background='#f8faff'; };
+    zone.ondrop = function(e){
+        e.preventDefault();
+        zone.style.background='#f8faff';
+        var files = Array.from(e.dataTransfer.files).filter(function(f){ return f.type.startsWith('image/'); });
+        if (files.length) zbDoUploadFiles(files, cam, row, panel);
+    };
+    zone.onclick = function(){
+        var input = document.createElement('input');
+        input.type='file'; input.accept='image/*'; input.multiple=true;
+        input.onchange = function(){ zbDoUploadFiles(Array.from(input.files), cam, row, panel); };
+        input.click();
+    };
+    return zone;
+}
+
 function zbShowImgPanel(cam, row, urls) {
     var existing = document.getElementById('zbImgPanel');
     if (existing) existing.remove();
     var panel = document.createElement('div');
     panel.id = 'zbImgPanel';
     var rect = cam.getBoundingClientRect();
-    panel.style.cssText = 'position:fixed;z-index:9999;background:#fff;border:0.5px solid #bfdbfe;border-radius:10px;box-shadow:0 4px 20px rgba(0,0,0,0.12);padding:10px 12px;min-width:200px;';
+    panel.style.cssText = 'position:fixed;z-index:9999;background:#fff;border:0.5px solid #bfdbfe;border-radius:10px;box-shadow:0 2px 16px rgba(0,0,0,0.1);padding:12px;width:220px;';
     panel.style.top  = (rect.bottom + 6) + 'px';
-    panel.style.left = Math.max(8, rect.left - 80) + 'px';
+    panel.style.left = Math.max(8, rect.left - 90) + 'px';
+
+    // 标题栏
     var header = document.createElement('div');
-    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;';
+    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;';
     var title = document.createElement('span');
     title.style.cssText = 'font-size:11px;font-weight:500;color:#1e3a8a;';
-    title.textContent = '已上传 ' + urls.length + ' 张';
-    var addBtn = document.createElement('span');
-    addBtn.style.cssText = 'font-size:10px;padding:2px 8px;border-radius:4px;background:#eff6ff;border:0.5px solid #bfdbfe;color:#2563eb;cursor:pointer;';
-    addBtn.textContent = '+ 追加';
-    addBtn.onclick = function(){ panel.remove(); zbTriggerUpload(cam, row); };
+    title.textContent = urls.length > 0 ? '已上传 ' + urls.length + ' 张' : '上传图片';
+    var closeBtn = document.createElement('span');
+    closeBtn.style.cssText = 'font-size:14px;color:#94a3b8;cursor:pointer;line-height:1;padding:0 2px;';
+    closeBtn.textContent = '×';
+    closeBtn.onclick = function(){ panel.remove(); };
     header.appendChild(title);
-    header.appendChild(addBtn);
+    header.appendChild(closeBtn);
     panel.appendChild(header);
-    var thumbRow = document.createElement('div');
-    thumbRow.style.cssText = 'display:flex;gap:6px;flex-wrap:wrap;';
-    urls.forEach(function(url, i) {
-        var thumb = document.createElement('img');
-        thumb.src = url;
-        thumb.style.cssText = 'width:48px;height:48px;object-fit:cover;border-radius:4px;border:0.5px solid #bfdbfe;cursor:pointer;';
-        thumb.onclick = function(){ panel.remove(); zbShowImagePreview(urls, i); };
-        thumbRow.appendChild(thumb);
-    });
-    panel.appendChild(thumbRow);
+
+    // 已有图片缩略图
+    if (urls.length > 0) {
+        var thumbWrap = document.createElement('div');
+        thumbWrap.style.cssText = 'display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px;';
+        urls.forEach(function(url, i) {
+            var thumb = document.createElement('img');
+            thumb.src = url;
+            thumb.style.cssText = 'width:44px;height:44px;object-fit:cover;border-radius:4px;border:0.5px solid #bfdbfe;cursor:pointer;';
+            thumb.onclick = function(){ panel.remove(); zbShowImagePreview(urls, i); };
+            thumbWrap.appendChild(thumb);
+        });
+        panel.appendChild(thumbWrap);
+        // 分隔线
+        var sep = document.createElement('div');
+        sep.style.cssText = 'font-size:10px;color:#94a3b8;text-align:center;margin-bottom:8px;display:flex;align-items:center;gap:6px;';
+        sep.innerHTML = '<span style="flex:1;height:0.5px;background:#e2e8f0;display:block"></span>追加上传<span style="flex:1;height:0.5px;background:#e2e8f0;display:block"></span>';
+        panel.appendChild(sep);
+    }
+
+    // 拖拽上传区域
+    panel.appendChild(zbMakeDropZone(cam, row, panel));
+
+    // 点击选图按钮
+    var selBtn = document.createElement('div');
+    selBtn.style.cssText = 'text-align:center;padding:5px;border-radius:6px;background:#eff6ff;border:0.5px solid #bfdbfe;color:#2563eb;font-size:11px;cursor:pointer;';
+    selBtn.textContent = '点击选择图片';
+    selBtn.onclick = function(){
+        var input = document.createElement('input');
+        input.type='file'; input.accept='image/*'; input.multiple=true;
+        input.onchange = function(){ zbDoUploadFiles(Array.from(input.files), cam, row, panel); };
+        input.click();
+    };
+    panel.appendChild(selBtn);
+
     document.body.appendChild(panel);
     setTimeout(function(){
         document.addEventListener('click', function handler(e){
@@ -5077,30 +5143,9 @@ function zbShowImgPanel(cam, row, urls) {
     }, 50);
 }
 
-// 触发文件上传
+// 触发文件上传（无图时直接弹面板）
 function zbTriggerUpload(cam, row) {
-    var input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.multiple = true;
-    input.onchange = async function() {
-        var files = Array.from(input.files);
-        if (!files.length) return;
-        var key = zbImgKey(row);
-        showToast('⏳ 上传中，请稍候…');
-        try {
-            for (var i = 0; i < files.length; i++) {
-                var url = await zbUploadToCos(files[i], key);
-                await zbAddRowImage(row, url);
-            }
-            showToast('✅ 上传成功，共' + files.length + '张');
-            zbRefreshCamIcon(cam, row);
-        } catch(err) {
-            console.error('图片上传失败', err);
-            showToast('❌ 上传失败：' + err.message);
-        }
-    };
-    input.click();
+    zbShowImgPanel(cam, row, []);
 }
 
 // 刷新📷图标状态
