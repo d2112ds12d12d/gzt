@@ -1,6 +1,16 @@
 {
   "tasks": [
     {
+      "id": "mpl0z3ct3uc",
+      "title": "更新新人表",
+      "tag": null,
+      "date": "05/25",
+      "done": false,
+      "status": "todo",
+      "priority": "normal",
+      "created": 1779702595517
+    },
+    {
       "id": "mpkkqnxpy1p",
       "title": "手机品类有效 VS 现象值差异盘点",
       "tag": null,
@@ -59,7 +69,8 @@
       "status": "todo",
       "priority": "normal",
       "created": 1779416597858,
-      "parentId": "mpfdzjqbg7p"
+      "parentId": "mpfdzjqbg7p",
+      "pinned": true
     },
     {
       "id": "mpfdzjqbg7p",
@@ -226,7 +237,7 @@
       "priority": "normal",
       "created": 1779189919797,
       "parentId": "mpc1csbio5h",
-      "pinned": true
+      "pinned": false
     },
     {
       "id": "mpcj8q77q7v",
