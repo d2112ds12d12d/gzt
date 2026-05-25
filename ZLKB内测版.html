@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.44AG</title>
+    <title>培训部数据看板 v1.44AH</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -750,7 +750,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44AG</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44AH</div>
     </div>
   </nav>
 
@@ -5847,7 +5847,7 @@ function zbRenderSiteDetail(siteName) {
                         if(!chks) return null;
                         return parseFloat((diffs.size/chks*100).toFixed(2));
                     });
-                    return { name:c, type:'line', data:data, _diffCnt:_diffCntD, _chks:_chksD, smooth:false, connectNulls:false, symbol:'circle', symbolSize:xDates.length>100?3:6, lineStyle:{color:col4,width:2}, itemStyle:{color:col4}, label:{show:xDates.length<=20,position:'top',color:col4,fontSize:9,formatter:function(p){return p.value===null?'':p.value+'%';}} };
+                    return { name:c, type:'line', data:data, _diffCnt:_diffCntD, _chks:_chksD, smooth:false, connectNulls:false, symbol:'circle', symbolSize:xDates.length>100?3:6, lineStyle:{color:col4,width:2}, itemStyle:{color:col4}, label:{show:xDates.length<=60,position:'top',color:col4,fontSize:9,formatter:function(p){return p.value===null?'':p.value+'%';}} };
                 });
 
                 _siteChart_trend.setOption({
@@ -5891,22 +5891,31 @@ function zbRenderSiteDetail(siteName) {
                 }
                 var wk = weeks4c[params.dataIndex];
                 if (!wk) return;
-                var filtered = siteDiff.filter(function(d){ var dt=(d.date||'').split(' ')[0]; return dt>=wk.start&&dt<=wk.end; });
-                if (typeof openDetailWithData === 'function') openDetailWithData(filtered, '📅 ' + siteName + ' · ' + wk.start + '—' + wk.end + ' 客观执行（' + filtered.length + '条）', false);
+                var _clickCat4w = params.seriesName;
+                var _clickBase4w = _filterExecDiffByCat4(execDiff4, _clickCat4w);
+                var filtered = _clickBase4w.filter(function(d){ var dt=(d.date||'').split(' ')[0]; return dt>=wk.start&&dt<=wk.end; });
+                var _scopeLabel4c = window.zbGetScopeLabel ? window.zbGetScopeLabel(window._siteDataScope) : '客观执行';
+                if (typeof openDetailWithData === 'function') openDetailWithData(filtered, '📅 ' + siteName + ' · ' + wk.start + '—' + wk.end + ' ' + _scopeLabel4c + '（' + filtered.length + '条）', false);
             } else if (trendRange === '1y') {
                 // 近一年：点节点跳该月差异列表
                 var months12c = window._trend1yMonths || [];
                 var ym = months12c[params.dataIndex];
                 if (!ym) return;
-                var filtered = siteDiff.filter(function(d){ return d.date && d.date.slice(0,7)===ym; });
-                if (typeof openDetailWithData === 'function') openDetailWithData(filtered, '📅 ' + siteName + ' · ' + ym + ' 客观执行（' + filtered.length + '条）', false);
+                var _clickCat1y = params.seriesName;
+                var _clickBase1y = _filterExecDiffByCat4(execDiff4, _clickCat1y);
+                var filtered = _clickBase1y.filter(function(d){ return d.date && d.date.slice(0,7)===ym; });
+                var _scopeLabel4y = window.zbGetScopeLabel ? window.zbGetScopeLabel(window._siteDataScope) : '客观执行';
+                if (typeof openDetailWithData === 'function') openDetailWithData(filtered, '📅 ' + siteName + ' · ' + ym + ' ' + _scopeLabel4y + '（' + filtered.length + '条）', false);
             } else {
                 // 日维度：跳当日差异列表
                 var xDatesAll = window._trendDayDates || [];
                 var date = xDatesAll[params.dataIndex];
                 if (!date) return;
-                var filtered = siteDiff.filter(function(d){ return d.date && d.date.split(' ')[0] === date; });
-                if (typeof openDetailWithData === 'function') openDetailWithData(filtered, '📅 ' + siteName + ' · ' + date + ' 客观执行（' + filtered.length + '条）', false);
+                var _clickCatD = params.seriesName;
+                var _clickBaseD = _filterExecDiffByCat4(execDiff4, _clickCatD);
+                var filtered = _clickBaseD.filter(function(d){ return d.date && d.date.split(' ')[0] === date; });
+                var _scopeLabel4d = window.zbGetScopeLabel ? window.zbGetScopeLabel(window._siteDataScope) : '客观执行';
+                if (typeof openDetailWithData === 'function') openDetailWithData(filtered, '📅 ' + siteName + ' · ' + date + ' ' + _scopeLabel4d + '（' + filtered.length + '条）', false);
             }
         });
     }
@@ -6581,6 +6590,7 @@ function zbRenderSiteIssueAnalysis(execDiff, rootEl) {
         if(page>totalPages) page=window._zbIssuePage=1;
         window._zbIssueTotalRows = rows.length;
         var sliced=rows.slice((page-1)*pageSize,page*pageSize);
+        rootEl.innerHTML = '<div style="overflow-x:auto;"><table class="rank-table" style="width:100%;table-layout:fixed;">'
             + '<thead><tr><th style="width:50px;">排名</th><th>质检项</th><th style="text-align:center;width:110px;">'+labelA+'</th><th style="text-align:center;color:#2563eb;width:110px;">'+labelB+'</th><th style="text-align:center;width:80px;">变化</th></tr></thead><tbody>'
             + sliced.map(function(r,idx){
                 var rank=(page-1)*pageSize+idx+1;
