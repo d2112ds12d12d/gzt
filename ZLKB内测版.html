@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.44AE</title>
+    <title>培训部数据看板 v1.44AF</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -750,7 +750,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44AE</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.44AF</div>
     </div>
   </nav>
 
@@ -802,7 +802,7 @@
                     <div id="zbUploadBtnLabel" onclick="zbOpenUpload()" style="display:flex;align-items:center;gap:5px;font-size:11px;padding:5px 12px;border-radius:20px;border:1px solid rgba(37,99,235,0.4);background:rgba(37,99,235,0.06);color:#2563eb;cursor:pointer;transition:all .15s;white-space:nowrap;" onmouseover="this.style.background='#2563eb';this.style.color='#fff'" onmouseout="this.style.background='rgba(37,99,235,0.06)';this.style.color='#2563eb'">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>上传
                     </div>
-                    <div onclick="if(typeof zbExportExcel==='function')zbExportExcel();" id="exportDataBtn" style="display:flex;align-items:center;gap:5px;font-size:11px;padding:5px 12px;border-radius:20px;border:1px solid rgba(200,210,230,0.7);background:rgba(255,255,255,0.5);color:#64748b;cursor:pointer;transition:all .15s;white-space:nowrap;" onmouseover="this.style.background='rgba(37,99,235,0.06)';this.style.color='#2563eb';this.style.borderColor='rgba(37,99,235,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.5)';this.style.color='#64748b';this.style.borderColor='rgba(200,210,230,0.7)'">
+                    <div onclick="zbOpenExportPanel()" id="exportDataBtn" style="display:flex;align-items:center;gap:5px;font-size:11px;padding:5px 12px;border-radius:20px;border:1px solid rgba(200,210,230,0.7);background:rgba(255,255,255,0.5);color:#64748b;cursor:pointer;transition:all .15s;white-space:nowrap;" onmouseover="this.style.background='rgba(37,99,235,0.06)';this.style.color='#2563eb';this.style.borderColor='rgba(37,99,235,0.3)'" onmouseout="this.style.background='rgba(255,255,255,0.5)';this.style.color='#64748b';this.style.borderColor='rgba(200,210,230,0.7)'">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>导出
                     </div>
                     <span id="zbRefreshHint" style="font-size:10px;color:var(--text-secondary);opacity:0.7;display:none;"></span>
@@ -2714,51 +2714,63 @@
                 navigator.clipboard.writeText(txt).then(function(){ showToast('✅ 已复制到剪贴板'); }).catch(function(){ showToast('复制失败，请手动复制'); });
             };
 
-            function exportToExcel() {
+            function exportToExcel(opts) {
+                opts = opts || {};
+                var filterCats  = opts.cats  || null;  // null=全部
+                var filterSites = opts.sites || null;  // null=全部
+                var filterStart = opts.dateStart || '';
+                var filterEnd   = opts.dateEnd   || '';
+                var filterKj    = opts.kj || '全部';
+
+                function inRange(date) {
+                    if (!date) return true;
+                    var d = (date||'').split(' ')[0];
+                    if (filterStart && d < filterStart) return false;
+                    if (filterEnd   && d > filterEnd)   return false;
+                    return true;
+                }
+                function matchCat(cat) { return !filterCats || filterCats.indexOf(cat) >= 0; }
+                function matchSite(site) { return !filterSites || filterSites.indexOf(site) >= 0; }
+                function matchKj(d) {
+                    if (filterKj === '全部') return true;
+                    if (filterKj === '客观执行') return d.category && d.category.includes('客观') && d.judgedIssueType && d.judgedIssueType.includes('执行');
+                    if (filterKj === '客观') return d.category && d.category.includes('客观');
+                    if (filterKj === '主观') return d.category && d.category.includes('主观');
+                    return true;
+                }
+
                 const wb = XLSX.utils.book_new();
 
-                // ── 表1：QA差异率（对齐公司 1_QA差异率_站点维度 格式）──
-                if (DATA.qa.length) {
+                // ── 表1：QA差异率 ──
+                var qaRows = DATA.qa.filter(function(r){ return inRange(r.date) && matchCat(r.cat||'') && matchSite(r.site||''); });
+                if (qaRows.length) {
                     const qaHeaders = ['抽检日期','站点名称','品类名称','大盘抽检设备数量'];
                     const qaData = [qaHeaders];
-                    DATA.qa.forEach(r => qaData.push([r.date||'', r.site||'', r.cat||'', r.checks||0]));
+                    qaRows.forEach(function(r){ qaData.push([r.date||'', r.site||'', r.cat||'', r.checks||0]); });
                     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(qaData), '1_QA差异率_站点维度');
                 }
 
-                // ── 表2：差异明细（对齐公司 5_日维度差异明细_站点维度 格式）──
-                if (!currentFilteredDiff.length) { showToast('差异明细暂无数据'); }
-                else {
+                // ── 表2：差异明细 ──
+                var diffRows = (window._allDiffData||[]).filter(function(d){
+                    return inRange(d.date) && matchCat(d.cat||'') && matchSite(d.warehouse||d.site||'') && matchKj(d);
+                });
+                if (diffRows.length) {
                     const diffHeaders = ['日期','质检码','站点名称','品类名称','型号名称','策略类别','一级项名称','二级项名称','原三级项名称','新三级项名称','原操作人名称','新操作人名称','主客观问题分类','问题类型','抽检判定的问题类型'];
                     const diffData2 = [diffHeaders];
-                    // currentFilteredDiff 是桥接后的数据，需要从 DATA.diff5 里找原始字段
-                    const diff5Map = new Map(DATA.diff5.map(r => [r.code, r]));
-                    currentFilteredDiff.forEach(d => {
-                        const orig = diff5Map.get(d.code) || {};
-                        diffData2.push([
-                            d.date||'',
-                            d.code||'',
-                            d.warehouse||'',
-                            orig.cat||'',
-                            orig.cat||'',          // 型号名称（原始数据里没有单独存，暂用品类占位）
-                            orig.strategy||'',
-                            d.level1||'',
-                            d.level2||'',
-                            orig.level3_orig||'',
-                            orig.level3_new||d.level3||'',
-                            d.person||'',
-                            d.qaInspector||'',
-                            d.category||'',
-                            d.issueType||'',
-                            d.judgedIssueType||''
-                        ]);
+                    const diff5Map = new Map((DATA.diff5||[]).map(function(r){ return [r.code, r]; }));
+                    diffRows.forEach(function(d){
+                        var orig = diff5Map.get(d.code) || {};
+                        diffData2.push([d.date||'', d.code||'', d.warehouse||'', orig.cat||d.cat||'', orig.cat||'', orig.strategy||'', d.level1||'', d.level2||'', orig.level3_orig||'', orig.level3_new||d.level3||'', d.person||'', d.qaInspector||'', d.category||'', d.issueType||'', d.judgedIssueType||'']);
                     });
                     XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(diffData2), '5_日维度差异明细_站点维度');
                 }
 
-                if (wb.SheetNames.length === 0) { showToast('暂无数据可导出'); return; }
-                XLSX.writeFile(wb, `看板导出_${new Date().toISOString().slice(0,10)}.xlsx`);
-                showToast('✅ 导出成功（共 ' + wb.SheetNames.length + ' 张表）');
+                if (wb.SheetNames.length === 0) { showToast('暂无符合条件的数据'); return; }
+                var fname = '看板导出_' + (filterStart||'') + (filterEnd?'~'+filterEnd:'') + '_' + filterKj + '.xlsx';
+                XLSX.writeFile(wb, fname);
+                showToast('✅ 导出成功（共 ' + wb.SheetNames.length + ' 张表，' + diffRows.length + ' 条差异明细）');
             }
+            window.zbExportWithFilter = exportToExcel;
 
 
             // ── 站点分类 ──
@@ -6609,6 +6621,14 @@ function zbNav(name, el) {
         var el2 = document.getElementById(id);
         if (el2) el2.style.display = isSiteOrPerson ? 'none' : '';
     });
+    // 首页切回时，若当前不是ALL则重置为ALL，避免旧值残留
+    if (!isSiteOrPerson) {
+        var curSiteType = document.querySelector('.cat-tab[data-site-type].active, .cat-tab[data-site-type].on');
+        if (curSiteType && curSiteType.dataset.siteType !== 'ALL') {
+            var allBtn = document.getElementById('globalSiteType-ALL');
+            if (allBtn && typeof allBtn.click === 'function') allBtn.click();
+        }
+    }
     // 分隔线也一起隐藏
     var dividers = document.querySelectorAll('.sticky-divider');
     if (dividers.length >= 2) dividers[1].style.display = isSiteOrPerson ? 'none' : '';
@@ -9399,5 +9419,220 @@ document.addEventListener('DOMContentLoaded', function(){
   </div>
 </div>
 
-</body>
+<!-- 导出面板 -->
+<div id="zbExportPanel" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.35);backdrop-filter:blur(6px);z-index:99000;align-items:center;justify-content:center;" onclick="if(event.target===this)zbCloseExportPanel()">
+<div style="background:#fff;border-radius:16px;border:1px solid #e2e8f0;box-shadow:0 8px 32px rgba(0,0,0,0.12);width:min(520px,94vw);max-height:90vh;display:flex;flex-direction:column;overflow:hidden;" onclick="event.stopPropagation()">
+  <!-- 标题 -->
+  <div style="padding:16px 20px 12px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
+    <div style="font-size:14px;font-weight:700;color:#0f172a;display:flex;align-items:center;gap:7px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      导出数据
+    </div>
+    <div onclick="zbCloseExportPanel()" style="width:26px;height:26px;border-radius:8px;border:1px solid #e2e8f0;background:#f8fafc;color:#64748b;font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;">×</div>
+  </div>
+  <!-- 内容 -->
+  <div id="zbExportMain" style="flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;gap:14px;">
+    <!-- 品类 -->
+    <div>
+      <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:7px;display:flex;align-items:center;gap:5px;">📦 品类</div>
+      <div id="expCatChips" style="display:flex;gap:6px;flex-wrap:wrap;">
+        <div class="exp-chip exp-cat" data-all="1" onclick="zbExpCatTog(this)" style="padding:5px 13px;border-radius:20px;font-size:12px;border:1px solid #2563eb;background:#2563eb;color:#fff;cursor:pointer;user-select:none;">全部</div>
+        <div class="exp-chip exp-cat" onclick="zbExpCatTog(this)" style="padding:5px 13px;border-radius:20px;font-size:12px;border:1px solid #e2e8f0;background:#f8fafc;color:#334155;cursor:pointer;user-select:none;">手机</div>
+        <div class="exp-chip exp-cat" onclick="zbExpCatTog(this)" style="padding:5px 13px;border-radius:20px;font-size:12px;border:1px solid #e2e8f0;background:#f8fafc;color:#334155;cursor:pointer;user-select:none;">笔记本</div>
+        <div class="exp-chip exp-cat" onclick="zbExpCatTog(this)" style="padding:5px 13px;border-radius:20px;font-size:12px;border:1px solid #e2e8f0;background:#f8fafc;color:#334155;cursor:pointer;user-select:none;">平板</div>
+        <div class="exp-chip exp-cat" onclick="zbExpCatTog(this)" style="padding:5px 13px;border-radius:20px;font-size:12px;border:1px solid #e2e8f0;background:#f8fafc;color:#334155;cursor:pointer;user-select:none;">手表</div>
+        <div class="exp-chip exp-cat" onclick="zbExpCatTog(this)" style="padding:5px 13px;border-radius:20px;font-size:12px;border:1px solid #e2e8f0;background:#f8fafc;color:#334155;cursor:pointer;user-select:none;">耳机</div>
+      </div>
+    </div>
+    <!-- 站点 -->
+    <div>
+      <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:7px;">🏠 站点 <span style="font-weight:400;color:#94a3b8;">（可多选，不选则全部）</span></div>
+      <div id="expSiteWrap" style="display:flex;flex-direction:column;gap:8px;">
+        <!-- 大仓 -->
+        <div>
+          <div style="font-size:10px;font-weight:600;color:#2563eb;background:#eff6ff;padding:3px 8px;border-radius:5px;display:inline-block;margin-bottom:5px;">大仓</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;" id="expSiteDW"></div>
+        </div>
+        <!-- 后验中心仓 -->
+        <div>
+          <div style="font-size:10px;font-weight:600;color:#d97706;background:#fffbeb;padding:3px 8px;border-radius:5px;display:inline-block;margin-bottom:5px;">后验中心仓</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;" id="expSiteHY"></div>
+        </div>
+        <!-- 中心仓 -->
+        <div>
+          <div style="font-size:10px;font-weight:600;color:#7c3aed;background:#f5f3ff;padding:3px 8px;border-radius:5px;display:inline-block;margin-bottom:5px;">中心仓</div>
+          <div style="display:flex;flex-wrap:wrap;gap:5px;" id="expSiteZX"></div>
+        </div>
+      </div>
+    </div>
+    <!-- 分割线 -->
+    <div style="height:1px;background:#f1f5f9;"></div>
+    <!-- 日期 -->
+    <div>
+      <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:7px;">📅 日期范围</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+        <input type="date" id="expDateStart" style="flex:1;padding:6px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;background:#f8fafc;outline:none;" onchange="zbExpUpdSummary()">
+        <span style="color:#94a3b8;">—</span>
+        <input type="date" id="expDateEnd" style="flex:1;padding:6px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;background:#f8fafc;outline:none;" onchange="zbExpUpdSummary()">
+      </div>
+      <div style="display:flex;gap:5px;">
+        <div onclick="zbExpSetDate(7,this)" style="padding:3px 9px;border-radius:10px;font-size:11px;border:1px solid #bfdbfe;background:#eff6ff;color:#2563eb;cursor:pointer;">近7天</div>
+        <div onclick="zbExpSetDate(30,this)" style="padding:3px 9px;border-radius:10px;font-size:11px;border:1px solid #bfdbfe;background:#eff6ff;color:#2563eb;cursor:pointer;">近30天</div>
+        <div id="expMonthBtn" onclick="zbExpSetMonth(this)" style="padding:3px 9px;border-radius:10px;font-size:11px;border:1px solid #2563eb;background:#2563eb;color:#fff;cursor:pointer;">本月</div>
+        <div onclick="zbExpSetDate(0,this)" style="padding:3px 9px;border-radius:10px;font-size:11px;border:1px solid #bfdbfe;background:#eff6ff;color:#2563eb;cursor:pointer;">今天</div>
+      </div>
+    </div>
+    <!-- 口径 -->
+    <div>
+      <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:7px;">🔍 数据口径</div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <div class="exp-kj" onclick="zbExpKjTog(this)" style="padding:5px 13px;border-radius:20px;font-size:12px;border:1px solid #7c3aed;background:#7c3aed;color:#fff;cursor:pointer;user-select:none;">客观执行</div>
+        <div class="exp-kj" onclick="zbExpKjTog(this)" style="padding:5px 13px;border-radius:20px;font-size:12px;border:1px solid #e2e8f0;background:#f8fafc;color:#334155;cursor:pointer;user-select:none;">客观</div>
+        <div class="exp-kj" onclick="zbExpKjTog(this)" style="padding:5px 13px;border-radius:20px;font-size:12px;border:1px solid #e2e8f0;background:#f8fafc;color:#334155;cursor:pointer;user-select:none;">主观</div>
+        <div class="exp-kj" onclick="zbExpKjTog(this)" style="padding:5px 13px;border-radius:20px;font-size:12px;border:1px solid #e2e8f0;background:#f8fafc;color:#334155;cursor:pointer;user-select:none;">全部</div>
+      </div>
+    </div>
+  </div>
+  <!-- 底部 -->
+  <div style="padding:12px 20px;border-top:1px solid #f1f5f9;background:#f8fafc;flex-shrink:0;">
+    <div id="zbExpSummary" style="font-size:11px;color:#64748b;margin-bottom:10px;line-height:1.6;"></div>
+    <button onclick="zbDoExport()" style="width:100%;padding:11px;background:linear-gradient(135deg,#2563eb,#4f46e5);color:#fff;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      导出 Excel
+    </button>
+  </div>
+</div>
+</div>
+
+<script>
+// ── 导出面板 ──
+var DW_SITES_EXP = ['转转-青岛智能验机中心','转转-成都智能验机中心','转转-深圳智能验机中心'];
+var HY_SITES_EXP = ['深圳后验中心仓','青岛后验中心仓'];
+
+window.zbOpenExportPanel = function() {
+    var panel = document.getElementById('zbExportPanel');
+    if (!panel) return;
+    // 动态生成站点列表
+    zbExpBuildSites();
+    // 读顶部日期初始化
+    var s = (document.getElementById('startDateFilter')||{}).value || '';
+    var e = (document.getElementById('endDateFilter')||{}).value || '';
+    if (s) document.getElementById('expDateStart').value = s;
+    if (e) document.getElementById('expDateEnd').value = e;
+    zbExpUpdSummary();
+    panel.style.display = 'flex';
+};
+
+window.zbCloseExportPanel = function() {
+    var panel = document.getElementById('zbExportPanel');
+    if (panel) panel.style.display = 'none';
+};
+
+function zbExpBuildSites() {
+    var allData = window._allDiffData || [];
+    var allSites = Array.from(new Set(allData.map(function(d){ return d.warehouse||d.site||''; }).filter(Boolean)));
+    var zxSites = allSites.filter(function(s){
+        return DW_SITES_EXP.indexOf(s)<0 && HY_SITES_EXP.indexOf(s)<0 && !s.includes('后验');
+    }).sort();
+    function makeChip(s, cls, color, bg, bColor) {
+        var div = document.createElement('div');
+        div.className = 'exp-site-chip';
+        div.textContent = s;
+        div.dataset.site = s;
+        div.style.cssText = 'padding:4px 10px;border-radius:7px;font-size:11px;border:1px solid '+bColor+';background:'+bg+';color:'+color+';cursor:pointer;user-select:none;white-space:nowrap;transition:all .15s;';
+        div.onclick = function(){ 
+            var on = div.dataset.on === '1';
+            div.dataset.on = on ? '0' : '1';
+            div.style.background = !on ? bg.replace('f','e').replace('ff','ee') : bg;
+            div.style.fontWeight = !on ? '500' : '400';
+            div.style.borderColor = !on ? color : bColor;
+            zbExpUpdSummary();
+        };
+        return div;
+    }
+    var dwEl = document.getElementById('expSiteDW');
+    var hyEl = document.getElementById('expSiteHY');
+    var zxEl = document.getElementById('expSiteZX');
+    if (dwEl) { dwEl.innerHTML=''; DW_SITES_EXP.forEach(function(s){ dwEl.appendChild(makeChip(s,'#2563eb','#eff6ff','#bfdbfe')); }); }
+    if (hyEl) { hyEl.innerHTML=''; HY_SITES_EXP.forEach(function(s){ hyEl.appendChild(makeChip(s,'#d97706','#fffbeb','#fde68a')); }); }
+    if (zxEl) { zxEl.innerHTML=''; zxSites.forEach(function(s){ zxEl.appendChild(makeChip(s,'#7c3aed','#f5f3ff','#ddd6fe')); }); }
+}
+
+window.zbExpCatTog = function(el) {
+    var chips = document.querySelectorAll('.exp-cat');
+    if (el.dataset.all) {
+        chips.forEach(function(c){ 
+            if (!c.dataset.all) { c.style.background='#f8fafc'; c.style.borderColor='#e2e8f0'; c.style.color='#334155'; }
+        });
+        el.style.background='#2563eb'; el.style.borderColor='#2563eb'; el.style.color='#fff';
+    } else {
+        document.querySelector('.exp-cat[data-all]').style.background='#f8fafc';
+        document.querySelector('.exp-cat[data-all]').style.borderColor='#e2e8f0';
+        document.querySelector('.exp-cat[data-all]').style.color='#334155';
+        var isOn = el.style.background === 'rgb(37, 99, 235)' || el.dataset.on === '1';
+        if (isOn) { el.style.background='#f8fafc'; el.style.borderColor='#e2e8f0'; el.style.color='#334155'; el.dataset.on='0'; }
+        else { el.style.background='#2563eb'; el.style.borderColor='#2563eb'; el.style.color='#fff'; el.dataset.on='1'; }
+        var anyOn = Array.from(document.querySelectorAll('.exp-cat:not([data-all])')).some(function(c){ return c.dataset.on==='1'; });
+        if (!anyOn) { var allBtn=document.querySelector('.exp-cat[data-all]'); allBtn.style.background='#2563eb'; allBtn.style.borderColor='#2563eb'; allBtn.style.color='#fff'; }
+    }
+    zbExpUpdSummary();
+};
+
+window.zbExpKjTog = function(el) {
+    document.querySelectorAll('.exp-kj').forEach(function(c){ c.style.background='#f8fafc'; c.style.borderColor='#e2e8f0'; c.style.color='#334155'; });
+    el.style.background='#7c3aed'; el.style.borderColor='#7c3aed'; el.style.color='#fff';
+    zbExpUpdSummary();
+};
+
+window.zbExpSetDate = function(days, btn) {
+    document.querySelectorAll('#zbExportMain .exp-quick-btn, #zbExportMain div[onclick^="zbExpSet"]').forEach(function(b){ b.style.background='#eff6ff'; b.style.color='#2563eb'; b.style.borderColor='#bfdbfe'; });
+    if(btn){btn.style.background='#2563eb';btn.style.color='#fff';btn.style.borderColor='#2563eb';}
+    var end=new Date(),start=new Date();
+    if(days>0) start.setDate(end.getDate()-days+1);
+    document.getElementById('expDateStart').value=start.toISOString().slice(0,10);
+    document.getElementById('expDateEnd').value=end.toISOString().slice(0,10);
+    zbExpUpdSummary();
+};
+window.zbExpSetMonth = function(btn) {
+    document.querySelectorAll('#zbExportMain div[onclick^="zbExpSet"]').forEach(function(b){ b.style.background='#eff6ff'; b.style.color='#2563eb'; b.style.borderColor='#bfdbfe'; });
+    if(btn){btn.style.background='#2563eb';btn.style.color='#fff';btn.style.borderColor='#2563eb';}
+    var now=new Date();
+    document.getElementById('expDateStart').value=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0')+'-01';
+    document.getElementById('expDateEnd').value=now.toISOString().slice(0,10);
+    zbExpUpdSummary();
+};
+
+window.zbExpUpdSummary = function() {
+    var catAll = document.querySelector('.exp-cat[data-all]');
+    var catIsAll = catAll && (catAll.style.background==='rgb(37, 99, 235)' || catAll.style.background.includes('37, 99, 235'));
+    var catSels = Array.from(document.querySelectorAll('.exp-cat:not([data-all])')).filter(function(c){ return c.dataset.on==='1'; }).map(function(c){ return c.textContent; });
+    var catTxt = catIsAll ? '全部品类' : (catSels.join('、')||'全部品类');
+    var sites = Array.from(document.querySelectorAll('.exp-site-chip')).filter(function(c){ return c.dataset.on==='1'; });
+    var siteTxt = sites.length===0 ? '全部站点' : sites.length+'个站点';
+    var s=document.getElementById('expDateStart').value, e=document.getElementById('expDateEnd').value;
+    var kj=document.querySelector('.exp-kj[style*="7c3aed"]');
+    var kjTxt = kj ? kj.textContent : '客观执行';
+    var el=document.getElementById('zbExpSummary');
+    if(el) el.innerHTML=catTxt+' · '+siteTxt+' · '+(s||'--')+' ~ '+(e||'--')+' · <b style="color:#7c3aed;">'+kjTxt+'</b>口径';
+};
+
+window.zbDoExport = function() {
+    // 收集筛选条件
+    var catAll = document.querySelector('.exp-cat[data-all]');
+    var catIsAll = catAll && catAll.style.background.includes('37, 99, 235');
+    var catSels = catIsAll ? null : Array.from(document.querySelectorAll('.exp-cat:not([data-all])')).filter(function(c){ return c.dataset.on==='1'; }).map(function(c){ return c.textContent; });
+    var siteSels = Array.from(document.querySelectorAll('.exp-site-chip')).filter(function(c){ return c.dataset.on==='1'; }).map(function(c){ return c.dataset.site; });
+    var dateStart = document.getElementById('expDateStart').value;
+    var dateEnd   = document.getElementById('expDateEnd').value;
+    var kjEl = document.querySelector('.exp-kj[style*="7c3aed"]');
+    var kj = kjEl ? kjEl.textContent : '客观执行';
+    zbCloseExportPanel();
+    // 调用原exportToExcel并传参
+    if (typeof zbExportWithFilter === 'function') {
+        zbExportWithFilter({ cats: catSels, sites: siteSels.length ? siteSels : null, dateStart:dateStart, dateEnd:dateEnd, kj:kj });
+    } else if (typeof exportToExcel === 'function') {
+        exportToExcel();
+    }
+};
+</script>
 </html>
