@@ -9,7 +9,9 @@
       "status": "todo",
       "priority": "normal",
       "created": 1779708577706,
-      "parentId": "mpl28v37sxz"
+      "parentId": "mpl28v37sxz",
+      "note": "通过则更新新人表和导师带教表",
+      "links": []
     },
     {
       "id": "mpl3gqiika8",
