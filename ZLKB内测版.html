@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.45H</title>
+    <title>培训部数据看板 v1.45I</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -751,7 +751,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.45H</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.45I</div>
     </div>
   </nav>
 
@@ -1133,7 +1133,7 @@
                   </div>
                   <!-- 单图+右侧摘要（可折叠） -->
                   <div id="zbIssueChartWrap" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;height:320px;margin-bottom:12px;align-items:stretch;overflow:visible;transition:max-height .3s ease,opacity .25s ease,margin .3s ease;">
-                    <div id="zbIssueChartLeft" style="width:100%;height:320px;"></div>
+                    <div id="zbIssueChartLeft" style="width:100%;height:320px;padding:20px 40px;box-sizing:border-box;"></div>
                     <div id="zbIssueChartRight" style="height:320px;overflow-y:auto;padding:8px 0 8px 16px;border-left:0.5px solid var(--border-color);display:flex;flex-direction:column;justify-content:center;"></div>
                   </div>
                   <div id="site-issue-analysis-root">
@@ -4827,7 +4827,7 @@ function zbGetToken() {
 }
 
 // ══════════════════════════════════════════
-// 图片功能模块 v1.45H
+// 图片功能模块 v1.45I
 // 云函数签发临时密钥 → 压缩 → 上传COS → 存image_links.json
 // ══════════════════════════════════════════
 const ZB_IMG = {
@@ -6774,9 +6774,9 @@ window.zbRenderIssueCharts = function(execDiff) {
             type:'pie',
             radius: mode === 'level1' ? ['35%','62%'] : ['0%','60%'],
             center:['50%','50%'],
-            label:{ show: true, position:'inside', fontSize:9, color:'#fff', fontWeight:'500', formatter: function(p){ return p.percent >= 8 ? p.percent+'%' : ''; } },
-            labelLine:{ show: false },
-            tooltip: { formatter: function(p){ return p.name+': '+p.value+'条 ('+p.percent+'%)'; } },
+            label:{ show: true, fontSize:10, color:'#374151', overflow:'break', formatter: function(p){ return p.percent >= 5 ? p.name+'\n'+p.percent+'%' : ''; } },
+            labelLine:{ show: true, length:6, length2:4, smooth:true },
+            labelLayout:{ hideOverlap: true },
             labelLine:{ length:8, length2:5 },
             emphasis:{ scale:true, scaleSize:6 },
             data: pieData
