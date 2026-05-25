@@ -2,13 +2,15 @@
   "tasks": [
     {
       "id": "mpl0z3ct3uc",
-      "title": "更新新人表",
+      "title": "更新带教登记表和新人表",
       "tag": null,
       "date": "05/25",
       "done": false,
       "status": "todo",
       "priority": "normal",
-      "created": 1779702595517
+      "created": 1779702595517,
+      "note": "",
+      "links": []
     },
     {
       "id": "mpkkqnxpy1p",
