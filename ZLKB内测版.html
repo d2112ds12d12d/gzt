@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.50F</title>
+    <title>培训部数据看板 v1.50G</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -770,7 +770,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.50F</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.50G</div>
     </div>
   </nav>
 
@@ -2604,6 +2604,23 @@
                     } else filteredChip.style.display='none';
                 }
 
+                // 同质检码多行相邻：先按质检码稳定排序，再按原始顺序排同码内部
+                var codeOrderMap = {};
+                var codeOrderIdx = 0;
+                filtered.forEach(function(r) {
+                    var c = r.code || '';
+                    if (c && codeOrderMap[c] === undefined) codeOrderMap[c] = codeOrderIdx++;
+                });
+                filtered = filtered.slice().sort(function(a, b) {
+                    var ca = a.code || '', cb = b.code || '';
+                    if (!ca && !cb) return 0;
+                    if (!ca) return 1;
+                    if (!cb) return -1;
+                    var oa = codeOrderMap[ca] !== undefined ? codeOrderMap[ca] : 99999;
+                    var ob = codeOrderMap[cb] !== undefined ? codeOrderMap[cb] : 99999;
+                    return oa - ob;
+                });
+
                 // 方案B：同质检码分组颜色
                 var GROUP_BG = ['#fff7ed','#eff6ff','#f0fdf4','#fdf4ff','#fffbeb'];
                 var GROUP_TC = ['#d97706','#2563eb','#059669','#9333ea','#d97706'];
@@ -2682,6 +2699,8 @@
                 virtualScroll.attachScroll();
                 virtualScroll.setData(
                     filteredWithGroup.map(function(r){
+                        // 分组标题行直接透传，不做字段映射
+                        if (r._isSectionHeader) return r;
                         var obj={};
                         columnKeys.forEach(function(key){ obj[key]=r[key]||'—'; });
                         // 跳转图标需要这三个字段，不管columnKeys有没有都保留原始值
@@ -7253,17 +7272,20 @@ function zbRenderSitePersonList() {
         return '<span style="color:#94a3b8;">—</span>';
     }
     if (!isCompare) {
-        var totalDiff = 0;
-        var personListTop = {};
+        var totalCodeSet = new Set();
+        var personCodeMap = {};
         siteDiff.forEach(function(d){
             var dt = d.date ? d.date.split(' ')[0] : '';
             if ((!topStart||dt>=topStart) && (!topEnd||dt<=topEnd)) {
-                totalDiff++;
+                var code = d.code || ('__nocode__'+Math.random());
+                totalCodeSet.add(code);
                 var p = d.person||'未知';
-                personListTop[p] = (personListTop[p]||0) + 1;
+                if (!personCodeMap[p]) personCodeMap[p] = new Set();
+                personCodeMap[p].add(code);
             }
         });
-        var topArr = Object.keys(personListTop).map(function(n){ return {name:n,cnt:personListTop[n]}; });
+        var totalDiff = totalCodeSet.size;
+        var topArr = Object.keys(personCodeMap).map(function(n){ return {name:n,cnt:personCodeMap[n].size}; });
         topArr.sort(function(a,b){ return b.cnt-a.cnt; });
         var maxCnt = topArr.length ? topArr[0].cnt : 0;
         var kpiHtml = '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px;">'
@@ -7448,10 +7470,10 @@ function zbRenderSiteIssueAnalysis(execDiff, rootEl) {
         var itemMap = {};
         filtered.forEach(function(d){
             var k = (d.level3||'未知')+'||'+(d.level1||'')+'||'+(d.level2||'');
-            if (!itemMap[k]) itemMap[k] = {level1:d.level1||'',level2:d.level2||'',level3:d.level3||'未知',cnt:0};
-            itemMap[k].cnt++;
+            if (!itemMap[k]) itemMap[k] = {level1:d.level1||'',level2:d.level2||'',level3:d.level3||'未知',codes:new Set()};
+            itemMap[k].codes.add(d.code || ('__nc__'+Math.random()));
         });
-        var rows = Object.keys(itemMap).map(function(k){ return itemMap[k]; });
+        var rows = Object.keys(itemMap).map(function(k){ return Object.assign({},itemMap[k],{cnt:itemMap[k].codes.size}); });
         rows.sort(function(a,b){ return b.cnt-a.cnt; });
         var totalCnt = rows.reduce(function(s,r){ return s+r.cnt; }, 0);
         var top1label = rows.length ? ([rows[0].level1,rows[0].level2,rows[0].level3].filter(Boolean).join('—')) : '';
@@ -7532,10 +7554,13 @@ function zbRenderSiteIssueAnalysis(execDiff, rootEl) {
             var map={};
             rows.forEach(function(d){
                 var k=(d.level3||'未知')+'||'+(d.level1||'')+'||'+(d.level2||'');
-                if(!map[k]) map[k]={level1:d.level1||'',level2:d.level2||'',level3:d.level3||'未知',cnt:0};
-                map[k].cnt++;
+                if(!map[k]) map[k]={level1:d.level1||'',level2:d.level2||'',level3:d.level3||'未知',codes:new Set()};
+                map[k].codes.add(d.code || ('__nc__'+Math.random()));
             });
-            return map;
+            // 把codes.size转成cnt
+            var result={};
+            Object.keys(map).forEach(function(k){ result[k]={level1:map[k].level1,level2:map[k].level2,level3:map[k].level3,cnt:map[k].codes.size}; });
+            return result;
         }
         var mapA=groupByItem(diffA), mapB=groupByItem(diffB);
         var allKeys=new Set(Object.keys(mapA).concat(Object.keys(mapB)));
@@ -7585,8 +7610,8 @@ function zbRenderSiteIssueAnalysis(execDiff, rootEl) {
         var arrowDelta = sortKey==='delta' ? ' ↓' : '';
         rootEl.innerHTML = '<div style="overflow-x:auto;"><table class="rank-table" style="width:100%;table-layout:fixed;">'
             + '<thead><tr><th style="width:50px;">排名</th><th>质检项</th>'
-            + '<th style="'+thPrevStyle+'" onclick="window._zbIssueSortKey=\'prev\';window._zbIssuePage=1;if(window._zbIssueRerender)window._zbIssueRerender();">'+labelA+arrowPrev+'</th>'
             + '<th style="'+thCurStyle+'" onclick="window._zbIssueSortKey=\'cur\';window._zbIssuePage=1;if(window._zbIssueRerender)window._zbIssueRerender();">'+labelB+arrowCur+'</th>'
+            + '<th style="'+thPrevStyle+'" onclick="window._zbIssueSortKey=\'prev\';window._zbIssuePage=1;if(window._zbIssueRerender)window._zbIssueRerender();">'+labelA+arrowPrev+'</th>'
             + '<th style="'+thDeltaStyle+'" onclick="window._zbIssueSortKey=\'delta\';window._zbIssuePage=1;if(window._zbIssueRerender)window._zbIssueRerender();">变化'+arrowDelta+'</th>'
             + '</tr></thead><tbody>'
             + sliced.map(function(r,idx){
@@ -7597,7 +7622,7 @@ function zbRenderSiteIssueAnalysis(execDiff, rootEl) {
                 var itemLabel=[r.level1,r.level2,r.level3].filter(Boolean).join('—');
                 var l1=(r.level1||'').replace(/'/g,"\\'"),l2=(r.level2||'').replace(/'/g,"\\'"),l3=(r.level3||'').replace(/'/g,"\\'");
                 var labelEsc=itemLabel.replace(/'/g,"\\'");
-                return '<tr style="'+rowBg+';cursor:pointer;" onclick="zbIssueRowClick(\''+l1+'\',\''+l2+'\',\''+l3+'\',\''+labelEsc+'\')"><td style="text-align:center;"><div style="width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;'+rc+'margin:auto;">'+rank+'</div></td><td>'+itemLabel+'</td><td style="text-align:center;">'+(r.a||'—')+'</td><td style="text-align:center;font-weight:500;'+(isRed?'color:#dc2626;':'')+'"> '+(r.b||'—')+'</td><td style="text-align:center;">'+fmtDelta(r.delta)+'</td></tr>';
+                return '<tr style="'+rowBg+';cursor:pointer;" onclick="zbIssueRowClick(\''+l1+'\',\''+l2+'\',\''+l3+'\',\''+labelEsc+'\')"><td style="text-align:center;"><div style="width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:11px;font-weight:500;'+rc+'margin:auto;">'+rank+'</div></td><td>'+itemLabel+'</td><td style="text-align:center;font-weight:500;'+(isRed?'color:#dc2626;':'')+'"> '+(r.b||'—')+'</td><td style="text-align:center;">'+(r.a||'—')+'</td><td style="text-align:center;">'+fmtDelta(r.delta)+'</td></tr>';
             }).join('')
             + '</tbody></table></div>';
     }
