@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.50B</title>
+    <title>培训部数据看板 v1.50C</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -770,7 +770,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.50B</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.50C</div>
     </div>
   </nav>
 
@@ -3930,10 +3930,10 @@
                 if (savedWarehouse && savedWarehouse !== '__ALL__') {
                     warehouseFilter.value = savedWarehouse;
                 }
-                // 全量刷新
+                // 全量刷新（_activeCat必须在fullRefresh前赋值，排名板块会读它）
+                window._activeCat = cat;
                 fullRefresh();
                 // 站点详情页：品类切换后重新渲染
-                window._activeCat = cat;
                 var sitePage = document.getElementById('zb-page-site');
                 if (sitePage && sitePage.classList.contains('active')) {
                     var titleEl = document.getElementById('siteDetailTitle');
@@ -8085,8 +8085,9 @@ function zbNavToHotspotDetail(level3, level1, deltaInfo) {
         var titleEl = document.getElementById('hdmRightTitle');
         var linkEl = document.getElementById('hdmRightLink');
         var detailRows;
+        // 明细使用curRows（本期时间窗+客观执行），与KPI和站点数字口径一致
         if (selected.size > 0) {
-            detailRows = rows.filter(function(d){ return selected.has(d.warehouse); });
+            detailRows = curRows.filter(function(d){ return selected.has(d.warehouse); });
             if (selected.size === 1) {
                 var s = Array.from(selected)[0];
                 if (titleEl) titleEl.textContent = s + ' · ' + detailRows.length + ' 条明细';
@@ -8096,7 +8097,7 @@ function zbNavToHotspotDetail(level3, level1, deltaInfo) {
                 if (linkEl) linkEl.style.display = 'none';
             }
         } else {
-            detailRows = rows.filter(function(d){ return d.warehouse === activeSite; });
+            detailRows = curRows.filter(function(d){ return d.warehouse === activeSite; });
             if (titleEl) titleEl.textContent = activeSite ? activeSite + ' · ' + detailRows.length + ' 条明细' : '请选择站点';
             if (linkEl) { linkEl.style.display = activeSite ? '' : 'none'; window._hdmCurrentSite = activeSite; }
         }
@@ -9661,18 +9662,15 @@ function zbRenderImageLog() {
         + '<th style="padding:7px 10px;text-align:left;color:#94a3b8;font-weight:500;">质检码</th>'
         + '<th style="padding:7px 10px;text-align:left;color:#94a3b8;font-weight:500;">站点</th>'
         + '<th style="padding:7px 10px;text-align:center;color:#94a3b8;font-weight:500;">张数</th>'
-        + '<th style="padding:7px 10px;text-align:center;color:#94a3b8;font-weight:500;">大小</th>'
         + '</tr></thead><tbody>';
     _zbImageLog.forEach(function(l, i) {
         var bg = i%2===0?'':'background:#f8fafc;';
-        var sizeStr = l.sizeKB >= 1024 ? (l.sizeKB/1024).toFixed(1)+'MB' : l.sizeKB+'KB';
         html += '<tr style="border-bottom:0.5px solid #f1f5f9;'+bg+'">'
             + '<td style="padding:6px 10px;color:#64748b;">' + (l.lastTime||l.firstTime||'') + '</td>'
             + '<td style="padding:6px 10px;font-weight:500;color:#1e293b;">' + (l.operator||'') + '</td>'
             + '<td style="padding:6px 10px;font-family:monospace;color:#2563eb;">' + (l.code||'') + '</td>'
             + '<td style="padding:6px 10px;color:#64748b;">' + (l.site||'') + '</td>'
             + '<td style="padding:6px 10px;text-align:center;color:#1e293b;">' + (l.count||0) + '张</td>'
-            + '<td style="padding:6px 10px;text-align:center;color:#64748b;">' + sizeStr + '</td>'
             + '</tr>';
     });
     html += '</tbody></table>';
