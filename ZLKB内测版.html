@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.50</title>
+    <title>培训部数据看板 v1.50A</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -770,7 +770,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.50</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.50A</div>
     </div>
   </nav>
 
@@ -4098,11 +4098,12 @@
                     var noBg = rankNo===1?'#FAC775':rankNo===2?'#D3D1C7':rankNo===3?'#F5C4B3':'var(--kpi-bg)';
                     var noColor = rankNo===1?'#633806':rankNo===2?'#2C2C2A':rankNo===3?'#4A1B0C':'var(--text-tertiary)';
                     var noWeight = rankNo<=3?'600':'400';
-                    // 差异量颜色
+                    // 差异量颜色：用全局排名位置计算色段
                     var third = Math.ceil(total / 3);
+                    var rankIdx = rankNo - 1;
                     var cntColor = !asc
-                        ? (globalIdx < third ? '#dc2626' : globalIdx < third*2 ? '#ea580c' : '#16a34a')
-                        : (globalIdx < third ? '#16a34a' : globalIdx < third*2 ? '#ea580c' : '#dc2626');
+                        ? (rankIdx < third ? '#dc2626' : rankIdx < third*2 ? '#ea580c' : '#16a34a')
+                        : (rankIdx < third ? '#16a34a' : rankIdx < third*2 ? '#ea580c' : '#dc2626');
                     // 仓库名（取第一个）
                     var whArr = Array.from(p.whs||[]);
                     var whName = whArr.length ? whArr[0] : '—';
@@ -8044,9 +8045,16 @@ function zbNavToHotspotDetail(level3, level1, deltaInfo) {
     document.getElementById('hdmKpi2').textContent = siteSet.size;
     document.getElementById('hdmKpi3').textContent = personSet.size;
 
-    // 站点汇总
+    // 站点汇总：按质检码去重，口径与KPI一致（本期+客观执行）
+    var siteCodeMap = {}; // warehouse -> Set of codes
+    curRows.forEach(function(d){
+        if (!d.warehouse) return;
+        if (!siteCodeMap[d.warehouse]) siteCodeMap[d.warehouse] = new Set();
+        if (d.code) siteCodeMap[d.warehouse].add(d.code);
+        else siteCodeMap[d.warehouse].add(Math.random());
+    });
     var siteMap = {};
-    rows.forEach(function(d){ if(d.warehouse){ siteMap[d.warehouse]=(siteMap[d.warehouse]||0)+1; } });
+    Object.keys(siteCodeMap).forEach(function(wh){ siteMap[wh] = siteCodeMap[wh].size; });
     var siteList = Object.keys(siteMap).sort(function(a,b){ return siteMap[b]-siteMap[a]; });
     var maxCnt = siteList.length ? siteMap[siteList[0]] : 1;
 
