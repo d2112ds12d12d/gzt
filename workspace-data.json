@@ -1,6 +1,16 @@
 {
   "tasks": [
     {
+      "id": "mpmdu1yj8at",
+      "title": "主动承接培训记录表成看板",
+      "tag": null,
+      "date": "05/26",
+      "done": false,
+      "status": "todo",
+      "priority": "normal",
+      "created": 1779784661611
+    },
+    {
       "id": "mpm2onz2c0w",
       "title": "晨辉哥早上我演示下的数据源的上传全流程怎么样",
       "tag": null,
