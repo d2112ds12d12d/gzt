@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.53B</title>
+    <title>培训部数据看板 v1.53C</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -770,7 +770,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.53B</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.53C</div>
     </div>
   </nav>
 
@@ -1088,7 +1088,7 @@
                     </div>
                     <span id="siteTrendFollowHint" style="display:none;font-size:11px;color:#64748b;background:var(--kpi-bg);border-radius:6px;padding:3px 9px;border:1px dashed var(--border-color);">跟随顶部日期</span>
                     <div style="width:0.5px;height:14px;background:var(--border-color);flex-shrink:0;"></div>
-                    <div class="card-title" style="margin:0;"><div style="width:3px;height:14px;background:#10b981;border-radius:2px;flex-shrink:0;margin-right:4px;"></div><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-right:2px;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>客观执行差异率趋势<span style="font-size:11px;color:var(--text-secondary);font-weight:400;margin-left:4px;">点击节点查看当日明细</span></div>
+                    <div class="card-title" style="margin:0;"><div style="width:3px;height:14px;background:#10b981;border-radius:2px;flex-shrink:0;margin-right:4px;"></div><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-right:2px;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>站点差异率趋势图<span style="font-size:11px;color:var(--text-secondary);font-weight:400;margin-left:4px;">点击节点查看当日明细</span></div>
                   </div>
                   <button onclick="zbCopyTrendImg()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 11px;border-radius:7px;font-size:11px;font-weight:500;border:0.5px solid #93c5fd;background:#eff6ff;color:#2563eb;cursor:pointer;white-space:nowrap;flex-shrink:0;" onmouseenter="this.style.background='#dbeafe'" onmouseleave="this.style.background='#eff6ff'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制图片</button>
                 </div>
@@ -1170,7 +1170,7 @@
                     <div style="text-align:center;padding:24px;color:var(--text-secondary);font-size:13px;">点击排行榜站点后自动显示</div>
                   </div>
                 </div>
-                <div style="padding:0 16px 10px;font-size:11px;color:var(--text-secondary);">默认取上一完整自然周 · 可手动修改日期范围</div>
+                <div style="padding:0 16px 10px;font-size:11px;color:var(--text-secondary);display:none;"></div>
               </div>
             </div><!-- end zb-page site -->
 
@@ -1601,12 +1601,6 @@
                 modal.appendChild(hd);
 
                 // 提示条
-                var tip = document.createElement('div');
-                tip.style.cssText = 'padding:10px 20px;background:#fffbeb;border-bottom:1px solid #fde68a;font-size:11px;color:#92400e;display:flex;align-items:center;gap:8px;flex-shrink:0;';
-                tip.innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>'
-                    + '请填写企业微信表格的分享链接（doc.weixin.qq.com/...），确保团队成员有访问权限。' + (canEdit?'':'当前角色无编辑权限。');
-                modal.appendChild(tip);
-
                 // 内容区
                 var body = document.createElement('div');
                 body.style.cssText = 'flex:1;overflow-y:auto;padding:16px 20px;';
@@ -6622,8 +6616,8 @@ function zbRenderSiteDetail(siteName) {
 
             kpiEl.innerHTML =
                 mk('总抽检量', siteChecks || '—', 'checks', '抽检量', '#2563eb', '#1d4ed8') +
-                mk('差异量（' + kjLabel + '）', diffCnt, 'diff', kjLabel + '差异', kjColor.side, kjColor.num) +
-                mk('差异率（' + kjLabel + '）', diffRate, 'rate', kjLabel + '差异率', kjColor.side, kjColor.num);
+                mk('差异量', diffCnt, 'diff', kjLabel + '差异', kjColor.side, kjColor.num) +
+                mk('差异率', diffRate, 'rate', kjLabel + '差异率', kjColor.side, kjColor.num);
 
             kpiEl._siteDiff  = siteDiff.filter(diffFilter);
             kpiEl._siteName  = siteName;
