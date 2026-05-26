@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.54K</title>
+    <title>培训部数据看板 v1.54L</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -775,7 +775,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.54K</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.54L</div>
     </div>
   </nav>
 
@@ -5912,8 +5912,18 @@ window.zbSavePersonEdits = async function() {
     // 按月份分片推送，与加载逻辑保持一致
     try {
         var token = await zbGetToken();
+        console.log('[PersonSave] token:', token ? '✅有' : '❌无');
         if (!token) throw new Error('Token获取失败');
         var payload = window._allDiffData || [];
+        console.log('[PersonSave] _allDiffData条数:', payload.length);
+        // 确认修改是否写入内存
+        Object.keys(_zbPersonEdits).forEach(function(key){
+            var e = _zbPersonEdits[key];
+            var parts = key.split('|');
+            var code = parts[0];
+            var matched = payload.filter(function(d){ return (d.code||'')===code; });
+            console.log('[PersonSave] 质检码', code, '在_allDiffData中匹配', matched.length, '条，inspector值:', matched.map(function(d){return d.inspector;}).join(','));
+        });
         // 按 date 字段分组到各月份
         var monthMap = {};
         payload.forEach(function(d) {
@@ -5923,6 +5933,7 @@ window.zbSavePersonEdits = async function() {
             if (!monthMap[ym]) monthMap[ym] = [];
             monthMap[ym].push(d);
         });
+        console.log('[PersonSave] 月份分组:', Object.keys(monthMap));
         // 只推送涉及修改的月份
         var modifiedMonths = {};
         Object.keys(_zbPersonEdits).forEach(function(key){
@@ -5931,12 +5942,16 @@ window.zbSavePersonEdits = async function() {
             var ym = dt.slice(0,7);
             if (ym && ym.length >= 7) modifiedMonths[ym] = true;
         });
+        console.log('[PersonSave] 涉及月份:', Object.keys(modifiedMonths));
         var pushTargets = Object.keys(modifiedMonths).length > 0 ? Object.keys(modifiedMonths) : Object.keys(monthMap);
+        console.log('[PersonSave] 推送目标文件:', pushTargets.map(function(ym){ return 'phone_diff_'+ym+'.json'; }));
         for (var i = 0; i < pushTargets.length; i++) {
             var ym = pushTargets[i];
             if (ym === 'unknown') continue;
             var rows = monthMap[ym] || [];
-            await _zbPushFile('QGZLdata/phone_diff_' + ym + '.json', { rows: rows }, token);
+            console.log('[PersonSave] 推送', 'phone_diff_'+ym+'.json', '共', rows.length, '条');
+            var pushResult = await _zbPushFile('QGZLdata/phone_diff_' + ym + '.json', { rows: rows }, token);
+            console.log('[PersonSave] 推送结果:', pushResult);
         }
 
         // 写日志
