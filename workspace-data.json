@@ -77,18 +77,6 @@
       "created": 1779723850445
     },
     {
-      "id": "mplcmud2gxr",
-      "title": "田睿没有给我什么bug信息，还是会存在一些 bug，只能边跑边修了。",
-      "tag": null,
-      "date": "05/26",
-      "done": false,
-      "status": "todo",
-      "priority": "normal",
-      "created": 1779722179382,
-      "note": "",
-      "links": []
-    },
-    {
       "id": "mpl4jb8q1ds",
       "title": "黄浩瀚上岗延期沟通",
       "tag": null,
@@ -1255,6 +1243,7 @@
     "mpc3iatiws6",
     "mpcdsrwyv09",
     "mpdecbdbs4l",
-    "mpgjx1cqq6x"
+    "mpgjx1cqq6x",
+    "mplcmud2gxr"
   ]
 }
