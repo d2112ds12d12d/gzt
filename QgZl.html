@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.53E</title>
+    <title>培训部数据看板 v1.54</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -756,6 +756,11 @@
         <button id="zbExportSideBtn" onclick="zbOpenExportPanel()" title="导出数据" aria-label="导出数据" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:7px;border:none;background:transparent;color:var(--sidebar-item);cursor:pointer;transition:background .15s,color .15s;flex-shrink:0;">
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </button>
+        <!-- 反馈按钮（所有角色可见） -->
+        <button id="zbFeedbackBtn" onclick="zbOpenFeedback()" title="反馈与建议" aria-label="反馈与建议" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:7px;border:none;background:transparent;color:var(--sidebar-item);cursor:pointer;transition:background .15s,color .15s;flex-shrink:0;position:relative;">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          <span id="zbFeedbackDot" style="display:none;position:absolute;top:3px;right:3px;width:7px;height:7px;background:#ef4444;border-radius:50%;border:1.5px solid var(--sidebar-bg);"></span>
+        </button>
         <span id="zbRefreshHint" style="font-size:10px;color:var(--sidebar-lbl);margin-left:3px;display:none;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px;"></span>
       </div>
       <!-- 已登录：显示用户信息（管理员） -->
@@ -770,7 +775,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.53E</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.54</div>
     </div>
   </nav>
 
@@ -5113,7 +5118,8 @@ const GH_FILES = {
     log:      'upload_log.json',
     tableLinks: 'table_links.json',
     qcAttachments: 'qc_attachments.json',
-    personCorrections: 'person_corrections.json'
+    personCorrections: 'person_corrections.json',
+    feedback: 'feedback.json'
 };
 // 超管Token拆分混淆（运行时拼接，防扫描）
 const _t = ['github_pat_','11BMTOZFI0','c1Zh3zsjA4','ep_3DbEX3c','8xDGxNPAwa','IOB4RsDKRd','tI0VtxSQwM','b6yrkRBGWH','2AOJbL2jHnWF'];
@@ -8248,6 +8254,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <button id="zbTabEdit" onclick="zbSwitchLogTab('edit')" style="padding:7px 16px;font-size:12px;font-weight:600;background:transparent;color:var(--text-secondary);border:none;border-bottom:2px solid transparent;cursor:pointer;">✏️ 记录编辑</button>
         <button id="zbTabImage" onclick="zbSwitchLogTab('image')" style="padding:7px 16px;font-size:12px;font-weight:600;background:transparent;color:var(--text-secondary);border:none;border-bottom:2px solid transparent;cursor:pointer;">🖼️ 图片操作</button>
         <button id="zbTabCorrection" onclick="zbSwitchLogTab('correction')" style="padding:7px 16px;font-size:12px;font-weight:600;background:transparent;color:var(--text-secondary);border:none;border-bottom:2px solid transparent;cursor:pointer;">🔧 纠正日志</button>
+        <button id="zbTabFeedback" onclick="zbSwitchLogTab('feedback')" style="padding:7px 16px;font-size:12px;font-weight:600;background:transparent;color:var(--text-secondary);border:none;border-bottom:2px solid transparent;cursor:pointer;position:relative;">💬 用户反馈<span id="zbFeedbackLogDot" style="display:none;position:absolute;top:6px;right:6px;width:7px;height:7px;background:#ef4444;border-radius:50%;"></span></button>
       </div>
     </div>
     <!-- 统计行 -->
@@ -8288,8 +8295,48 @@ document.addEventListener('DOMContentLoaded', function() {
     <div id="zbImagePanel" style="display:none;flex:1;overflow-y:auto;padding:14px 20px;">
       <div id="zbImageLogList"></div>
     </div>
-    <!-- 纠正日志面板 -->
-    <div id="zbCorrectionPanel" style="display:none;flex:1;overflow-y:auto;padding:14px 20px;">
+    <!-- 反馈弹窗 -->
+<div id="zbFeedbackModal" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.35);z-index:3000;justify-content:flex-end;align-items:flex-end;">
+  <div style="background:var(--bg-card);border-radius:14px 14px 0 0;width:100%;max-width:860px;max-height:85vh;display:flex;flex-direction:column;margin:0 auto;box-shadow:0 -4px 24px rgba(0,0,0,0.12);">
+    <!-- 头部 -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:0.5px solid var(--border-color);flex-shrink:0;">
+      <div style="font-size:14px;font-weight:600;color:var(--text-primary);">反馈与建议</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <button id="zbFeedbackTabSubmit" onclick="zbFeedbackSwitchTab('submit')" style="font-size:12px;padding:4px 12px;border-radius:14px;border:0.5px solid #2563eb;background:#eff6ff;color:#2563eb;cursor:pointer;font-weight:500;">提交反馈</button>
+        <button id="zbFeedbackTabHistory" onclick="zbFeedbackSwitchTab('history')" style="font-size:12px;padding:4px 12px;border-radius:14px;border:0.5px solid var(--border-color);background:transparent;color:var(--text-secondary);cursor:pointer;">我的记录</button>
+        <button onclick="zbCloseFeedback()" style="font-size:20px;color:var(--text-secondary);background:none;border:none;cursor:pointer;line-height:1;padding:2px 6px;">×</button>
+      </div>
+    </div>
+    <!-- 提交面板 -->
+    <div id="zbFeedbackPanelSubmit" style="flex:1;overflow-y:auto;padding:16px 18px;display:flex;gap:16px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:240px;">
+        <div style="font-size:11px;color:var(--text-secondary);margin-bottom:6px;">反馈类型</div>
+        <div id="zbFbTypeRow" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px;">
+          <span onclick="zbFbSelectType(this,'数据问题')" style="font-size:11px;padding:3px 10px;border-radius:10px;border:0.5px solid #93c5fd;background:#eff6ff;color:#1e40af;cursor:pointer;">数据问题</span>
+          <span onclick="zbFbSelectType(this,'功能建议')" style="font-size:11px;padding:3px 10px;border-radius:10px;border:0.5px solid var(--border-color);color:var(--text-secondary);cursor:pointer;">功能建议</span>
+          <span onclick="zbFbSelectType(this,'显示异常')" style="font-size:11px;padding:3px 10px;border-radius:10px;border:0.5px solid var(--border-color);color:var(--text-secondary);cursor:pointer;">显示异常</span>
+          <span onclick="zbFbSelectType(this,'其他')" style="font-size:11px;padding:3px 10px;border-radius:10px;border:0.5px solid var(--border-color);color:var(--text-secondary);cursor:pointer;">其他</span>
+        </div>
+        <div style="font-size:11px;color:var(--text-secondary);margin-bottom:6px;">问题描述</div>
+        <textarea id="zbFbText" style="width:100%;border:0.5px solid var(--border-color);border-radius:8px;padding:8px 10px;font-size:12px;color:var(--text-primary);background:var(--kpi-bg);resize:vertical;outline:none;font-family:inherit;min-height:100px;" placeholder="请描述你遇到的问题或建议，越详细越好…"></textarea>
+      </div>
+      <div style="flex:1;min-width:200px;">
+        <div style="font-size:11px;color:var(--text-secondary);margin-bottom:6px;">上传截图（最多5张）</div>
+        <div id="zbFbImgPreview" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;min-height:0;"></div>
+        <label for="zbFbImgInput" style="display:flex;align-items:center;justify-content:center;flex-direction:column;gap:4px;border:0.5px dashed var(--border-color);border-radius:8px;padding:14px;cursor:pointer;background:var(--kpi-bg);">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--text-secondary)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+          <span style="font-size:11px;color:var(--text-secondary);">点击选择截图</span>
+        </label>
+        <input type="file" id="zbFbImgInput" accept="image/*" multiple style="display:none;">
+        <button onclick="zbSubmitFeedback()" style="width:100%;margin-top:12px;padding:9px;background:#2563eb;color:#fff;border:none;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;">提交反馈</button>
+      </div>
+    </div>
+    <!-- 历史记录面板 -->
+    <div id="zbFeedbackPanelHistory" style="display:none;flex:1;overflow-y:auto;padding:16px 18px;">
+      <div id="zbFbHistoryList"><div style="text-align:center;padding:40px;color:var(--text-secondary);font-size:13px;">暂无反馈记录</div></div>
+    </div>
+  </div>
+</div>
       <div style="margin-bottom:10px;font-size:11px;color:#92400e;background:#fef3c7;border-radius:8px;padding:8px 12px;border:0.5px solid #fcd34d;">记录每次上传纠正表的匹配情况，日志仅存本地。规则存储在云服务器上，换设备后自动同步最新规则。</div>
       <div id="zbCorrectionLogPanel"><div style="text-align:center;padding:40px;color:var(--text-secondary);font-size:12px;">暂无纠正表上传记录</div></div>
     </div>
@@ -10046,10 +10093,12 @@ function zbSwitchLogTab(tab){
 
   var tabCorrection = document.getElementById('zbTabCorrection');
   var correctionPanel = document.getElementById('zbCorrectionPanel');
+  var tabFeedback = document.getElementById('zbTabFeedback');
+  var feedbackLogPanel = document.getElementById('zbFeedbackLogPanel');
 
   // 重置所有tab样式
-  [tabLog,tabCloud,tabEdit,tabImage,tabCorrection].forEach(function(t){ if(t){ t.style.color='var(--text-secondary)'; t.style.borderBottom='2px solid transparent'; t.style.fontWeight='400'; }});
-  [logPanel,cloudPanel,editPanel,imagePanel,correctionPanel].forEach(function(p){ if(p) p.style.display='none'; });
+  [tabLog,tabCloud,tabEdit,tabImage,tabCorrection,tabFeedback].forEach(function(t){ if(t){ t.style.color='var(--text-secondary)'; t.style.borderBottom='2px solid transparent'; t.style.fontWeight='400'; }});
+  [logPanel,cloudPanel,editPanel,imagePanel,correctionPanel,feedbackLogPanel].forEach(function(p){ if(p) p.style.display='none'; });
   if(logStats) logStats.style.display='none';
   if(logFooter) logFooter.style.display='none';
 
@@ -10074,6 +10123,10 @@ function zbSwitchLogTab(tab){
     if(correctionPanel) correctionPanel.style.display='';
     if(tabCorrection){ tabCorrection.style.color='#3b82f6'; tabCorrection.style.borderBottom='2px solid #3b82f6'; tabCorrection.style.fontWeight='600'; }
     zbRenderCorrectionLog();
+  } else if(tab==='feedback'){
+    if(feedbackLogPanel) feedbackLogPanel.style.display='';
+    if(tabFeedback){ tabFeedback.style.color='#3b82f6'; tabFeedback.style.borderBottom='2px solid #3b82f6'; tabFeedback.style.fontWeight='600'; }
+    zbRenderFeedbackAdmin();
   }
 }
 
@@ -10937,6 +10990,266 @@ function zbApplyPersonCorrections(corrections) {
 
 // ── 纠正表日志渲染 ──
 // zbRenderCorrectionLog is defined above
+
+// == 反馈工单系统 ==
+var _ZB_FEEDBACK_KEY = 'zb_feedback_v1';
+var _zbFeedbackData = []; // 内存中的工单列表
+var _zbFbSelectedType = '数据问题';
+var _zbFbImgFiles = [];
+
+// 加载反馈数据
+async function zbLoadFeedback() {
+    try {
+        var token = zbGetToken();
+        var data = await ghApiFetch(GH_FILES.feedback, token);
+        if (data && Array.isArray(data.tickets)) {
+            _zbFeedbackData = data.tickets;
+        } else {
+            var raw = await fetch(ghRaw(GH_FILES.feedback));
+            if (raw.ok) { var j = await raw.json(); if (j && j.tickets) _zbFeedbackData = j.tickets; }
+        }
+    } catch(e) { _zbFeedbackData = []; }
+    zbUpdateFeedbackDot();
+}
+
+// 保存反馈数据到GitHub
+async function zbSaveFeedback() {
+    var token = zbGetToken();
+    await _zbPushFile(GH_FILES.feedback, { tickets: _zbFeedbackData }, token);
+}
+
+// 更新红点
+function zbUpdateFeedbackDot() {
+    var isAdmin = (zbRole === 'admin');
+    var dot = document.getElementById('zbFeedbackDot');
+    var logDot = document.getElementById('zbFeedbackLogDot');
+    var unread = _zbFeedbackData.filter(function(t){ return !t.adminRead; });
+    if (isAdmin && unread.length > 0) {
+        if (dot) dot.style.display = 'block';
+        if (logDot) logDot.style.display = 'block';
+    } else {
+        if (dot) dot.style.display = 'none';
+        if (logDot) logDot.style.display = 'none';
+    }
+}
+
+// 打开反馈弹窗
+window.zbOpenFeedback = function() {
+    var modal = document.getElementById('zbFeedbackModal');
+    if (modal) { modal.style.display = 'flex'; }
+    zbLoadFeedback().then(function(){
+        zbRenderFeedbackHistory();
+    });
+};
+
+// 关闭反馈弹窗
+window.zbCloseFeedback = function() {
+    var modal = document.getElementById('zbFeedbackModal');
+    if (modal) modal.style.display = 'none';
+    _zbFbImgFiles = [];
+    var preview = document.getElementById('zbFbImgPreview');
+    if (preview) preview.innerHTML = '';
+    var txt = document.getElementById('zbFbText');
+    if (txt) txt.value = '';
+};
+
+// 切换Tab
+window.zbFeedbackSwitchTab = function(tab) {
+    var submit = document.getElementById('zbFeedbackPanelSubmit');
+    var history = document.getElementById('zbFeedbackPanelHistory');
+    var btnS = document.getElementById('zbFeedbackTabSubmit');
+    var btnH = document.getElementById('zbFeedbackTabHistory');
+    if (tab === 'submit') {
+        if (submit) submit.style.display = 'flex';
+        if (history) history.style.display = 'none';
+        if (btnS) { btnS.style.background='#eff6ff'; btnS.style.borderColor='#2563eb'; btnS.style.color='#2563eb'; }
+        if (btnH) { btnH.style.background='transparent'; btnH.style.borderColor='var(--border-color)'; btnH.style.color='var(--text-secondary)'; }
+    } else {
+        if (submit) submit.style.display = 'none';
+        if (history) history.style.display = 'block';
+        if (btnH) { btnH.style.background='#eff6ff'; btnH.style.borderColor='#2563eb'; btnH.style.color='#2563eb'; }
+        if (btnS) { btnS.style.background='transparent'; btnS.style.borderColor='var(--border-color)'; btnS.style.color='var(--text-secondary)'; }
+        zbRenderFeedbackHistory();
+    }
+};
+
+// 选择反馈类型
+window.zbFbSelectType = function(el, type) {
+    _zbFbSelectedType = type;
+    var row = document.getElementById('zbFbTypeRow');
+    if (!row) return;
+    row.querySelectorAll('span').forEach(function(s) {
+        s.style.background = 'transparent';
+        s.style.borderColor = 'var(--border-color)';
+        s.style.color = 'var(--text-secondary)';
+    });
+    el.style.background = '#eff6ff';
+    el.style.borderColor = '#93c5fd';
+    el.style.color = '#1e40af';
+};
+
+// 图片选择预览 - 延迟绑定等DOM就绪
+setTimeout(function() {
+    var inp = document.getElementById('zbFbImgInput');
+    if (inp) {
+        inp.addEventListener('change', function(e) {
+            var files = Array.from(e.target.files);
+            var remaining = 5 - _zbFbImgFiles.length;
+            if (files.length > remaining) { files = files.slice(0, remaining); showToast('最多上传5张图片'); }
+            _zbFbImgFiles = _zbFbImgFiles.concat(files);
+            zbRenderFbImgPreview();
+            inp.value = '';
+        });
+    }
+}, 500);
+
+function zbRenderFbImgPreview() {
+    var preview = document.getElementById('zbFbImgPreview');
+    if (!preview) return;
+    preview.innerHTML = '';
+    _zbFbImgFiles.forEach(function(f, i) {
+        var url = URL.createObjectURL(f);
+        var wrap = document.createElement('div');
+        wrap.style.cssText = 'position:relative;width:56px;height:56px;';
+        var img = document.createElement('img');
+        img.src = url; img.style.cssText = 'width:56px;height:56px;object-fit:cover;border-radius:6px;border:0.5px solid var(--border-color);';
+        var del = document.createElement('button');
+        del.textContent = '×'; del.dataset.idx = i;
+        del.style.cssText = 'position:absolute;top:-4px;right:-4px;width:16px;height:16px;border-radius:50%;background:#ef4444;color:#fff;border:none;cursor:pointer;font-size:11px;line-height:1;padding:0;display:flex;align-items:center;justify-content:center;';
+        del.onclick = function() { _zbFbImgFiles.splice(parseInt(this.dataset.idx), 1); zbRenderFbImgPreview(); };
+        wrap.appendChild(img); wrap.appendChild(del);
+        preview.appendChild(wrap);
+    });
+}
+
+// 提交反馈
+window.zbSubmitFeedback = async function() {
+    var txt = (document.getElementById('zbFbText')||{}).value || '';
+    if (!txt.trim()) { showToast('⚠️ 请填写问题描述'); return; }
+    showToast('⏳ 提交中…');
+    // 上传图片到COS
+    var imgUrls = [];
+    for (var i = 0; i < _zbFbImgFiles.length; i++) {
+        try {
+            var url = await zbUploadImageToCOS(_zbFbImgFiles[i]);
+            if (url) imgUrls.push(url);
+        } catch(e) { console.warn('图片上传失败', e); }
+    }
+    // 获取提交者信息
+    var submitter = '匿名';
+    if (zbRole === 'trainer' && zbTrainerInfo) submitter = zbTrainerInfo.name || zbTrainerInfo.id || '培训师';
+    else if (zbRole === 'admin') submitter = '管理员';
+    var ticket = {
+        id: Date.now() + '_' + Math.random().toString(36).slice(2,6),
+        submitter: submitter,
+        type: _zbFbSelectedType,
+        text: txt.trim(),
+        imgs: imgUrls,
+        ts: Date.now(),
+        status: 'pending', // pending / accepted / done
+        adminRead: false,
+        adminReply: '',
+        adminReplyTs: 0
+    };
+    _zbFeedbackData.unshift(ticket);
+    await zbSaveFeedback();
+    showToast('✅ 反馈已提交，感谢你的建议！');
+    // 重置
+    _zbFbImgFiles = [];
+    zbRenderFbImgPreview();
+    var txtel = document.getElementById('zbFbText');
+    if (txtel) txtel.value = '';
+    // 切到历史记录查看
+    zbFeedbackSwitchTab('history');
+};
+
+// 培训师历史工单渲染
+function zbRenderFeedbackHistory() {
+    var el = document.getElementById('zbFbHistoryList');
+    if (!el) return;
+    var myName = '';
+    if (zbRole === 'trainer' && zbTrainerInfo) myName = zbTrainerInfo.name || zbTrainerInfo.id || '';
+    var myTickets = zbRole === 'admin' ? _zbFeedbackData :
+        _zbFeedbackData.filter(function(t){ return t.submitter === myName || myName === ''; });
+    if (!myTickets.length) { el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary);font-size:13px;">暂无反馈记录</div>'; return; }
+    var STATUS_MAP = { pending:{label:'未受理',bg:'#f1f5f9',color:'#64748b'}, accepted:{label:'已受理',bg:'#eff6ff',color:'#1d4ed8'}, done:{label:'已完成',bg:'#f0fdf4',color:'#15803d'} };
+    el.innerHTML = myTickets.map(function(t) {
+        var st = STATUS_MAP[t.status] || STATUS_MAP.pending;
+        var hasNewReply = t.adminReply && !t.userReadReply;
+        var d = new Date(t.ts);
+        var timeStr = (d.getMonth()+1)+'/'+(d.getDate())+' '+d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+        var imgs = (t.imgs||[]).map(function(url){ return '<img src="'+url+'" onclick="zbShowImagePreview([\''+url+'\'],0)" style="width:44px;height:44px;object-fit:cover;border-radius:5px;border:0.5px solid var(--border-color);cursor:pointer;">'; }).join('');
+        var replyHtml = t.adminReply ? '<div style="background:var(--kpi-bg);border-radius:6px;padding:7px 10px;margin-top:6px;border-left:2px solid #2563eb;"><div style="font-size:10px;color:#2563eb;font-weight:500;margin-bottom:3px;">管理员回复</div><div style="font-size:12px;color:var(--text-primary);line-height:1.5;">'+t.adminReply+'</div></div>' : '';
+        return '<div style="border:0.5px solid '+(hasNewReply?'#93c5fd':'var(--border-color)')+';border-radius:10px;padding:10px;margin-bottom:8px;'+(t.status==='done'?'opacity:.75;':'')+'"><div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;"><span style="font-size:10px;padding:1px 7px;border-radius:8px;background:#fef3c7;color:#92400e;">'+t.type+'</span><span style="font-size:10px;padding:1px 7px;border-radius:8px;background:'+st.bg+';color:'+st.color+';">'+st.label+'</span>'+(hasNewReply?'<span style="font-size:10px;padding:1px 7px;border-radius:8px;background:#fef3c7;color:#b45309;" onclick="zbFbUserReadReply(\''+t.id+'\')">有新回复</span>':'')+'<span style="font-size:10px;color:var(--text-secondary);margin-left:auto;">'+timeStr+'</span></div><div style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin-bottom:6px;">'+t.text+'</div>'+(imgs?'<div style="display:flex;gap:4px;margin-bottom:4px;">'+imgs+'</div>':'')+replyHtml+'</div>';
+    }).join('');
+}
+
+// 培训师标记已看到回复
+window.zbFbUserReadReply = async function(id) {
+    var t = _zbFeedbackData.find(function(x){ return x.id === id; });
+    if (t) { t.userReadReply = true; await zbSaveFeedback(); zbRenderFeedbackHistory(); }
+};
+
+// 管理员工单列表渲染
+function zbRenderFeedbackAdmin() {
+    var el = document.getElementById('zbFbAdminList');
+    var badge = document.getElementById('zbFbAdminUnreadBadge');
+    if (!el) return;
+    var unread = _zbFeedbackData.filter(function(t){ return !t.adminRead; });
+    if (badge) { badge.textContent = unread.length + ' 条未读'; badge.style.display = unread.length ? 'inline-block' : 'none'; }
+    if (!_zbFeedbackData.length) { el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary);font-size:12px;">暂无反馈记录</div>'; return; }
+    var STATUS_MAP = { pending:{label:'未受理',bg:'#f1f5f9',color:'#64748b'}, accepted:{label:'已受理',bg:'#eff6ff',color:'#1d4ed8'}, done:{label:'已完成',bg:'#f0fdf4',color:'#15803d'} };
+    el.innerHTML = _zbFeedbackData.map(function(t, idx) {
+        var st = STATUS_MAP[t.status] || STATUS_MAP.pending;
+        var d = new Date(t.ts); var timeStr = (d.getMonth()+1)+'/'+(d.getDate())+' '+d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+        var imgs = (t.imgs||[]).map(function(url){ return '<img src="'+url+'" onclick="zbShowImagePreview([\''+url+'\'],0)" style="width:40px;height:40px;object-fit:cover;border-radius:5px;border:0.5px solid var(--border-color);cursor:pointer;">'; }).join('');
+        var replyHtml = t.adminReply ? '<div style="background:var(--kpi-bg);border-radius:6px;padding:6px 10px;margin:6px 0;border-left:2px solid #2563eb;"><div style="font-size:10px;color:#2563eb;font-weight:500;margin-bottom:2px;">已回复</div><div style="font-size:12px;color:var(--text-primary);">'+t.adminReply+'</div></div>' : '';
+        var btnAccept = t.status==='pending' ? '<button onclick="zbFbAdminAction(\''+t.id+'\',\'accept\')" style="font-size:11px;padding:3px 10px;border-radius:6px;border:0.5px solid #93c5fd;background:#eff6ff;color:#1d4ed8;cursor:pointer;">标记已受理</button>' : '';
+        var btnDone = t.status!=='done' ? '<button onclick="zbFbAdminAction(\''+t.id+'\',\'done\')" style="font-size:11px;padding:3px 10px;border-radius:6px;border:0.5px solid #86efac;background:#f0fdf4;color:#15803d;cursor:pointer;">标记已完成</button>' : '';
+        var btnRead = !t.adminRead ? '<button onclick="zbFbAdminAction(\''+t.id+'\',\'read\')" style="font-size:11px;padding:3px 10px;border-radius:6px;border:0.5px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);cursor:pointer;">标记已读</button>' : '';
+        return '<div style="border:0.5px solid var(--border-color);border-radius:10px;padding:10px;margin-bottom:8px;'+(t.status==='done'?'opacity:.75;':'')+(!t.adminRead?'border-color:#fbbf24;':'')+'"><div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;flex-wrap:wrap;"><span style="font-size:11px;font-weight:500;color:var(--text-primary);">'+t.submitter+'</span><span style="font-size:10px;padding:1px 7px;border-radius:8px;background:#fef3c7;color:#92400e;">'+t.type+'</span><span style="font-size:10px;padding:1px 7px;border-radius:8px;background:'+st.bg+';color:'+st.color+';">'+st.label+'</span>'+(t.adminRead?'':'<span style="font-size:10px;padding:1px 7px;border-radius:8px;background:#fef3c7;color:#b45309;">未读</span>')+'<span style="font-size:10px;color:var(--text-secondary);margin-left:auto;">'+timeStr+'</span></div><div style="font-size:12px;color:var(--text-secondary);line-height:1.5;margin-bottom:6px;">'+t.text+'</div>'+(imgs?'<div style="display:flex;gap:4px;margin-bottom:6px;">'+imgs+'</div>':'')+replyHtml+'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:6px;">'+btnAccept+btnDone+btnRead+'<textarea id="zbFbReplyInput_'+idx+'" placeholder="输入回复，培训师可见…" style="flex:1;min-width:120px;border:0.5px solid var(--border-color);border-radius:6px;padding:4px 8px;font-size:11px;background:var(--kpi-bg);color:var(--text-primary);resize:none;outline:none;font-family:inherit;" rows="1">'+( t.adminReply||'')+'</textarea><button onclick="zbFbAdminReply(\''+t.id+'\','+idx+')" style="font-size:11px;padding:3px 10px;border-radius:6px;border:0.5px solid #2563eb;background:#eff6ff;color:#2563eb;cursor:pointer;white-space:nowrap;">发送回复</button></div></div>';
+    }).join('');
+}
+
+// 管理员操作
+window.zbFbAdminAction = async function(id, action) {
+    var t = _zbFeedbackData.find(function(x){ return x.id === id; });
+    if (!t) return;
+    if (action === 'accept') t.status = 'accepted';
+    if (action === 'done') t.status = 'done';
+    if (action === 'read') t.adminRead = true;
+    await zbSaveFeedback();
+    zbUpdateFeedbackDot();
+    zbRenderFeedbackAdmin();
+};
+
+// 管理员发送回复
+window.zbFbAdminReply = async function(id, idx) {
+    var inp = document.getElementById('zbFbReplyInput_' + idx);
+    var reply = inp ? inp.value.trim() : '';
+    if (!reply) { showToast('⚠️ 请输入回复内容'); return; }
+    var t = _zbFeedbackData.find(function(x){ return x.id === id; });
+    if (!t) return;
+    t.adminReply = reply;
+    t.adminReplyTs = Date.now();
+    t.adminRead = true;
+    t.userReadReply = false; // 培训师未读新回复
+    if (t.status === 'pending') t.status = 'accepted';
+    await zbSaveFeedback();
+    showToast('✅ 回复已发送');
+    zbRenderFeedbackAdmin();
+};
+
+// 管理员全部标为已读
+window.zbFbMarkAllRead = async function() {
+    _zbFeedbackData.forEach(function(t){ t.adminRead = true; });
+    await zbSaveFeedback();
+    zbUpdateFeedbackDot();
+    zbRenderFeedbackAdmin();
+};
+
+// 初始化时加载反馈
+setTimeout(zbLoadFeedback, 2000);
 
 // 把原上传按钮改成打开弹窗
 document.addEventListener('DOMContentLoaded', function(){
