@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.52</title>
+    <title>培训部数据看板 v1.53</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -770,7 +770,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.52</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.53</div>
     </div>
   </nav>
 
@@ -3641,7 +3641,7 @@
             }
 
             // ── 你的四表数据存储 ──────────────────────────────
-            const DATA = window._DATA = { qa:[], diff5:[], sum:[], diff4:[] };
+            const DATA = window._DATA = { qa:[], diff5:[], sum:[], diff4:[], dw4cat:[], dw4sum:[] };
             const CAT_MAP = {'平板电脑':'平板','智能手表':'手表','耳机/耳麦':'耳机','手机':'手机','笔记本':'笔记本','相机':'相机'};
 
             function nd(v){ if(!v)return ''; const s=String(v).trim(); if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10); const n=parseFloat(s); if(!isNaN(n)&&n>40000){const d=new Date((n-25569)*86400*1000);return d.toISOString().slice(0,10);} return s.slice(0,10); }
@@ -3707,13 +3707,22 @@
                     summaryData = DATA.qa.map(r => ({ siteName: r.site, totalChecks: r.checks, date: r.date }));
                     diffData = DATA.diff5.filter(r => r.strategy === '大盘评估/站点').map(mapDiff5);
                 } else {
-                    summaryData = DATA.sum.filter(r => r.cat === currentCat).map(r => ({ siteName: r.site, totalChecks: r.checks, date: r.date }));
-                    diffData = DATA.diff4.filter(r => r.cat === currentCat).map(mapDiff4);
+                    // 中心仓四品类
+                    var zxSum  = DATA.sum.filter(r => r.cat === currentCat).map(r => ({ siteName: r.site, totalChecks: r.checks, date: r.date }));
+                    // 大仓四品类汇总
+                    var dw4Sum = (DATA.dw4sum||[]).filter(r => r.cat === currentCat).map(r => ({ siteName: r.site, totalChecks: r.checks, date: r.date }));
+                    summaryData = zxSum.concat(dw4Sum);
+                    // 中心仓四品类差异明细
+                    var zxDiff = DATA.diff4.filter(r => r.cat === currentCat).map(mapDiff4);
+                    // 大仓四品类差异明细
+                    var dw4Diff = (DATA.dw4cat||[]).filter(r => r.cat === currentCat).map(mapDiff4);
+                    diffData = zxDiff.concat(dw4Diff);
                 }
                 // 差异明细页全量数据（所有品类）
                 window._allDiffData = [
                     ...DATA.diff5.filter(r => r.strategy === '大盘评估/站点').map(mapDiff5),
-                    ...DATA.diff4.map(mapDiff4)
+                    ...DATA.diff4.map(mapDiff4),
+                    ...(DATA.dw4cat||[]).map(mapDiff4)
                 ].sort((a,b) => (a.date||'').localeCompare(b.date||''));
             }
 
@@ -3769,6 +3778,44 @@
                             tableType = 'diff4'; tableName = '五品类差异明细';
                             parsed = rows.map(r => ({ date:nd(r['抽检时间']), code:(r['质检码']||'').trim(), site:(r['站点']||'').trim(), cat:CAT_MAP[r['品类']]||r['品类']||'', level1:r['一级项']||'', level2:r['二级项']||'', level3_orig:r['原三级项']||'', level3_new:r['新三级项']||'', subjobj:(r['主客观分类']||'').trim(), issueType:(r['质检项类型']||'').trim(), judgedType:(r['问题分类']||'').trim(), inspector:extractCN(r['质检师']||''), qaInspector:extractCN(r['QA']||'') }));
                             DATA.diff4 = smartMerge(DATA.diff4, parsed);
+                        } else if ('抽检设备数量' in fr && '站点名称' in fr && '品类名称' in fr && !('质检码' in fr)) {
+                            // 大仓四品类汇总表
+                            var DW4_SITES = new Set(['转转-深圳智能验机中心','转转-青岛智能验机中心','转转-成都智能验机中心','深圳后验中心仓','青岛后验中心仓','成都后验中心仓']);
+                            var DW4_CAT_MAP = {'平板电脑':'平板','智能手表':'手表','耳机/耳麦':'耳机','笔记本':'笔记本'};
+                            tableType = 'dw4sum'; tableName = '大仓四品类汇总';
+                            parsed = rows.filter(r => DW4_SITES.has((r['站点名称']||'').trim())).map(r => ({
+                                date:  nd(r['抽检日期']||r['日期']),
+                                site:  (r['站点名称']||'').trim(),
+                                cat:   DW4_CAT_MAP[r['品类名称']] || r['品类名称'] || '',
+                                checks: parseFloat(r['抽检设备数量'])||0,
+                                objDiff: parseFloat(r['客观差异设备量'])||0,
+                                subjDiff: parseFloat(r['主观差异设备量'])||0
+                            }));
+                            // 存到DATA.dw4sum
+                            if (!DATA.dw4sum) DATA.dw4sum = [];
+                            DATA.dw4sum = smartMerge(DATA.dw4sum, parsed, r => r.date+'|'+r.site+'|'+r.cat);
+                        } else if ('主客观问题分类' in fr && '抽检判定的问题类型' in fr && '站点名称' in fr && !('策略类别' in fr)) {
+                            // 大仓四品类差异明细表
+                            var DW4_SITES2 = new Set(['转转-深圳智能验机中心','转转-青岛智能验机中心','转转-成都智能验机中心','深圳后验中心仓','青岛后验中心仓','成都后验中心仓']);
+                            var DW4_CAT_MAP2 = {'平板电脑':'平板','智能手表':'手表','耳机/耳麦':'耳机','笔记本':'笔记本'};
+                            tableType = 'dw4cat'; tableName = '大仓四品类差异明细';
+                            parsed = rows.filter(r => DW4_SITES2.has((r['站点名称']||'').trim())).map(r => ({
+                                date:     nd(r['日期']),
+                                code:     (r['质检码']||'').trim(),
+                                site:     (r['站点名称']||'').trim(),
+                                cat:      DW4_CAT_MAP2[r['品类名称']] || r['品类名称'] || '',
+                                level1:   r['一级项名称']||'',
+                                level2:   r['二级项名称']||'',
+                                level3_orig: r['原三级项名称']||'',
+                                level3_new:  r['新三级项名称']||'',
+                                subjobj:  (r['主客观问题分类']||'').trim(),
+                                issueType: (r['问题类型']||'').trim(),
+                                judgedType: (r['抽检判定的问题类型']||'').trim(),
+                                inspector:  extractCN(r['原操作人名称']||''),
+                                qaInspector: extractCN(r['新操作人名称']||'')
+                            }));
+                            if (!DATA.dw4cat) DATA.dw4cat = [];
+                            DATA.dw4cat = smartMerge(DATA.dw4cat, parsed, r => r.date+'|'+r.code+'|'+r.site);
                         } else {
                             const colNames = Object.keys(fr).slice(0,5).join('、');
                             showToast('⚠️ 无法识别表格格式: ' + file.name + '（前几列: ' + colNames + '）');
@@ -5054,6 +5101,8 @@ const GH_FILES = {
     diff5:    'phone_diff_detail.json',
     sum:      'daily_summary.json',
     diff4:    'five_cat_detail.json',
+    dw4cat:   'dw_four_cat_detail.json',
+    dw4sum:   'dw_four_cat_summary.json',
     auth:     'auth_users.json',
     inspector:'inspector_override.json',
     log:      'upload_log.json',
@@ -6094,6 +6143,16 @@ async function zbLoadCloudData(useApi) {
     const diff4 = await loadSharded('five_cat_');
     if (diff4.length > 0) { window._DATA.diff4 = diff4; loaded++; }
 
+    // 加载大仓四品类差异明细和汇总（小文件，不分片）
+    const dw4catJson = await fetchFile(GH_FILES.dw4cat);
+    if (dw4catJson && dw4catJson.rows && dw4catJson.rows.length > 0) {
+        window._DATA.dw4cat = dw4catJson.rows; loaded++;
+    }
+    const dw4sumJson = await fetchFile(GH_FILES.dw4sum);
+    if (dw4sumJson && dw4sumJson.rows && dw4sumJson.rows.length > 0) {
+        window._DATA.dw4sum = dw4sumJson.rows;
+    }
+
     // 加载修改记录
     try {
         const json = viaApi ? await ghApiFetch(GH_FILES.inspector, token) : await fetchFile(GH_FILES.inspector);
@@ -6134,7 +6193,9 @@ async function zbPushAllWithProgress() {
         { key: 'qa',    label: 'QA差异率' },
         { key: 'diff5', label: '手机差异明细' },
         { key: 'sum',   label: '日汇总' },
-        { key: 'diff4', label: '五品类差异明细' }
+        { key: 'diff4', label: '五品类差异明细' },
+        { key: 'dw4cat', label: '大仓四品类差异明细' },
+        { key: 'dw4sum', label: '大仓四品类汇总' }
     ];
     // 过滤掉无数据的任务
     tasks = tasks.filter(function(t) { return window._DATA && (window._DATA[t.key]||[]).length > 0; });
@@ -8224,7 +8285,7 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <!-- 纠正日志面板 -->
     <div id="zbCorrectionPanel" style="display:none;flex:1;overflow-y:auto;padding:14px 20px;">
-      <div style="margin-bottom:10px;font-size:11px;color:#92400e;background:#fef3c7;border-radius:8px;padding:8px 12px;border:0.5px solid #fcd34d;">记录每次上传纠正表的匹配情况，日志仅存本地。规则存储在 GitHub 上，换设备后自动同步最新规则。</div>
+      <div style="margin-bottom:10px;font-size:11px;color:#92400e;background:#fef3c7;border-radius:8px;padding:8px 12px;border:0.5px solid #fcd34d;">记录每次上传纠正表的匹配情况，日志仅存本地。规则存储在云服务器上，换设备后自动同步最新规则。</div>
       <div id="zbCorrectionLogPanel"><div style="text-align:center;padding:40px;color:var(--text-secondary);font-size:12px;">暂无纠正表上传记录</div></div>
     </div>
     <div id="zbLogFooter" style="padding:10px 20px;border-top:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
@@ -10580,8 +10641,8 @@ function zbCloseUpload() {
         <div style="display:flex;align-items:center;gap:12px;">
           <div style="width:40px;height:40px;border-radius:10px;background:#ecfdf5;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">📦</div>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:600;color:#1e293b;">五品类数据</div>
-            <div style="font-size:11px;color:#64748b;margin-top:1px;">日汇总表 · 五品类差异明细表</div>
+            <div style="font-size:13px;font-weight:600;color:#1e293b;">大仓四品类数据</div>
+            <div style="font-size:11px;color:#64748b;margin-top:1px;">汇总数据表 · 差异明细数据表</div>
             <div id="zbUpFile2Name" style="font-size:11px;color:#059669;margin-top:4px;display:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
           </div>
           <label for="zbFiveCatInput" style="padding:6px 14px;border-radius:8px;background:#059669;color:#fff;font-size:12px;font-weight:500;cursor:pointer;flex-shrink:0;white-space:nowrap;">选择文件</label>
