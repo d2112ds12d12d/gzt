@@ -93,8 +93,8 @@
       "title": "黄浩瀚上岗延期沟通",
       "tag": null,
       "date": "05/26",
-      "done": false,
-      "status": "todo",
+      "done": true,
+      "status": "done",
       "priority": "normal",
       "created": 1779708577706,
       "parentId": "mpl28v37sxz",
@@ -1078,6 +1078,14 @@
   ],
   "books": [],
   "notes": [
+    {
+      "id": "mpmkz4p9jb0",
+      "title": "跟进：黄浩瀚上岗延期沟通 · 05/26",
+      "body": "",
+      "cat": "followup",
+      "date": "05/26 19:57",
+      "created": 1779796655757
+    },
     {
       "id": "mp5e4rsnn90",
       "title": "",
