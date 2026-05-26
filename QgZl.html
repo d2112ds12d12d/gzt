@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.54N</title>
+    <title>培训部数据看板 v1.54O</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -775,7 +775,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.54N</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.54O</div>
     </div>
   </nav>
 
@@ -6614,21 +6614,54 @@ async function _zbPushFile(fname, content, token) {
         bytes.forEach(function(b){ binary += String.fromCharCode(b); });
         b64 = btoa(binary);
     } catch(e) { console.error('base64编码失败:', e); return false; }
+    // 获取SHA：先尝试API，失败则用raw CDN降级
     let sha = '';
     for (let retry = 0; retry < 3; retry++) {
         try {
-            const r = await fetch(ghUrl(fname) + '?t=' + Date.now(), { headers: { Authorization: 'token ' + token } });
+            const r = await fetch(ghUrl(fname) + '?t=' + Date.now(), {
+                headers: { Authorization: 'token ' + token },
+                signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined
+            });
             if (r.ok) { const j = await r.json(); sha = j.sha || ''; break; }
-            else { break; }
-        } catch(e) { break; }
+            else if (r.status === 404) { sha = ''; break; } // 新文件，不需要SHA
+            else { await new Promise(function(r){ setTimeout(r, 1000); }); }
+        } catch(e) {
+            console.warn('SHA获取失败，第'+(retry+1)+'次重试:', e.message);
+            if (retry < 2) await new Promise(function(r){ setTimeout(r, 1500); });
+        }
+    }
+    // SHA还是空但文件可能存在，用raw CDN再试一次获取SHA
+    if (!sha) {
+        try {
+            const raw = await fetch(ghUrl(fname) + '?t=' + Date.now(), { headers: { Authorization: 'token ' + token } });
+            if (raw.ok) { const j = await raw.json(); sha = j.sha || ''; }
+        } catch(e) {}
     }
     const body = { message: 'Update ' + fname + ' via dashboard', content: b64 };
     if (sha) body.sha = sha;
-    try {
-        const res = await fetch(ghUrl(fname), { method: 'PUT', headers: { Authorization: 'token ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-        if (!res.ok) { const errText = await res.text(); console.error('推送失败 ' + fname + ':', res.status, errText); }
-        return res.ok;
-    } catch(e) { console.error('推送异常:', e); return false; }
+    // 推送，失败重试一次
+    for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+            const res = await fetch(ghUrl(fname), {
+                method: 'PUT',
+                headers: { Authorization: 'token ' + token, 'Content-Type': 'application/json' },
+                body: JSON.stringify(body)
+            });
+            if (res.ok) return true;
+            const errText = await res.text();
+            console.error('推送失败 ' + fname + ':', res.status, errText);
+            // 422通常是SHA过期，重新获取SHA再试
+            if (res.status === 422 && attempt === 0) {
+                try {
+                    const r2 = await fetch(ghUrl(fname) + '?t=' + Date.now(), { headers: { Authorization: 'token ' + token } });
+                    if (r2.ok) { const j2 = await r2.json(); body.sha = j2.sha || ''; }
+                } catch(e) {}
+                continue;
+            }
+            return false;
+        } catch(e) { console.error('推送异常:', e); return false; }
+    }
+    return false;
 }
 
 // ── 推送修改记录 ──
