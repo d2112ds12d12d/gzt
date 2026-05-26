@@ -1,6 +1,17 @@
 {
   "tasks": [
     {
+      "id": "mpml04maw9p",
+      "title": "kappa 停掉，至于复测岗问下复测组长要不要停掉",
+      "tag": null,
+      "date": "05/27",
+      "done": false,
+      "status": "todo",
+      "priority": "normal",
+      "created": 1779796702306,
+      "parentId": "mpl287bn43z"
+    },
+    {
       "id": "mpmjscz2bre",
       "title": "让大家核对昨日数据有无问题，特别是大仓四品类老师",
       "tag": null,
@@ -144,7 +155,10 @@
       "status": "done",
       "priority": "normal",
       "created": 1779704700179,
-      "parentId": "mpgap65e40b"
+      "parentId": "mpgap65e40b",
+      "childIds": [
+        "mpml04maw9p"
+      ]
     },
     {
       "id": "mpl0z3ct3uc",
