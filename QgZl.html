@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.54H</title>
+    <title>培训部数据看板 v1.54I</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -775,7 +775,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.54H</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.54I</div>
     </div>
   </nav>
 
@@ -790,7 +790,7 @@
       <!-- 表单 -->
       <div style="padding:20px 24px 22px;">
         <div style="font-size:11px;color:#64748b;margin-bottom:6px;">管理密码</div>
-        <input type="password" id="zbAdminPwdInput" placeholder="请输入密码" lang="zh"
+        <input type="password" id="zbAdminPwdInput" placeholder="请输入密码" autocomplete="new-password" lang="zh"
           style="width:100%;box-sizing:border-box;height:38px;border:1px solid #e2e8f0;border-radius:8px;padding:0 12px;font-size:13px;color:#0f172a;outline:none;margin-bottom:6px;"
           onkeydown="if(event.key==='Enter')zbAdminLoginSubmit()" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
         <div id="zbAdminLoginHint" style="font-size:11px;color:#dc2626;min-height:16px;margin-bottom:10px;"></div>
@@ -5902,12 +5902,35 @@ window.zbSavePersonEdits = async function() {
         });
     });
 
-    // 推送 phone_diff_detail.json
+    // 按月份分片推送，与加载逻辑保持一致
     try {
         var token = await zbGetToken();
         if (!token) throw new Error('Token获取失败');
         var payload = window._allDiffData || [];
-        await _zbPushFile('QGZLdata/phone_diff_detail.json', payload, token);
+        // 按 date 字段分组到各月份
+        var monthMap = {};
+        payload.forEach(function(d) {
+            var dt = (d.date||'').split(' ')[0] || '';
+            var ym = dt.slice(0,7); // "2026-05"
+            if (!ym || ym.length < 7) ym = 'unknown';
+            if (!monthMap[ym]) monthMap[ym] = [];
+            monthMap[ym].push(d);
+        });
+        // 只推送涉及修改的月份
+        var modifiedMonths = {};
+        Object.keys(_zbPersonEdits).forEach(function(key){
+            var parts = key.split('|');
+            var dt = (parts[1]||'').split(' ')[0];
+            var ym = dt.slice(0,7);
+            if (ym && ym.length >= 7) modifiedMonths[ym] = true;
+        });
+        var pushTargets = Object.keys(modifiedMonths).length > 0 ? Object.keys(modifiedMonths) : Object.keys(monthMap);
+        for (var i = 0; i < pushTargets.length; i++) {
+            var ym = pushTargets[i];
+            if (ym === 'unknown') continue;
+            var rows = monthMap[ym] || [];
+            await _zbPushFile('QGZLdata/phone_diff_' + ym + '.json', { rows: rows }, token);
+        }
 
         // 写日志
         zbAddPersonEditLog(Object.values(_zbPersonEdits));
@@ -8448,7 +8471,7 @@ document.addEventListener('DOMContentLoaded', function() {
   <div style="background:var(--bg-card);border-radius:20px;width:360px;max-width:92vw;padding:28px 28px 24px;border:1px solid var(--border-color);box-shadow:0 8px 24px rgba(0,0,0,0.12);">
     <div style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">🔑 登录</div>
     <div style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;">管理员输入管理密码，登录后可上传数据并同步云端</div>
-    <input type="password" id="zbLoginPwd" placeholder="请输入密码" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);font-size:13px;outline:none;box-sizing:border-box;margin-bottom:8px;" onkeydown="if(event.key==='Enter')zbConfirmLogin()">
+    <input type="password" id="zbLoginPwd" placeholder="请输入密码" autocomplete="new-password" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);font-size:13px;outline:none;box-sizing:border-box;margin-bottom:8px;" onkeydown="if(event.key==='Enter')zbConfirmLogin()">
     <div id="zbLoginHint" style="font-size:11px;color:#ef4444;min-height:16px;margin-bottom:12px;"></div>
     <div style="display:flex;gap:8px;">
       <button onclick="zbConfirmLogin()" style="flex:1;padding:10px;background:var(--btn-bg);color:white;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">确认登录</button>
