@@ -10084,7 +10084,9 @@ function zbSwitchLogTab(tab){
   } else if(tab==='feedback'){
     if(feedbackLogPanel) feedbackLogPanel.style.display='';
     if(tabFeedback){ tabFeedback.style.color='#3b82f6'; tabFeedback.style.borderBottom='2px solid #3b82f6'; tabFeedback.style.fontWeight='600'; }
+    // 先用内存数据渲染，再从云端拉取最新后刷新
     zbRenderFeedbackAdmin();
+    zbLoadFeedback().then(function(){ zbRenderFeedbackAdmin(); }).catch(function(){});
   }
 }
 
@@ -11006,6 +11008,12 @@ function zbUpdateFeedbackDot() {
 
 // 打开反馈弹窗
 window.zbOpenFeedback = function() {
+    // 管理员：直接打开日志弹窗并切到用户反馈Tab
+    if (zbRole === 'admin') {
+        zbOpenLog();
+        zbSwitchLogTab('feedback');
+        return;
+    }
     var modal = document.getElementById('zbFeedbackModal');
     if (modal) modal.style.display = 'flex';
     // 先渲染空状态，再后台加载数据
