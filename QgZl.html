@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.54G</title>
+    <title>培训部数据看板 v1.54H</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -775,7 +775,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.54G</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.54H</div>
     </div>
   </nav>
 
@@ -1251,6 +1251,13 @@
                 <select id="modalIssueTypeFilter" style="display:none;"></select>
                 <span id="modalResetFilter" style="display:none;"></span>
                 <input id="modalKeywordFilter" style="display:none;">
+            </div>
+            <!-- 原操作人批量保存条 -->
+            <div id="zbPersonSaveBar" style="display:none;align-items:center;gap:8px;padding:7px 16px;background:#fefce8;border-bottom:0.5px solid #fcd34d;font-size:12px;color:#92400e;flex-shrink:0;">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" style="flex-shrink:0;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+              已修改 <span id="zbPersonEditCount" style="font-weight:600;">0</span> 条原操作人，未保存
+              <button id="zbPersonSaveBtn" onclick="zbSavePersonEdits()" style="margin-left:auto;font-size:11px;padding:3px 12px;border-radius:6px;border:none;background:#2563eb;color:#fff;cursor:pointer;font-weight:500;">保存修改</button>
+              <button onclick="zbCancelPersonEdits()" style="font-size:11px;padding:3px 10px;border-radius:6px;border:0.5px solid #cbd5e1;background:#fff;color:#64748b;cursor:pointer;">撤销全部</button>
             </div>
             <div id="modalBody" style="flex:1;overflow:auto;">
                 <div class="virtual-scroll-container" id="virtualScrollContainer"></div>
@@ -2460,8 +2467,14 @@
                             const val = row[key] || '';
                             if (key === 'code' && gi >= 0) {
                                 const span = document.createElement('span');
-                                span.style.cssText = 'font-weight:500;color:'+tc+';';
+                                span.style.cssText = 'font-weight:500;color:'+tc+';cursor:pointer;';
                                 span.textContent = val;
+                                span.title = '双击复制质检码';
+                                span.addEventListener('dblclick', function(e){
+                                    e.stopPropagation();
+                                    try { navigator.clipboard.writeText(val); } catch(err) {}
+                                    showToast('✅ 已复制质检码 ' + val);
+                                });
                                 td.appendChild(span);
                                 if (row._isFirst && row._groupCount > 1) {
                                     const badge = document.createElement('span');
@@ -2502,8 +2515,14 @@
                                     zbInjectCamIcon(td, row, null);
                                 }
                             } else if (key === 'code') {
-                                td.style.cssText += 'font-weight:500;color:#2563eb;';
+                                td.style.cssText += 'font-weight:500;color:#2563eb;cursor:pointer;';
                                 td.textContent = val;
+                                td.title = '双击复制质检码';
+                                td.addEventListener('dblclick', function(e){
+                                    e.stopPropagation();
+                                    try { navigator.clipboard.writeText(val); } catch(err) {}
+                                    showToast('✅ 已复制质检码 ' + val);
+                                });
                                 // 跳转图标（普通行）
                                 var rowDate2 = row['_date']||row['date']||'';
                                 var rowCat2  = row['_cat'] ||row['cat'] ||'';
@@ -2535,6 +2554,10 @@
                                 } else {
                                     zbInjectCamIcon(td, row, null);
                                 }
+                            } else if (key === 'person') {
+                                // 原操作人列：培训师权限内可编辑
+                                var rawRow2 = row._rawRow || row;
+                                zbRenderPersonCell(td, rawRow2, row);
                             } else if (key === '_note') {
                                 // 备注列：显示内容+编辑图标（仅管理员）
                                 td.style.cssText += 'min-width:240px;max-width:480px;';
@@ -5769,6 +5792,199 @@ function zbShowImgPanel(cam, row, urls, readOnly) {
 // 触发文件上传（无图时直接弹面板）
 
 // ── 备注列渲染 ──────────────────────────────
+
+// ══ 原操作人列可编辑（培训师/管理员，权限内站点） ══
+var _zbPersonEdits = {}; // { rowKey: { oldVal, newVal, row } }
+
+function zbPersonRowKey(row) {
+    return [row.code||row['质检码']||'', row.date||row['抽检日期']||'', row.warehouse||row['站点']||'', row.level1||row['一级项']||'', row.level3||row.level3_new||row['新三级项']||''].join('|');
+}
+
+function zbRenderPersonCell(td, row, displayRow) {
+    td.innerHTML = '';
+    td.style.cssText += 'min-width:70px;';
+    var canEdit = zbRole === 'admin' || (zbRole === 'trainer' && zbCanEditRow(row));
+    var key = zbPersonRowKey(row);
+    var curVal = (_zbPersonEdits[key] ? _zbPersonEdits[key].newVal : null) || row.person || row['原操作人'] || row['原操作人名称'] || '—';
+
+    var span = document.createElement('span');
+    span.style.cssText = 'font-size:12px;color:#1e293b;' + (canEdit ? 'cursor:pointer;' : '');
+    span.textContent = curVal;
+    if (_zbPersonEdits[key]) {
+        span.style.color = '#b45309';
+        span.title = '已修改（原：' + _zbPersonEdits[key].oldVal + '）';
+    }
+    td.appendChild(span);
+
+    if (!canEdit) return;
+
+    // 悬浮编辑图标
+    var editIcon = document.createElement('span');
+    editIcon.style.cssText = 'display:inline-flex;width:14px;height:14px;align-items:center;justify-content:center;color:#94a3b8;cursor:pointer;opacity:0;vertical-align:middle;margin-left:3px;transition:opacity .15s;flex-shrink:0;';
+    editIcon.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
+    editIcon.title = '修改原操作人';
+
+    function doEdit(e) {
+        e && e.stopPropagation();
+        // 关闭已有输入框
+        var old = document.getElementById('zbPersonEditInput');
+        if (old) old.parentNode.removeChild(old);
+
+        var inp = document.createElement('input');
+        inp.id = 'zbPersonEditInput';
+        inp.value = curVal === '—' ? '' : curVal;
+        inp.style.cssText = 'width:70px;height:22px;font-size:12px;padding:0 5px;border:1.5px solid #2563eb;border-radius:5px;background:#eff6ff;color:#1e40af;outline:none;';
+        span.style.display = 'none';
+        editIcon.style.display = 'none';
+        td.insertBefore(inp, span);
+        inp.focus(); inp.select();
+
+        function commit() {
+            var newVal = inp.value.trim();
+            if (inp.parentNode) inp.parentNode.removeChild(inp);
+            span.style.display = '';
+            editIcon.style.display = '';
+            if (!newVal || newVal === curVal) return;
+            var origVal = row.person || row['原操作人'] || row['原操作人名称'] || '';
+            _zbPersonEdits[key] = { oldVal: origVal, newVal: newVal, row: row };
+            curVal = newVal;
+            span.textContent = newVal;
+            span.style.color = '#b45309';
+            span.title = '已修改（原：' + origVal + '）';
+            zbUpdatePersonSaveBar();
+        }
+        inp.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') { e.preventDefault(); commit(); }
+            if (e.key === 'Escape') { inp.remove(); span.style.display=''; editIcon.style.display=''; }
+        });
+        inp.addEventListener('blur', function() { setTimeout(commit, 150); });
+    }
+
+    editIcon.addEventListener('click', doEdit);
+    span.addEventListener('click', doEdit);
+
+    var tr = td.closest('tr');
+    if (tr) {
+        tr.addEventListener('mouseenter', function(){ editIcon.style.opacity='1'; });
+        tr.addEventListener('mouseleave', function(){ editIcon.style.opacity='0'; });
+    }
+    td.appendChild(editIcon);
+}
+
+function zbUpdatePersonSaveBar() {
+    var n = Object.keys(_zbPersonEdits).length;
+    var bar = document.getElementById('zbPersonSaveBar');
+    if (!bar) return;
+    if (n > 0) {
+        bar.style.display = 'flex';
+        var cnt = bar.querySelector('#zbPersonEditCount');
+        if (cnt) cnt.textContent = n;
+    } else {
+        bar.style.display = 'none';
+    }
+}
+
+window.zbSavePersonEdits = async function() {
+    var n = Object.keys(_zbPersonEdits).length;
+    if (!n) return;
+    var btn = document.getElementById('zbPersonSaveBtn');
+    if (btn) { btn.textContent = '保存中…'; btn.style.opacity='0.6'; }
+
+    // 把修改写入 window._allDiffData
+    Object.keys(_zbPersonEdits).forEach(function(key) {
+        var e = _zbPersonEdits[key];
+        var parts = key.split('|');
+        var code = parts[0], date = parts[1], site = parts[2];
+        (window._allDiffData||[]).forEach(function(d) {
+            if ((d.code||'') === code && (d.date||'').split(' ')[0] === date && (d.warehouse||d.site||'') === site) {
+                d.person = e.newVal;
+            }
+        });
+    });
+
+    // 推送 phone_diff_detail.json
+    try {
+        var token = await zbGetToken();
+        if (!token) throw new Error('Token获取失败');
+        var payload = window._allDiffData || [];
+        await _zbPushFile('QGZLdata/phone_diff_detail.json', payload, token);
+
+        // 写日志
+        zbAddPersonEditLog(Object.values(_zbPersonEdits));
+
+        showToast('✅ 原操作人已保存，共修改 ' + n + ' 条');
+        _zbPersonEdits = {};
+        zbUpdatePersonSaveBar();
+    } catch(err) {
+        showToast('❌ 保存失败：' + err.message);
+        if (btn) { btn.textContent = '保存修改'; btn.style.opacity='1'; }
+    }
+    if (btn) { btn.textContent = '保存修改'; btn.style.opacity='1'; }
+};
+
+window.zbCancelPersonEdits = function() {
+    _zbPersonEdits = {};
+    zbUpdatePersonSaveBar();
+    // 重新渲染当前弹窗
+    if (window.virtualScroll) window.virtualScroll.renderRows(0);
+    showToast('已撤销全部修改');
+};
+
+// 人员修改日志（存localStorage）
+var _ZB_PERSON_EDIT_LOG_KEY = 'zb_person_edit_log';
+function zbAddPersonEditLog(edits) {
+    var operator = (zbTrainerInfo && zbTrainerInfo.name) || (zbRole==='admin'?'管理员':'未知');
+    var now = new Date();
+    var ts = now.toLocaleString('zh-CN',{hour12:false});
+    var log = [];
+    try { log = JSON.parse(localStorage.getItem(_ZB_PERSON_EDIT_LOG_KEY)||'[]'); } catch(e) {}
+    edits.forEach(function(e) {
+        log.unshift({
+            ts: ts,
+            operator: operator,
+            code: (e.row && (e.row.code||e.row['质检码'])) || '',
+            site: (e.row && (e.row.warehouse||e.row['站点'])) || '',
+            oldVal: e.oldVal,
+            newVal: e.newVal
+        });
+    });
+    if (log.length > 500) log = log.slice(0, 500);
+    try { localStorage.setItem(_ZB_PERSON_EDIT_LOG_KEY, JSON.stringify(log)); } catch(err) {}
+}
+
+function zbRenderPersonEditLog() {
+    var el = document.getElementById('zbPersonEditLogPanel');
+    if (!el) return;
+    var log = [];
+    try { log = JSON.parse(localStorage.getItem(_ZB_PERSON_EDIT_LOG_KEY)||'[]'); } catch(e) {}
+    if (!log.length) {
+        el.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;font-size:12px;">暂无修改记录</div>';
+        return;
+    }
+    var html = '<table style="width:100%;border-collapse:collapse;font-size:11px;">'
+        + '<thead><tr style="border-bottom:0.5px solid #e2e8f0;">'
+        + '<th style="padding:7px 10px;text-align:left;color:#94a3b8;font-weight:500;">时间</th>'
+        + '<th style="padding:7px 10px;text-align:left;color:#94a3b8;font-weight:500;">操作人</th>'
+        + '<th style="padding:7px 10px;text-align:left;color:#94a3b8;font-weight:500;">质检码</th>'
+        + '<th style="padding:7px 10px;text-align:left;color:#94a3b8;font-weight:500;">站点</th>'
+        + '<th style="padding:7px 10px;text-align:left;color:#94a3b8;font-weight:500;">改前</th>'
+        + '<th style="padding:7px 10px;text-align:left;color:#94a3b8;font-weight:500;">改后</th>'
+        + '</tr></thead><tbody>';
+    log.forEach(function(l, i) {
+        var bg = i%2===0?'':'background:#f8fafc;';
+        html += '<tr style="border-bottom:0.5px solid #f1f5f9;'+bg+'">'
+            + '<td style="padding:6px 10px;color:#64748b;">' + (l.ts||'') + '</td>'
+            + '<td style="padding:6px 10px;font-weight:500;color:#1e293b;">' + (l.operator||'') + '</td>'
+            + '<td style="padding:6px 10px;font-family:monospace;color:#2563eb;">' + (l.code||'') + '</td>'
+            + '<td style="padding:6px 10px;color:#64748b;">' + (l.site||'') + '</td>'
+            + '<td style="padding:6px 10px;"><span style="background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:4px;">' + (l.oldVal||'') + '</span></td>'
+            + '<td style="padding:6px 10px;"><span style="background:#dcfce7;color:#166534;padding:1px 6px;border-radius:4px;">' + (l.newVal||'') + '</span></td>'
+            + '</tr>';
+    });
+    html += '</tbody></table>';
+    el.innerHTML = html;
+}
+
 function zbRenderNoteCell(td, row) {
     td.innerHTML = '';
     var canEdit = zbCanEditRow(row);
@@ -8256,6 +8472,7 @@ document.addEventListener('DOMContentLoaded', function() {
         <button id="zbTabEdit" onclick="zbSwitchLogTab('edit')" style="padding:7px 16px;font-size:12px;font-weight:600;background:transparent;color:var(--text-secondary);border:none;border-bottom:2px solid transparent;cursor:pointer;">✏️ 记录编辑</button>
         <button id="zbTabImage" onclick="zbSwitchLogTab('image')" style="padding:7px 16px;font-size:12px;font-weight:600;background:transparent;color:var(--text-secondary);border:none;border-bottom:2px solid transparent;cursor:pointer;">🖼️ 图片操作</button>
         <button id="zbTabCorrection" onclick="zbSwitchLogTab('correction')" style="padding:7px 16px;font-size:12px;font-weight:600;background:transparent;color:var(--text-secondary);border:none;border-bottom:2px solid transparent;cursor:pointer;">🔧 纠正日志</button>
+        <button id="zbTabPersonEdit" onclick="zbSwitchLogTab('personedit')" style="padding:7px 16px;font-size:12px;font-weight:600;background:transparent;color:var(--text-secondary);border:none;border-bottom:2px solid transparent;cursor:pointer;">✏️ 人员修改</button>
 
       </div>
     </div>
@@ -8301,6 +8518,11 @@ document.addEventListener('DOMContentLoaded', function() {
     <div id="zbCorrectionPanel" style="display:none;flex:1;overflow-y:auto;padding:14px 20px;">
       <div style="margin-bottom:10px;font-size:11px;color:#92400e;background:#fef3c7;border-radius:8px;padding:8px 12px;border:0.5px solid #fcd34d;">记录每次上传纠正表的匹配情况，日志仅存本地。规则存储在云服务器上，换设备后自动同步最新规则。</div>
       <div id="zbCorrectionLogPanel"><div style="text-align:center;padding:40px;color:var(--text-secondary);font-size:12px;">暂无纠正表上传记录</div></div>
+    </div>
+    <!-- 人员修改面板 -->
+    <div id="zbPersonEditPanel" style="display:none;flex:1;overflow-y:auto;padding:14px 20px;">
+      <div style="margin-bottom:10px;font-size:11px;color:#1e40af;background:#eff6ff;border-radius:8px;padding:8px 12px;border:0.5px solid #bfdbfe;">记录培训师/管理员对差异明细「原操作人」列的所有修改，日志仅存本地。</div>
+      <div id="zbPersonEditLogPanel"><div style="text-align:center;padding:40px;color:var(--text-secondary);font-size:12px;">暂无修改记录</div></div>
     </div>
     <div id="zbLogFooter" style="padding:10px 20px;border-top:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
       <div id="zbLogFooterTxt" style="font-size:11px;color:var(--text-secondary);"></div>
@@ -10059,8 +10281,10 @@ function zbSwitchLogTab(tab){
   var feedbackLogPanel = document.getElementById('zbFeedbackLogPanel');
 
   // 重置所有tab样式
-  [tabLog,tabCloud,tabEdit,tabImage,tabCorrection,tabFeedback].forEach(function(t){ if(t){ t.style.color='var(--text-secondary)'; t.style.borderBottom='2px solid transparent'; t.style.fontWeight='400'; }});
-  [logPanel,cloudPanel,editPanel,imagePanel,correctionPanel,feedbackLogPanel].forEach(function(p){ if(p) p.style.display='none'; });
+  var tabPersonEdit2 = document.getElementById('zbTabPersonEdit');
+  var personEditPanel2 = document.getElementById('zbPersonEditPanel');
+  [tabLog,tabCloud,tabEdit,tabImage,tabCorrection,tabFeedback,tabPersonEdit2].forEach(function(t){ if(t){ t.style.color='var(--text-secondary)'; t.style.borderBottom='2px solid transparent'; t.style.fontWeight='400'; }});
+  [logPanel,cloudPanel,editPanel,imagePanel,correctionPanel,feedbackLogPanel,personEditPanel2].forEach(function(p){ if(p) p.style.display='none'; });
   if(logStats) logStats.style.display='none';
   if(logFooter) logFooter.style.display='none';
 
@@ -10085,6 +10309,12 @@ function zbSwitchLogTab(tab){
     if(correctionPanel) correctionPanel.style.display='';
     if(tabCorrection){ tabCorrection.style.color='#3b82f6'; tabCorrection.style.borderBottom='2px solid #3b82f6'; tabCorrection.style.fontWeight='600'; }
     zbRenderCorrectionLog();
+  } else if(tab==='personedit'){
+    var personEditPanel = document.getElementById('zbPersonEditPanel');
+    var tabPersonEdit = document.getElementById('zbTabPersonEdit');
+    if(personEditPanel) personEditPanel.style.display='';
+    if(tabPersonEdit){ tabPersonEdit.style.color='#3b82f6'; tabPersonEdit.style.borderBottom='2px solid #3b82f6'; tabPersonEdit.style.fontWeight='600'; }
+    zbRenderPersonEditLog();
   }
 }
 
@@ -10679,19 +10909,7 @@ function zbCloseUpload() {
       </div>
       <input type="file" id="zbZxCatInput" style="display:none;" accept=".xlsx,.xls" multiple>
 
-      <!-- 框3：三大仓操作人纠正表 -->
-      <div style="border:1.5px dashed #fbbf24;border-radius:12px;padding:14px 16px;background:#fffbeb;transition:all .15s;position:relative;" id="zbUpBox3">
-        <div style="display:flex;align-items:center;gap:12px;">
-          <div style="width:40px;height:40px;border-radius:10px;background:#fef3c7;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🔧</div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:600;color:#92400e;">三大仓操作人纠正表</div>
-            <div style="font-size:11px;color:#b45309;margin-top:1px;">手机品类原操作人纠正 · 按质检码+五项匹配</div>
-            <div id="zbUpFile3Name" style="display:none;font-size:11px;color:#059669;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
-          </div>
-          <button onclick="document.getElementById('zbCorrectionInput').click()" style="padding:6px 14px;border-radius:8px;background:#f59e0b;color:#fff;font-size:12px;font-weight:500;border:none;flex-shrink:0;white-space:nowrap;cursor:pointer;" id="zbUpBtn3">选择文件</button>
-        </div>
-      </div>
-      <input type="file" id="zbCorrectionInput" style="display:none;" accept=".xlsx,.xls">
+
 
     </div>
 
