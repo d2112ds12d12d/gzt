@@ -8,7 +8,8 @@
       "done": false,
       "status": "todo",
       "priority": "normal",
-      "created": 1779765934430
+      "created": 1779765934430,
+      "pinned": true
     },
     {
       "id": "mpm0s0jmtma",
