@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.51A</title>
+    <title>培训部数据看板 v1.52</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -770,7 +770,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.51A</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.52</div>
     </div>
   </nav>
 
@@ -932,7 +932,7 @@
                     <div class="card-title" style="margin:0;">
                         <div class="card-title-bar" style="background:#2563eb;"></div>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        全国客观执行差异量排名
+                        全国质检排行榜（客观执行差异量）
                     </div>
                     <span id="rankPersonCnt" style="font-size:12px;color:var(--text-secondary);"></span>
                 </div>
@@ -954,7 +954,7 @@
             <!-- 全国差异率趋势图 -->
             <div class="card" id="nationalTrendCard">
                 <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;flex-wrap:wrap;gap:8px;">
-                    <div class="card-title" id="nationalTrendTitle" style="margin:0;"><div class="card-title-bar" style="background:#10b981;"></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>客观执行差异率趋势 · 全国总览</div>
+                    <div class="card-title" id="nationalTrendTitle" style="margin:0;"><div class="card-title-bar" style="background:#10b981;"></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>客观执行差异率趋势图</div>
                     <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
                         <span style="font-size:11px;color:var(--text-secondary);">站点筛选</span>
                         <div id="zbTrendSiteFilterWrap" style="display:flex;align-items:center;gap:4px;flex-wrap:wrap;"></div>
@@ -1059,7 +1059,7 @@
                 <span id="hotspotPageInfo" style="font-size:10px;color:var(--text-secondary);"></span>
                 <div id="hotspotPageBtns" style="display:flex;gap:3px;"></div>
               </div>
-              <div style="font-size:10px;color:var(--text-secondary);margin-top:7px;">排序：↑ 上升幅度优先 → ↓ 下降 → — 持平 · 数据跟随顶部品类 / 站点类型 / 日期联动</div>
+              <div style="font-size:10px;color:var(--text-secondary);margin-top:7px;">排序：上升幅度优先 · 跟随顶部品类筛选</div>
             </div>
 
             </div><!-- end zb-page overview -->
@@ -4403,7 +4403,7 @@
 
                 // ── 站点筛选模式：每个站点一条折线 ──
                 if (_zbTrendSelectedSites.length > 0) {
-                    if (titleEl) titleEl.innerHTML = '<div class="card-title-bar" style="background:#10b981;"></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>客观执行差异率趋势 · 站点对比（' + _zbTrendSelectedSites.length + '个）';
+                    if (titleEl) titleEl.innerHTML = '<div class="card-title-bar" style="background:#10b981;"></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>客观执行差异率趋势图 · 站点对比（' + _zbTrendSelectedSites.length + '个）';
                     var allDates = new Set();
                     var seriesData = _zbTrendSelectedSites.map(function(site, i) {
                         var siteDiff = allDiff.filter(function(d){ return d.warehouse === site; });
@@ -4448,7 +4448,7 @@
                 // ── 默认模式：跟随顶部站点类型联动 ──
                 var showLabels = true;
                 if (currentSiteType === 'ALL') {
-                    if (titleEl) titleEl.innerHTML = '<div class="card-title-bar" style="background:#10b981;"></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>客观执行差异率趋势 · 大仓 vs 中心仓';
+                    if (titleEl) titleEl.innerHTML = '<div class="card-title-bar" style="background:#10b981;"></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>客观执行差异率趋势图 · 大仓 vs 中心仓';
                     var dwDiff = allDiff.filter(function(d){ return getSiteType(d.warehouse||'') === 'DW'; });
                     var zxDiff = allDiff.filter(function(d){ return getSiteType(d.warehouse||'') === 'ZX'; });
                     var dwSum  = _sumData.filter(function(r){ return getSiteType(r.siteName||'') === 'DW'; });
@@ -4485,7 +4485,7 @@
                 } else {
                     var typeLabel = currentSiteType === 'DW' ? '大仓' : '中心仓';
                     var lineColor = currentSiteType === 'DW' ? '#3b82f6' : '#10b981';
-                    if (titleEl) titleEl.innerHTML = '<div class="card-title-bar" style="background:#10b981;"></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>客观执行差异率趋势 · ' + typeLabel + '总览';
+                    if (titleEl) titleEl.innerHTML = '<div class="card-title-bar" style="background:#10b981;"></div><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>客观执行差异率趋势图 · ' + typeLabel + '';
                     var baseDiff = allDiff.filter(function(d){ return getSiteType(d.warehouse||'') === currentSiteType; });
                     var baseSum  = _sumData.filter(function(r){ return getSiteType(r.siteName||'') === currentSiteType; });
                     var result = calcRateByDate(baseDiff, baseSum);
@@ -5368,38 +5368,153 @@ async function zbRemoveRowImage(row, url) {
 // 图片预览弹窗
 function zbShowImagePreview(urls, startIdx) {
     var idx = startIdx || 0;
+    var scale = 1, tx = 0, ty = 0;
+    var dragging = false, dragStartX = 0, dragStartY = 0, dragTx = 0, dragTy = 0;
+    var lastPinchDist = 0;
+
     var overlay = document.createElement('div');
-    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.88);z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;';
+    overlay.style.cssText = 'position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,0.92);z-index:99999;display:flex;align-items:center;justify-content:center;flex-direction:column;overflow:hidden;';
+
+    function resetTransform() { scale = 1; tx = 0; ty = 0; applyTransform(); }
+    function applyTransform() {
+        if (imgEl) imgEl.style.transform = 'translate(' + tx + 'px,' + ty + 'px) scale(' + scale + ')';
+    }
+    function clampTx() {
+        // 缩放后图片尺寸
+        var W = imgEl.naturalWidth  || imgEl.offsetWidth;
+        var H = imgEl.naturalHeight || imgEl.offsetHeight;
+        var maxTx = Math.max(0, (W * scale - window.innerWidth)  / 2);
+        var maxTy = Math.max(0, (H * scale - window.innerHeight) / 2);
+        tx = Math.max(-maxTx, Math.min(maxTx, tx));
+        ty = Math.max(-maxTy, Math.min(maxTy, ty));
+    }
+
+    var imgEl;
     function render() {
         overlay.innerHTML = '';
+        scale = 1; tx = 0; ty = 0;
+
+        // 关闭按钮
         var close = document.createElement('div');
-        close.style.cssText = 'position:absolute;top:18px;right:24px;color:#fff;font-size:28px;cursor:pointer;z-index:1;';
+        close.style.cssText = 'position:absolute;top:16px;right:22px;color:#fff;font-size:28px;cursor:pointer;z-index:2;line-height:1;padding:4px;';
         close.textContent = '×';
         close.onclick = function(){ document.body.removeChild(overlay); };
         overlay.appendChild(close);
+
+        // 计数 + 缩放提示
         var counter = document.createElement('div');
-        counter.style.cssText = 'position:absolute;top:20px;left:50%;transform:translateX(-50%);color:#fff;font-size:13px;opacity:.7;';
-        counter.textContent = (idx+1) + ' / ' + urls.length;
+        counter.style.cssText = 'position:absolute;top:18px;left:50%;transform:translateX(-50%);color:#fff;font-size:12px;opacity:.65;z-index:2;pointer-events:none;white-space:nowrap;';
+        counter.textContent = urls.length > 1 ? (idx+1) + ' / ' + urls.length + '   滚轮缩放 · 拖拽平移 · 双击还原' : '滚轮缩放 · 拖拽平移 · 双击还原';
         overlay.appendChild(counter);
-        var img = document.createElement('img');
-        img.src = urls[idx];
-        img.style.cssText = 'max-width:90vw;max-height:80vh;border-radius:8px;object-fit:contain;';
-        overlay.appendChild(img);
+
+        // 重置按钮（右下角）
+        var resetBtn = document.createElement('div');
+        resetBtn.style.cssText = 'position:absolute;bottom:20px;right:20px;color:#fff;font-size:11px;background:rgba(255,255,255,0.15);border-radius:8px;padding:5px 12px;cursor:pointer;z-index:2;';
+        resetBtn.textContent = '还原大小';
+        resetBtn.onclick = resetTransform;
+        overlay.appendChild(resetBtn);
+
+        // 图片容器
+        var imgWrap = document.createElement('div');
+        imgWrap.style.cssText = 'position:relative;display:flex;align-items:center;justify-content:center;width:100%;height:100%;';
+
+        imgEl = document.createElement('img');
+        imgEl.src = urls[idx];
+        imgEl.style.cssText = 'max-width:90vw;max-height:82vh;border-radius:6px;object-fit:contain;cursor:grab;user-select:none;transform-origin:center center;transition:transform .05s;';
+        imgEl.draggable = false;
+
+        // 双击还原
+        imgEl.ondblclick = function(e){ e.stopPropagation(); resetTransform(); };
+
+        // 鼠标滚轮缩放
+        overlay.onwheel = function(e) {
+            e.preventDefault();
+            var delta = e.deltaY < 0 ? 1.12 : 0.89;
+            scale = Math.max(0.5, Math.min(8, scale * delta));
+            clampTx();
+            applyTransform();
+        };
+
+        // 拖拽
+        imgEl.onmousedown = function(e) {
+            if (scale <= 1) return;
+            e.preventDefault();
+            dragging = true;
+            dragStartX = e.clientX; dragStartY = e.clientY;
+            dragTx = tx; dragTy = ty;
+            imgEl.style.cursor = 'grabbing';
+            imgEl.style.transition = 'none';
+        };
+        window._zbImgMouseMove = function(e) {
+            if (!dragging) return;
+            tx = dragTx + (e.clientX - dragStartX);
+            ty = dragTy + (e.clientY - dragStartY);
+            clampTx();
+            applyTransform();
+        };
+        window._zbImgMouseUp = function() {
+            if (dragging) { dragging = false; if(imgEl){ imgEl.style.cursor='grab'; imgEl.style.transition='transform .05s'; } }
+        };
+        overlay.onmousemove = window._zbImgMouseMove;
+        overlay.onmouseup   = window._zbImgMouseUp;
+
+        // 触摸捏合缩放
+        overlay.ontouchstart = function(e) {
+            if (e.touches.length === 2) {
+                lastPinchDist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+            } else if (e.touches.length === 1 && scale > 1) {
+                dragging = true;
+                dragStartX = e.touches[0].clientX; dragStartY = e.touches[0].clientY;
+                dragTx = tx; dragTy = ty;
+            }
+        };
+        overlay.ontouchmove = function(e) {
+            e.preventDefault();
+            if (e.touches.length === 2) {
+                var dist = Math.hypot(e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
+                if (lastPinchDist) scale = Math.max(0.5, Math.min(8, scale * (dist / lastPinchDist)));
+                lastPinchDist = dist;
+                clampTx(); applyTransform();
+            } else if (e.touches.length === 1 && dragging) {
+                tx = dragTx + (e.touches[0].clientX - dragStartX);
+                ty = dragTy + (e.touches[0].clientY - dragStartY);
+                clampTx(); applyTransform();
+            }
+        };
+        overlay.ontouchend = function() { dragging = false; lastPinchDist = 0; };
+
+        imgWrap.appendChild(imgEl);
+        overlay.appendChild(imgWrap);
+
+        // 左右切换箭头
         if (urls.length > 1) {
             var prev = document.createElement('div');
-            prev.style.cssText = 'position:absolute;left:20px;top:50%;transform:translateY(-50%);color:#fff;font-size:36px;cursor:pointer;padding:10px;opacity:'+(idx===0?'0.2':'0.8')+';';
+            prev.style.cssText = 'position:absolute;left:12px;top:50%;transform:translateY(-50%);color:#fff;font-size:40px;cursor:pointer;padding:8px 14px;opacity:'+(idx===0?'0.15':'0.75')+';z-index:2;line-height:1;transition:opacity .15s;';
             prev.textContent = '‹';
-            prev.onclick = function(){ if(idx>0){idx--;render();} };
+            prev.onclick = function(e){ e.stopPropagation(); if(idx>0){idx--;render();} };
             overlay.appendChild(prev);
             var next = document.createElement('div');
-            next.style.cssText = 'position:absolute;right:20px;top:50%;transform:translateY(-50%);color:#fff;font-size:36px;cursor:pointer;padding:10px;opacity:'+(idx===urls.length-1?'0.2':'0.8')+';';
+            next.style.cssText = 'position:absolute;right:12px;top:50%;transform:translateY(-50%);color:#fff;font-size:40px;cursor:pointer;padding:8px 14px;opacity:'+(idx===urls.length-1?'0.15':'0.75')+';z-index:2;line-height:1;transition:opacity .15s;';
             next.textContent = '›';
-            next.onclick = function(){ if(idx<urls.length-1){idx++;render();} };
+            next.onclick = function(e){ e.stopPropagation(); if(idx<urls.length-1){idx++;render();} };
             overlay.appendChild(next);
         }
+        // 键盘支持
+        window._zbImgKeydown = function(e) {
+            if (e.key === 'Escape') document.body.removeChild(overlay);
+            if (e.key === 'ArrowLeft'  && idx > 0) { idx--; render(); }
+            if (e.key === 'ArrowRight' && idx < urls.length-1) { idx++; render(); }
+        };
+        document.addEventListener('keydown', window._zbImgKeydown);
     }
+
     render();
-    overlay.onclick = function(e){ if(e.target===overlay) document.body.removeChild(overlay); };
+    overlay.onclick = function(e){ if(e.target === overlay){ document.body.removeChild(overlay); } };
+    overlay.addEventListener('remove', function(){
+        document.removeEventListener('keydown', window._zbImgKeydown);
+    });
+    var _origRemove = overlay.remove.bind(overlay);
+    overlay.remove = function(){ document.removeEventListener('keydown', window._zbImgKeydown); _origRemove(); };
     document.body.appendChild(overlay);
 }
 
@@ -5996,6 +6111,14 @@ async function zbLoadCloudData(useApi) {
         showToast('✅ 云端数据已加载（' + loaded + '/4）' + src);
         if (typeof zbSetCloudStatus === 'function') zbSetCloudStatus('ok');
         if (typeof bridgeData === 'function') bridgeData();
+        // 数据加载完立即应用操作人纠正（不等轮询，确保导出时person已是正确值）
+        try {
+            var _corr = localStorage.getItem(_ZB_CORRECTION_KEY||'zb_person_corrections_v1');
+            if (_corr) {
+                var _corrObj = JSON.parse(_corr);
+                if (typeof zbApplyPersonCorrections === 'function') zbApplyPersonCorrections(_corrObj);
+            }
+        } catch(e) {}
         if (typeof fullRefresh === 'function') fullRefresh();
     } else {
         showToast('云端暂无数据，请上传文件');
@@ -6323,7 +6446,13 @@ function zbRenderSiteDetail(siteName) {
             // 总抽检量
             var siteChecks = 0;
             var _sumData = window._getSummaryData ? window._getSummaryData() : [];
-            _sumData.forEach(function(s){ if(s.siteName === siteName) siteChecks += (s.totalChecks||0); });
+            _sumData.forEach(function(s){
+                if (s.siteName !== siteName) return;
+                // 联动顶部日期：只统计日期范围内的抽检量
+                if (startD && s.date && s.date < startD) return;
+                if (endD   && s.date && s.date > endD)   return;
+                siteChecks += (s.totalChecks||0);
+            });
 
             // 按口径计算差异量
             var diffFilter;
@@ -10613,16 +10742,19 @@ async function zbProcessCorrectionFile(file) {
         // 更新本地缓存
         try { localStorage.setItem(_ZB_CORRECTION_KEY, JSON.stringify(corrections)); } catch(e) {}
 
-        // 立即应用到内存数据
-        var matchCount = zbApplyPersonCorrections(corrections);
+        // 立即应用到内存数据，获取明细
+        var applyResult = zbApplyPersonCorrections(corrections);
+        var matchCount = applyResult.matched;
 
-        // 记录日志
+        // 记录日志，含每行明细
         var logEntry = {
             ts: Date.now(),
             fileName: file.name,
             total: total,
             matched: matchCount,
-            unmatched: total - matchCount
+            unmatched: total - matchCount,
+            okRows:   applyResult.okRows,
+            failRows: applyResult.failRows
         };
         var logs = [];
         try { logs = JSON.parse(localStorage.getItem('zb_correction_log_v1')||'[]'); } catch(e) {}
@@ -10640,21 +10772,35 @@ async function zbProcessCorrectionFile(file) {
     }
 }
 
-// 把纠正规则应用到 _allDiffData
+// 把纠正规则应用到 _allDiffData，返回{matched, okRows, failRows}
 function zbApplyPersonCorrections(corrections) {
     var allDiff = window._allDiffData || [];
     var DW_SITES = new Set(['转转-深圳智能验机中心','转转-青岛智能验机中心','转转-成都智能验机中心']);
-    var matchCount = 0;
-    allDiff.forEach(function(d) {
-        if (!DW_SITES.has(d.warehouse)) return;
-        if (d.cat !== '手机') return;
-        var key = [d.code||'', d.level1||'', d.level2||'', d.level3_orig||'', d.level3||''].join('|');
-        if (corrections[key]) {
-            d.person = corrections[key];
-            matchCount++;
+    var matched = 0;
+    var okRows = [], failRows = [];
+    // 建立_allDiffData的key集合，用于判断"码不在数据中"
+    var dataKeys = new Set(allDiff.map(function(d){
+        return [d.code||'',d.level1||'',d.level2||'',d.level3_orig||'',d.level3||''].join('|');
+    }));
+    var dataCodes = new Set(allDiff.map(function(d){ return d.code||''; }));
+
+    Object.keys(corrections).forEach(function(key) {
+        var parts = key.split('|');
+        var code=parts[0],l1=parts[1],l2=parts[2],l3o=parts[3],l3=parts[4];
+        var person = corrections[key];
+        if (dataKeys.has(key)) {
+            // 完整匹配
+            allDiff.forEach(function(d){
+                var k=[d.code||'',d.level1||'',d.level2||'',d.level3_orig||'',d.level3||''].join('|');
+                if(k===key){ d.person=person; matched++; }
+            });
+            okRows.push({code:code,l1:l1,l2:l2,l3:l3,person:person});
+        } else {
+            var reason = dataCodes.has(code) ? '五项中有字段不一致' : '质检码不在数据中';
+            failRows.push({code:code,l1:l1,l2:l2,l3:l3,person:person,reason:reason});
         }
     });
-    return matchCount;
+    return { matched: matched, okRows: okRows, failRows: failRows };
 }
 
 // 页面加载时自动从 localStorage 恢复纠正（快速），后台再从 GitHub 拉最新
@@ -10690,38 +10836,7 @@ function zbApplyPersonCorrections(corrections) {
 })();
 
 // ── 纠正表日志渲染 ──
-function zbRenderCorrectionLog() {
-    var el = document.getElementById('zbCorrectionLogPanel');
-    if (!el) return;
-    var logs = [];
-    try { logs = JSON.parse(localStorage.getItem('zb_correction_log_v1')||'[]'); } catch(e) {}
-    if (!logs.length) {
-        el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary);font-size:12px;">暂无纠正表上传记录</div>';
-        return;
-    }
-    var html = '<table style="width:100%;border-collapse:collapse;font-size:11px;">'
-        + '<thead><tr style="border-bottom:0.5px solid #e2e8f0;">'
-        + '<th style="padding:7px 10px;text-align:left;color:#94a3b8;font-weight:500;">时间</th>'
-        + '<th style="padding:7px 10px;text-align:left;color:#94a3b8;font-weight:500;">文件名</th>'
-        + '<th style="padding:7px 10px;text-align:center;color:#94a3b8;font-weight:500;">规则总数</th>'
-        + '<th style="padding:7px 10px;text-align:center;color:#94a3b8;font-weight:500;">匹配成功</th>'
-        + '<th style="padding:7px 10px;text-align:center;color:#94a3b8;font-weight:500;">未匹配</th>'
-        + '</tr></thead><tbody>';
-    logs.forEach(function(l, i) {
-        var bg = i%2===0?'':'background:#f8fafc;';
-        var d = new Date(l.ts);
-        var timeStr = d.getFullYear()+'/'+(d.getMonth()+1)+'/'+d.getDate()+' '+d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
-        html += '<tr style="border-bottom:0.5px solid #f1f5f9;'+bg+'">'
-            + '<td style="padding:6px 10px;color:#64748b;">' + timeStr + '</td>'
-            + '<td style="padding:6px 10px;color:#1e293b;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+l.fileName+'">' + l.fileName + '</td>'
-            + '<td style="padding:6px 10px;text-align:center;color:#1e293b;">' + l.total + '</td>'
-            + '<td style="padding:6px 10px;text-align:center;font-weight:500;color:#059669;">' + l.matched + '</td>'
-            + '<td style="padding:6px 10px;text-align:center;color:' + (l.unmatched>0?'#dc2626':'#94a3b8') + ';">' + l.unmatched + '</td>'
-            + '</tr>';
-    });
-    html += '</tbody></table>';
-    el.innerHTML = html;
-}
+// zbRenderCorrectionLog is defined above
 
 // 把原上传按钮改成打开弹窗
 document.addEventListener('DOMContentLoaded', function(){
