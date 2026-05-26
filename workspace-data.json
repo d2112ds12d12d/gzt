@@ -1,6 +1,18 @@
 {
   "tasks": [
     {
+      "id": "mpmjscz2bre",
+      "title": "让大家核对昨日数据有无问题，特别是大仓四品类老师",
+      "tag": null,
+      "date": "05/27",
+      "done": false,
+      "status": "todo",
+      "priority": "normal",
+      "created": 1779794660270,
+      "note": "",
+      "links": []
+    },
+    {
       "id": "mpmdu1yj8at",
       "title": "主动承接培训记录表成看板",
       "tag": null,
@@ -8,7 +20,8 @@
       "done": false,
       "status": "todo",
       "priority": "normal",
-      "created": 1779784661611
+      "created": 1779784661611,
+      "pinned": true
     },
     {
       "id": "mpm2onz2c0w",
