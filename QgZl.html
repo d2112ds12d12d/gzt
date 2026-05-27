@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.54P</title>
+    <title>培训部数据看板 v1.54O</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -775,7 +775,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.54P</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.54O</div>
     </div>
   </nav>
 
@@ -1239,13 +1239,7 @@
                             <button onclick="zbCopyWeekly()" style="height:24px;padding:0 10px;border-radius:6px;border:0.5px solid #93c5fd;background:#eff6ff;color:#2563eb;font-size:11px;cursor:pointer;flex-shrink:0;white-space:nowrap;">📋 复制</button>
                         </div>
                     </div>
-                    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-                        <button id="modalJumpBtn" onclick="zbModalJump()" style="display:none;align-items:center;gap:4px;padding:5px 12px;border-radius:7px;border:0.5px solid #93c5fd;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;line-height:1;">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                            跳转抽检登记表
-                        </button>
-                        <span class="close-modal" style="flex-shrink:0;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#64748b;">&times;</span>
-                    </div>
+                    <span class="close-modal" style="flex-shrink:0;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#64748b;">&times;</span>
                 </div>
             </div>
             <!-- 副筛选栏：仅保留口径提示，列筛选在表头▾ -->
@@ -1527,14 +1521,7 @@
             };
 
             // 获取某行对应的表格链接
-            
-// 差异明细弹窗顶部跳转按钮
-window.zbModalJump = function() {
-    var btn = document.getElementById('modalJumpBtn');
-    if (!btn || !btn._link) return;
-    window.open(btn._link, '_blank');
-};
-window.zbGetTableLink = function(date, cat, site) {
+            window.zbGetTableLink = function(date, cat, site) {
                 if (!date || !cat) return null;
                 var ym = date.slice(0,7);
                 var siteType = window.zbGetSiteType(site||'');
@@ -2810,26 +2797,6 @@ window.zbGetTableLink = function(date, cat, site) {
 
                 var modalTitleEl = document.getElementById('modalTitle');
                 if (modalTitleEl) modalTitleEl.innerText = title;
-                // 设置跳转按钮：取第一条记录的date/cat/site算链接
-                var jumpBtn = document.getElementById('modalJumpBtn');
-                if (jumpBtn) {
-                    var firstR = (filteredByKJ.length ? filteredByKJ : records)[0];
-                    if (firstR) {
-                        var jDate = (firstR.date||'').split(' ')[0];
-                        var jCat  = firstR.cat || firstR._cat || '';
-                        var jSite = firstR.warehouse || firstR.site || firstR._warehouse || '';
-                        var jLink = typeof zbGetTableLink === 'function' ? zbGetTableLink(jDate, jCat, jSite) : null;
-                        if (jLink) {
-                            jumpBtn.style.display = 'inline-flex';
-                            jumpBtn._link = jLink;
-                            jumpBtn._code = firstR.code || '';
-                        } else {
-                            jumpBtn.style.display = 'none';
-                        }
-                    } else {
-                        jumpBtn.style.display = 'none';
-                    }
-                }
 
                 // 口径提示
                 var kjHint = document.getElementById('modalKouJingHint');
@@ -3017,10 +2984,10 @@ window.zbGetTableLink = function(date, cat, site) {
                     return true;
                 };
                 // 取范围内实际有数据的日期，找最后一天和前一天
-                const allDates = [...new Set([...DATA.qa,...DATA.sum,...DATA.diff5].map(r=>r.date).filter(Boolean).filter(inRange))].sort();
+                const allDates = [...new Set([...DATA.qa,...DATA.sum].map(r=>r.date).filter(Boolean).filter(inRange))].sort();
                 if (!allDates.length) {
                     document.getElementById('rankBoardDW').innerHTML = '<div style="color:var(--text-secondary);font-size:12px;padding:12px;">暂无数据</div>';
-                    document.getElementById('rankBoardZX').innerHTML = '<div style="color:var(--text-secondary);font-size:12px;padding:12px;">暂无数据</div>';
+                    document.getElementById('rankBoardZX').innerHTML = '';
                     return;
                 }
                 const latestDate = allDates[allDates.length - 1];
@@ -7986,7 +7953,6 @@ function zbRenderSitePersonList() {
 
 function zbRenderSiteIssueAnalysis(execDiff, rootEl) {
     var isCompare = !!window._zbCompareOpen;
-    var lastStart = (document.getElementById('siteWeekLastStart')||{}).value||'';
     var lastStart = (document.getElementById('siteWeekLastStart')||{}).value||'';
     var lastEnd   = (document.getElementById('siteWeekLastEnd')||{}).value||'';
     var curStart  = (document.getElementById('siteWeekCurStart')||{}).value||'';
