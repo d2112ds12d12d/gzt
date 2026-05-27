@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.54H</title>
+    <title>培训部数据看板 v1.54I</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -775,7 +775,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.54H</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.54I</div>
     </div>
   </nav>
 
@@ -3655,7 +3655,7 @@
             const DATA = window._DATA = { qa:[], diff5:[], sum:[], diff4:[], dw4cat:[], dw4sum:[] };
             const CAT_MAP = {'平板电脑':'平板','智能手表':'手表','耳机/耳麦':'耳机','手机':'手机','笔记本':'笔记本','相机':'相机'};
 
-            function nd(v){ if(!v)return ''; const s=String(v).trim(); if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10); const n=parseFloat(s); if(!isNaN(n)&&n>40000){const d=new Date((n-25569)*86400*1000);return d.toISOString().slice(0,10);} const slash=/^(\d{4})\/(\d{1,2})\/(\d{1,2})/.exec(s); if(slash)return slash[1]+'-'+slash[2].padStart(2,'0')+'-'+slash[3].padStart(2,'0'); return s.slice(0,10); }
+            function nd(v){ if(!v)return ''; const s=String(v).trim(); if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10); const n=parseFloat(s); if(!isNaN(n)&&n>40000){const d=new Date((n-25569)*86400*1000);return d.toISOString().slice(0,10);} return s.slice(0,10); }
             function extractCN(str){ if(!str)return ''; const m=str.match(/[\u4e00-\u9fa5]+/g); if(m)return m.join(''); const m2=str.match(/[（(]([^）)]+)[）)]/); if(m2)return m2[1]; return str.trim(); }
             function setChipLoaded(id, ok) {
                 const el = document.getElementById(id);
@@ -3742,6 +3742,7 @@
                 if (!files.length) return;
                 showLoading();
                 showToast('正在解析…');
+                var _thisUploadKeys = new Set(); // 记录本次实际上传了哪些表
                 for (const file of files) {
                     try {
                         const buf = await file.arrayBuffer();
@@ -3838,6 +3839,7 @@
                         const _dMin = _parsedDates.length ? _parsedDates.reduce((a,b)=>a<b?a:b) : '—';
                         const _dMax = _parsedDates.length ? _parsedDates.reduce((a,b)=>a>b?a:b) : '—';
                         var _logRecord = zbAddLog({ type: tableType, tableName: tableName, rows: parsed.length, dateMin: _dMin, dateMax: _dMax, dates: [...new Set(_parsedDates)] });
+                        _thisUploadKeys.add(tableType);
                     } catch(e) {
                         console.error('解析失败:', file.name, e);
                         showToast('✗ 解析失败: ' + file.name + '（' + (e.message||'格式错误') + '）');
@@ -3858,7 +3860,7 @@
 
                 // 管理员及以上：带进度条推送到云端
                 if (typeof zbPushToGitHub === 'function' && (zbRole === 'admin' || zbRole === 'super')) {
-                    await zbPushAllWithProgress();
+                    await zbPushAllWithProgress(_thisUploadKeys);
                     setTimeout(() => { if (typeof zbPushLog === 'function') zbPushLog(); }, 800);
                     _zbHealthDismissed = false;
                     zbCheckDataHealth();
@@ -4031,8 +4033,6 @@
                 if (diffData.length) fullRefresh();
                 else { if (trendChart) trendChart.resize(); if (personStackChart) personStackChart.resize(); if (issueTypeChart) issueTypeChart.resize(); }
             });
-
-            loadDataByMode('weekly');
 
             // ── 品类切换：直接在闭包内绑定，不需要window._zb*迂回 ──
             function switchCat(cat) {
@@ -6176,18 +6176,6 @@ async function zbLoadCloudData(useApi) {
         if (json && json.logs) { _zbLog = json.logs; localStorage.setItem('zb_upload_log', JSON.stringify(_zbLog)); }
     } catch(e) {}
 
-    // 格式清洗：把 qa/sum 里历史遗留的斜杠日期（2026/5/26）统一转成横线格式（2026-05-26）
-    function fixSlashDate(s) {
-        if (!s) return s;
-        var slash = /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/.exec(String(s).trim());
-        return slash ? slash[1]+'-'+slash[2].padStart(2,'0')+'-'+slash[3].padStart(2,'0') : s;
-    }
-    ['qa','sum'].forEach(function(key) {
-        if (window._DATA[key]) {
-            window._DATA[key].forEach(function(r){ if(r.date) r.date = fixSlashDate(r.date); });
-        }
-    });
-
     if (loaded > 0) {
         const src = viaApi ? '（API直连）' : '';
         showToast('✅ 云端数据已加载（' + loaded + '/4）' + src);
@@ -6211,7 +6199,7 @@ async function zbLoadCloudData(useApi) {
 
 // ── 推送到GitHub ──
 // ── 带进度遮罩的批量云端推送 ──
-async function zbPushAllWithProgress() {
+async function zbPushAllWithProgress(uploadedKeys) {
     var tasks = [
         { key: 'qa',    label: 'QA差异率' },
         { key: 'diff5', label: '手机差异明细' },
@@ -6222,6 +6210,10 @@ async function zbPushAllWithProgress() {
     ];
     // 过滤掉无数据的任务
     tasks = tasks.filter(function(t) { return window._DATA && (window._DATA[t.key]||[]).length > 0; });
+    // 如果传入了本次上传的key集合，进度条只展示本次上传的项
+    if (uploadedKeys && uploadedKeys.size > 0) {
+        tasks = tasks.filter(function(t) { return uploadedKeys.has(t.key); });
+    }
     var total = tasks.length;
     if (!total) return;
 
