@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.54F</title>
+    <title>培训部数据看板 v1.54M</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -775,7 +775,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.54F</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.54M</div>
     </div>
   </nav>
 
@@ -9474,6 +9474,7 @@ function zbCopyDimTable() {
     var siteName = titleEl ? titleEl.textContent.replace(' · 站点详情','').trim() : '站点';
 
     var scopeLabel = window.zbGetScopeLabel ? window.zbGetScopeLabel(window._siteDataScope) : '客观执行';
+    var lastStart  = (document.getElementById('siteWeekLastStart')||{}).value||'';
     var lastEnd   = (document.getElementById('siteWeekLastEnd')||{}).value||'';
     var curStart  = (document.getElementById('siteWeekCurStart')||{}).value||'';
     var curEnd    = (document.getElementById('siteWeekCurEnd')||{}).value||'';
@@ -9516,127 +9517,204 @@ function zbCopyDimTable() {
 
         function inPeriod(date, s, e){ if(!s||!e) return false; return date>=s&&date<=e; }
 
-        // 本周列表：按本周差异量降序
-        var curMap = {}, prvMap = {};
-        personData.forEach(function(d){
-            var dt = d.date ? d.date.split(' ')[0] : '';
-            var p  = d.person || '未知';
-            if (inPeriod(dt, curStart, curEnd))  curMap[p] = (curMap[p]||0) + 1;
-            if (inPeriod(dt, lastStart, lastEnd)) prvMap[p] = (prvMap[p]||0) + 1;
-        });
-
-        var curList = Object.keys(curMap).map(function(n){ return {name:n, cur:curMap[n], prv:prvMap[n]||0}; });
-        curList.sort(function(a,b){ return b.cur - a.cur || b.prv - a.prv; });
-
-        var prvList = Object.keys(prvMap).map(function(n){ return {name:n, prv:prvMap[n], cur:curMap[n]||0}; });
-        prvList.sort(function(a,b){ return b.prv - a.prv || b.cur - a.cur; });
-
-        if (!curList.length && !prvList.length) { showToast('暂无数据，请先开启「对比数据」并设置周区间'); return; }
-
-        html = '<table style="'+S.table+'">'
-            + '<tr>'
-            + '<th style="'+S.thL+'">质检人员（'+scopeLabel+'）</th>'
-            + '<th style="'+S.th+'">上周差异数量（'+lastLabel+'）</th>'
-            + '<th style="'+S.th+'">本周差异数量（'+curLabel+'）</th>'
-            + '<th style="'+S.th+'">变化</th>'
-            + '</tr>';
-
-        var tdN = 'padding:6px 12px;text-align:center;border:1px solid #e9eff6;color:#1e293b;';
-        var tdL = 'padding:6px 12px;text-align:left;border:1px solid #e9eff6;color:#1e293b;';
-
-        // 本周分组
-        if (curList.length) {
-            html += '<tr><td colspan="4" style="'+S.secCur+'">本周失误人明细 · '+curLabel+'</td></tr>';
-            curList.forEach(function(p){
-                var delta = p.cur - p.prv;
-                html += '<tr>'
-                    + '<td style="'+tdL+'">'+p.name+'</td>'
-                    + '<td style="'+tdN+'">'+(p.prv||'—')+'</td>'
-                    + '<td style="'+tdN+'">'+p.cur+'</td>';
-                html += deltaHtml(delta, tdN);
-                html += '</tr>';
+        if (!isCompare) {
+            // ── 累计模式：按筛选期差异台数排名 ──
+            var topStart2 = (document.getElementById('startDateFilter')||{}).value || '';
+            var topEnd2   = (document.getElementById('endDateFilter')||{}).value || '';
+            var dateLabel2 = (topStart2&&topEnd2) ? (function(){ function fs(s){var p=s.split('-');return (p[1]|0)+'/'+(p[2]|0);}  return fs(topStart2)+'—'+fs(topEnd2)+'·累计'; })() : '累计';
+            var personCodeMap2 = {};
+            personData.forEach(function(d){
+                var dt = d.date ? d.date.split(' ')[0] : '';
+                if ((!topStart2||dt>=topStart2) && (!topEnd2||dt<=topEnd2)) {
+                    var code = d.code || ('__nocode__'+Math.random());
+                    var p = d.person||'未知';
+                    if (!personCodeMap2[p]) personCodeMap2[p] = new Set();
+                    personCodeMap2[p].add(code);
+                }
             });
-        }
-
-        // 上周分组
-        if (prvList.length) {
-            html += '<tr><td colspan="4" style="'+S.secPrv+'">上周失误人明细 · '+lastLabel+'</td></tr>';
-            prvList.forEach(function(p){
-                var delta = p.cur - p.prv;
+            var topArr2 = Object.keys(personCodeMap2).map(function(n){ return {name:n, cnt:personCodeMap2[n].size}; });
+            topArr2.sort(function(a,b){ return b.cnt-a.cnt; });
+            if (!topArr2.length) { showToast('暂无数据'); return; }
+            var tdN2 = 'padding:6px 12px;text-align:center;border:1px solid #e9eff6;color:#1e293b;';
+            var tdL2 = 'padding:6px 12px;text-align:left;border:1px solid #e9eff6;color:#1e293b;';
+            var totalCnt = topArr2.reduce(function(s,r){return s+r.cnt;},0);
+            html = '<table style="'+S.table+'">'
+                + '<tr>'
+                + '<th style="'+S.thL.replace('text-align:center','text-align:left')+'">排名</th>'
+                + '<th style="'+S.thL+'">质检人员（'+scopeLabel+'）</th>'
+                + '<th style="'+S.th+'">差异台数（'+dateLabel2+'）</th>'
+                + '<th style="'+S.th+'">占比</th>'
+                + '</tr>';
+            topArr2.forEach(function(p, i){
+                var pct = totalCnt ? Math.round(p.cnt/totalCnt*100)+'%' : '—';
                 html += '<tr>'
-                    + '<td style="'+tdL+'">'+p.name+'</td>'
-                    + '<td style="'+tdN+'">'+p.prv+'</td>'
-                    + '<td style="'+tdN+'">'+(p.cur||'—')+'</td>';
-                html += deltaHtml(delta, tdN);
-                html += '</tr>';
+                    + '<td style="'+tdN2+'">'+(i+1)+'</td>'
+                    + '<td style="'+tdL2+'">'+p.name+'</td>'
+                    + '<td style="'+tdN2+'">'+p.cnt+'</td>'
+                    + '<td style="'+tdN2+'">'+pct+'</td>'
+                    + '</tr>';
             });
-        }
+            html += '</table>';
 
-        html += '</table>';
+        } else {
+            // ── 对比模式：上周 vs 本周 ──
+            // 本周列表：按本周差异量降序
+            var curMap = {}, prvMap = {};
+            personData.forEach(function(d){
+                var dt = d.date ? d.date.split(' ')[0] : '';
+                var p  = d.person || '未知';
+                if (inPeriod(dt, curStart, curEnd))  curMap[p] = (curMap[p]||0) + 1;
+                if (inPeriod(dt, lastStart, lastEnd)) prvMap[p] = (prvMap[p]||0) + 1;
+            });
+
+            var curList = Object.keys(curMap).map(function(n){ return {name:n, cur:curMap[n], prv:prvMap[n]||0}; });
+            curList.sort(function(a,b){ return b.cur - a.cur || b.prv - a.prv; });
+
+            var prvList = Object.keys(prvMap).map(function(n){ return {name:n, prv:prvMap[n], cur:curMap[n]||0}; });
+            prvList.sort(function(a,b){ return b.prv - a.prv || b.cur - a.cur; });
+
+            if (!curList.length && !prvList.length) { showToast('暂无数据，请先开启「对比数据」并设置周区间'); return; }
+
+            html = '<table style="'+S.table+'">'
+                + '<tr>'
+                + '<th style="'+S.thL+'">质检人员（'+scopeLabel+'）</th>'
+                + '<th style="'+S.th+'">上周差异数量（'+lastLabel+'）</th>'
+                + '<th style="'+S.th+'">本周差异数量（'+curLabel+'）</th>'
+                + '<th style="'+S.th+'">变化</th>'
+                + '</tr>';
+
+            var tdN = 'padding:6px 12px;text-align:center;border:1px solid #e9eff6;color:#1e293b;';
+            var tdL = 'padding:6px 12px;text-align:left;border:1px solid #e9eff6;color:#1e293b;';
+
+            if (curList.length) {
+                html += '<tr><td colspan="4" style="'+S.secCur+'">本周失误人明细 · '+curLabel+'</td></tr>';
+                curList.forEach(function(p){
+                    var delta = p.cur - p.prv;
+                    html += '<tr>'
+                        + '<td style="'+tdL+'">'+p.name+'</td>'
+                        + '<td style="'+tdN+'">'+(p.prv||'—')+'</td>'
+                        + '<td style="'+tdN+'">'+p.cur+'</td>';
+                    html += deltaHtml(delta, tdN);
+                    html += '</tr>';
+                });
+            }
+            if (prvList.length) {
+                html += '<tr><td colspan="4" style="'+S.secPrv+'">上周失误人明细 · '+lastLabel+'</td></tr>';
+                prvList.forEach(function(p){
+                    var delta = p.cur - p.prv;
+                    html += '<tr>'
+                        + '<td style="'+tdL+'">'+p.name+'</td>'
+                        + '<td style="'+tdN+'">'+p.prv+'</td>'
+                        + '<td style="'+tdN+'">'+(p.cur||'—')+'</td>';
+                    html += deltaHtml(delta, tdN);
+                    html += '</tr>';
+                });
+            }
+            html += '</table>';
+        }
 
     } else {
-        // ── 项维度：从_siteExecDiff按对比区间重新聚合 ──
+        // ── 项维度 ──
         var execDiff2 = window._siteExecDiff || [];
         if (!execDiff2.length) { showToast('项维度暂无数据'); return; }
+        var isCompare2 = !!window._zbCompareOpen;
 
         function inPrd(date, s, e){ if(!s||!e) return false; return date>=s&&date<=e; }
-        var curItemMap = {}, prvItemMap = {};
-        execDiff2.forEach(function(d){
-            var dt = d.date ? d.date.split(' ')[0] : '';
-            var k  = d.level3 || '未知';
-            if (inPrd(dt, curStart,  curEnd))  curItemMap[k] = (curItemMap[k]||0) + 1;
-            if (inPrd(dt, lastStart, lastEnd))  prvItemMap[k] = (prvItemMap[k]||0) + 1;
-        });
 
-        var allItemKeys = new Set(Object.keys(curItemMap).concat(Object.keys(prvItemMap)));
-        var curRows = [], prvRows = [];
-        allItemKeys.forEach(function(k){
-            var c = curItemMap[k]||0, p = prvItemMap[k]||0;
-            if (c > 0) curRows.push({level3:k, cur:c, last:p, delta:c-p});
-            else        prvRows.push({level3:k, cur:c, last:p, delta:c-p});
-        });
-        curRows.sort(function(a,b){ return b.cur-a.cur||b.last-a.last; });
-        prvRows.sort(function(a,b){ return b.last-a.last||b.cur-a.cur; });
-
-        if (!curRows.length && !prvRows.length) { showToast('项维度暂无数据，请先开启「对比数据」'); return; }
-
-        // 数据行白底，只有分组标题行有底色
-        var tdN = 'padding:6px 12px;text-align:center;border:1px solid #e9eff6;color:#1e293b;';
-        var tdL = 'padding:6px 12px;text-align:left;border:1px solid #e9eff6;color:#1e293b;';
-
-        html = '<table style="'+S.table+'">'
-            + '<tr>'
-            + '<th style="'+S.thL+'">质检项（'+scopeLabel+'）</th>'
-            + '<th style="'+S.th+'">上周差异数量（'+lastLabel+'）</th>'
-            + '<th style="'+S.th+'">本周差异数量（'+curLabel+'）</th>'
-            + '<th style="'+S.th+'">变化</th>'
-            + '</tr>';
-
-        if (curRows.length) {
-            html += '<tr><td colspan="4" style="'+S.secCur+'">本周失误项明细 · '+curLabel+'</td></tr>';
-            curRows.forEach(function(r){
-                html += '<tr>'
-                    + '<td style="'+tdL+'">'+r.level3+'</td>'
-                    + '<td style="'+tdN+'">'+(r.last||'—')+'</td>'
-                    + '<td style="'+tdN+'">'+r.cur+'</td>';
-                html += deltaHtml(r.delta, tdN);
-                html += '</tr>';
+        if (!isCompare2) {
+            // ── 累计模式：按筛选期出现次数排名 ──
+            var topStart3 = (document.getElementById('startDateFilter')||{}).value || '';
+            var topEnd3   = (document.getElementById('endDateFilter')||{}).value || '';
+            var dateLabel3 = (topStart3&&topEnd3) ? (function(){ function fs(s){var p=s.split('-');return (p[1]|0)+'/'+(p[2]|0);} return fs(topStart3)+'—'+fs(topEnd3)+'·累计'; })() : '累计';
+            var itemMap3 = {};
+            execDiff2.forEach(function(d){
+                var dt = d.date ? d.date.split(' ')[0] : '';
+                if ((!topStart3||dt>=topStart3) && (!topEnd3||dt<=topEnd3)) {
+                    var k = d.level3 || '未知';
+                    itemMap3[k] = (itemMap3[k]||0) + 1;
+                }
             });
-        }
-
-        if (prvRows.length) {
-            html += '<tr><td colspan="4" style="'+S.secPrv+'">上周失误项明细 · '+lastLabel+'</td></tr>';
-            prvRows.forEach(function(r){
+            var itemArr3 = Object.keys(itemMap3).map(function(k){ return {level3:k, cnt:itemMap3[k]}; });
+            itemArr3.sort(function(a,b){ return b.cnt-a.cnt; });
+            if (!itemArr3.length) { showToast('项维度暂无数据'); return; }
+            var totalCnt3 = itemArr3.reduce(function(s,r){return s+r.cnt;},0);
+            var tdN3 = 'padding:6px 12px;text-align:center;border:1px solid #e9eff6;color:#1e293b;';
+            var tdL3 = 'padding:6px 12px;text-align:left;border:1px solid #e9eff6;color:#1e293b;';
+            html = '<table style="'+S.table+'">'
+                + '<tr>'
+                + '<th style="'+S.thL.replace('text-align:center','text-align:left')+'">排名</th>'
+                + '<th style="'+S.thL+'">质检项（'+scopeLabel+'）</th>'
+                + '<th style="'+S.th+'">出现次数（'+dateLabel3+'）</th>'
+                + '<th style="'+S.th+'">占比</th>'
+                + '</tr>';
+            itemArr3.forEach(function(r, i){
+                var pct = totalCnt3 ? Math.round(r.cnt/totalCnt3*100)+'%' : '—';
                 html += '<tr>'
-                    + '<td style="'+tdL+'">'+r.level3+'</td>'
-                    + '<td style="'+tdN+'">'+r.last+'</td>'
-                    + '<td style="'+tdN+'">'+(r.cur||'—')+'</td>';
-                html += deltaHtml(r.delta, tdN);
-                html += '</tr>';
+                    + '<td style="'+tdN3+'">'+(i+1)+'</td>'
+                    + '<td style="'+tdL3+'">'+r.level3+'</td>'
+                    + '<td style="'+tdN3+'">'+r.cnt+'</td>'
+                    + '<td style="'+tdN3+'">'+pct+'</td>'
+                    + '</tr>';
             });
-        }
+            html += '</table>';
 
-        html += '</table>';
+        } else {
+            // ── 对比模式：上周 vs 本周 ──
+            var curItemMap = {}, prvItemMap = {};
+            execDiff2.forEach(function(d){
+                var dt = d.date ? d.date.split(' ')[0] : '';
+                var k  = d.level3 || '未知';
+                if (inPrd(dt, curStart,  curEnd))  curItemMap[k] = (curItemMap[k]||0) + 1;
+                if (inPrd(dt, lastStart, lastEnd))  prvItemMap[k] = (prvItemMap[k]||0) + 1;
+            });
+
+            var allItemKeys = new Set(Object.keys(curItemMap).concat(Object.keys(prvItemMap)));
+            var curRows = [], prvRows = [];
+            allItemKeys.forEach(function(k){
+                var c = curItemMap[k]||0, p = prvItemMap[k]||0;
+                if (c > 0) curRows.push({level3:k, cur:c, last:p, delta:c-p});
+                else        prvRows.push({level3:k, cur:c, last:p, delta:c-p});
+            });
+            curRows.sort(function(a,b){ return b.cur-a.cur||b.last-a.last; });
+            prvRows.sort(function(a,b){ return b.last-a.last||b.cur-a.cur; });
+
+            if (!curRows.length && !prvRows.length) { showToast('项维度暂无数据，请先开启「对比数据」'); return; }
+
+            var tdN = 'padding:6px 12px;text-align:center;border:1px solid #e9eff6;color:#1e293b;';
+            var tdL = 'padding:6px 12px;text-align:left;border:1px solid #e9eff6;color:#1e293b;';
+
+            html = '<table style="'+S.table+'">'
+                + '<tr>'
+                + '<th style="'+S.thL+'">质检项（'+scopeLabel+'）</th>'
+                + '<th style="'+S.th+'">上周差异数量（'+lastLabel+'）</th>'
+                + '<th style="'+S.th+'">本周差异数量（'+curLabel+'）</th>'
+                + '<th style="'+S.th+'">变化</th>'
+                + '</tr>';
+
+            if (curRows.length) {
+                html += '<tr><td colspan="4" style="'+S.secCur+'">本周失误项明细 · '+curLabel+'</td></tr>';
+                curRows.forEach(function(r){
+                    html += '<tr>'
+                        + '<td style="'+tdL+'">'+r.level3+'</td>'
+                        + '<td style="'+tdN+'">'+(r.last||'—')+'</td>'
+                        + '<td style="'+tdN+'">'+r.cur+'</td>';
+                    html += deltaHtml(r.delta, tdN);
+                    html += '</tr>';
+                });
+            }
+            if (prvRows.length) {
+                html += '<tr><td colspan="4" style="'+S.secPrv+'">上周失误项明细 · '+lastLabel+'</td></tr>';
+                prvRows.forEach(function(r){
+                    html += '<tr>'
+                        + '<td style="'+tdL+'">'+r.level3+'</td>'
+                        + '<td style="'+tdN+'">'+r.last+'</td>'
+                        + '<td style="'+tdN+'">'+(r.cur||'—')+'</td>';
+                    html += deltaHtml(r.delta, tdN);
+                    html += '</tr>';
+                });
+            }
+            html += '</table>';
+        }
     }
 
     try {
