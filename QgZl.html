@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.54P</title>
+    <title>培训部数据看板 v1.54F</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -775,7 +775,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.54P</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.54F</div>
     </div>
   </nav>
 
@@ -790,7 +790,7 @@
       <!-- 表单 -->
       <div style="padding:20px 24px 22px;">
         <div style="font-size:11px;color:#64748b;margin-bottom:6px;">管理密码</div>
-        <input type="password" id="zbAdminPwdInput" placeholder="请输入密码" autocomplete="new-password" lang="zh"
+        <input type="password" id="zbAdminPwdInput" placeholder="请输入密码" lang="zh"
           style="width:100%;box-sizing:border-box;height:38px;border:1px solid #e2e8f0;border-radius:8px;padding:0 12px;font-size:13px;color:#0f172a;outline:none;margin-bottom:6px;"
           onkeydown="if(event.key==='Enter')zbAdminLoginSubmit()" onfocus="this.style.borderColor='#2563eb'" onblur="this.style.borderColor='#e2e8f0'">
         <div id="zbAdminLoginHint" style="font-size:11px;color:#dc2626;min-height:16px;margin-bottom:10px;"></div>
@@ -1239,13 +1239,7 @@
                             <button onclick="zbCopyWeekly()" style="height:24px;padding:0 10px;border-radius:6px;border:0.5px solid #93c5fd;background:#eff6ff;color:#2563eb;font-size:11px;cursor:pointer;flex-shrink:0;white-space:nowrap;">📋 复制</button>
                         </div>
                     </div>
-                    <div style="display:flex;align-items:center;gap:6px;flex-shrink:0;">
-                        <button id="modalJumpBtn" onclick="zbModalJump()" style="display:none;align-items:center;gap:4px;padding:5px 12px;border-radius:7px;border:0.5px solid #93c5fd;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;line-height:1;">
-                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-                            跳转抽检登记表
-                        </button>
-                        <span class="close-modal" style="flex-shrink:0;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#64748b;">&times;</span>
-                    </div>
+                    <span class="close-modal" style="flex-shrink:0;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#64748b;">&times;</span>
                 </div>
             </div>
             <!-- 副筛选栏：仅保留口径提示，列筛选在表头▾ -->
@@ -1257,13 +1251,6 @@
                 <select id="modalIssueTypeFilter" style="display:none;"></select>
                 <span id="modalResetFilter" style="display:none;"></span>
                 <input id="modalKeywordFilter" style="display:none;">
-            </div>
-            <!-- 原操作人批量保存条 -->
-            <div id="zbPersonSaveBar" style="display:none;align-items:center;gap:8px;padding:7px 16px;background:#fefce8;border-bottom:0.5px solid #fcd34d;font-size:12px;color:#92400e;flex-shrink:0;">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" style="flex-shrink:0;"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
-              已修改 <span id="zbPersonEditCount" style="font-weight:600;">0</span> 条原操作人，未保存
-              <button id="zbPersonSaveBtn" onclick="zbSavePersonEdits()" style="margin-left:auto;font-size:11px;padding:3px 12px;border-radius:6px;border:none;background:#2563eb;color:#fff;cursor:pointer;font-weight:500;">保存修改</button>
-              <button onclick="zbCancelPersonEdits()" style="font-size:11px;padding:3px 10px;border-radius:6px;border:0.5px solid #cbd5e1;background:#fff;color:#64748b;cursor:pointer;">撤销全部</button>
             </div>
             <div id="modalBody" style="flex:1;overflow:auto;">
                 <div class="virtual-scroll-container" id="virtualScrollContainer"></div>
@@ -1527,14 +1514,7 @@
             };
 
             // 获取某行对应的表格链接
-            
-// 差异明细弹窗顶部跳转按钮
-window.zbModalJump = function() {
-    var btn = document.getElementById('modalJumpBtn');
-    if (!btn || !btn._link) return;
-    window.open(btn._link, '_blank');
-};
-window.zbGetTableLink = function(date, cat, site) {
+            window.zbGetTableLink = function(date, cat, site) {
                 if (!date || !cat) return null;
                 var ym = date.slice(0,7);
                 var siteType = window.zbGetSiteType(site||'');
@@ -2480,14 +2460,8 @@ window.zbGetTableLink = function(date, cat, site) {
                             const val = row[key] || '';
                             if (key === 'code' && gi >= 0) {
                                 const span = document.createElement('span');
-                                span.style.cssText = 'font-weight:500;color:'+tc+';cursor:pointer;';
+                                span.style.cssText = 'font-weight:500;color:'+tc+';';
                                 span.textContent = val;
-                                span.title = '双击复制质检码';
-                                span.addEventListener('dblclick', function(e){
-                                    e.stopPropagation();
-                                    try { navigator.clipboard.writeText(val); } catch(err) {}
-                                    showToast('✅ 已复制质检码 ' + val);
-                                });
                                 td.appendChild(span);
                                 if (row._isFirst && row._groupCount > 1) {
                                     const badge = document.createElement('span');
@@ -2528,14 +2502,8 @@ window.zbGetTableLink = function(date, cat, site) {
                                     zbInjectCamIcon(td, row, null);
                                 }
                             } else if (key === 'code') {
-                                td.style.cssText += 'font-weight:500;color:#2563eb;cursor:pointer;';
+                                td.style.cssText += 'font-weight:500;color:#2563eb;';
                                 td.textContent = val;
-                                td.title = '双击复制质检码';
-                                td.addEventListener('dblclick', function(e){
-                                    e.stopPropagation();
-                                    try { navigator.clipboard.writeText(val); } catch(err) {}
-                                    showToast('✅ 已复制质检码 ' + val);
-                                });
                                 // 跳转图标（普通行）
                                 var rowDate2 = row['_date']||row['date']||'';
                                 var rowCat2  = row['_cat'] ||row['cat'] ||'';
@@ -2567,10 +2535,6 @@ window.zbGetTableLink = function(date, cat, site) {
                                 } else {
                                     zbInjectCamIcon(td, row, null);
                                 }
-                            } else if (key === 'person') {
-                                // 原操作人列：培训师权限内可编辑
-                                var rawRow2 = row._rawRow || row;
-                                zbRenderPersonCell(td, rawRow2, row);
                             } else if (key === '_note') {
                                 // 备注列：显示内容+编辑图标（仅管理员）
                                 td.style.cssText += 'min-width:240px;max-width:480px;';
@@ -2810,26 +2774,6 @@ window.zbGetTableLink = function(date, cat, site) {
 
                 var modalTitleEl = document.getElementById('modalTitle');
                 if (modalTitleEl) modalTitleEl.innerText = title;
-                // 设置跳转按钮：取第一条记录的date/cat/site算链接
-                var jumpBtn = document.getElementById('modalJumpBtn');
-                if (jumpBtn) {
-                    var firstR = (filteredByKJ.length ? filteredByKJ : records)[0];
-                    if (firstR) {
-                        var jDate = (firstR.date||'').split(' ')[0];
-                        var jCat  = firstR.cat || firstR._cat || '';
-                        var jSite = firstR.warehouse || firstR.site || firstR._warehouse || '';
-                        var jLink = typeof zbGetTableLink === 'function' ? zbGetTableLink(jDate, jCat, jSite) : null;
-                        if (jLink) {
-                            jumpBtn.style.display = 'inline-flex';
-                            jumpBtn._link = jLink;
-                            jumpBtn._code = firstR.code || '';
-                        } else {
-                            jumpBtn.style.display = 'none';
-                        }
-                    } else {
-                        jumpBtn.style.display = 'none';
-                    }
-                }
 
                 // 口径提示
                 var kjHint = document.getElementById('modalKouJingHint');
@@ -3017,10 +2961,10 @@ window.zbGetTableLink = function(date, cat, site) {
                     return true;
                 };
                 // 取范围内实际有数据的日期，找最后一天和前一天
-                const allDates = [...new Set([...DATA.qa,...DATA.sum,...DATA.diff5].map(r=>r.date).filter(Boolean).filter(inRange))].sort();
+                const allDates = [...new Set([...DATA.qa,...DATA.sum].map(r=>r.date).filter(Boolean).filter(inRange))].sort();
                 if (!allDates.length) {
                     document.getElementById('rankBoardDW').innerHTML = '<div style="color:var(--text-secondary);font-size:12px;padding:12px;">暂无数据</div>';
-                    document.getElementById('rankBoardZX').innerHTML = '<div style="color:var(--text-secondary);font-size:12px;padding:12px;">暂无数据</div>';
+                    document.getElementById('rankBoardZX').innerHTML = '';
                     return;
                 }
                 const latestDate = allDates[allDates.length - 1];
@@ -5825,252 +5769,6 @@ function zbShowImgPanel(cam, row, urls, readOnly) {
 // 触发文件上传（无图时直接弹面板）
 
 // ── 备注列渲染 ──────────────────────────────
-
-// ══ 原操作人列可编辑（培训师/管理员，权限内站点） ══
-var _zbPersonEdits = {}; // { rowKey: { oldVal, newVal, row } }
-
-function zbPersonRowKey(row) {
-    return [row.code||row['质检码']||'', row.date||row['抽检日期']||'', row.warehouse||row['站点']||'', row.level1||row['一级项']||'', row.level3||row.level3_new||row['新三级项']||''].join('|');
-}
-
-function zbRenderPersonCell(td, row, displayRow) {
-    td.innerHTML = '';
-    td.style.cssText += 'min-width:70px;';
-    var canEdit = zbRole === 'admin' || (zbRole === 'trainer' && zbCanEditRow(row));
-    var key = zbPersonRowKey(row);
-    var curVal = (_zbPersonEdits[key] ? _zbPersonEdits[key].newVal : null) || row.person || row['原操作人'] || row['原操作人名称'] || '—';
-
-    var span = document.createElement('span');
-    span.style.cssText = 'font-size:12px;color:#1e293b;' + (canEdit ? 'cursor:pointer;' : '');
-    span.textContent = curVal;
-    if (_zbPersonEdits[key]) {
-        span.style.color = '#b45309';
-        span.title = '已修改（原：' + _zbPersonEdits[key].oldVal + '）';
-    }
-    td.appendChild(span);
-
-    if (!canEdit) return;
-
-    // 悬浮编辑图标
-    var editIcon = document.createElement('span');
-    editIcon.style.cssText = 'display:inline-flex;width:14px;height:14px;align-items:center;justify-content:center;color:#94a3b8;cursor:pointer;opacity:0;vertical-align:middle;margin-left:3px;transition:opacity .15s;flex-shrink:0;';
-    editIcon.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>';
-    editIcon.title = '修改原操作人';
-
-    function doEdit(e) {
-        e && e.stopPropagation();
-        // 关闭已有输入框
-        var old = document.getElementById('zbPersonEditInput');
-        if (old) old.parentNode.removeChild(old);
-
-        var inp = document.createElement('input');
-        inp.id = 'zbPersonEditInput';
-        inp.value = curVal === '—' ? '' : curVal;
-        inp.style.cssText = 'width:70px;height:22px;font-size:12px;padding:0 5px;border:1.5px solid #2563eb;border-radius:5px;background:#eff6ff;color:#1e40af;outline:none;';
-        span.style.display = 'none';
-        editIcon.style.display = 'none';
-        td.insertBefore(inp, span);
-        inp.focus(); inp.select();
-
-        function commit() {
-            var newVal = inp.value.trim();
-            if (inp.parentNode) inp.parentNode.removeChild(inp);
-            span.style.display = '';
-            editIcon.style.display = '';
-            if (!newVal || newVal === curVal) return;
-            var origVal = row.person || row['原操作人'] || row['原操作人名称'] || '';
-            _zbPersonEdits[key] = { oldVal: origVal, newVal: newVal, row: row };
-            curVal = newVal;
-            span.textContent = newVal;
-            span.style.color = '#b45309';
-            span.title = '已修改（原：' + origVal + '）';
-            zbUpdatePersonSaveBar();
-        }
-        inp.addEventListener('keydown', function(e) {
-            if (e.key === 'Enter') { e.preventDefault(); commit(); }
-            if (e.key === 'Escape') { inp.remove(); span.style.display=''; editIcon.style.display=''; }
-        });
-        inp.addEventListener('blur', function() { setTimeout(commit, 150); });
-    }
-
-    editIcon.addEventListener('click', doEdit);
-    span.addEventListener('click', doEdit);
-
-    var tr = td.closest('tr');
-    if (tr) {
-        tr.addEventListener('mouseenter', function(){ editIcon.style.opacity='1'; });
-        tr.addEventListener('mouseleave', function(){ editIcon.style.opacity='0'; });
-    }
-    td.appendChild(editIcon);
-}
-
-function zbUpdatePersonSaveBar() {
-    var n = Object.keys(_zbPersonEdits).length;
-    var bar = document.getElementById('zbPersonSaveBar');
-    if (!bar) return;
-    if (n > 0) {
-        bar.style.display = 'flex';
-        var cnt = bar.querySelector('#zbPersonEditCount');
-        if (cnt) cnt.textContent = n;
-    } else {
-        bar.style.display = 'none';
-    }
-}
-
-window.zbSavePersonEdits = async function() {
-    var n = Object.keys(_zbPersonEdits).length;
-    if (!n) return;
-    var btn = document.getElementById('zbPersonSaveBtn');
-    if (btn) { btn.textContent = '保存中…'; btn.style.opacity='0.6'; }
-
-    // 把修改写入 window._allDiffData
-    Object.keys(_zbPersonEdits).forEach(function(key) {
-        var e = _zbPersonEdits[key];
-        var parts = key.split('|');
-        var code = parts[0], date = parts[1], site = parts[2];
-        // 同步_allDiffData（显示用）
-        (window._allDiffData||[]).forEach(function(d) {
-            if ((d.code||'') === code && (d.date||'').split(' ')[0] === date && (d.warehouse||d.site||'') === site) {
-                d.person = e.newVal;
-            }
-        });
-        // 同步_DATA.diff5（推送用，字段是site/inspector）
-        ((window._DATA&&window._DATA.diff5)||[]).forEach(function(d) {
-            if ((d.code||'') === code && (d.date||'').split(' ')[0] === date && (d.site||'') === site) {
-                d.inspector = e.newVal;
-                console.log('[PersonSave] 已同步diff5 inspector:', code, '->', e.newVal);
-            }
-        });
-    });
-
-    // 按月份分片推送，与加载逻辑保持一致
-    try {
-        var token = await zbGetToken();
-        console.log('[PersonSave] token:', token ? '✅有' : '❌无');
-        if (!token) throw new Error('Token获取失败');
-        // 用_DATA.diff5作为推送源（字段完整，site/inspector正确）
-        var diff5Source = (window._DATA && window._DATA.diff5) || [];
-        console.log('[PersonSave] _DATA.diff5条数:', diff5Source.length);
-        // 确认修改是否写入
-        Object.keys(_zbPersonEdits).forEach(function(key){
-            var e = _zbPersonEdits[key];
-            var parts = key.split('|');
-            var code = parts[0];
-            var matched = diff5Source.filter(function(d){ return (d.code||'')===code; });
-            console.log('[PersonSave] 质检码', code, '在diff5中匹配', matched.length, '条，inspector值:', matched.map(function(d){return d.inspector;}).join(','));
-        });
-        // 按 date 字段分组到各月份
-        var monthMap = {};
-        diff5Source.forEach(function(d) {
-            var dt = (d.date||'').split(' ')[0] || '';
-            var ym = dt.slice(0,7);
-            if (!ym || ym.length < 7) ym = 'unknown';
-            if (!monthMap[ym]) monthMap[ym] = [];
-            monthMap[ym].push(d);
-        });
-        console.log('[PersonSave] 月份分组:', Object.keys(monthMap));
-        // 只推送涉及修改的月份
-        var modifiedMonths = {};
-        Object.keys(_zbPersonEdits).forEach(function(key){
-            var parts = key.split('|');
-            var dt = (parts[1]||'').split(' ')[0];
-            var ym = dt.slice(0,7);
-            if (ym && ym.length >= 7) modifiedMonths[ym] = true;
-        });
-        console.log('[PersonSave] 涉及月份:', Object.keys(modifiedMonths));
-        var pushTargets = Object.keys(modifiedMonths).length > 0 ? Object.keys(modifiedMonths) : Object.keys(monthMap);
-        console.log('[PersonSave] 推送目标文件:', pushTargets.map(function(ym){ return 'phone_diff_'+ym+'.json'; }));
-        for (var i = 0; i < pushTargets.length; i++) {
-            var ym = pushTargets[i];
-            if (ym === 'unknown') continue;
-            var rows = monthMap[ym] || [];
-            // 验证修改是否在推送数据里
-            Object.keys(_zbPersonEdits).forEach(function(k){
-                var code = k.split('|')[0];
-                var hit = rows.find(function(r){ return r.code===code; });
-                console.log('[PersonSave] 推送数据中质检码', code, hit ? '找到，inspector='+hit.inspector : '未找到！');
-            });
-            console.log('[PersonSave] 推送', 'phone_diff_'+ym+'.json', '共', rows.length, '条');
-            var pushResult = await _zbPushFile('QGZLdata/phone_diff_' + ym + '.json', { rows: rows }, token);
-            console.log('[PersonSave] 推送结果:', pushResult);
-        }
-
-        // 写日志
-        zbAddPersonEditLog(Object.values(_zbPersonEdits));
-
-        showToast('✅ 原操作人已保存，共修改 ' + n + ' 条');
-        _zbPersonEdits = {};
-        zbUpdatePersonSaveBar();
-    } catch(err) {
-        showToast('❌ 保存失败：' + err.message);
-        if (btn) { btn.textContent = '保存修改'; btn.style.opacity='1'; }
-    }
-    if (btn) { btn.textContent = '保存修改'; btn.style.opacity='1'; }
-};
-
-window.zbCancelPersonEdits = function() {
-    _zbPersonEdits = {};
-    zbUpdatePersonSaveBar();
-    // 重新渲染当前弹窗
-    if (window.virtualScroll) window.virtualScroll.renderRows(0);
-    showToast('已撤销全部修改');
-};
-
-// 人员修改日志（存localStorage）
-var _ZB_PERSON_EDIT_LOG_KEY = 'zb_person_edit_log';
-function zbAddPersonEditLog(edits) {
-    var operator = (zbTrainerInfo && zbTrainerInfo.name) || (zbRole==='admin'?'管理员':'未知');
-    var now = new Date();
-    var ts = now.toLocaleString('zh-CN',{hour12:false});
-    var log = [];
-    try { log = JSON.parse(localStorage.getItem(_ZB_PERSON_EDIT_LOG_KEY)||'[]'); } catch(e) {}
-    edits.forEach(function(e) {
-        log.unshift({
-            ts: ts,
-            operator: operator,
-            code: (e.row && (e.row.code||e.row['质检码'])) || '',
-            site: (e.row && (e.row.warehouse||e.row['站点'])) || '',
-            oldVal: e.oldVal,
-            newVal: e.newVal
-        });
-    });
-    if (log.length > 500) log = log.slice(0, 500);
-    try { localStorage.setItem(_ZB_PERSON_EDIT_LOG_KEY, JSON.stringify(log)); } catch(err) {}
-}
-
-function zbRenderPersonEditLog() {
-    var el = document.getElementById('zbPersonEditLogPanel');
-    if (!el) return;
-    var log = [];
-    try { log = JSON.parse(localStorage.getItem(_ZB_PERSON_EDIT_LOG_KEY)||'[]'); } catch(e) {}
-    if (!log.length) {
-        el.innerHTML = '<div style="text-align:center;padding:40px;color:#94a3b8;font-size:12px;">暂无修改记录</div>';
-        return;
-    }
-    var html = '<table style="width:100%;border-collapse:collapse;font-size:11px;">'
-        + '<thead><tr style="border-bottom:0.5px solid #e2e8f0;">'
-        + '<th style="padding:7px 10px;text-align:left;color:#94a3b8;font-weight:500;">时间</th>'
-        + '<th style="padding:7px 10px;text-align:left;color:#94a3b8;font-weight:500;">操作人</th>'
-        + '<th style="padding:7px 10px;text-align:left;color:#94a3b8;font-weight:500;">质检码</th>'
-        + '<th style="padding:7px 10px;text-align:left;color:#94a3b8;font-weight:500;">站点</th>'
-        + '<th style="padding:7px 10px;text-align:left;color:#94a3b8;font-weight:500;">改前</th>'
-        + '<th style="padding:7px 10px;text-align:left;color:#94a3b8;font-weight:500;">改后</th>'
-        + '</tr></thead><tbody>';
-    log.forEach(function(l, i) {
-        var bg = i%2===0?'':'background:#f8fafc;';
-        html += '<tr style="border-bottom:0.5px solid #f1f5f9;'+bg+'">'
-            + '<td style="padding:6px 10px;color:#64748b;">' + (l.ts||'') + '</td>'
-            + '<td style="padding:6px 10px;font-weight:500;color:#1e293b;">' + (l.operator||'') + '</td>'
-            + '<td style="padding:6px 10px;font-family:monospace;color:#2563eb;">' + (l.code||'') + '</td>'
-            + '<td style="padding:6px 10px;color:#64748b;">' + (l.site||'') + '</td>'
-            + '<td style="padding:6px 10px;"><span style="background:#fee2e2;color:#991b1b;padding:1px 6px;border-radius:4px;">' + (l.oldVal||'') + '</span></td>'
-            + '<td style="padding:6px 10px;"><span style="background:#dcfce7;color:#166534;padding:1px 6px;border-radius:4px;">' + (l.newVal||'') + '</span></td>'
-            + '</tr>';
-    });
-    html += '</tbody></table>';
-    el.innerHTML = html;
-}
-
 function zbRenderNoteCell(td, row) {
     td.innerHTML = '';
     var canEdit = zbCanEditRow(row);
@@ -6243,7 +5941,6 @@ async function zbAdminLoginSubmit() {
         zbCloseAdminLogin();
         zbUpdateRoleBadge();
         showToast('✅ 已登录为管理员');
-        zbStartFeedbackPoll();
         return;
     }
     // 培训师ID匹配
@@ -6256,7 +5953,6 @@ async function zbAdminLoginSubmit() {
         zbCloseAdminLogin();
         zbUpdateRoleBadge();
         zbShowWelcomeToast(trainer);
-        zbStartFeedbackPoll();
         return;
     }
     hint.textContent = '密码或ID错误';
@@ -6647,54 +6343,21 @@ async function _zbPushFile(fname, content, token) {
         bytes.forEach(function(b){ binary += String.fromCharCode(b); });
         b64 = btoa(binary);
     } catch(e) { console.error('base64编码失败:', e); return false; }
-    // 获取SHA：先尝试API，失败则用raw CDN降级
     let sha = '';
     for (let retry = 0; retry < 3; retry++) {
         try {
-            const r = await fetch(ghUrl(fname) + '?t=' + Date.now(), {
-                headers: { Authorization: 'token ' + token },
-                signal: AbortSignal.timeout ? AbortSignal.timeout(8000) : undefined
-            });
+            const r = await fetch(ghUrl(fname) + '?t=' + Date.now(), { headers: { Authorization: 'token ' + token } });
             if (r.ok) { const j = await r.json(); sha = j.sha || ''; break; }
-            else if (r.status === 404) { sha = ''; break; } // 新文件，不需要SHA
-            else { await new Promise(function(r){ setTimeout(r, 1000); }); }
-        } catch(e) {
-            console.warn('SHA获取失败，第'+(retry+1)+'次重试:', e.message);
-            if (retry < 2) await new Promise(function(r){ setTimeout(r, 1500); });
-        }
-    }
-    // SHA还是空但文件可能存在，用raw CDN再试一次获取SHA
-    if (!sha) {
-        try {
-            const raw = await fetch(ghUrl(fname) + '?t=' + Date.now(), { headers: { Authorization: 'token ' + token } });
-            if (raw.ok) { const j = await raw.json(); sha = j.sha || ''; }
-        } catch(e) {}
+            else { break; }
+        } catch(e) { break; }
     }
     const body = { message: 'Update ' + fname + ' via dashboard', content: b64 };
     if (sha) body.sha = sha;
-    // 推送，失败重试一次
-    for (let attempt = 0; attempt < 2; attempt++) {
-        try {
-            const res = await fetch(ghUrl(fname), {
-                method: 'PUT',
-                headers: { Authorization: 'token ' + token, 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            });
-            if (res.ok) return true;
-            const errText = await res.text();
-            console.error('推送失败 ' + fname + ':', res.status, errText);
-            // 422通常是SHA过期，重新获取SHA再试
-            if (res.status === 422 && attempt === 0) {
-                try {
-                    const r2 = await fetch(ghUrl(fname) + '?t=' + Date.now(), { headers: { Authorization: 'token ' + token } });
-                    if (r2.ok) { const j2 = await r2.json(); body.sha = j2.sha || ''; }
-                } catch(e) {}
-                continue;
-            }
-            return false;
-        } catch(e) { console.error('推送异常:', e); return false; }
-    }
-    return false;
+    try {
+        const res = await fetch(ghUrl(fname), { method: 'PUT', headers: { Authorization: 'token ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        if (!res.ok) { const errText = await res.text(); console.error('推送失败 ' + fname + ':', res.status, errText); }
+        return res.ok;
+    } catch(e) { console.error('推送异常:', e); return false; }
 }
 
 // ── 推送修改记录 ──
@@ -7987,7 +7650,6 @@ function zbRenderSitePersonList() {
 function zbRenderSiteIssueAnalysis(execDiff, rootEl) {
     var isCompare = !!window._zbCompareOpen;
     var lastStart = (document.getElementById('siteWeekLastStart')||{}).value||'';
-    var lastStart = (document.getElementById('siteWeekLastStart')||{}).value||'';
     var lastEnd   = (document.getElementById('siteWeekLastEnd')||{}).value||'';
     var curStart  = (document.getElementById('siteWeekCurStart')||{}).value||'';
     var curEnd    = (document.getElementById('siteWeekCurEnd')||{}).value||'';
@@ -8568,7 +8230,7 @@ document.addEventListener('DOMContentLoaded', function() {
   <div style="background:var(--bg-card);border-radius:20px;width:360px;max-width:92vw;padding:28px 28px 24px;border:1px solid var(--border-color);box-shadow:0 8px 24px rgba(0,0,0,0.12);">
     <div style="font-size:16px;font-weight:700;color:var(--text-primary);margin-bottom:6px;">🔑 登录</div>
     <div style="font-size:12px;color:var(--text-secondary);margin-bottom:16px;">管理员输入管理密码，登录后可上传数据并同步云端</div>
-    <input type="password" id="zbLoginPwd" placeholder="请输入密码" autocomplete="new-password" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);font-size:13px;outline:none;box-sizing:border-box;margin-bottom:8px;" onkeydown="if(event.key==='Enter')zbConfirmLogin()">
+    <input type="password" id="zbLoginPwd" placeholder="请输入密码" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border-color);background:var(--filter-input-bg);color:var(--text-primary);font-size:13px;outline:none;box-sizing:border-box;margin-bottom:8px;" onkeydown="if(event.key==='Enter')zbConfirmLogin()">
     <div id="zbLoginHint" style="font-size:11px;color:#ef4444;min-height:16px;margin-bottom:12px;"></div>
     <div style="display:flex;gap:8px;">
       <button onclick="zbConfirmLogin()" style="flex:1;padding:10px;background:var(--btn-bg);color:white;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;">确认登录</button>
@@ -8592,7 +8254,6 @@ document.addEventListener('DOMContentLoaded', function() {
         <button id="zbTabEdit" onclick="zbSwitchLogTab('edit')" style="padding:7px 16px;font-size:12px;font-weight:600;background:transparent;color:var(--text-secondary);border:none;border-bottom:2px solid transparent;cursor:pointer;">✏️ 记录编辑</button>
         <button id="zbTabImage" onclick="zbSwitchLogTab('image')" style="padding:7px 16px;font-size:12px;font-weight:600;background:transparent;color:var(--text-secondary);border:none;border-bottom:2px solid transparent;cursor:pointer;">🖼️ 图片操作</button>
         <button id="zbTabCorrection" onclick="zbSwitchLogTab('correction')" style="padding:7px 16px;font-size:12px;font-weight:600;background:transparent;color:var(--text-secondary);border:none;border-bottom:2px solid transparent;cursor:pointer;">🔧 纠正日志</button>
-        <button id="zbTabPersonEdit" onclick="zbSwitchLogTab('personedit')" style="padding:7px 16px;font-size:12px;font-weight:600;background:transparent;color:var(--text-secondary);border:none;border-bottom:2px solid transparent;cursor:pointer;">✏️ 人员修改</button>
 
       </div>
     </div>
@@ -8638,11 +8299,6 @@ document.addEventListener('DOMContentLoaded', function() {
     <div id="zbCorrectionPanel" style="display:none;flex:1;overflow-y:auto;padding:14px 20px;">
       <div style="margin-bottom:10px;font-size:11px;color:#92400e;background:#fef3c7;border-radius:8px;padding:8px 12px;border:0.5px solid #fcd34d;">记录每次上传纠正表的匹配情况，日志仅存本地。规则存储在云服务器上，换设备后自动同步最新规则。</div>
       <div id="zbCorrectionLogPanel"><div style="text-align:center;padding:40px;color:var(--text-secondary);font-size:12px;">暂无纠正表上传记录</div></div>
-    </div>
-    <!-- 人员修改面板 -->
-    <div id="zbPersonEditPanel" style="display:none;flex:1;overflow-y:auto;padding:14px 20px;">
-      <div style="margin-bottom:10px;font-size:11px;color:#1e40af;background:#eff6ff;border-radius:8px;padding:8px 12px;border:0.5px solid #bfdbfe;">记录培训师/管理员对差异明细「原操作人」列的所有修改，日志仅存本地。</div>
-      <div id="zbPersonEditLogPanel"><div style="text-align:center;padding:40px;color:var(--text-secondary);font-size:12px;">暂无修改记录</div></div>
     </div>
     <div id="zbLogFooter" style="padding:10px 20px;border-top:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
       <div id="zbLogFooterTxt" style="font-size:11px;color:var(--text-secondary);"></div>
@@ -10401,10 +10057,8 @@ function zbSwitchLogTab(tab){
   var feedbackLogPanel = document.getElementById('zbFeedbackLogPanel');
 
   // 重置所有tab样式
-  var tabPersonEdit2 = document.getElementById('zbTabPersonEdit');
-  var personEditPanel2 = document.getElementById('zbPersonEditPanel');
-  [tabLog,tabCloud,tabEdit,tabImage,tabCorrection,tabFeedback,tabPersonEdit2].forEach(function(t){ if(t){ t.style.color='var(--text-secondary)'; t.style.borderBottom='2px solid transparent'; t.style.fontWeight='400'; }});
-  [logPanel,cloudPanel,editPanel,imagePanel,correctionPanel,feedbackLogPanel,personEditPanel2].forEach(function(p){ if(p) p.style.display='none'; });
+  [tabLog,tabCloud,tabEdit,tabImage,tabCorrection,tabFeedback].forEach(function(t){ if(t){ t.style.color='var(--text-secondary)'; t.style.borderBottom='2px solid transparent'; t.style.fontWeight='400'; }});
+  [logPanel,cloudPanel,editPanel,imagePanel,correctionPanel,feedbackLogPanel].forEach(function(p){ if(p) p.style.display='none'; });
   if(logStats) logStats.style.display='none';
   if(logFooter) logFooter.style.display='none';
 
@@ -10429,12 +10083,6 @@ function zbSwitchLogTab(tab){
     if(correctionPanel) correctionPanel.style.display='';
     if(tabCorrection){ tabCorrection.style.color='#3b82f6'; tabCorrection.style.borderBottom='2px solid #3b82f6'; tabCorrection.style.fontWeight='600'; }
     zbRenderCorrectionLog();
-  } else if(tab==='personedit'){
-    var personEditPanel = document.getElementById('zbPersonEditPanel');
-    var tabPersonEdit = document.getElementById('zbTabPersonEdit');
-    if(personEditPanel) personEditPanel.style.display='';
-    if(tabPersonEdit){ tabPersonEdit.style.color='#3b82f6'; tabPersonEdit.style.borderBottom='2px solid #3b82f6'; tabPersonEdit.style.fontWeight='600'; }
-    zbRenderPersonEditLog();
   }
 }
 
@@ -11029,7 +10677,19 @@ function zbCloseUpload() {
       </div>
       <input type="file" id="zbZxCatInput" style="display:none;" accept=".xlsx,.xls" multiple>
 
-
+      <!-- 框3：三大仓操作人纠正表 -->
+      <div style="border:1.5px dashed #fbbf24;border-radius:12px;padding:14px 16px;background:#fffbeb;transition:all .15s;position:relative;" id="zbUpBox3">
+        <div style="display:flex;align-items:center;gap:12px;">
+          <div style="width:40px;height:40px;border-radius:10px;background:#fef3c7;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🔧</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:13px;font-weight:600;color:#92400e;">三大仓操作人纠正表</div>
+            <div style="font-size:11px;color:#b45309;margin-top:1px;">手机品类原操作人纠正 · 按质检码+五项匹配</div>
+            <div id="zbUpFile3Name" style="display:none;font-size:11px;color:#059669;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
+          </div>
+          <button onclick="document.getElementById('zbCorrectionInput').click()" style="padding:6px 14px;border-radius:8px;background:#f59e0b;color:#fff;font-size:12px;font-weight:500;border:none;flex-shrink:0;white-space:nowrap;cursor:pointer;" id="zbUpBtn3">选择文件</button>
+        </div>
+      </div>
+      <input type="file" id="zbCorrectionInput" style="display:none;" accept=".xlsx,.xls">
 
     </div>
 
@@ -11528,14 +11188,15 @@ function zbRenderFeedbackAdmin() {
 }
 
 
-// ── 管理员反馈看板 ──
+// ── 独立管理员反馈弹窗 ──
 window.zbOpenAdminFeedback = function() {
     var modal = document.getElementById('zbAdminFeedbackModal');
     if (!modal) return;
     modal.style.display = 'flex';
-    zbRenderAdminKanban();
+    // 先渲染内存数据，再拉取最新
+    zbRenderAdminFbList();
     zbLoadFeedback().then(function(){
-        zbRenderAdminKanban();
+        zbRenderAdminFbList();
         zbUpdateFeedbackDot();
     }).catch(function(){});
 };
@@ -11545,96 +11206,77 @@ window.zbCloseAdminFeedback = function() {
     if (modal) modal.style.display = 'none';
 };
 
-function zbRenderAdminKanban() {
+function zbRenderAdminFbList() {
+    var el = document.getElementById('zbAdminFbList');
     var badge = document.getElementById('zbAdminFbUnreadBadge');
+    if (!el) return;
     var unread = _zbFeedbackData.filter(function(t){ return !t.adminRead; });
     if (badge) { badge.textContent = unread.length + ' 条未读'; badge.style.display = unread.length ? 'inline-block' : 'none'; }
-
-    var cols = { pending:[], accepted:[], done:[] };
-    _zbFeedbackData.forEach(function(t){
-        var s = t.status || 'pending';
-        if (!cols[s]) s = 'pending';
-        cols[s].push(t);
-    });
-
-    ['pending','accepted','done'].forEach(function(s){
-        var cnt = document.getElementById('zbFbCnt'+s.charAt(0).toUpperCase()+s.slice(1));
-        if (cnt) cnt.textContent = cols[s].length;
-        var col = document.getElementById('zbFbCol'+s.charAt(0).toUpperCase()+s.slice(1));
-        if (!col) return;
-        if (!cols[s].length) {
-            col.innerHTML = '<div style="text-align:center;padding:24px 8px;color:var(--text-secondary);font-size:12px;">暂无</div>';
-            return;
-        }
-        col.innerHTML = cols[s].map(function(t){
-            var d = new Date(t.ts);
-            var timeStr = (d.getMonth()+1)+'/'+(d.getDate())+' '+d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
-            var borderStyle = !t.adminRead ? 'border:1.5px solid #fbbf24;' : 'border:0.5px solid var(--border-color);';
-            var bgStyle = s==='pending' ? 'background:#fefce8;' : s==='accepted' ? 'background:#eff6ff;' : 'background:var(--kpi-bg);opacity:0.8;';
-            var imgs = (t.imgs||[]).map(function(url){
-                return '<img src="'+url+'" onclick="zbShowImagePreview([\''+url+'\'],0)" style="width:36px;height:36px;object-fit:cover;border-radius:5px;border:0.5px solid var(--border-color);cursor:pointer;">';
-            }).join('');
-            var replyHtml = t.adminReply
-                ? '<div style="font-size:11px;color:#2563eb;padding:4px 8px;background:rgba(37,99,235,0.07);border-radius:5px;margin-top:6px;border-left:2px solid #2563eb;border-radius:0;">回复：'+t.adminReply+'</div>'
-                : '';
-            var moveBtn = s==='pending'
-                ? '<button onclick="zbKanbanMove(\''+t.id+'\',\'accepted\')" style="font-size:10px;padding:2px 8px;border-radius:5px;border:0.5px solid #93c5fd;background:#eff6ff;color:#1d4ed8;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">→ 受理</button>'
-                : s==='accepted'
-                ? '<button onclick="zbKanbanMove(\''+t.id+'\',\'done\')" style="font-size:10px;padding:2px 8px;border-radius:5px;border:0.5px solid #86efac;background:#f0fdf4;color:#15803d;cursor:pointer;transition:all 0.15s;" onmouseover="this.style.opacity=0.8" onmouseout="this.style.opacity=1">→ 完成</button>'
-                : '';
-            var replyInput = s!=='done'
-                ? '<div style="display:flex;gap:4px;margin-top:6px;"><input type="text" id="zbKbReply_'+t.id+'" placeholder="回复…" value="'+(t.adminReply||'')+'" style="flex:1;height:24px;font-size:11px;padding:0 7px;border:0.5px solid var(--border-color);border-radius:5px;background:var(--bg-card);color:var(--text-primary);outline:none;"><button onclick="zbKanbanReply(\''+t.id+'\')" style="font-size:10px;padding:2px 8px;border-radius:5px;border:0.5px solid #93c5fd;background:#eff6ff;color:#1d4ed8;cursor:pointer;white-space:nowrap;">发送</button></div>'
-                : '';
-            return '<div style="'+borderStyle+bgStyle+'border-radius:8px;padding:9px 10px;margin-bottom:8px;">'
-                + '<div style="display:flex;align-items:center;gap:5px;margin-bottom:5px;flex-wrap:wrap;">'
-                + '<div style="width:22px;height:22px;border-radius:50%;background:rgba(37,99,235,0.12);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#1d4ed8;flex-shrink:0;">'+(t.submitter||'?').charAt(0)+'</div>'
-                + '<span style="font-size:12px;font-weight:500;color:var(--text-primary);">'+t.submitter+'</span>'
-                + (!t.adminRead ? '<span style="font-size:9px;padding:0 5px;border-radius:5px;background:#fef3c7;color:#b45309;">未读</span>' : '')
-                + '<span style="font-size:10px;color:var(--text-secondary);margin-left:auto;">'+timeStr+'</span>'
-                + '</div>'
-                + '<div style="font-size:11px;padding:1px 6px;border-radius:5px;background:#fef3c7;color:#92400e;display:inline-block;margin-bottom:5px;">'+t.type+'</div>'
-                + '<div style="font-size:12px;color:var(--text-primary);line-height:1.5;margin-bottom:4px;">'+t.text+'</div>'
-                + (imgs ? '<div style="display:flex;gap:4px;flex-wrap:wrap;margin-bottom:4px;">'+imgs+'</div>' : '')
-                + replyHtml
-                + '<div style="display:flex;gap:4px;margin-top:6px;align-items:center;">'
-                + moveBtn
-                + (!t.adminRead ? '<button onclick="zbKanbanRead(\''+t.id+'\')" style="font-size:10px;padding:2px 8px;border-radius:5px;border:0.5px solid var(--border-color);background:transparent;color:var(--text-secondary);cursor:pointer;">已读</button>' : '')
-                + '</div>'
-                + replyInput
-                + '</div>';
+    if (!_zbFeedbackData.length) {
+        el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary);font-size:13px;">暂无反馈记录</div>';
+        return;
+    }
+    var STATUS_MAP = {
+        pending:  { label:'未受理', bg:'#f1f5f9', color:'#64748b' },
+        accepted: { label:'已受理', bg:'#eff6ff', color:'#1d4ed8' },
+        done:     { label:'已完成', bg:'#f0fdf4', color:'#15803d' }
+    };
+    el.innerHTML = _zbFeedbackData.map(function(t, idx) {
+        var st = STATUS_MAP[t.status] || STATUS_MAP.pending;
+        var d = new Date(t.ts);
+        var timeStr = (d.getMonth()+1)+'/'+(d.getDate())+' '+d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0');
+        var imgs = (t.imgs||[]).map(function(url){
+            return '<img src="'+url+'" onclick="zbShowImagePreview([\''+url+'\'],0)" style="width:44px;height:44px;object-fit:cover;border-radius:6px;border:0.5px solid var(--border-color);cursor:pointer;">';
         }).join('');
-    });
+        var replyHtml = t.adminReply
+            ? '<div style="background:var(--kpi-bg);border-radius:6px;padding:6px 10px;margin:6px 0;border-left:2px solid #2563eb;"><div style="font-size:10px;color:#2563eb;font-weight:500;margin-bottom:2px;">已回复</div><div style="font-size:12px;color:var(--text-primary);">'+t.adminReply+'</div></div>'
+            : '';
+        var btnAccept = t.status==='pending'
+            ? '<button onclick="zbAdminFbAction(\''+t.id+'\',\'accept\')" style="font-size:11px;padding:3px 10px;border-radius:6px;border:0.5px solid #93c5fd;background:#eff6ff;color:#1d4ed8;cursor:pointer;">标记已受理</button>' : '';
+        var btnDone = t.status!=='done'
+            ? '<button onclick="zbAdminFbAction(\''+t.id+'\',\'done\')" style="font-size:11px;padding:3px 10px;border-radius:6px;border:0.5px solid #86efac;background:#f0fdf4;color:#15803d;cursor:pointer;">标记已完成</button>' : '';
+        var btnRead = !t.adminRead
+            ? '<button onclick="zbAdminFbAction(\''+t.id+'\',\'read\')" style="font-size:11px;padding:3px 10px;border-radius:6px;border:0.5px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);cursor:pointer;">标记已读</button>' : '';
+        return '<div style="border:0.5px solid '+(t.adminRead?'var(--border-color)':'#fbbf24')+';border-radius:10px;padding:12px 14px;margin-bottom:10px;'+(t.status==='done'?'opacity:.7;':'')+'">'
+            + '<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;">'
+            + '<span style="font-size:12px;font-weight:500;color:var(--text-primary);">'+t.submitter+'</span>'
+            + '<span style="font-size:10px;padding:1px 7px;border-radius:8px;background:#fef3c7;color:#92400e;">'+t.type+'</span>'
+            + '<span style="font-size:10px;padding:1px 7px;border-radius:8px;background:'+st.bg+';color:'+st.color+';">'+st.label+'</span>'
+            + (!t.adminRead ? '<span style="font-size:10px;padding:1px 7px;border-radius:8px;background:#fef3c7;color:#b45309;">未读</span>' : '')
+            + '<span style="font-size:10px;color:var(--text-secondary);margin-left:auto;">'+timeStr+'</span>'
+            + '</div>'
+            + '<div style="font-size:13px;color:var(--text-primary);line-height:1.6;margin-bottom:8px;">'+t.text+'</div>'
+            + (imgs ? '<div style="display:flex;gap:5px;margin-bottom:8px;">'+imgs+'</div>' : '')
+            + replyHtml
+            + '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:8px;">'
+            + btnAccept + btnDone + btnRead
+            + '<textarea id="zbAdminFbReply_'+idx+'" placeholder="输入回复，培训师可见…" style="flex:1;min-width:140px;border:0.5px solid var(--border-color);border-radius:6px;padding:5px 8px;font-size:12px;background:var(--kpi-bg);color:var(--text-primary);resize:none;outline:none;font-family:inherit;" rows="1">'+(t.adminReply||'')+'</textarea>'
+            + '<button onclick="zbAdminFbReply(\''+t.id+'\','+idx+')" style="font-size:11px;padding:4px 12px;border-radius:6px;border:0.5px solid #2563eb;background:#eff6ff;color:#2563eb;cursor:pointer;white-space:nowrap;">发送回复</button>'
+            + '</div>'
+            + '</div>';
+    }).join('');
 }
 
-window.zbKanbanMove = async function(id, newStatus) {
-    var t = _zbFeedbackData.find(function(x){ return x.id===id; });
+window.zbAdminFbAction = async function(id, action) {
+    var t = _zbFeedbackData.find(function(x){ return x.id === id; });
     if (!t) return;
-    t.status = newStatus;
-    t.adminRead = true;
+    if (action === 'accept') t.status = 'accepted';
+    if (action === 'done')   t.status = 'done';
+    if (action === 'read')   t.adminRead = true;
     await zbSaveFeedback();
-    zbRenderAdminKanban();
+    zbRenderAdminFbList();
     zbUpdateFeedbackDot();
 };
 
-window.zbKanbanRead = async function(id) {
-    var t = _zbFeedbackData.find(function(x){ return x.id===id; });
+window.zbAdminFbReply = async function(id, idx) {
+    var ta = document.getElementById('zbAdminFbReply_' + idx);
+    if (!ta) return;
+    var t = _zbFeedbackData.find(function(x){ return x.id === id; });
     if (!t) return;
+    t.adminReply = ta.value.trim();
     t.adminRead = true;
     await zbSaveFeedback();
-    zbRenderAdminKanban();
-    zbUpdateFeedbackDot();
-};
-
-window.zbKanbanReply = async function(id) {
-    var inp = document.getElementById('zbKbReply_'+id);
-    if (!inp) return;
-    var t = _zbFeedbackData.find(function(x){ return x.id===id; });
-    if (!t) return;
-    t.adminReply = inp.value.trim();
-    t.adminRead = true;
-    t.replyTs = Date.now();
-    await zbSaveFeedback();
-    zbRenderAdminKanban();
+    zbRenderAdminFbList();
     zbUpdateFeedbackDot();
     showToast('✅ 回复已发送');
 };
@@ -11642,95 +11284,9 @@ window.zbKanbanReply = async function(id) {
 window.zbAdminFbMarkAllRead = async function() {
     _zbFeedbackData.forEach(function(t){ t.adminRead = true; });
     await zbSaveFeedback();
-    zbRenderAdminKanban();
+    zbRenderAdminFbList();
     zbUpdateFeedbackDot();
 };
-
-// ── 顶部通知 ──
-var _zbNotifTimer = null;
-var _zbNotifProgAnim = null;
-
-window.zbShowTopNotif = function(avatarText, avatarBg, avatarColor, title, body) {
-    var el = document.getElementById('zbTopNotif');
-    var av = document.getElementById('zbTopNotifAvatar');
-    var ti = document.getElementById('zbTopNotifTitle');
-    var bo = document.getElementById('zbTopNotifBody');
-    var pg = document.getElementById('zbTopNotifProgress');
-    if (!el) return;
-    if (avatarText) av.textContent = avatarText;
-    av.style.background = avatarBg || '#eff6ff';
-    av.style.color = avatarColor || '#1d4ed8';
-    ti.textContent = title || '';
-    bo.textContent = body || '';
-    clearTimeout(_zbNotifTimer);
-    el.style.animation = 'none';
-    pg.style.animation = 'none';
-    el.style.opacity = '1';
-    el.style.pointerEvents = 'auto';
-    void el.offsetWidth;
-    el.style.animation = 'zbNotifIn 0.55s cubic-bezier(0.34,1.56,0.64,1) forwards';
-    setTimeout(function(){
-        el.style.animation = 'zbNotifShake 0.4s ease';
-        pg.style.animation = 'zbProgShrink 5s linear forwards';
-    }, 580);
-    _zbNotifTimer = setTimeout(function(){ zbDismissTopNotif(); }, 6000);
-};
-
-window.zbDismissTopNotif = function() {
-    var el = document.getElementById('zbTopNotif');
-    if (!el) return;
-    clearTimeout(_zbNotifTimer);
-    el.style.animation = 'zbNotifOut 0.3s ease forwards';
-    setTimeout(function(){
-        el.style.opacity = '0';
-        el.style.pointerEvents = 'none';
-        el.style.animation = 'none';
-    }, 320);
-};
-
-// 轮询：管理员检查新反馈，培训师检查新回复
-var _zbPollLastCount = -1;
-var _zbPollLastReplyTs = {};
-
-function zbStartFeedbackPoll() {
-    setInterval(function(){
-        zbLoadFeedback().then(function(){
-            if (zbRole === 'admin') {
-                var unread = _zbFeedbackData.filter(function(t){ return !t.adminRead; });
-                if (_zbPollLastCount >= 0 && unread.length > _zbPollLastCount) {
-                    var newest = unread[0];
-                    zbShowTopNotif(
-                        (newest.submitter||'?').charAt(0),
-                        '#eff6ff', '#1d4ed8',
-                        (newest.submitter||'用户') + ' 提交了反馈',
-                        newest.type + ' · ' + (newest.text||'').slice(0,20)
-                    );
-                }
-                _zbPollLastCount = unread.length;
-                zbUpdateFeedbackDot();
-            } else if (zbRole === 'trainer') {
-                var myName = (window._zbCurrentUser && window._zbCurrentUser.name) || '';
-                _zbFeedbackData.forEach(function(t){
-                    if (t.submitter !== myName) return;
-                    if (!t.adminReply || !t.replyTs) return;
-                    var seen = _zbPollLastReplyTs[t.id];
-                    if (!seen || t.replyTs > seen) {
-                        _zbPollLastReplyTs[t.id] = t.replyTs;
-                        if (seen) {
-                            zbShowTopNotif(
-                                '管', '#f0fdf4', '#15803d',
-                                '管理员回复了你',
-                                t.adminReply.slice(0,30)
-                            );
-                        } else {
-                            _zbPollLastReplyTs[t.id] = t.replyTs;
-                        }
-                    }
-                });
-            }
-        }).catch(function(){});
-    }, 60000);
-}
 
 
 // 管理员操作（旧，保留兼容）
@@ -12121,63 +11677,25 @@ window.zbDoExport = function() {
 </div>
 
 
-<!-- 管理员反馈看板弹窗 -->
-<div id="zbAdminFeedbackModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.45);z-index:3100;align-items:center;justify-content:center;" onclick="if(event.target===this)zbCloseAdminFeedback()">
-  <div style="background:var(--bg-card,#fff);border-radius:14px;width:860px;max-width:96vw;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;border:0.5px solid var(--border-color);">
-    <div style="display:flex;align-items:center;gap:8px;padding:12px 16px;border-bottom:0.5px solid var(--border-color);flex-shrink:0;">
-      <span style="font-size:14px;font-weight:600;color:var(--text-primary);">反馈看板</span>
-      <span id="zbAdminFbUnreadBadge" style="display:none;font-size:11px;padding:2px 8px;border-radius:10px;background:#fef3c7;color:#b45309;font-weight:500;"></span>
-      <button onclick="zbAdminFbMarkAllRead()" style="margin-left:auto;font-size:12px;padding:4px 12px;border-radius:8px;border:0.5px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);cursor:pointer;">全部已读</button>
-      <button onclick="zbCloseAdminFeedback()" style="font-size:20px;color:var(--text-secondary);background:none;border:none;cursor:pointer;line-height:1;padding:2px 6px;">×</button>
+<!-- 管理员反馈弹窗（独立） -->
+<div id="zbAdminFeedbackModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,0.45);z-index:3100;align-items:center;justify-content:center;backdrop-filter:blur(4px);" onclick="if(event.target===this)zbCloseAdminFeedback()">
+  <div style="background:var(--bg-card,#fff);border-radius:14px;width:820px;max-width:96vw;max-height:88vh;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,0.16);overflow:hidden;">
+    <!-- 头部 -->
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:0.5px solid var(--border-color);flex-shrink:0;">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:15px;font-weight:600;color:var(--text-primary);">💬 用户反馈</span>
+        <span id="zbAdminFbUnreadBadge" style="display:none;font-size:11px;padding:2px 8px;border-radius:10px;background:#fef3c7;color:#b45309;font-weight:500;"></span>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <button onclick="zbAdminFbMarkAllRead()" style="font-size:12px;padding:4px 12px;border-radius:8px;border:0.5px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);cursor:pointer;">全部已读</button>
+        <button onclick="zbCloseAdminFeedback()" style="font-size:20px;color:var(--text-secondary);background:none;border:none;cursor:pointer;line-height:1;padding:2px 6px;">×</button>
+      </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;border-bottom:0.5px solid var(--border-color);flex-shrink:0;">
-      <div id="zbFbColHeadPending" style="padding:7px 12px;text-align:center;font-size:12px;font-weight:500;color:#92400e;background:#fef9ee;border-right:0.5px solid var(--border-color);">未受理 <span id="zbFbCntPending" style="background:#fef3c7;padding:0 5px;border-radius:8px;font-size:11px;">0</span></div>
-      <div id="zbFbColHeadAccepted" style="padding:7px 12px;text-align:center;font-size:12px;font-weight:500;color:#1d4ed8;background:#f0f6ff;border-right:0.5px solid var(--border-color);">处理中 <span id="zbFbCntAccepted" style="background:#dbeafe;padding:0 5px;border-radius:8px;font-size:11px;">0</span></div>
-      <div id="zbFbColHeadDone" style="padding:7px 12px;text-align:center;font-size:12px;font-weight:500;color:#15803d;background:#f0fdf4;">已完成 <span id="zbFbCntDone" style="background:#dcfce7;padding:0 5px;border-radius:8px;font-size:11px;">0</span></div>
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;flex:1;overflow:hidden;">
-      <div id="zbFbColPending" style="overflow-y:auto;padding:10px;border-right:0.5px solid var(--border-color);min-height:260px;"></div>
-      <div id="zbFbColAccepted" style="overflow-y:auto;padding:10px;border-right:0.5px solid var(--border-color);"></div>
-      <div id="zbFbColDone" style="overflow-y:auto;padding:10px;"></div>
+    <!-- 内容 -->
+    <div id="zbAdminFbList" style="flex:1;overflow-y:auto;padding:16px 20px;">
+      <div style="text-align:center;padding:40px;color:var(--text-secondary);font-size:13px;">加载中…</div>
     </div>
   </div>
 </div>
-
-<!-- 顶部通知条 -->
-<div id="zbTopNotif" style="position:fixed;top:16px;left:50%;transform:translateX(-50%) translateY(-100px);z-index:9999;width:300px;background:var(--bg-card,#fff);border:0.5px solid var(--border-color);border-radius:14px;padding:10px 14px;display:flex;align-items:center;gap:10px;opacity:0;pointer-events:none;transition:none;">
-  <div id="zbTopNotifAvatar" style="width:36px;height:36px;border-radius:50%;background:#eff6ff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;color:#1d4ed8;flex-shrink:0;"></div>
-  <div style="flex:1;min-width:0;">
-    <div id="zbTopNotifTitle" style="font-size:12px;font-weight:600;color:var(--text-primary);"></div>
-    <div id="zbTopNotifBody" style="font-size:11px;color:var(--text-secondary);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></div>
-  </div>
-  <button onclick="zbDismissTopNotif()" style="font-size:16px;background:none;border:none;color:var(--text-secondary);cursor:pointer;flex-shrink:0;line-height:1;padding:0;">×</button>
-  <div id="zbTopNotifProgress" style="position:absolute;bottom:0;left:0;height:2px;background:#2563eb;border-radius:0 0 14px 14px;width:100%;transform-origin:left;"></div>
-</div>
-
-<style>
-@keyframes zbNotifIn {
-  0%   { transform:translateX(-50%) translateY(-100px); opacity:0; }
-  55%  { transform:translateX(-50%) translateY(8px);    opacity:1; }
-  70%  { transform:translateX(-50%) translateY(-4px); }
-  82%  { transform:translateX(-50%) translateY(3px); }
-  91%  { transform:translateX(-50%) translateY(-2px); }
-  100% { transform:translateX(-50%) translateY(0);      opacity:1; }
-}
-@keyframes zbNotifShake {
-  0%,100% { transform:translateX(-50%) translateX(0); }
-  20%  { transform:translateX(calc(-50% - 5px)) rotate(-1deg); }
-  40%  { transform:translateX(calc(-50% + 5px)) rotate(1deg); }
-  60%  { transform:translateX(calc(-50% - 3px)); }
-  80%  { transform:translateX(calc(-50% + 3px)); }
-}
-@keyframes zbNotifOut {
-  0%   { transform:translateX(-50%) translateY(0); opacity:1; }
-  100% { transform:translateX(-50%) translateY(-80px); opacity:0; }
-}
-@keyframes zbProgShrink {
-  from { transform:scaleX(1); }
-  to   { transform:scaleX(0); }
-}
-</style>
 
 </html>
