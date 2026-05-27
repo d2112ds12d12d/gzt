@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.54G</title>
+    <title>培训部数据看板 v1.54F</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -775,7 +775,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.54G</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.54F</div>
     </div>
   </nav>
 
@@ -10071,7 +10071,7 @@ function zbSwitchLogTab(tab){
   } else if(tab==='cloud'){
     if(cloudPanel) cloudPanel.style.display='';
     if(tabCloud){ tabCloud.style.color='#3b82f6'; tabCloud.style.borderBottom='2px solid #3b82f6'; tabCloud.style.fontWeight='600'; }
-    zbRefreshCloudDates();
+    zbRenderCloudManager();
   } else if(tab==='edit'){
     if(editPanel) editPanel.style.display='';
     if(tabEdit){ tabEdit.style.color='#3b82f6'; tabEdit.style.borderBottom='2px solid #3b82f6'; tabEdit.style.fontWeight='600'; }
@@ -10399,36 +10399,6 @@ function _zbShowRefreshResult(success, elapsed) {
 
 function zbRefreshCloud() {
   zbRefreshCloudManual();
-}
-
-// ── 云端管理：打开时轻量刷新日期列表 ──
-async function zbRefreshCloudDates() {
-    var el = document.getElementById('zbCloudContent');
-    if (el) el.innerHTML = '<div style="text-align:center;padding:32px;color:var(--text-secondary);font-size:13px;">⏳ 正在同步云端数据…</div>';
-
-    var token = zbGetToken();
-
-    async function fetchSmall(fname) {
-        try {
-            if (token) {
-                var j = await ghApiFetch(fname, token);
-                if (j) return j;
-            }
-            var r = await fetch(ghRaw(fname));
-            if (r.ok) return await r.json();
-        } catch(e) { console.warn('zbRefreshCloudDates 拉取失败:', fname, e); }
-        return null;
-    }
-
-    // 只拉 qa / sum 两个小文件，够用于判断日期列表
-    var qaJson  = await fetchSmall(GH_FILES.qa);
-    var sumJson = await fetchSmall(GH_FILES.sum);
-
-    if (!window._DATA) window._DATA = {};
-    if (qaJson  && qaJson.rows  && qaJson.rows.length)  window._DATA.qa  = qaJson.rows;
-    if (sumJson && sumJson.rows && sumJson.rows.length)  window._DATA.sum = sumJson.rows;
-
-    zbRenderCloudManager();
 }
 
 // ── 云端管理：多选批量删除 ──
