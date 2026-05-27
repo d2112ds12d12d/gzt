@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.54I</title>
+    <title>培训部数据看板 v1.54J</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -775,7 +775,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.54I</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.54J</div>
     </div>
   </nav>
 
@@ -3742,7 +3742,6 @@
                 if (!files.length) return;
                 showLoading();
                 showToast('正在解析…');
-                var _thisUploadKeys = new Set(); // 记录本次实际上传了哪些表
                 for (const file of files) {
                     try {
                         const buf = await file.arrayBuffer();
@@ -3839,7 +3838,6 @@
                         const _dMin = _parsedDates.length ? _parsedDates.reduce((a,b)=>a<b?a:b) : '—';
                         const _dMax = _parsedDates.length ? _parsedDates.reduce((a,b)=>a>b?a:b) : '—';
                         var _logRecord = zbAddLog({ type: tableType, tableName: tableName, rows: parsed.length, dateMin: _dMin, dateMax: _dMax, dates: [...new Set(_parsedDates)] });
-                        _thisUploadKeys.add(tableType);
                     } catch(e) {
                         console.error('解析失败:', file.name, e);
                         showToast('✗ 解析失败: ' + file.name + '（' + (e.message||'格式错误') + '）');
@@ -3860,7 +3858,7 @@
 
                 // 管理员及以上：带进度条推送到云端
                 if (typeof zbPushToGitHub === 'function' && (zbRole === 'admin' || zbRole === 'super')) {
-                    await zbPushAllWithProgress(_thisUploadKeys);
+                    await zbPushAllWithProgress();
                     setTimeout(() => { if (typeof zbPushLog === 'function') zbPushLog(); }, 800);
                     _zbHealthDismissed = false;
                     zbCheckDataHealth();
@@ -4033,6 +4031,8 @@
                 if (diffData.length) fullRefresh();
                 else { if (trendChart) trendChart.resize(); if (personStackChart) personStackChart.resize(); if (issueTypeChart) issueTypeChart.resize(); }
             });
+
+            loadDataByMode('weekly');
 
             // ── 品类切换：直接在闭包内绑定，不需要window._zb*迂回 ──
             function switchCat(cat) {
@@ -6199,7 +6199,7 @@ async function zbLoadCloudData(useApi) {
 
 // ── 推送到GitHub ──
 // ── 带进度遮罩的批量云端推送 ──
-async function zbPushAllWithProgress(uploadedKeys) {
+async function zbPushAllWithProgress() {
     var tasks = [
         { key: 'qa',    label: 'QA差异率' },
         { key: 'diff5', label: '手机差异明细' },
@@ -6210,10 +6210,6 @@ async function zbPushAllWithProgress(uploadedKeys) {
     ];
     // 过滤掉无数据的任务
     tasks = tasks.filter(function(t) { return window._DATA && (window._DATA[t.key]||[]).length > 0; });
-    // 如果传入了本次上传的key集合，进度条只展示本次上传的项
-    if (uploadedKeys && uploadedKeys.size > 0) {
-        tasks = tasks.filter(function(t) { return uploadedKeys.has(t.key); });
-    }
     var total = tasks.length;
     if (!total) return;
 
@@ -9478,6 +9474,7 @@ function zbCopyDimTable() {
     var siteName = titleEl ? titleEl.textContent.replace(' · 站点详情','').trim() : '站点';
 
     var scopeLabel = window.zbGetScopeLabel ? window.zbGetScopeLabel(window._siteDataScope) : '客观执行';
+    var lastStart  = (document.getElementById('siteWeekLastStart')||{}).value||'';
     var lastEnd   = (document.getElementById('siteWeekLastEnd')||{}).value||'';
     var curStart  = (document.getElementById('siteWeekCurStart')||{}).value||'';
     var curEnd    = (document.getElementById('siteWeekCurEnd')||{}).value||'';
