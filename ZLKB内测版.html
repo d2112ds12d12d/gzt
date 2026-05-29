@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.54M</title>
+    <title>培训部数据看板 v1.54N</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -775,7 +775,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.54M</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.54N</div>
     </div>
   </nav>
 
@@ -1239,7 +1239,10 @@
                             <button onclick="zbCopyWeekly()" style="height:24px;padding:0 10px;border-radius:6px;border:0.5px solid #93c5fd;background:#eff6ff;color:#2563eb;font-size:11px;cursor:pointer;flex-shrink:0;white-space:nowrap;">📋 复制</button>
                         </div>
                     </div>
-                    <span class="close-modal" style="flex-shrink:0;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#64748b;">&times;</span>
+                    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                        <button id="modalJumpBtn" onclick="zbJumpTableLink()" style="display:none;align-items:center;gap:5px;padding:5px 14px;border-radius:7px;font-size:12px;font-weight:500;border:0.5px solid #93c5fd;background:#eff6ff;color:#2563eb;cursor:pointer;white-space:nowrap;" onmouseenter="this.style.background='#dbeafe'" onmouseleave="this.style.background='#eff6ff'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle;margin-right:2px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>跳转抽检登记表</button>
+                        <span class="close-modal" style="flex-shrink:0;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#64748b;">&times;</span>
+                    </div>
                 </div>
             </div>
             <!-- 副筛选栏：仅保留口径提示，列筛选在表头▾ -->
@@ -2469,72 +2472,26 @@
                                     badge.textContent = '×' + row._groupCount + '条';
                                     td.appendChild(badge);
                                 }
-                                // 跳转图标
+                                // K: 去掉跳转图标，改为双击复制质检码
                                 var rowDate = row['_date']||row['date']||'';
                                 var rowCat  = row['_cat'] ||row['cat'] ||'';
                                 var rowSite = row['_warehouse']||row['warehouse']||'';
-                                var link = typeof zbGetTableLink === 'function' ? zbGetTableLink(rowDate, rowCat, rowSite) : null;
-                                if (link && val && val !== '—') {
-                                    const icon = document.createElement('span');
-                                    icon.title = '复制质检码并跳转原始表格';
-                                    icon.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:4px;background:#eff6ff;border:1px solid #bfdbfe;color:#2563eb;cursor:pointer;margin-left:5px;opacity:0;transition:opacity .15s,transform .15s;vertical-align:middle;';
-                                    icon.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
-                                    icon.onclick = function(e) {
-                                        e.stopPropagation();
-                                        try { navigator.clipboard.writeText(val); } catch(err) {}
-                                        icon.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
-                                        icon.style.background = '#f0fdf4';
-                                        icon.style.borderColor = '#bbf7d0';
-                                        showToast('✅ 已复制质检码 ' + val + '，正在跳转原始表格');
-                                        setTimeout(function(){ window.open(link, '_blank'); }, 300);
-                                        setTimeout(function(){
-                                            icon.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
-                                            icon.style.background = '#eff6ff';
-                                            icon.style.borderColor = '#bfdbfe';
-                                        }, 2500);
-                                    };
-                                    tr.addEventListener('mouseenter', function(){ icon.style.opacity='1'; });
-                                    tr.addEventListener('mouseleave', function(){ icon.style.opacity='0'; });
-                                    td.appendChild(icon);
-                                    // 📷图标注入（在链接图标左边）
-                                    zbInjectCamIcon(td, row, icon);
-                                } else {
-                                    zbInjectCamIcon(td, row, null);
+                                if (val && val !== '—') {
+                                    td.title = '双击复制质检码';
+                                    td.style.cursor = 'copy';
+                                    td.ondblclick = (function(v){ return function(e){ e.stopPropagation(); try{ navigator.clipboard.writeText(v); }catch(err){} showToast('✅ 已复制质检码 ' + v); }; })(val);
                                 }
+                                zbInjectCamIcon(td, row, null);
                             } else if (key === 'code') {
                                 td.style.cssText += 'font-weight:500;color:#2563eb;';
                                 td.textContent = val;
-                                // 跳转图标（普通行）
-                                var rowDate2 = row['_date']||row['date']||'';
-                                var rowCat2  = row['_cat'] ||row['cat'] ||'';
-                                var rowSite2 = row['_warehouse']||row['warehouse']||'';
-                                var link2 = typeof zbGetTableLink === 'function' ? zbGetTableLink(rowDate2, rowCat2, rowSite2) : null;
-                                if (link2 && val && val !== '—') {
-                                    const icon2 = document.createElement('span');
-                                    icon2.title = '复制质检码并跳转原始表格';
-                                    icon2.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:4px;background:#eff6ff;border:1px solid #bfdbfe;color:#2563eb;cursor:pointer;margin-left:5px;opacity:0;transition:opacity .15s;vertical-align:middle;';
-                                    icon2.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
-                                    icon2.onclick = function(e) {
-                                        e.stopPropagation();
-                                        try { navigator.clipboard.writeText(val); } catch(err) {}
-                                        icon2.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
-                                        icon2.style.background = '#f0fdf4';
-                                        icon2.style.borderColor = '#bbf7d0';
-                                        showToast('✅ 已复制质检码 ' + val + '，正在跳转原始表格');
-                                        setTimeout(function(){ window.open(link2, '_blank'); }, 300);
-                                        setTimeout(function(){
-                                            icon2.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
-                                            icon2.style.background = '#eff6ff';
-                                            icon2.style.borderColor = '#bfdbfe';
-                                        }, 2500);
-                                    };
-                                    tr.addEventListener('mouseenter', function(){ icon2.style.opacity='1'; });
-                                    tr.addEventListener('mouseleave', function(){ icon2.style.opacity='0'; });
-                                    td.appendChild(icon2);
-                                    zbInjectCamIcon(td, row, icon2);
-                                } else {
-                                    zbInjectCamIcon(td, row, null);
+                                // K: 去掉跳转图标，改为双击复制质检码
+                                if (val && val !== '—') {
+                                    td.title = '双击复制质检码';
+                                    td.style.cursor = 'copy';
+                                    td.ondblclick = (function(v){ return function(e){ e.stopPropagation(); try{ navigator.clipboard.writeText(v); }catch(err){} showToast('✅ 已复制质检码 ' + v); }; })(val);
                                 }
+                                zbInjectCamIcon(td, row, null);
                             } else if (key === '_note') {
                                 // 备注列：显示内容+编辑图标（仅管理员）
                                 td.style.cssText += 'min-width:240px;max-width:480px;';
@@ -2807,6 +2764,19 @@
                 }
                 modal.classList.add('visible');
                 requestAnimationFrame(function(){ renderModalTableVirtual(); });
+
+                // K: 推断跳转链接
+                var jumpBtn = document.getElementById('modalJumpBtn');
+                if (jumpBtn) {
+                    var sampleRec = currentModalRecords[0] || {};
+                    var jDate = sampleRec.date || '';
+                    var jCat  = sampleRec.cat  || sampleRec._cat  || '';
+                    var jSite = sampleRec.warehouse || sampleRec.site || sampleRec._warehouse || '';
+                    var jUrl  = (typeof zbGetTableLink === 'function' && jDate && jCat && jSite)
+                        ? zbGetTableLink(jDate, jCat, jSite) : null;
+                    window._zbModalJumpUrl = jUrl || null;
+                    jumpBtn.style.display = jUrl ? 'inline-flex' : 'none';
+                }
             };
 
             // 生成周报句子
@@ -2850,6 +2820,12 @@
                 var txt = window._zbWeeklyText||'';
                 if (!txt) return;
                 navigator.clipboard.writeText(txt).then(function(){ showToast('✅ 已复制到剪贴板'); }).catch(function(){ showToast('复制失败，请手动复制'); });
+            };
+
+            window.zbJumpTableLink = function() {
+                var url = window._zbModalJumpUrl;
+                if (!url) { showToast('⚠️ 未配置该品类/月份的表格链接'); return; }
+                window.open(url, '_blank');
             };
 
             function exportToExcel(opts) {
@@ -3655,7 +3631,7 @@
             const DATA = window._DATA = { qa:[], diff5:[], sum:[], diff4:[], dw4cat:[], dw4sum:[] };
             const CAT_MAP = {'平板电脑':'平板','智能手表':'手表','耳机/耳麦':'耳机','手机':'手机','笔记本':'笔记本','相机':'相机'};
 
-            function nd(v){ if(!v)return ''; const s=String(v).trim(); if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10); const n=parseFloat(s); if(!isNaN(n)&&n>40000){const d=new Date((n-25569)*86400*1000);return d.toISOString().slice(0,10);} return s.slice(0,10); }
+            function nd(v){ if(!v)return ''; const s=String(v).trim(); if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10); const n=parseFloat(s); if(!isNaN(n)&&n>40000){const d=new Date((n-25569)*86400*1000);return d.toISOString().slice(0,10);} const slash=/^(\d{4})\/(\d{1,2})\/(\d{1,2})/.exec(s); if(slash)return slash[1]+'-'+slash[2].padStart(2,'0')+'-'+slash[3].padStart(2,'0'); return s.slice(0,10); }
             function extractCN(str){ if(!str)return ''; const m=str.match(/[\u4e00-\u9fa5]+/g); if(m)return m.join(''); const m2=str.match(/[（(]([^）)]+)[）)]/); if(m2)return m2[1]; return str.trim(); }
             function setChipLoaded(id, ok) {
                 const el = document.getElementById(id);
@@ -3742,6 +3718,7 @@
                 if (!files.length) return;
                 showLoading();
                 showToast('正在解析…');
+                var _thisUploadKeys = new Set(); // 记录本次实际上传了哪些表
                 for (const file of files) {
                     try {
                         const buf = await file.arrayBuffer();
@@ -3838,6 +3815,7 @@
                         const _dMin = _parsedDates.length ? _parsedDates.reduce((a,b)=>a<b?a:b) : '—';
                         const _dMax = _parsedDates.length ? _parsedDates.reduce((a,b)=>a>b?a:b) : '—';
                         var _logRecord = zbAddLog({ type: tableType, tableName: tableName, rows: parsed.length, dateMin: _dMin, dateMax: _dMax, dates: [...new Set(_parsedDates)] });
+                        _thisUploadKeys.add(tableType);
                     } catch(e) {
                         console.error('解析失败:', file.name, e);
                         showToast('✗ 解析失败: ' + file.name + '（' + (e.message||'格式错误') + '）');
@@ -3858,7 +3836,7 @@
 
                 // 管理员及以上：带进度条推送到云端
                 if (typeof zbPushToGitHub === 'function' && (zbRole === 'admin' || zbRole === 'super')) {
-                    await zbPushAllWithProgress();
+                    await zbPushAllWithProgress(_thisUploadKeys);
                     setTimeout(() => { if (typeof zbPushLog === 'function') zbPushLog(); }, 800);
                     _zbHealthDismissed = false;
                     zbCheckDataHealth();
@@ -6176,6 +6154,18 @@ async function zbLoadCloudData(useApi) {
         if (json && json.logs) { _zbLog = json.logs; localStorage.setItem('zb_upload_log', JSON.stringify(_zbLog)); }
     } catch(e) {}
 
+    // H: 格式清洗——把 qa/sum 里历史遗留斜杠日期统一转成横线格式
+    function fixSlashDate(s) {
+        if (!s) return s;
+        var slash = /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/.exec(String(s).trim());
+        return slash ? slash[1]+'-'+slash[2].padStart(2,'0')+'-'+slash[3].padStart(2,'0') : s;
+    }
+    ['qa','sum'].forEach(function(key) {
+        if (window._DATA[key]) {
+            window._DATA[key].forEach(function(r){ if(r.date) r.date = fixSlashDate(r.date); });
+        }
+    });
+
     if (loaded > 0) {
         const src = viaApi ? '（API直连）' : '';
         showToast('✅ 云端数据已加载（' + loaded + '/4）' + src);
@@ -6199,7 +6189,7 @@ async function zbLoadCloudData(useApi) {
 
 // ── 推送到GitHub ──
 // ── 带进度遮罩的批量云端推送 ──
-async function zbPushAllWithProgress() {
+async function zbPushAllWithProgress(uploadedKeys) {
     var tasks = [
         { key: 'qa',    label: 'QA差异率' },
         { key: 'diff5', label: '手机差异明细' },
@@ -6210,6 +6200,10 @@ async function zbPushAllWithProgress() {
     ];
     // 过滤掉无数据的任务
     tasks = tasks.filter(function(t) { return window._DATA && (window._DATA[t.key]||[]).length > 0; });
+    // 进度条只展示本次实际上传的项
+    if (uploadedKeys && uploadedKeys.size > 0) {
+        tasks = tasks.filter(function(t) { return uploadedKeys.has(t.key); });
+    }
     var total = tasks.length;
     if (!total) return;
 
