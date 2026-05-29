@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.55D</title>
+    <title>培训部数据看板 v1.55E</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -775,7 +775,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55D</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55E</div>
     </div>
   </nav>
 
@@ -6420,13 +6420,59 @@ async function _zbPushFile(fname, content, token) {
 async function zbPushEdits() {
     if (zbRole !== 'admin' && zbRole !== 'super') return;
     const token = zbGetToken();
-    const fname = GH_FILES.inspector;
-    const content = { edits: (typeof dtEdits !== 'undefined' ? dtEdits : {}), updated: new Date().toISOString() };
-    const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 0))));
-    let sha = '';
-    try { const r = await fetch(ghUrl(fname), { headers: { Authorization: 'token ' + token } }); if (r.ok) { const j = await r.json(); sha = j.sha||''; } } catch(e) {}
-    const body = { message: 'Update inspector_override.json', content: b64 }; if (sha) body.sha = sha;
-    try { await fetch(ghUrl(fname), { method: 'PUT', headers: { Authorization: 'token ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); } catch(e) {}
+    if (!token) return;
+
+    const edits = (typeof dtEdits !== 'undefined') ? dtEdits : {};
+    if (!Object.keys(edits).length) return;
+
+    // 把 dtEdits 写入 DATA.diff5 对应记录
+    var diff5 = window._DATA && window._DATA.diff5;
+    if (!diff5) return;
+
+    // 建立 code → record 的索引
+    var codeMap = {};
+    diff5.forEach(function(r) { if (r.code) codeMap[r.code] = r; });
+
+    var touchedMonths = new Set();
+    Object.keys(edits).forEach(function(editKey) {
+        var parts = editKey.split('|');
+        var code = parts[0], col = parts[1], val = edits[editKey];
+        var rec = codeMap[code];
+        if (!rec) return;
+        rec[col] = val;
+        var ym = (rec.date||'').slice(0,7);
+        if (ym && ym.length === 7) touchedMonths.add(ym);
+    });
+
+    if (!touchedMonths.size) return;
+
+    // 推送涉及的月份文件
+    var monthMap = {};
+    diff5.forEach(function(r) {
+        var ym = (r.date||'').slice(0,7);
+        if (!ym || ym.length < 7) return;
+        if (!monthMap[ym]) monthMap[ym] = [];
+        monthMap[ym].push(r);
+    });
+
+    var allOk = true;
+    for (var ym of touchedMonths) {
+        if (!monthMap[ym]) continue;
+        var fname = 'phone_diff_' + ym + '.json';
+        var ok = await _zbPushFile(fname, { rows: monthMap[ym], updated: new Date().toISOString() }, token);
+        if (!ok) { allOk = false; console.error('编辑推送失败:', fname); }
+    }
+
+    if (allOk) {
+        // 清空本地覆盖层（已永久写入云端）
+        if (typeof dtEdits !== 'undefined') {
+            Object.keys(edits).forEach(function(k) { delete dtEdits[k]; });
+            if (typeof dtSaveEdits === 'function') dtSaveEdits();
+        }
+        showToast('✅ 改动已永久写入云端');
+    } else {
+        showToast('⚠️ 部分改动推送失败，请重试');
+    }
 }
 
 // ── 推送日志 ──
