@@ -3674,7 +3674,8 @@
                         issueType:       r.issueType,
                         judgedIssueType: r.judgedType,
                         model:           r.cat,
-                        code:            r.code
+                        code:            r.code,
+                        _origRef:        r
                     };
                 }
                 function mapDiff4(r) {
@@ -3692,7 +3693,8 @@
                         issueType:       r.issueType,
                         judgedIssueType: r.judgedType,
                         model:           r.cat,
-                        code:            r.code
+                        code:            r.code,
+                        _origRef:        r
                     };
                 }
                 if (currentCat === '手机') {
@@ -8903,9 +8905,9 @@ async function _doEditSave() {
     var touchedMonths = new Set();
 
     // 把记录编辑的改动反向写回 DATA.diff5
+    // 注：mappedRow._origRef 在 bridgeData 投影时建立，直接指向 DATA.diff5 里的原始行，
+    // 避免按 code 查表时同质检码多行被覆盖到最后一条的问题。
     var diff5 = (window._DATA && window._DATA.diff5) || [];
-    var codeMap5 = {};
-    diff5.forEach(function(r){ if(r.code) codeMap5[r.code] = r; });
 
     Object.keys(_zbEditChanges).forEach(function(key){
         var idx = parseInt(key.split('_')[0]);
@@ -8913,9 +8915,8 @@ async function _doEditSave() {
         if (!mappedRow) return;
         var ym = (mappedRow.date||'').slice(0,7);
         if (ym && ym.length===7) touchedMonths.add(ym);
-        // 找到 diff5 里对应的原始行
-        var origRow = codeMap5[mappedRow.code];
-        if (!origRow) return;
+        var origRow = mappedRow._origRef;
+        if (!origRow || diff5.indexOf(origRow) === -1) return;
         var changes = _zbEditChanges[key];
         Object.keys(changes).forEach(function(mappedField){
             var origField = MAPPED_TO_ORIG[mappedField] || mappedField;
@@ -8930,7 +8931,8 @@ async function _doEditSave() {
         if (!mappedRow) return;
         var ym = (mappedRow.date||'').slice(0,7);
         if (ym && ym.length===7) touchedMonths.add(ym);
-        var i = diff5.findIndex(function(r){ return r.code === mappedRow.code && r.date === mappedRow.date; });
+        var origRow = mappedRow._origRef;
+        var i = origRow ? diff5.indexOf(origRow) : -1;
         if (i !== -1) diff5.splice(i, 1);
     });
 
