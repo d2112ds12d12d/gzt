@@ -2313,11 +2313,12 @@
                 if (e.target && e.target.id === 'dtCancelFilter') { e.stopPropagation(); dtClosePopup(); }
             });
 
-            // 单元格编辑：事件委托
-            var _dtBody = document.getElementById('detailTableBody');
-            if (_dtBody) _dtBody.addEventListener('click', function(e) {
+            // 单元格编辑：事件委托（挂在差异明细弹窗的虚拟滚动容器上）
+            var _vsContainer = document.getElementById('virtualScrollContainer');
+            if (_vsContainer) _vsContainer.addEventListener('click', function(e) {
                 const span = e.target.closest('.dt-cell-editable');
                 if (!span) return;
+                e.stopPropagation();
                 dtStartEdit(span);
             });
 
@@ -2350,11 +2351,22 @@
                         // 写入修改日志
                         zbAddLog({ type:'edit', code:code, col:DT_COL_LABELS[col]||col, from:oldVal, to:newVal });
                     }
-                    renderDetailTable();
+                    // 弹窗里的虚拟滚动表用 renderModalTableVirtual 重渲；主表 stub 兜底
+                    if (typeof renderModalTableVirtual === 'function' && document.getElementById('detailModal') && document.getElementById('detailModal').style.display !== 'none') {
+                        renderModalTableVirtual();
+                    } else if (typeof renderDetailTable === 'function') {
+                        renderDetailTable();
+                    }
                 };
                 input.addEventListener('keydown', function(e) {
                     if (e.key === 'Enter') { e.preventDefault(); save(); }
-                    if (e.key === 'Escape') { renderDetailTable(); }
+                    if (e.key === 'Escape') {
+                        if (typeof renderModalTableVirtual === 'function' && document.getElementById('detailModal') && document.getElementById('detailModal').style.display !== 'none') {
+                            renderModalTableVirtual();
+                        } else if (typeof renderDetailTable === 'function') {
+                            renderDetailTable();
+                        }
+                    }
                 });
                 input.addEventListener('blur', save);
                 input.addEventListener('click', function(e) { e.stopPropagation(); });
@@ -2499,6 +2511,18 @@
                                 td.style.cssText += 'min-width:240px;max-width:480px;';
                                 var rawRow = row._rawRow || row;
                                 zbRenderNoteCell(td, rawRow);
+                            } else if (key === 'person' && !row._isSectionHeader && typeof zbCanEditRow === 'function' && zbCanEditRow(row)) {
+                                // 原操作人列：权限通过则启用单元格编辑（复用 dtEdits 通道）
+                                var editKey = (row.code||'') + '|person';
+                                var displayVal = (dtEdits[editKey] !== undefined) ? dtEdits[editKey] : (row.person || '');
+                                var isModified = dtEdits[editKey] !== undefined;
+                                var span = document.createElement('span');
+                                span.className = 'dt-cell-editable' + (isModified ? ' dt-cell-modified' : '');
+                                span.setAttribute('data-code', row.code||'');
+                                span.setAttribute('data-col', 'person');
+                                span.setAttribute('data-orig', row.person||'-');
+                                span.textContent = displayVal || '-';
+                                td.appendChild(span);
                             } else {
                                 td.textContent = val;
                             }
@@ -9010,7 +9034,6 @@ async function _doEditSave() {
     }
     if (typeof bridgeData==='function') bridgeData();
     if (typeof fullRefresh==='function') fullRefresh();
-    if (typeof _zbRenderLog==='function') _zbRenderLog();
 }
 
 function zbShowSkeleton() {
