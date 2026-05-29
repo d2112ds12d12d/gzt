@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.54N</title>
+    <title>培训部数据看板 v1.55</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -775,7 +775,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.54N</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55</div>
     </div>
   </nav>
 
@@ -10722,32 +10722,18 @@ function zbCloseUpload() {
         </div>
       </div>
 
-      <!-- 框2：五品类 -->
+      <!-- 框2：四品类数据（大仓+中心仓合并） -->
       <div style="border:1.5px dashed #a7f3d0;border-radius:12px;padding:14px 16px;background:#f8fdfb;transition:all .15s;position:relative;" id="zbUpBox2">
         <div style="display:flex;align-items:center;gap:12px;">
           <div style="width:40px;height:40px;border-radius:10px;background:#ecfdf5;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">📦</div>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:600;color:#1e293b;">大仓四品类数据</div>
+            <div style="font-size:13px;font-weight:600;color:#1e293b;">四品类数据</div>
             <div style="font-size:11px;color:#64748b;margin-top:1px;">汇总数据表 · 差异明细数据表</div>
             <div id="zbUpFile2Name" style="font-size:11px;color:#059669;margin-top:4px;display:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
           </div>
           <label for="zbFiveCatInput" style="padding:6px 14px;border-radius:8px;background:#059669;color:#fff;font-size:12px;font-weight:500;cursor:pointer;flex-shrink:0;white-space:nowrap;">选择文件</label>
         </div>
       </div>
-
-      <!-- 框2.5：中心仓四品类数据 -->
-      <div style="border:1.5px dashed #93c5fd;border-radius:12px;padding:14px 16px;background:#f0f7ff;transition:all .15s;position:relative;" id="zbUpBox25">
-        <div style="display:flex;align-items:center;gap:12px;">
-          <div style="width:40px;height:40px;border-radius:10px;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🏪</div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:600;color:#1e3a8a;">中心仓四品类数据</div>
-            <div style="font-size:11px;color:#64748b;margin-top:1px;">日汇总表 · 差异明细表（笔记本/平板/手表/耳机）</div>
-            <div id="zbUpFile25Name" style="font-size:11px;color:#059669;margin-top:4px;display:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
-          </div>
-          <label for="zbZxCatInput" style="padding:6px 14px;border-radius:8px;background:#2563eb;color:#fff;font-size:12px;font-weight:500;cursor:pointer;flex-shrink:0;white-space:nowrap;">选择文件</label>
-        </div>
-      </div>
-      <input type="file" id="zbZxCatInput" style="display:none;" accept=".xlsx,.xls" multiple>
 
       <!-- 框3：三大仓操作人纠正表 -->
       <div style="border:1.5px dashed #fbbf24;border-radius:12px;padding:14px 16px;background:#fffbeb;transition:all .15s;position:relative;" id="zbUpBox3">
@@ -10802,21 +10788,6 @@ document.getElementById('zbFiveCatInput').addEventListener('change', function(e)
   box.style.background = '#ecfdf5';
 });
 
-// 中心仓四品类文件选择预览
-document.getElementById('zbZxCatInput').addEventListener('change', function(e){
-  var files = e.target.files;
-  var nameEl = document.getElementById('zbUpFile25Name');
-  var box = document.getElementById('zbUpBox25');
-  if (files.length) {
-    var names = Array.from(files).map(function(f){ return f.name; }).join('、');
-    if (nameEl) { nameEl.textContent = '✓ ' + names; nameEl.style.display = 'block'; }
-    if (box) { box.style.borderColor = '#2563eb'; box.style.background = '#dbeafe'; }
-  } else {
-    if (nameEl) nameEl.style.display = 'none';
-    if (box) { box.style.borderColor = '#93c5fd'; box.style.background = '#f0f7ff'; }
-  }
-});
-
 // 确认上传
 // 纠正表文件选择预览
 document.getElementById('zbCorrectionInput').addEventListener('change', function() {
@@ -10835,31 +10806,26 @@ document.getElementById('zbCorrectionInput').addEventListener('change', function
 window.zbConfirmUpload = function() {
   var f1 = document.getElementById('zbPhoneInput').files;
   var f2 = document.getElementById('zbFiveCatInput').files;
-  var f25 = document.getElementById('zbZxCatInput').files;
   var f3 = document.getElementById('zbCorrectionInput').files;
   var hint = document.getElementById('zbUploadHint');
-  if (!f1.length && !f2.length && !f25.length && !f3.length) {
+  if (!f1.length && !f2.length && !f3.length) {
     hint.style.display = 'block';
     return;
   }
   hint.style.display = 'none';
-  var mainFiles = Array.from(f1).concat(Array.from(f2)).concat(Array.from(f25));
+  var mainFiles = Array.from(f1).concat(Array.from(f2));
   var correctionFile = f3.length ? f3[0] : null;
   zbCloseUpload();
   document.getElementById('zbPhoneInput').value = '';
   document.getElementById('zbFiveCatInput').value = '';
-  document.getElementById('zbZxCatInput').value = '';
   document.getElementById('zbCorrectionInput').value = '';
   document.getElementById('zbUpFile1Name').style.display = 'none';
   document.getElementById('zbUpFile2Name').style.display = 'none';
-  document.getElementById('zbUpFile25Name').style.display = 'none';
   document.getElementById('zbUpFile3Name').style.display = 'none';
   document.getElementById('zbUpBox1').style.borderColor = '#bfdbfe';
   document.getElementById('zbUpBox1').style.background = '#f8fbff';
   document.getElementById('zbUpBox2').style.borderColor = '#a7f3d0';
   document.getElementById('zbUpBox2').style.background = '#f8fdfb';
-  document.getElementById('zbUpBox25').style.borderColor = '#93c5fd';
-  document.getElementById('zbUpBox25').style.background = '#f0f7ff';
   document.getElementById('zbUpBox3').style.borderColor = '#fbbf24';
   document.getElementById('zbUpBox3').style.background = '#fffbeb';
   // 处理纠正表
