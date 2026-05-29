@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.55I-debug</title>
+    <title>培训部数据看板 v1.55J</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -775,7 +775,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55I-debug</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55J</div>
     </div>
   </nav>
 
@@ -8644,13 +8644,11 @@ function zbSwitchDimTab(tab) {
 }
 
 // ══ 记录编辑：搜索、行内编辑、双轨保存 ══
-console.log('%c[DEBUG-BUILD] 记录编辑探针已加载 v1.55I-debug', 'background:#fef08a;color:#854d0e;font-weight:700;padding:4px 8px;border-radius:4px;');
 var _zbEditChanges = {}; // { rowKey: {field:newVal,...} }
 var _zbEditDeletes = new Set(); // 待删除的rowKey集合
 var _zbEditResults = []; // 搜索结果
 
 function zbEditSearch() {
-    console.log('[DEBUG] zbEditSearch called — will reset _zbEditChanges & _zbEditResults');
     var code = (document.getElementById('zbEditSearchInput')||{}).value||'';
     code = code.trim();
     var el = document.getElementById('zbEditResult');
@@ -8674,7 +8672,6 @@ var ZB_EDIT_FIELDS = ['date','warehouse','cat','brand','model','level1','level2'
 var ZB_EDIT_LABELS = {date:'抽检日期',warehouse:'站点',cat:'品类',brand:'品牌',model:'型号',level1:'一级项',level2:'二级项',level3_orig:'原三级项',level3:'新三级项',person:'原操作人',category:'主客观分类',issueType:'问题类型',judgedIssueType:'责任类型'};
 
 function zbEditRenderTable() {
-    console.log('[DEBUG] zbEditRenderTable called — will rebuild innerHTML, current changes:', JSON.parse(JSON.stringify(_zbEditChanges)));
     var el = document.getElementById('zbEditResult');
     if (!el) return;
     var results = _zbEditResults;
@@ -8735,10 +8732,8 @@ function zbEditRenderTable() {
 }
 
 function zbEditFieldChange(key, field, val) {
-    console.log('[DEBUG] zbEditFieldChange', { key: key, field: field, val: val, rowExists: !!_zbEditResults[parseInt(key.split('_')[0])] });
     if (!_zbEditChanges[key]) _zbEditChanges[key] = {};
     _zbEditChanges[key][field] = val;
-    console.log('[DEBUG]   → _zbEditChanges after write:', JSON.parse(JSON.stringify(_zbEditChanges)));
     // 更新状态栏
     var hint = document.querySelector('#zbEditResult > div > span');
     if (hint) {
@@ -8777,14 +8772,6 @@ function zbEditClearAll() {
 }
 
 async function zbEditSavePush() {
-    console.log('[DEBUG] zbEditSavePush ENTRY', {
-        changesKeys: Object.keys(_zbEditChanges),
-        changes: JSON.parse(JSON.stringify(_zbEditChanges)),
-        deletesCount: _zbEditDeletes.size,
-        resultsLen: _zbEditResults.length,
-        firstResultHasOrigRef: !!(_zbEditResults[0] && _zbEditResults[0]._origRef),
-        firstResultKeys: _zbEditResults[0] ? Object.keys(_zbEditResults[0]) : []
-    });
     var hasEdit = Object.keys(_zbEditChanges).length > 0;
     var hasDel  = _zbEditDeletes.size > 0;
     if (!hasEdit && !hasDel) { showToast('没有任何改动'); return; }
@@ -8902,9 +8889,9 @@ async function _doEditSave() {
         return;
     }
 
-    // mapped字段 → diff5原始字段 反向映射
-    // mapDiff5: warehouse←site, person←inspector, category←subjobj,
-    //           level3←level3_new, judgedIssueType←judgedType, model←cat
+    // mapped字段 → 原始字段 反向映射
+    // mapDiff5/mapDiff4: warehouse←site, person←inspector, category←subjobj,
+    //                    level3←level3_new, judgedIssueType←judgedType
     var MAPPED_TO_ORIG = {
         warehouse:       'site',
         person:          'inspector',
@@ -8914,22 +8901,34 @@ async function _doEditSave() {
         // level1,level2,level3_orig,level2,issueType,date,code,cat,qaInspector 同名不需要转换
     };
 
-    // 收集受影响月份（必须在清空_zbEditChanges/_zbEditResults之前）
-    var touchedMonths = new Set();
+    // 三个数据源：手机 diff5 / 五品类 diff4 / 大仓 dw4cat
+    // _origRef 在 bridgeData 投影时建立，直接指向原始行，避免按 code 查表时同质检码多行被覆盖的问题
+    var diff5  = (window._DATA && window._DATA.diff5)  || [];
+    var diff4  = (window._DATA && window._DATA.diff4)  || [];
+    var dw4cat = (window._DATA && window._DATA.dw4cat) || [];
 
-    // 把记录编辑的改动反向写回 DATA.diff5
-    // 注：mappedRow._origRef 在 bridgeData 投影时建立，直接指向 DATA.diff5 里的原始行，
-    // 避免按 code 查表时同质检码多行被覆盖到最后一条的问题。
-    var diff5 = (window._DATA && window._DATA.diff5) || [];
+    // 判断 _origRef 落在哪个源里，返回 'diff5' / 'diff4' / 'dw4cat' / null
+    function locateSource(origRow) {
+        if (!origRow) return null;
+        if (diff5.indexOf(origRow)  !== -1) return 'diff5';
+        if (diff4.indexOf(origRow)  !== -1) return 'diff4';
+        if (dw4cat.indexOf(origRow) !== -1) return 'dw4cat';
+        return null;
+    }
 
+    // 每个源各自记录"被改动 / 被删除的月份"
+    var touchedMonths = { diff5: new Set(), diff4: new Set(), dw4cat: new Set() };
+
+    // 反向写回原始行
     Object.keys(_zbEditChanges).forEach(function(key){
         var idx = parseInt(key.split('_')[0]);
         var mappedRow = _zbEditResults[idx];
         if (!mappedRow) return;
-        var ym = (mappedRow.date||'').slice(0,7);
-        if (ym && ym.length===7) touchedMonths.add(ym);
         var origRow = mappedRow._origRef;
-        if (!origRow || diff5.indexOf(origRow) === -1) return;
+        var src = locateSource(origRow);
+        if (!src) return;
+        var ym = (mappedRow.date||'').slice(0,7);
+        if (ym && ym.length===7) touchedMonths[src].add(ym);
         var changes = _zbEditChanges[key];
         Object.keys(changes).forEach(function(mappedField){
             var origField = MAPPED_TO_ORIG[mappedField] || mappedField;
@@ -8937,19 +8936,23 @@ async function _doEditSave() {
         });
     });
 
-    // 被删除的行：从 DATA.diff5 里也删掉
+    // 删除原始行
     _zbEditDeletes.forEach(function(key){
         var idx = parseInt(key.split('_')[0]);
         var mappedRow = _zbEditResults[idx];
         if (!mappedRow) return;
-        var ym = (mappedRow.date||'').slice(0,7);
-        if (ym && ym.length===7) touchedMonths.add(ym);
         var origRow = mappedRow._origRef;
-        var i = origRow ? diff5.indexOf(origRow) : -1;
-        if (i !== -1) diff5.splice(i, 1);
+        var src = locateSource(origRow);
+        if (!src) return;
+        var ym = (mappedRow.date||'').slice(0,7);
+        if (ym && ym.length===7) touchedMonths[src].add(ym);
+        var arr = src === 'diff5' ? diff5 : src === 'diff4' ? diff4 : dw4cat;
+        var i = arr.indexOf(origRow);
+        if (i !== -1) arr.splice(i, 1);
     });
 
-    if (!touchedMonths.size) {
+    var totalTouched = touchedMonths.diff5.size + touchedMonths.diff4.size + touchedMonths.dw4cat.size;
+    if (!totalTouched) {
         showToast('✅ 改动已应用');
         _zbEditChanges={}; _zbEditDeletes=new Set(); _zbEditResults=[];
         document.getElementById('zbEditResult').innerHTML='<div style="text-align:center;padding:24px;color:#10b981;font-size:13px;">✅ 已保存</div>';
@@ -8958,24 +8961,43 @@ async function _doEditSave() {
         return;
     }
 
-    // 按月分片（从 DATA.diff5 原始数据分片，保持原始字段格式）
-    var monthMap = {};
-    diff5.forEach(function(r){
-        var ym=(r.date||'').slice(0,7);
-        if(!ym||ym.length<7) return;
-        if(!monthMap[ym]) monthMap[ym]=[];
-        monthMap[ym].push(r);
-    });
+    // 按月分片（每个源独立分片）
+    function buildMonthMap(arr) {
+        var m = {};
+        arr.forEach(function(r){
+            var ym=(r.date||'').slice(0,7);
+            if(!ym||ym.length<7) return;
+            if(!m[ym]) m[ym]=[];
+            m[ym].push(r);
+        });
+        return m;
+    }
+    var monthMap5  = buildMonthMap(diff5);
+    var monthMap4  = buildMonthMap(diff4);
 
     document.getElementById('zbEditResult').innerHTML='<div style="text-align:center;padding:24px;color:#2563eb;font-size:13px;">⏳ 正在推送云端，请稍候…</div>';
     _zbEditChanges={}; _zbEditDeletes=new Set(); _zbEditResults=[];
 
     var allOk = true;
-    for (var ym of touchedMonths) {
-        if (!monthMap[ym]) continue;
+
+    // 推 手机 diff5（phone_diff_<YM>.json）
+    for (var ym of touchedMonths.diff5) {
+        if (!monthMap5[ym]) continue;
         var fname = 'phone_diff_' + ym + '.json';
-        var ok = await _zbPushFile(fname, { rows: monthMap[ym], updated: new Date().toISOString() }, token);
+        var ok = await _zbPushFile(fname, { rows: monthMap5[ym], updated: new Date().toISOString() }, token);
         if (!ok) { allOk = false; console.error('[记录编辑] 推送失败:', fname); }
+    }
+    // 推 五品类 diff4（five_cat_<YM>.json）
+    for (var ym of touchedMonths.diff4) {
+        if (!monthMap4[ym]) continue;
+        var fname = 'five_cat_' + ym + '.json';
+        var ok = await _zbPushFile(fname, { rows: monthMap4[ym], updated: new Date().toISOString() }, token);
+        if (!ok) { allOk = false; console.error('[记录编辑] 推送失败:', fname); }
+    }
+    // 推 大仓 dw4cat（不分片，整文件覆盖）
+    if (touchedMonths.dw4cat.size > 0) {
+        var ok = await _zbPushFile(GH_FILES.dw4cat, { rows: dw4cat, updated: new Date().toISOString() }, token);
+        if (!ok) { allOk = false; console.error('[记录编辑] 推送失败:', GH_FILES.dw4cat); }
     }
 
     if (allOk) {
