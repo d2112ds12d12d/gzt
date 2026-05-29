@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.55G</title>
+    <title>培训部数据看板 v1.55F</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -8824,7 +8824,7 @@ async function zbEditSavePush() {
     });
 }
 
-function _doEditSave() {
+async function _doEditSave() {
     var allDiff = window._allDiffData || [];
     var delKeys = new Set();
     _zbEditDeletes.forEach(function(key){
@@ -8878,9 +8878,68 @@ function _doEditSave() {
     editLog.push(snap);
     localStorage.setItem('zb_edit_log', JSON.stringify(editLog.slice(-50)));
 
-    showToast('✅ 改动已应用，可在日志-云端管理里撤回');
+    // ── 推送受影响月份到云端 ──
+    var token = zbGetToken ? zbGetToken() : null;
+    if (!token) {
+        showToast('⚠️ 未找到 token，改动已写入内存但未同步云端');
+        _zbEditChanges={}; _zbEditDeletes=new Set(); _zbEditResults=[];
+        document.getElementById('zbEditResult').innerHTML='<div style="text-align:center;padding:24px;color:#f59e0b;font-size:13px;">⚠️ 未找到 token，请重新登录后推送</div>';
+        return;
+    }
+
+    // 收集受影响月份
+    var touchedMonths = new Set();
+    var allDiff2 = window._allDiffData || [];
+    // 被编辑的行
+    Object.keys(_zbEditChanges).forEach(function(key){
+        var idx = parseInt(key.split('_')[0]);
+        var r = _zbEditResults[idx];
+        if (r) { var ym=(r.date||'').slice(0,7); if(ym&&ym.length===7) touchedMonths.add(ym); }
+    });
+    // 被删除的行（已从allDiff移除，用key里的date字段取月份）
+    _zbEditDeletes.forEach(function(key){
+        var parts = key.split('_');
+        // key格式: idx_code_date，date在最后
+        var date = parts.slice(2).join('_');
+        var ym = (date||'').slice(0,7);
+        if(ym&&ym.length===7) touchedMonths.add(ym);
+    });
+
+    if (!touchedMonths.size) {
+        showToast('✅ 改动已应用');
+        _zbEditChanges={}; _zbEditDeletes=new Set(); _zbEditResults=[];
+        document.getElementById('zbEditResult').innerHTML='<div style="text-align:center;padding:24px;color:#10b981;font-size:13px;">✅ 已保存</div>';
+        if (typeof fullRefresh==='function') fullRefresh();
+        return;
+    }
+
+    // 按月分片
+    var monthMap = {};
+    allDiff2.forEach(function(r){
+        var ym=(r.date||'').slice(0,7);
+        if(!ym||ym.length<7) return;
+        if(!monthMap[ym]) monthMap[ym]=[];
+        monthMap[ym].push(r);
+    });
+
+    document.getElementById('zbEditResult').innerHTML='<div style="text-align:center;padding:24px;color:#2563eb;font-size:13px;">⏳ 正在推送云端，请稍候…</div>';
     _zbEditChanges={}; _zbEditDeletes=new Set(); _zbEditResults=[];
-    document.getElementById('zbEditResult').innerHTML='<div style="text-align:center;padding:24px;color:#10b981;font-size:13px;">✅ 已保存，在上传页重新推送云端以同步</div>';
+
+    var allOk = true;
+    for (var ym of touchedMonths) {
+        if (!monthMap[ym]) continue;
+        var fname = 'phone_diff_' + ym + '.json';
+        var ok = await _zbPushFile(fname, { rows: monthMap[ym], updated: new Date().toISOString() }, token);
+        if (!ok) { allOk = false; console.error('[记录编辑] 推送失败:', fname); }
+    }
+
+    if (allOk) {
+        showToast('✅ 改动已永久写入云端');
+        document.getElementById('zbEditResult').innerHTML='<div style="text-align:center;padding:24px;color:#10b981;font-size:13px;">✅ 已成功推送云端</div>';
+    } else {
+        showToast('⚠️ 部分月份推送失败，请重试');
+        document.getElementById('zbEditResult').innerHTML='<div style="text-align:center;padding:24px;color:#f59e0b;font-size:13px;">⚠️ 部分推送失败，请重试</div>';
+    }
     if (typeof fullRefresh==='function') fullRefresh();
 }
 
