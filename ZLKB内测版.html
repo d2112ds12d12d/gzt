@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.55C</title>
+    <title>培训部数据看板 v1.55D</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -775,7 +775,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55C</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55D</div>
     </div>
   </nav>
 
@@ -6215,6 +6215,18 @@ async function zbLoadCloudData(useApi) {
             window._DATA[key].forEach(function(r){ if(r.date) r.date = fixSlashDate(r.date); });
         }
     });
+
+    // 去重清洗：qa 按 date|site|cat 去重，保留最后一条（最新上传的）
+    if (window._DATA.qa && window._DATA.qa.length) {
+        var qaMap = new Map();
+        window._DATA.qa.forEach(function(r) {
+            qaMap.set(r.date+'|'+r.site+'|'+r.cat, r);
+        });
+        var before = window._DATA.qa.length;
+        window._DATA.qa = Array.from(qaMap.values());
+        var removed = before - window._DATA.qa.length;
+        if (removed > 0) console.log('[看板] qa去重清洗：移除重复行', removed, '条');
+    }
 
     if (loaded > 0) {
         const src = viaApi ? '（API直连）' : '';
