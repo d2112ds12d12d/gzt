@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.55Q</title>
+    <title>培训部数据看板 v1.55R</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -775,7 +775,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55Q</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55R</div>
     </div>
   </nav>
 
@@ -3813,6 +3813,7 @@
                             DATA.qa = smartMerge(DATA.qa, parsed, r => r.date+'|'+r.site+'|'+r.cat);
                         } else if ('主客观问题分类' in fr && '策略类别' in fr) {
                             tableType = 'diff5'; tableName = '手机差异明细';
+                            const DW_SITES_PARSE = new Set(['转转-深圳智能验机中心','转转-青岛智能验机中心','转转-成都智能验机中心','深圳后验中心仓','青岛后验中心仓','成都后验中心仓']);
                             parsed = rows.map(r => ({
                                 date: nd(r['日期']),
                                 code: String(r['质检码']||'').trim(),
@@ -3826,7 +3827,7 @@
                                 subjobj: String(r['主客观问题分类']||'').trim(),
                                 issueType: String(r['问题类型']||'').trim(),
                                 judgedType: String(r['抽检判定的问题类型']||'').trim(),
-                                inspector: extractCN(String(r['原操作人名称']||'')),
+                                inspector: DW_SITES_PARSE.has(String(r['站点名称']||'').trim()) ? '/' : extractCN(String(r['原操作人名称']||'')),
                                 qaInspector: extractCN(String(r['新操作人名称']||''))
                             }));
                             DATA.diff5 = smartMerge(DATA.diff5, parsed, r => r.date+'|'+r.code+'|'+r.site);
