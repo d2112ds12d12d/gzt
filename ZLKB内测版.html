@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.55</title>
+    <title>培训部数据看板 v1.55A</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -775,7 +775,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55A</div>
     </div>
   </nav>
 
@@ -3766,8 +3766,38 @@
                             tableType = 'diff4'; tableName = '五品类差异明细';
                             parsed = rows.map(r => ({ date:nd(r['抽检时间']), code:(r['质检码']||'').trim(), site:(r['站点']||'').trim(), cat:CAT_MAP[r['品类']]||r['品类']||'', level1:r['一级项']||'', level2:r['二级项']||'', level3_orig:r['原三级项']||'', level3_new:r['新三级项']||'', subjobj:(r['主客观分类']||'').trim(), issueType:(r['质检项类型']||'').trim(), judgedType:(r['问题分类']||'').trim(), inspector:extractCN(r['质检师']||''), qaInspector:extractCN(r['QA']||'') }));
                             DATA.diff4 = smartMerge(DATA.diff4, parsed);
+                        } else if ('抽检设备数量' in fr && '站点名称' in fr && '品类名称' in fr && !('质检码' in fr) && !('主客观问题分类' in fr)) {
+                            // 四品类汇总表（中心仓+大仓混合），按站点分流
+                            var DW4_SITES_SUM = new Set(['转转-深圳智能验机中心','转转-青岛智能验机中心','转转-成都智能验机中心','深圳后验中心仓','青岛后验中心仓','成都后验中心仓']);
+                            var DW4_CAT_MAP_SUM = {'平板电脑':'平板','智能手表':'手表','耳机/耳麦':'耳机','笔记本':'笔记本'};
+                            var sumRows = [], dw4sumRows = [];
+                            rows.forEach(function(r) {
+                                var site = (r['站点名称']||'').trim();
+                                var cat  = DW4_CAT_MAP_SUM[r['品类名称']] || r['品类名称'] || '';
+                                var date = nd(r['抽检日期']||r['日期']);
+                                var checks = parseFloat(r['抽检设备数量'])||0;
+                                var objDiff  = parseFloat(r['客观差异设备量'])||0;
+                                var subjDiff = parseFloat(r['主观差异设备量'])||0;
+                                if (DW4_SITES_SUM.has(site)) {
+                                    dw4sumRows.push({ date, site, cat, checks, objDiff, subjDiff });
+                                } else {
+                                    sumRows.push({ date, site, cat, checks });
+                                }
+                            });
+                            if (sumRows.length) {
+                                tableType = 'sum'; tableName = '四品类汇总（中心仓）';
+                                parsed = sumRows;
+                                DATA.sum = smartMerge(DATA.sum, sumRows);
+                            }
+                            if (dw4sumRows.length) {
+                                tableType = tableType || 'dw4sum'; tableName = tableName ? tableName + '+大仓' : '四品类汇总（大仓）';
+                                if (!DATA.dw4sum) DATA.dw4sum = [];
+                                DATA.dw4sum = smartMerge(DATA.dw4sum, dw4sumRows, r => r.date+'|'+r.site+'|'+r.cat);
+                            }
+                            // parsed 取合并，用于日志记录
+                            parsed = sumRows.concat(dw4sumRows);
                         } else if (('抽检设备数量' in fr || '大盘抽检设备数量' in fr) && ('站点名称' in fr || ('品类名称' in fr && '抽检日期' in fr)) && !('质检码' in fr) && !('主客观问题分类' in fr)) {
-                            // 大仓四品类汇总表（兼容新旧两种字段名）
+                            // 大仓四品类汇总表（兼容旧字段名）
                             var DW4_SITES = new Set(['转转-深圳智能验机中心','转转-青岛智能验机中心','转转-成都智能验机中心','深圳后验中心仓','青岛后验中心仓','成都后验中心仓']);
                             var DW4_CAT_MAP = {'平板电脑':'平板','智能手表':'手表','耳机/耳麦':'耳机','笔记本':'笔记本'};
                             tableType = 'dw4sum'; tableName = '大仓四品类汇总';
@@ -3776,33 +3806,49 @@
                                 site:  (r['站点名称']||'').trim(),
                                 cat:   DW4_CAT_MAP[r['品类名称']] || r['品类名称'] || '',
                                 checks: parseFloat(r['抽检设备数量']||r['大盘抽检设备数量'])||0,
-                                objDiff: parseFloat(r['客观差异设备量']||r['客观差异设备量'])||0,
-                                subjDiff: parseFloat(r['主观差异设备量']||r['主观差异设备量'])||0
+                                objDiff: parseFloat(r['客观差异设备量'])||0,
+                                subjDiff: parseFloat(r['主观差异设备量'])||0
                             }));
                             if (!DATA.dw4sum) DATA.dw4sum = [];
                             DATA.dw4sum = smartMerge(DATA.dw4sum, parsed, r => r.date+'|'+r.site+'|'+r.cat);
                         } else if ('主客观问题分类' in fr && '抽检判定的问题类型' in fr && '站点名称' in fr && !('策略类别' in fr)) {
-                            // 大仓四品类差异明细表
+                            // 四品类差异明细表（中心仓+大仓混合），按站点分流
                             var DW4_SITES2 = new Set(['转转-深圳智能验机中心','转转-青岛智能验机中心','转转-成都智能验机中心','深圳后验中心仓','青岛后验中心仓','成都后验中心仓']);
                             var DW4_CAT_MAP2 = {'平板电脑':'平板','智能手表':'手表','耳机/耳麦':'耳机','笔记本':'笔记本'};
-                            tableType = 'dw4cat'; tableName = '大仓四品类差异明细';
-                            parsed = rows.filter(r => DW4_SITES2.has((r['站点名称']||'').trim())).map(r => ({
-                                date:     nd(r['日期']),
-                                code:     (r['质检码']||'').trim(),
-                                site:     (r['站点名称']||'').trim(),
-                                cat:      DW4_CAT_MAP2[r['品类名称']] || r['品类名称'] || '',
-                                level1:   r['一级项名称']||'',
-                                level2:   r['二级项名称']||'',
-                                level3_orig: r['原三级项名称']||'',
-                                level3_new:  r['新三级项名称']||'',
-                                subjobj:  (r['主客观问题分类']||'').trim(),
-                                issueType: (r['问题类型']||'').trim(),
-                                judgedType: (r['抽检判定的问题类型']||'').trim(),
-                                inspector:  extractCN(r['原操作人名称']||''),
-                                qaInspector: extractCN(r['新操作人名称']||'')
-                            }));
-                            if (!DATA.dw4cat) DATA.dw4cat = [];
-                            DATA.dw4cat = smartMerge(DATA.dw4cat, parsed, r => r.date+'|'+r.code+'|'+r.site);
+                            var diff4Rows = [], dw4catRows = [];
+                            rows.forEach(function(r) {
+                                var site = (r['站点名称']||'').trim();
+                                var rec = {
+                                    date:     nd(r['日期']),
+                                    code:     (r['质检码']||'').trim(),
+                                    site:     site,
+                                    cat:      DW4_CAT_MAP2[r['品类名称']] || r['品类名称'] || '',
+                                    level1:   r['一级项名称']||'',
+                                    level2:   r['二级项名称']||'',
+                                    level3_orig: r['原三级项名称']||'',
+                                    level3_new:  r['新三级项名称']||'',
+                                    subjobj:  (r['主客观问题分类']||'').trim(),
+                                    issueType: (r['问题类型']||'').trim(),
+                                    judgedType: (r['抽检判定的问题类型']||'').trim(),
+                                    inspector:  extractCN(r['原操作人名称']||''),
+                                    qaInspector: extractCN(r['新操作人名称']||'')
+                                };
+                                if (DW4_SITES2.has(site)) {
+                                    dw4catRows.push(rec);
+                                } else {
+                                    diff4Rows.push(rec);
+                                }
+                            });
+                            if (diff4Rows.length) {
+                                tableType = 'diff4'; tableName = '四品类差异明细（中心仓）';
+                                DATA.diff4 = smartMerge(DATA.diff4, diff4Rows);
+                            }
+                            if (dw4catRows.length) {
+                                tableType = tableType || 'dw4cat'; tableName = tableName ? tableName + '+大仓' : '四品类差异明细（大仓）';
+                                if (!DATA.dw4cat) DATA.dw4cat = [];
+                                DATA.dw4cat = smartMerge(DATA.dw4cat, dw4catRows, r => r.date+'|'+r.code+'|'+r.site);
+                            }
+                            parsed = diff4Rows.concat(dw4catRows);
                         } else {
                             const colNames = Object.keys(fr).slice(0,5).join('、');
                             showToast('⚠️ 无法识别表格格式: ' + file.name + '（前几列: ' + colNames + '）');
