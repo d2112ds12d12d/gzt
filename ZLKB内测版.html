@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.55J</title>
+    <title>培训部数据看板 v1.55L</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -775,7 +775,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55J</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55L</div>
     </div>
   </nav>
 
@@ -2090,7 +2090,7 @@
             function dtSaveEdits() { localStorage.setItem(DT_STORE_KEY, JSON.stringify(dtEdits)); window._dtEdits = dtEdits; }
 
             // 可编辑列
-            const DT_EDITABLE_COLS = ['level1','level2','level3_orig','level3','category','issueType','judgedIssueType','person','qaInspector'];
+            const DT_EDITABLE_COLS = ['person'];
             const DT_COL_LABELS = { date:'日期', warehouse:'站点名称', cat:'品类', code:'质检码', level1:'一级项', level2:'二级项', level3_orig:'原三级项', level3:'新三级项', category:'主客观分类', issueType:'问题类型', judgedIssueType:'抽检判定类型', person:'质检人员', qaInspector:'QA抽检人' };
 
             // 列筛选状态
@@ -2175,11 +2175,12 @@
                 const slice = filtered.slice(start, end);
                 const cols = ['date','warehouse','cat','code','level1','level2','level3_orig','level3','category','issueType','judgedIssueType','person','qaInspector'];
                 detailTableBody.innerHTML = slice.map(function(d) {
+                    var rowEditable = (typeof zbCanEditRow === 'function') ? zbCanEditRow(d) : false;
                     return '<tr>' + cols.map(function(col) {
                         const val = dtGetVal(d, col);
                         const editKey = d.code + '|' + col;
                         const isModified = dtEdits[editKey] !== undefined;
-                        const canEdit = DT_EDITABLE_COLS.includes(col);
+                        const canEdit = DT_EDITABLE_COLS.includes(col) && rowEditable;
                         if (canEdit) {
                             return '<td><span class="dt-cell-editable'+(isModified?' dt-cell-modified':'')+'" '
                                 +'data-code="'+d.code+'" data-col="'+col+'" data-orig="'+(d[col]||'-').replace(/"/g,'&quot;')+'">'
@@ -9009,6 +9010,7 @@ async function _doEditSave() {
     }
     if (typeof bridgeData==='function') bridgeData();
     if (typeof fullRefresh==='function') fullRefresh();
+    if (typeof _zbRenderLog==='function') _zbRenderLog();
 }
 
 function zbShowSkeleton() {
