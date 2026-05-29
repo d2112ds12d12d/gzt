@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.55B</title>
+    <title>培训部数据看板 v1.55C</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -775,7 +775,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55B</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55C</div>
     </div>
   </nav>
 
@@ -10555,7 +10555,7 @@ function zbRenderCloudManager() {
   var toolbarHtml = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">'
     + '<div style="display:flex;align-items:center;gap:0;background:var(--kpi-bg);border-radius:20px;border:0.5px solid var(--border-color);overflow:hidden;flex-shrink:0;">'
     + '<button id="zbCloudTabPhone" onclick="zbSwitchCloudTab(&quot;phone&quot;)" style="font-size:12px;padding:5px 16px;border:none;background:'+((_zbCloudTab==='phone')?'#2563eb':'transparent')+';color:'+((_zbCloudTab==='phone')?'#fff':'var(--text-secondary)')+';cursor:pointer;font-weight:'+((_zbCloudTab==='phone')?'500':'400')+';">手机</button>'
-    + '<button id="zbCloudTabFive" onclick="zbSwitchCloudTab(&quot;five&quot;)" style="font-size:12px;padding:5px 16px;border:none;background:'+((_zbCloudTab==='five')?'#2563eb':'transparent')+';color:'+((_zbCloudTab==='five')?'#fff':'var(--text-secondary)')+';cursor:pointer;font-weight:'+((_zbCloudTab==='five')?'500':'400')+';">五品类</button>'
+    + '<button id="zbCloudTabFive" onclick="zbSwitchCloudTab(&quot;five&quot;)" style="font-size:12px;padding:5px 16px;border:none;background:'+((_zbCloudTab==='five')?'#2563eb':'transparent')+';color:'+((_zbCloudTab==='five')?'#fff':'var(--text-secondary)')+';cursor:pointer;font-weight:'+((_zbCloudTab==='five')?'500':'400')+';">四品类</button>'
     + '</div>'
     + '<div style="flex:1;min-width:140px;position:relative;">'
     + '<input type="text" id="zbCloudSearch" oninput="zbFilterCloudList()" placeholder="搜索日期，如 2026-05" style="width:100%;height:30px;padding:0 8px 0 30px;border-radius:8px;border:0.5px solid var(--border-color);background:var(--filter-input-bg);font-size:12px;color:var(--text-primary);box-sizing:border-box;outline:none;">'
@@ -10584,25 +10584,54 @@ function zbRenderCloudManager() {
   }
   phoneHtml += '</div>';
 
-  // 五品类列表
+  // 四品类列表（按日期折叠）
   var fiveHtml = '<div id="zbCloudFiveList" style="'+((_zbCloudTab!=='five')?'display:none;':'')+'border:0.5px solid var(--border-color);border-radius:8px;overflow:hidden;">';
   if (!fiveList.length) {
     fiveHtml += '<div style="font-size:12px;color:var(--text-secondary);padding:16px;text-align:center;">暂无数据</div>';
   } else {
-    fiveList.forEach(function(key, i) {
+    // 按日期分组
+    var fiveDateMap = {};
+    fiveList.forEach(function(key) {
       var parts = key.split('||'), date = parts[0], cat = parts[1];
-      var cc = catColors[cat] || '#64748b';
-      fiveHtml += '<div id="zb-five-row-'+i+'" data-date="'+date+'" style="display:flex;align-items:center;padding:9px 14px;border-bottom:0.5px solid var(--border-color);cursor:'+(canEdit?'pointer':'default')+'" '
-        + (canEdit?'onclick="zbToggleSelect(\'five\',\''+key+'\','+i+')"':'')+' >'
-        + (canEdit?'<input type="checkbox" id="zb-five-cb-'+i+'" data-key="'+key+'" style="margin-right:10px;width:14px;height:14px;cursor:pointer;accent-color:#dc2626;" onclick="event.stopPropagation()" onchange="zbToggleSelect(\'five\',\''+key+'\','+i+',true)">':'')
+      if (!fiveDateMap[date]) fiveDateMap[date] = [];
+      fiveDateMap[date].push({ key: key, cat: cat });
+    });
+    var fiveDates = Object.keys(fiveDateMap).sort().reverse();
+    var rowIdx = 0;
+    fiveDates.forEach(function(date, di) {
+      var cats = fiveDateMap[date];
+      var groupId = 'zb-five-group-' + di;
+      // 顶部折叠行
+      var catBadges = cats.map(function(c) {
+        var cc = catColors[c.cat] || '#64748b';
+        return '<span style="font-size:11px;color:'+cc+';background:'+cc+'18;padding:2px 7px;border-radius:5px;margin-left:3px;">'+c.cat+'</span>';
+      }).join('');
+      fiveHtml += '<div style="border-bottom:0.5px solid var(--border-color);background:var(--bg-card,#fff);">';
+      // 折叠头行
+      fiveHtml += '<div data-date="'+date+'" style="display:flex;align-items:center;padding:9px 14px;cursor:pointer;" onclick="zbToggleFiveGroup(\''+groupId+'\')">'
+        + (canEdit ? '<input type="checkbox" id="zb-five-group-cb-'+di+'" style="margin-right:10px;width:14px;height:14px;cursor:pointer;accent-color:#dc2626;" onclick="event.stopPropagation()" onchange="zbToggleFiveGroupSelect(\''+date+'\','+di+',this.checked)">' : '')
         + '<span class="zb-date-label" style="font-size:12px;color:var(--text-primary);flex:1;">'+date+'</span>'
-        + '<span style="font-size:11px;color:'+cc+';background:'+cc+'18;padding:2px 8px;border-radius:6px;">'+cat+'</span>'
+        + catBadges
+        + '<svg id="'+groupId+'-arrow" style="width:13px;height:13px;margin-left:6px;color:var(--text-secondary);transition:transform .15s;flex-shrink:0;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>'
         + '</div>';
+      // 子行（默认隐藏）
+      fiveHtml += '<div id="'+groupId+'" style="display:none;background:var(--filter-input-bg,#f8fafc);">';
+      cats.forEach(function(c, ci) {
+        var cc = catColors[c.cat] || '#64748b';
+        var idx = rowIdx++;
+        fiveHtml += '<div id="zb-five-row-'+idx+'" data-date="'+date+'" style="display:flex;align-items:center;padding:7px 14px 7px 36px;border-top:0.5px solid var(--border-color);cursor:'+(canEdit?'pointer':'default')+'" '
+          + (canEdit ? 'onclick="zbToggleSelect(\'five\',\''+c.key+'\','+idx+')"' : '') + '>'
+          + (canEdit ? '<input type="checkbox" id="zb-five-cb-'+idx+'" data-key="'+c.key+'" style="margin-right:10px;width:13px;height:13px;cursor:pointer;accent-color:#dc2626;" onclick="event.stopPropagation()" onchange="zbToggleSelect(\'five\',\''+c.key+'\','+idx+',true)">' : '')
+          + '<span class="zb-date-label" style="font-size:12px;color:var(--text-secondary);flex:1;">'+date+'</span>'
+          + '<span style="font-size:11px;color:'+cc+';background:'+cc+'18;padding:2px 8px;border-radius:5px;">'+c.cat+'</span>'
+          + '</div>';
+      });
+      fiveHtml += '</div></div>';
     });
   }
   fiveHtml += '</div>';
 
-  var totalCount = _zbCloudTab === 'phone' ? phoneDateList.length : fiveList.length;
+  var totalCount = _zbCloudTab === 'phone' ? phoneDateList.length : Object.keys(fiveDateMap||{}).length;
   var footerHtml = '<div style="margin-top:8px;font-size:11px;color:var(--text-secondary);">共 '+totalCount+' 条 · 已选 <span id="zbCloudSelCount">0</span> 条</div>';
 
   el.innerHTML = alertHtml + toolbarHtml + phoneHtml + fiveHtml + footerHtml;
@@ -10615,24 +10644,76 @@ function zbSwitchCloudTab(tab) {
   zbRenderCloudManager();
 }
 
+// 四品类折叠展开
+function zbToggleFiveGroup(groupId) {
+  var el = document.getElementById(groupId);
+  var arrow = document.getElementById(groupId + '-arrow');
+  if (!el) return;
+  var isOpen = el.style.display !== 'none';
+  el.style.display = isOpen ? 'none' : '';
+  if (arrow) arrow.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+
+// 四品类头行checkbox：选中/取消该日期下所有品类
+function zbToggleFiveGroupSelect(date, di, checked) {
+  var DATA = window._DATA;
+  if (!DATA) return;
+  var keys = [];
+  (DATA.sum||[]).forEach(function(r){ if(r.date===date&&r.cat) keys.push(r.date+'||'+r.cat); });
+  (DATA.diff4||[]).forEach(function(r){ if(r.date===date&&r.cat){ var k=r.date+'||'+r.cat; if(keys.indexOf(k)<0) keys.push(k); }});
+  (DATA.dw4cat||[]).forEach(function(r){ if(r.date===date&&r.cat){ var k=r.date+'||'+r.cat; if(keys.indexOf(k)<0) keys.push(k); }});
+  (DATA.dw4sum||[]).forEach(function(r){ if(r.date===date&&r.cat){ var k=r.date+'||'+r.cat; if(keys.indexOf(k)<0) keys.push(k); }});
+  keys.forEach(function(k) {
+    if (checked) _zbSelected.five.add(k);
+    else _zbSelected.five.delete(k);
+  });
+  // 同步子行checkbox
+  var group = document.getElementById('zb-five-group-' + di);
+  if (group) {
+    group.querySelectorAll('input[type=checkbox]').forEach(function(cb) {
+      cb.checked = checked;
+      var row = cb.closest('[id^=zb-five-row-]');
+      if (row) row.style.background = checked ? '#fef2f2' : '';
+    });
+  }
+  // 更新删除按钮和计数
+  var btn = document.getElementById('zbBatchDeleteBtn');
+  if (btn) btn.style.display = _zbSelected.five.size > 0 ? '' : 'none';
+  var cnt = document.getElementById('zbCloudSelCount');
+  if (cnt) cnt.textContent = _zbSelected.five.size;
+}
+
 function zbFilterCloudList() {
   var q = (document.getElementById('zbCloudSearch')||{}).value || '';
   q = q.trim().toLowerCase();
   var listId = _zbCloudTab === 'phone' ? 'zbCloudPhoneList' : 'zbCloudFiveList';
   var list = document.getElementById(listId);
   if (!list) return;
-  list.querySelectorAll('[data-date]').forEach(function(row) {
-    var date = (row.dataset.date||'').toLowerCase();
-    var match = !q || date.includes(q);
-    row.style.display = match ? '' : 'none';
-    if (match && q) {
-      var lbl = row.querySelector('.zb-date-label');
-      if (lbl) lbl.innerHTML = date.replace(new RegExp('('+q.replace(/[-\/\^$*+?.()|[\]{}]/g,'\$&')+')','gi'),'<mark style="background:#fef08a;border-radius:2px;">$1</mark>');
-    } else {
-      var lbl2 = row.querySelector('.zb-date-label');
-      if (lbl2) lbl2.innerHTML = row.dataset.date;
-    }
-  });
+  if (_zbCloudTab === 'phone') {
+    list.querySelectorAll('[data-date]').forEach(function(row) {
+      var date = (row.dataset.date||'').toLowerCase();
+      var match = !q || date.includes(q);
+      row.style.display = match ? '' : 'none';
+      if (match && q) {
+        var lbl = row.querySelector('.zb-date-label');
+        if (lbl) lbl.innerHTML = date.replace(new RegExp('('+q.replace(/[-\/\^$*+?.()|[\]{}]/g,'\$&')+')','gi'),'<mark style="background:#fef08a;border-radius:2px;">$1</mark>');
+      } else {
+        var lbl2 = row.querySelector('.zb-date-label');
+        if (lbl2) lbl2.innerHTML = row.dataset.date;
+      }
+    });
+  } else {
+    // 四品类：过滤折叠头行
+    list.querySelectorAll('[data-date]').forEach(function(row) {
+      // 只处理头行（直接子div含data-date）
+      if (row.parentElement && row.parentElement.style !== undefined) {
+        var date = (row.dataset.date||'').toLowerCase();
+        var match = !q || date.includes(q);
+        var wrapper = row.closest('[style*="border-bottom"]') || row.parentElement;
+        if (wrapper && wrapper !== list) wrapper.style.display = match ? '' : 'none';
+      }
+    });
+  }
 }
 
 // ── 勾选逻辑 ──
