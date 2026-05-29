@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.55S</title>
+    <title>培训部数据看板 v1.55T</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -899,7 +899,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55S</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55T</div>
     </div>
   </nav>
 
@@ -5549,7 +5549,7 @@ function zbCompressImage(file, maxKB) {
 // 上传单个文件到COS，返回公开URL
 async function zbUploadToCos(file, imgKey) {
     var sts = await zbGetSts();
-    var blob = await zbCompressImage(file, 400);
+    var blob = await zbCompressImage(file, 1024);
     var ext  = (file.name.match(/\.[^.]+$/) || ['.jpg'])[0].toLowerCase();
     var fileName = imgKey.replace(/[|\/\\:*?"<>]/g, '_') + '_' + Date.now() + ext;
     var cosKey = 'qc-images/' + fileName;
@@ -5915,7 +5915,7 @@ async function zbDoUploadFiles(files, cam, row, panel) {
     try {
         var totalSizeKB = 0;
         for (var i = 0; i < files.length; i++) {
-            var blob = await zbCompressImage(files[i], 400);
+            var blob = await zbCompressImage(files[i], 1024);
             totalSizeKB += blob.size / 1024;
             var url = await zbUploadToCos(files[i], key);
             await zbAddRowImage(row, url);
@@ -5934,7 +5934,7 @@ async function zbDoUploadFiles(files, cam, row, panel) {
 function zbMakeDropZone(cam, row, panel) {
     var zone = document.createElement('div');
     zone.style.cssText = 'border:1.5px dashed #bfdbfe;border-radius:8px;padding:14px 10px;text-align:center;background:#f8faff;cursor:pointer;transition:background .15s;margin-bottom:8px;';
-    zone.innerHTML = '<div style="font-size:10px;color:#64748b;line-height:1.6">拖拽图片到此处<br><span style="color:#94a3b8;font-size:9px">支持 JPG、PNG，自动压缩至 400KB</span></div>';
+    zone.innerHTML = '<div style="font-size:10px;color:#64748b;line-height:1.6">拖拽图片到此处<br><span style="color:#94a3b8;font-size:9px">支持 JPG、PNG，自动压缩至 1MB</span></div>';
     zone.ondragover = function(e){ e.preventDefault(); zone.style.background='#eff6ff'; };
     zone.ondragleave = function(){ zone.style.background='#f8faff'; };
     zone.ondrop = function(e){
