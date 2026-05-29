@@ -8879,7 +8879,13 @@ async function _doEditSave() {
     localStorage.setItem('zb_edit_log', JSON.stringify(editLog.slice(-50)));
 
     // ── 推送受影响月份到云端 ──
+    console.log('[记录编辑] Step1: 开始推送流程');
+    console.log('[记录编辑] _zbEditChanges keys:', Object.keys(_zbEditChanges));
+    console.log('[记录编辑] _zbEditResults length:', _zbEditResults.length);
+    console.log('[记录编辑] _zbEditDeletes:', Array.from(_zbEditDeletes));
+
     var token = zbGetToken ? zbGetToken() : null;
+    console.log('[记录编辑] Step2: token 是否存在:', !!token);
     if (!token) {
         showToast('⚠️ 未找到 token，改动已写入内存但未同步云端');
         _zbEditChanges={}; _zbEditDeletes=new Set(); _zbEditResults=[];
@@ -8887,25 +8893,31 @@ async function _doEditSave() {
         return;
     }
 
-    // 收集受影响月份
+    // 收集受影响月份（必须在清空_zbEditChanges/_zbEditResults之前）
     var touchedMonths = new Set();
     var allDiff2 = window._allDiffData || [];
+    console.log('[记录编辑] Step3: allDiffData 总行数:', allDiff2.length);
+
     // 被编辑的行
     Object.keys(_zbEditChanges).forEach(function(key){
         var idx = parseInt(key.split('_')[0]);
         var r = _zbEditResults[idx];
-        if (r) { var ym=(r.date||'').slice(0,7); if(ym&&ym.length===7) touchedMonths.add(ym); }
+        var ym = r ? (r.date||'').slice(0,7) : '';
+        console.log('[记录编辑] 编辑行 key='+key+' date='+(r&&r.date)+' ym='+ym);
+        if (ym && ym.length===7) touchedMonths.add(ym);
     });
-    // 被删除的行（已从allDiff移除，用key里的date字段取月份）
+    // 被删除的行
     _zbEditDeletes.forEach(function(key){
         var parts = key.split('_');
-        // key格式: idx_code_date，date在最后
         var date = parts.slice(2).join('_');
         var ym = (date||'').slice(0,7);
+        console.log('[记录编辑] 删除行 key='+key+' date='+date+' ym='+ym);
         if(ym&&ym.length===7) touchedMonths.add(ym);
     });
+    console.log('[记录编辑] Step4: touchedMonths:', Array.from(touchedMonths));
 
     if (!touchedMonths.size) {
+        console.warn('[记录编辑] touchedMonths 为空，无法确定要推送的月份');
         showToast('✅ 改动已应用');
         _zbEditChanges={}; _zbEditDeletes=new Set(); _zbEditResults=[];
         document.getElementById('zbEditResult').innerHTML='<div style="text-align:center;padding:24px;color:#10b981;font-size:13px;">✅ 已保存</div>';
@@ -8921,15 +8933,19 @@ async function _doEditSave() {
         if(!monthMap[ym]) monthMap[ym]=[];
         monthMap[ym].push(r);
     });
+    console.log('[记录编辑] Step5: monthMap keys:', Object.keys(monthMap));
 
     document.getElementById('zbEditResult').innerHTML='<div style="text-align:center;padding:24px;color:#2563eb;font-size:13px;">⏳ 正在推送云端，请稍候…</div>';
+    // 清空放在收集月份之后
     _zbEditChanges={}; _zbEditDeletes=new Set(); _zbEditResults=[];
 
     var allOk = true;
     for (var ym of touchedMonths) {
-        if (!monthMap[ym]) continue;
+        if (!monthMap[ym]) { console.warn('[记录编辑] monthMap 里找不到月份:', ym); continue; }
         var fname = 'phone_diff_' + ym + '.json';
+        console.log('[记录编辑] Step6: 推送', fname, '行数:', monthMap[ym].length);
         var ok = await _zbPushFile(fname, { rows: monthMap[ym], updated: new Date().toISOString() }, token);
+        console.log('[记录编辑] 推送结果', fname, ':', ok);
         if (!ok) { allOk = false; console.error('[记录编辑] 推送失败:', fname); }
     }
 
@@ -8940,6 +8956,7 @@ async function _doEditSave() {
         showToast('⚠️ 部分月份推送失败，请重试');
         document.getElementById('zbEditResult').innerHTML='<div style="text-align:center;padding:24px;color:#f59e0b;font-size:13px;">⚠️ 部分推送失败，请重试</div>';
     }
+    console.log('[记录编辑] Step7: 推送流程结束，allOk=', allOk);
     if (typeof fullRefresh==='function') fullRefresh();
 }
 
