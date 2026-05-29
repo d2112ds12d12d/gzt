@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.55T</title>
+    <title>培训部数据看板 v1.55U</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -899,7 +899,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55T</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55U</div>
     </div>
   </nav>
 
@@ -983,6 +983,18 @@
                     <span class="cat-tab active" id="globalSiteType-ALL" data-site-type="ALL" style="display:none;">全部</span>
                     <span class="cat-tab" id="globalSiteType-DW" data-site-type="DW" style="display:none;">大仓</span>
                     <span class="cat-tab" id="globalSiteType-ZX" data-site-type="ZX" id="siteTypeGroup" style="display:none;">中心仓</span>
+                    <!-- 站点类型胶囊下拉（质检排行榜+差异快报联动） -->
+                    <div id="zbSiteTypeDropWrap" style="position:relative;flex-shrink:0;">
+                        <div id="zbSiteTypeBtn" onclick="zbSiteTypeDropToggle()" style="display:inline-flex;align-items:center;height:28px;padding:0 26px 0 11px;border-radius:14px;border:0.5px solid var(--border-color);background:var(--filter-input-bg);font-size:11px;color:var(--text-primary);cursor:pointer;white-space:nowrap;user-select:none;position:relative;transition:all .15s;">
+                            <span id="zbSiteTypeBtnLabel">全部站点</span>
+                            <svg id="zbSiteTypeArrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);transition:transform .2s;flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
+                        </div>
+                        <div id="zbSiteTypeDropPanel" style="display:none;position:absolute;top:34px;left:0;z-index:9100;background:var(--bg-card);border:0.5px solid var(--border-color);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.10);min-width:120px;padding:5px;overflow:hidden;">
+                            <div class="zb-st-item" data-val="ALL" onclick="zbSiteTypeSelect('ALL')" style="padding:7px 12px;border-radius:7px;font-size:12px;cursor:pointer;color:var(--text-primary);background:#eff6ff;">全部站点</div>
+                            <div class="zb-st-item" data-val="DW" onclick="zbSiteTypeSelect('DW')" style="padding:7px 12px;border-radius:7px;font-size:12px;cursor:pointer;color:var(--text-primary);">验机中心</div>
+                            <div class="zb-st-item" data-val="ZX" onclick="zbSiteTypeSelect('ZX')" style="padding:7px 12px;border-radius:7px;font-size:12px;cursor:pointer;color:var(--text-primary);">中心仓</div>
+                        </div>
+                    </div>
                     <!-- 口径折叠标签（首页隐藏，站点页保留联动） -->
                     <div id="zbKouJingTag" onclick="zbToggleKouJingDropdown()" style="display:none;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;background:#eff6ff;border:0.5px solid #bfdbfe;cursor:pointer;flex-shrink:0;user-select:none;white-space:nowrap;">
                         <div id="zbKouJingDot" style="width:6px;height:6px;border-radius:50%;background:#2563eb;flex-shrink:0;"></div>
@@ -1070,10 +1082,17 @@
             <!-- 质检人差异排名（独立全宽板块） -->
             <div class="card" style="padding:0;overflow:hidden;">
                 <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:0.5px solid var(--border-color);">
-                    <div class="card-title" style="margin:0;">
-                        <div class="card-title-bar" style="background:#2563eb;"></div>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        全国质检排行榜（客观执行差异量）
+                    <div style="display:flex;align-items:center;gap:12px;">
+                        <div class="card-title" style="margin:0;">
+                            <div class="card-title-bar" style="background:#2563eb;"></div>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            全国质检排行榜（客观执行差异量）
+                        </div>
+                        <div id="personRankSiteTypeTabs" style="display:flex;gap:4px;">
+                            <button onclick="zbPersonRankSiteType('ALL')" id="prstTab_ALL" style="height:24px;padding:0 10px;border-radius:6px;border:0.5px solid #2563eb;background:#2563eb;color:#fff;font-size:11px;cursor:pointer;font-weight:500;">全部</button>
+                            <button onclick="zbPersonRankSiteType('DW')" id="prstTab_DW" style="height:24px;padding:0 10px;border-radius:6px;border:0.5px solid var(--border-color);background:transparent;color:var(--text-secondary);font-size:11px;cursor:pointer;">验机中心</button>
+                            <button onclick="zbPersonRankSiteType('ZX')" id="prstTab_ZX" style="height:24px;padding:0 10px;border-radius:6px;border:0.5px solid var(--border-color);background:transparent;color:var(--text-secondary);font-size:11px;cursor:pointer;">中心仓</button>
+                        </div>
                     </div>
                     <span id="rankPersonCnt" style="font-size:12px;color:var(--text-secondary);"></span>
                 </div>
@@ -1126,11 +1145,18 @@
             <!-- 近期客观执行差异快报 -->
             <div class="card" id="issueHotspotCard" style="margin-top:0;">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;">
-                <div class="card-title" style="margin:0;display:flex;align-items:center;gap:7px;">
-                  <span style="display:inline-block;width:3px;height:15px;background:#3b82f6;border-radius:0;flex-shrink:0;"></span>
-                  <span style="font-size:15px;">📋</span>
-                  近期客观执行差异快报
-                  <span id="hotspotCatLabel" style="font-size:11px;color:var(--text-secondary);font-weight:400;margin-left:2px;"></span>
+                <div style="display:flex;align-items:center;gap:10px;">
+                  <div class="card-title" style="margin:0;display:flex;align-items:center;gap:7px;">
+                    <span style="display:inline-block;width:3px;height:15px;background:#3b82f6;border-radius:0;flex-shrink:0;"></span>
+                    <span style="font-size:15px;">📋</span>
+                    近期客观执行差异快报
+                    <span id="hotspotCatLabel" style="font-size:11px;color:var(--text-secondary);font-weight:400;margin-left:2px;"></span>
+                  </div>
+                  <div id="hotspotSiteTypeTabs" style="display:flex;gap:4px;">
+                    <button onclick="zbHotspotSiteType('ALL')" id="hstTab_ALL" style="height:24px;padding:0 10px;border-radius:6px;border:0.5px solid #3b82f6;background:#3b82f6;color:#fff;font-size:11px;cursor:pointer;font-weight:500;">全部</button>
+                    <button onclick="zbHotspotSiteType('DW')" id="hstTab_DW" style="height:24px;padding:0 10px;border-radius:6px;border:0.5px solid var(--border-color);background:transparent;color:var(--text-secondary);font-size:11px;cursor:pointer;">验机中心</button>
+                    <button onclick="zbHotspotSiteType('ZX')" id="hstTab_ZX" style="height:24px;padding:0 10px;border-radius:6px;border:0.5px solid var(--border-color);background:transparent;color:var(--text-secondary);font-size:11px;cursor:pointer;">中心仓</button>
+                  </div>
                 </div>
                 <div style="display:flex;align-items:center;gap:6px;">
                   <span id="hotspotPeriodLabel" style="font-size:10px;color:var(--text-secondary);"></span>
@@ -3564,9 +3590,14 @@
                 if (!card || card.style.display === 'none') return;
 
                 // 1. 获取当前已过滤的客观执行差异数据（品类+站点+日期已经联动）
+                var _hstFilter = window._hotspotSiteTypeFilter || 'ALL';
                 var base = currentFilteredDiff.filter(function(d){
-                    return d.category && d.category.includes('客观')
-                        && d.judgedIssueType === '执行问题';
+                    if (!(d.category && d.category.includes('客观') && d.judgedIssueType === '执行问题')) return false;
+                    if (_hstFilter !== 'ALL') {
+                        var st = typeof getSiteType === 'function' ? getSiteType(d.warehouse||'') : 'ZX';
+                        if (st !== _hstFilter) return false;
+                    }
+                    return true;
                 });
 
                 // 2. 计算本期 / 上期的日期边界
@@ -4456,6 +4487,60 @@
                 zbPersonRankRender();
             }
 
+            // ── 站点类型胶囊下拉 ──
+            window._zbSiteTypeFilter = 'ALL';
+
+            window.zbSiteTypeDropToggle = function() {
+                var panel = document.getElementById('zbSiteTypeDropPanel');
+                var arrow = document.getElementById('zbSiteTypeArrow');
+                if (!panel) return;
+                var open = panel.style.display !== 'none';
+                panel.style.display = open ? 'none' : 'block';
+                if (arrow) arrow.style.transform = open ? 'translateY(-50%)' : 'translateY(-50%) rotate(180deg)';
+                if (!open) {
+                    setTimeout(function(){
+                        document.addEventListener('click', function _close(e){
+                            if (!document.getElementById('zbSiteTypeDropWrap').contains(e.target)) {
+                                panel.style.display = 'none';
+                                if (arrow) arrow.style.transform = 'translateY(-50%)';
+                                document.removeEventListener('click', _close);
+                            }
+                        });
+                    }, 50);
+                }
+            };
+
+            window.zbSiteTypeSelect = function(val) {
+                window._zbSiteTypeFilter = val;
+                // 更新按钮文字和样式
+                var labelMap = { ALL: '全部站点', DW: '验机中心', ZX: '中心仓' };
+                var btn = document.getElementById('zbSiteTypeBtn');
+                var lbl = document.getElementById('zbSiteTypeBtnLabel');
+                var panel = document.getElementById('zbSiteTypeDropPanel');
+                var arrow = document.getElementById('zbSiteTypeArrow');
+                if (lbl) lbl.textContent = labelMap[val] || '全部站点';
+                if (btn) {
+                    btn.style.background = val !== 'ALL' ? '#eff6ff' : 'var(--filter-input-bg)';
+                    btn.style.borderColor = val !== 'ALL' ? '#2563eb' : 'var(--border-color)';
+                    btn.style.color = val !== 'ALL' ? '#1d4ed8' : 'var(--text-primary)';
+                }
+                // 更新选项高亮
+                document.querySelectorAll('.zb-st-item').forEach(function(el){
+                    el.style.background = el.dataset.val === val ? '#eff6ff' : 'transparent';
+                    el.style.color = el.dataset.val === val ? '#1d4ed8' : 'var(--text-primary)';
+                    el.style.fontWeight = el.dataset.val === val ? '500' : '400';
+                });
+                // 关闭面板
+                if (panel) panel.style.display = 'none';
+                if (arrow) arrow.style.transform = 'translateY(-50%)';
+                // 联动质检排行榜和差异快报
+                window._personRankSiteTypeFilter = val;
+                window._hotspotSiteTypeFilter = val;
+                window._personRankPage = 1;
+                if (typeof zbPersonRankRender === 'function') zbPersonRankRender();
+                if (typeof renderHotspot === 'function') renderHotspot();
+            };
+
             window.zbPersonRankToggleSort = function() {
                 window._personRankAsc = !window._personRankAsc;
                 var indicator = document.getElementById('personRankSortIndicator');
@@ -4488,6 +4573,7 @@
                     whGroups[wh].sort(function(a,b){ return asc ? a.total-b.total : b.total-a.total; });
                     whGroups[wh].forEach(function(p, i){ whRankMap[p.name] = i + 1; });
                 });
+                var _prstFilter = window._personRankSiteTypeFilter || 'ALL';
                 var list = allData.filter(function(p){
                     if (filters.person && !filters.person.has(p.name)) return false;
                     if (filters.wh) {
@@ -4498,6 +4584,11 @@
                         var whArr2 = Array.from(p.whs||[]);
                         var types = whArr2.map(function(w){ return getSiteType && getSiteType(w) === 'DW' ? '大仓' : '中心仓'; });
                         if (!types.some(function(t){ return filters.type.has(t); })) return false;
+                    }
+                    // 站点类型Tab过滤
+                    if (_prstFilter !== 'ALL') {
+                        var whArr3 = Array.from(p.whs||[]);
+                        if (!whArr3.some(function(w){ return typeof getSiteType === 'function' && getSiteType(w) === _prstFilter; })) return false;
                     }
                     return true;
                 });
