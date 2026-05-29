@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.55A</title>
+    <title>培训部数据看板 v1.55B</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -775,7 +775,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55A</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55B</div>
     </div>
   </nav>
 
@@ -2917,9 +2917,11 @@
                     const diffRows = DATA.diff5.filter(r => r.site === site && r.cat === cat && r.strategy === '大盘评估/站点' && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true));
                     execDiff = new Set(diffRows.map(r => r.code).filter(Boolean)).size;
                 } else {
-                    const smRows = DATA.sum.filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true));
+                    const smRows = [...DATA.sum.filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true)),
+                                    ...(DATA.dw4sum||[]).filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true))];
                     checks = smRows.reduce((s,r) => s + (r.checks||0), 0);
-                    const diffRows = DATA.diff4.filter(r => r.site === site && r.cat === cat && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true));
+                    const diffRows = [...DATA.diff4.filter(r => r.site === site && r.cat === cat && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true)),
+                                      ...(DATA.dw4cat||[]).filter(r => r.site === site && r.cat === cat && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true))];
                     execDiff = new Set(diffRows.map(r => r.code).filter(Boolean)).size;
                 }
                 return checks > 0 ? (execDiff / checks * 100) : null;
@@ -2955,9 +2957,11 @@
                         const diffRows = DATA.diff5.filter(r => r.site === site && r.cat === cat && r.strategy === '大盘评估/站点' && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true));
                         execDiff = new Set(diffRows.map(r => r.code).filter(Boolean)).size;
                     } else {
-                        const smRows = DATA.sum.filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true));
+                        const smRows = [...DATA.sum.filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true)),
+                                        ...(DATA.dw4sum||[]).filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true))];
                         checks = smRows.reduce((s,r) => s + (r.checks||0), 0);
-                        const diffRows = DATA.diff4.filter(r => r.site === site && r.cat === cat && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true));
+                        const diffRows = [...DATA.diff4.filter(r => r.site === site && r.cat === cat && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true)),
+                                          ...(DATA.dw4cat||[]).filter(r => r.site === site && r.cat === cat && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true))];
                         execDiff = new Set(diffRows.map(r => r.code).filter(Boolean)).size;
                     }
                     return { checks, execDiff };
