@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.55R</title>
+    <title>培训部数据看板 v1.55S</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -775,7 +775,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55R</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55S</div>
     </div>
   </nav>
 
@@ -7821,7 +7821,7 @@ function zbRenderSitePersonList() {
         var thPrevS = pSortKey==='prev'  ? 'text-align:center;color:#2563eb;font-weight:500;width:110px;cursor:pointer;user-select:none;' : 'text-align:center;width:110px;cursor:pointer;user-select:none;';
         var thCurS  = pSortKey==='cur'   ? 'text-align:center;color:#2563eb;font-weight:500;width:110px;cursor:pointer;user-select:none;' : 'text-align:center;width:110px;cursor:pointer;user-select:none;';
         var thDeltaS= pSortKey==='delta' ? 'text-align:center;color:#2563eb;font-weight:500;width:80px;cursor:pointer;user-select:none;'  : 'text-align:center;width:80px;cursor:pointer;user-select:none;';
-        if(headEl) headEl.innerHTML='<tr><th style="width:50px;">排名</th><th style="width:120px;">质检人员</th>'
+        if(headEl) headEl.innerHTML='<tr><th style="width:50px;">排名</th><th>质检人员</th>'
             +'<th style="'+thCurS+'" onclick="window._zbPersonSortKey=\'cur\';window._zbPersonPage=1;zbRenderSitePersonList();">'+pillTextB+(pSortKey==='cur'?' ↓':'')+'</th>'
             +'<th style="'+thPrevS+'" onclick="window._zbPersonSortKey=\'prev\';window._zbPersonPage=1;zbRenderSitePersonList();">'+pillTextA+(pSortKey==='prev'?' ↓':'')+'</th>'
             +'<th style="'+thDeltaS+'" onclick="window._zbPersonSortKey=\'delta\';window._zbPersonPage=1;zbRenderSitePersonList();">变化'+(pSortKey==='delta'?' ↓':'')+'</th>'
