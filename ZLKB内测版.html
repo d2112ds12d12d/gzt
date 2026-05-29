@@ -8666,8 +8666,8 @@ function zbEditSearch() {
     zbEditRenderTable();
 }
 
-var ZB_EDIT_FIELDS = ['date','warehouse','cat','person','qaInspector','category','judgedIssueType','issueType','level1','level2','level3','model'];
-var ZB_EDIT_LABELS = {date:'日期',warehouse:'站点',cat:'品类',person:'质检人',qaInspector:'QA',category:'问题类别',judgedIssueType:'执行类型',issueType:'问题类型',level1:'一级项',level2:'二级项',level3:'三级项',model:'型号'};
+var ZB_EDIT_FIELDS = ['date','warehouse','cat','brand','model','level1','level2','level3_orig','level3','person','category','issueType','judgedIssueType'];
+var ZB_EDIT_LABELS = {date:'抽检日期',warehouse:'站点',cat:'品类',brand:'品牌',model:'型号',level1:'一级项',level2:'二级项',level3_orig:'原三级项',level3:'新三级项',person:'原操作人',category:'主客观分类',issueType:'问题类型',judgedIssueType:'责任类型'};
 
 function zbEditRenderTable() {
     var el = document.getElementById('zbEditResult');
@@ -8708,6 +8708,11 @@ function zbEditRenderTable() {
             + '<td style="text-align:center;padding:6px 8px;border-bottom:0.5px solid var(--border-color);"><input type="checkbox" class="zb-edit-chk" data-key="'+key+'" '+(isDel?'checked':'')+' onchange="zbEditMarkDelByEl(this)"></td>'
             + '<td style="padding:6px 8px;border-bottom:0.5px solid var(--border-color);color:#94a3b8;white-space:nowrap;">'+( row.code||'—')+'</td>';
         FIELDS.forEach(function(f){
+            // brand字段数据里没有，固定显示—且只读
+            if (f === 'brand') {
+                html += '<td style="padding:4px 6px;border-bottom:0.5px solid var(--border-color);color:#94a3b8;text-align:center;">—</td>';
+                return;
+            }
             var cur = (_zbEditChanges[key]&&_zbEditChanges[key][f]!==undefined) ? _zbEditChanges[key][f] : (row[f]||'');
             var edited = _zbEditChanges[key] && _zbEditChanges[key][f] !== undefined;
             var inputStyle = 'width:100%;min-width:70px;box-sizing:border-box;height:26px;border:1px solid '+(edited?'#2563eb':'#e2e8f0')+';border-radius:5px;padding:0 6px;font-size:11px;background:'+(isDel?'transparent':edited?'#eff6ff':'transparent')+';color:'+(isDel?'#94a3b8':'var(--text-primary)')+';outline:none;'+(isDel?'pointer-events:none;':'');
