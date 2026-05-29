@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.55U</title>
+    <title>培训部数据看板 v1.55V</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -899,7 +899,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55U</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55V</div>
     </div>
   </nav>
 
@@ -989,7 +989,7 @@
                             <span id="zbSiteTypeBtnLabel">全部站点</span>
                             <svg id="zbSiteTypeArrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);transition:transform .2s;flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
                         </div>
-                        <div id="zbSiteTypeDropPanel" style="display:none;position:absolute;top:34px;left:0;z-index:9100;background:var(--bg-card);border:0.5px solid var(--border-color);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.10);min-width:120px;padding:5px;overflow:hidden;">
+                        <div id="zbSiteTypeDropPanel" style="display:none;position:fixed;z-index:9100;background:var(--bg-card);border:0.5px solid var(--border-color);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.10);min-width:120px;padding:5px;overflow:hidden;">
                             <div class="zb-st-item" data-val="ALL" onclick="zbSiteTypeSelect('ALL')" style="padding:7px 12px;border-radius:7px;font-size:12px;cursor:pointer;color:var(--text-primary);background:#eff6ff;">全部站点</div>
                             <div class="zb-st-item" data-val="DW" onclick="zbSiteTypeSelect('DW')" style="padding:7px 12px;border-radius:7px;font-size:12px;cursor:pointer;color:var(--text-primary);">验机中心</div>
                             <div class="zb-st-item" data-val="ZX" onclick="zbSiteTypeSelect('ZX')" style="padding:7px 12px;border-radius:7px;font-size:12px;cursor:pointer;color:var(--text-primary);">中心仓</div>
@@ -4492,15 +4492,23 @@
 
             window.zbSiteTypeDropToggle = function() {
                 var panel = document.getElementById('zbSiteTypeDropPanel');
+                var btn = document.getElementById('zbSiteTypeBtn');
                 var arrow = document.getElementById('zbSiteTypeArrow');
-                if (!panel) return;
+                if (!panel || !btn) return;
                 var open = panel.style.display !== 'none';
-                panel.style.display = open ? 'none' : 'block';
-                if (arrow) arrow.style.transform = open ? 'translateY(-50%)' : 'translateY(-50%) rotate(180deg)';
-                if (!open) {
+                if (open) {
+                    panel.style.display = 'none';
+                    if (arrow) arrow.style.transform = 'translateY(-50%)';
+                } else {
+                    var rect = btn.getBoundingClientRect();
+                    panel.style.display = 'block';
+                    panel.style.top = (rect.bottom + 6) + 'px';
+                    panel.style.left = rect.left + 'px';
+                    if (arrow) arrow.style.transform = 'translateY(-50%) rotate(180deg)';
                     setTimeout(function(){
                         document.addEventListener('click', function _close(e){
-                            if (!document.getElementById('zbSiteTypeDropWrap').contains(e.target)) {
+                            var wrap = document.getElementById('zbSiteTypeDropWrap');
+                            if (wrap && !wrap.contains(e.target)) {
                                 panel.style.display = 'none';
                                 if (arrow) arrow.style.transform = 'translateY(-50%)';
                                 document.removeEventListener('click', _close);
