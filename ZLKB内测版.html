@@ -8938,6 +8938,7 @@ async function _doEditSave() {
         showToast('✅ 改动已应用');
         _zbEditChanges={}; _zbEditDeletes=new Set(); _zbEditResults=[];
         document.getElementById('zbEditResult').innerHTML='<div style="text-align:center;padding:24px;color:#10b981;font-size:13px;">✅ 已保存</div>';
+        if (typeof bridgeData==='function') bridgeData();
         if (typeof fullRefresh==='function') fullRefresh();
         return;
     }
@@ -8969,6 +8970,7 @@ async function _doEditSave() {
         showToast('⚠️ 部分月份推送失败，请重试');
         document.getElementById('zbEditResult').innerHTML='<div style="text-align:center;padding:24px;color:#f59e0b;font-size:13px;">⚠️ 部分推送失败，请重试</div>';
     }
+    if (typeof bridgeData==='function') bridgeData();
     if (typeof fullRefresh==='function') fullRefresh();
 }
 
