@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.55V</title>
+    <title>培训部数据看板 v1.55W</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -899,7 +899,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55V</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55W</div>
     </div>
   </nav>
 
@@ -988,11 +988,6 @@
                         <div id="zbSiteTypeBtn" onclick="zbSiteTypeDropToggle()" style="display:inline-flex;align-items:center;height:28px;padding:0 26px 0 11px;border-radius:14px;border:0.5px solid var(--border-color);background:var(--filter-input-bg);font-size:11px;color:var(--text-primary);cursor:pointer;white-space:nowrap;user-select:none;position:relative;transition:all .15s;">
                             <span id="zbSiteTypeBtnLabel">全部站点</span>
                             <svg id="zbSiteTypeArrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);transition:transform .2s;flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
-                        </div>
-                        <div id="zbSiteTypeDropPanel" style="display:none;position:fixed;z-index:9100;background:var(--bg-card);border:0.5px solid var(--border-color);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.10);min-width:120px;padding:5px;overflow:hidden;">
-                            <div class="zb-st-item" data-val="ALL" onclick="zbSiteTypeSelect('ALL')" style="padding:7px 12px;border-radius:7px;font-size:12px;cursor:pointer;color:var(--text-primary);background:#eff6ff;">全部站点</div>
-                            <div class="zb-st-item" data-val="DW" onclick="zbSiteTypeSelect('DW')" style="padding:7px 12px;border-radius:7px;font-size:12px;cursor:pointer;color:var(--text-primary);">验机中心</div>
-                            <div class="zb-st-item" data-val="ZX" onclick="zbSiteTypeSelect('ZX')" style="padding:7px 12px;border-radius:7px;font-size:12px;cursor:pointer;color:var(--text-primary);">中心仓</div>
                         </div>
                     </div>
                     <!-- 口径折叠标签（首页隐藏，站点页保留联动） -->
@@ -4491,24 +4486,39 @@
             window._zbSiteTypeFilter = 'ALL';
 
             window.zbSiteTypeDropToggle = function() {
-                var panel = document.getElementById('zbSiteTypeDropPanel');
                 var btn = document.getElementById('zbSiteTypeBtn');
                 var arrow = document.getElementById('zbSiteTypeArrow');
-                if (!panel || !btn) return;
+                if (!btn) return;
+                // 面板挂在body下，避免父容器overflow/transform影响fixed定位
+                var panel = document.getElementById('zbSiteTypeDropPanel');
+                if (!panel) {
+                    panel = document.createElement('div');
+                    panel.id = 'zbSiteTypeDropPanel';
+                    panel.style.cssText = 'display:none;position:fixed;z-index:99999;background:var(--bg-card,#fff);border:0.5px solid var(--border-color,#e2e8f0);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.12);min-width:120px;padding:5px;';
+                    var items = [
+                        {val:'ALL', label:'全部站点', extra:'background:#eff6ff;font-weight:500;'},
+                        {val:'DW', label:'验机中心', extra:''},
+                        {val:'ZX', label:'中心仓', extra:''}
+                    ];
+                    panel.innerHTML = items.map(function(it){
+                        return '<div class="zb-st-item" data-val="'+it.val+'" onclick="zbSiteTypeSelect(\'' + it.val + '\')" style="padding:7px 12px;border-radius:7px;font-size:12px;cursor:pointer;color:var(--text-primary);'+it.extra+'">'+it.label+'</div>';
+                    }).join('');
+                    document.body.appendChild(panel);
+                }
                 var open = panel.style.display !== 'none';
                 if (open) {
                     panel.style.display = 'none';
                     if (arrow) arrow.style.transform = 'translateY(-50%)';
                 } else {
                     var rect = btn.getBoundingClientRect();
-                    panel.style.display = 'block';
-                    panel.style.top = (rect.bottom + 6) + 'px';
+                    panel.style.top = (rect.bottom + 4) + 'px';
                     panel.style.left = rect.left + 'px';
+                    panel.style.display = 'block';
                     if (arrow) arrow.style.transform = 'translateY(-50%) rotate(180deg)';
                     setTimeout(function(){
                         document.addEventListener('click', function _close(e){
                             var wrap = document.getElementById('zbSiteTypeDropWrap');
-                            if (wrap && !wrap.contains(e.target)) {
+                            if (wrap && !wrap.contains(e.target) && !panel.contains(e.target)) {
                                 panel.style.display = 'none';
                                 if (arrow) arrow.style.transform = 'translateY(-50%)';
                                 document.removeEventListener('click', _close);
