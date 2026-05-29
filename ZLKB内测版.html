@@ -36,7 +36,7 @@
             --switch-btn-bg: #eff6ff;
             --progress-bg: #e2e8f0;
             --sidebar-width: 210px;
-            --card-radius: 12px;
+            --card-radius: 18px;
             --sidebar-bg: #ffffff;
             --sidebar-border: #f1f5f9;
             --sidebar-lbl: #94a3b8;
@@ -80,13 +80,79 @@
             --sidebar-active-color: #93c5fd;
             --sidebar-active-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
+        html {
+            background: var(--bg-body);
+        }
         html, body { height: 100%; margin: 0; }
         body {
             font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', Roboto, system-ui, sans-serif;
-            background: linear-gradient(135deg,#e8edf5 0%,#dce4f0 50%,#e4e8f4 100%);
-            background-attachment: fixed;
+            background: transparent;
             padding: 0;
             color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        body > * { position: relative; z-index: 1; }
+        [data-theme="dark"] html { background: var(--bg-body); }
+
+        /* 几何线框层：淡蓝色三角/六边/圆环空心线条缓慢漂浮 + 旋转 */
+        .bg-particles {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0 !important;
+            overflow: hidden;
+        }
+        .bg-particles .shape {
+            position: absolute;
+            left: var(--x, 50%);
+            width: var(--size, 20px);
+            height: var(--size, 20px);
+            opacity: 0;
+            animation: shapeRise var(--dur, 22s) linear infinite;
+            animation-delay: var(--delay, 0s);
+            will-change: transform, opacity;
+        }
+        /* 圆环 */
+        .bg-particles .shape.circ {
+            border: 1.5px solid rgba(100,140,220,0.55);
+            border-radius: 50%;
+        }
+        /* 三角形：用 border 技巧画空心三角 */
+        .bg-particles .shape.tri {
+            background: transparent;
+            border: none;
+            width: 0;
+            height: 0;
+            border-left: calc(var(--size, 20px) / 2) solid transparent;
+            border-right: calc(var(--size, 20px) / 2) solid transparent;
+            border-bottom: calc(var(--size, 20px) * 0.86) solid rgba(100,140,220,0.45);
+        }
+        /* 六边形：clip-path 切出形状，inset shadow 描边 */
+        .bg-particles .shape.hex {
+            clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0% 50%);
+            background: rgba(100,140,220,0.18);
+            box-shadow: inset 0 0 0 1.5px rgba(100,140,220,0.55);
+        }
+        @keyframes shapeRise {
+            0%   { transform: translate3d(0, 105vh, 0) rotate(0deg);   opacity: 0; }
+            12%  { opacity: 0.85; }
+            50%  { transform: translate3d(20px, 50vh, 0) rotate(180deg); opacity: 0.85; }
+            88%  { opacity: 0.6; }
+            100% { transform: translate3d(-20px, -15vh, 0) rotate(360deg); opacity: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .bg-particles { display: none; }
+        }
+        [data-theme="dark"] .bg-particles .shape.circ {
+            border-color: rgba(140,180,255,0.55);
+        }
+        [data-theme="dark"] .bg-particles .shape.tri {
+            border-bottom-color: rgba(140,180,255,0.45);
+        }
+        [data-theme="dark"] .bg-particles .shape.hex {
+            background: rgba(140,180,255,0.15);
+            box-shadow: inset 0 0 0 1.5px rgba(140,180,255,0.55);
         }
         .loading-bar {
             position: fixed; top: 0; left: 0; width: 100%; height: 4px; z-index: 10000;
@@ -182,15 +248,56 @@
         }
         .reset-filter-btn:hover { background: var(--reset-btn-hover); transform: scale(0.97); }
         .card {
-            background: rgba(255,255,255,0.65);
-            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            background: rgba(255,255,255,0.78);
+            backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%);
             border-radius: var(--card-radius);
             border: 1px solid rgba(255,255,255,0.9);
-            box-shadow: 0 2px 10px rgba(100,120,180,0.08);
-            padding: 20px 24px; margin-bottom: 18px;
-            transition: transform 0.18s, box-shadow 0.18s;
+            box-shadow:
+                0 1px 2px rgba(15,30,80,0.04),
+                0 8px 24px rgba(60,90,180,0.10),
+                inset 0 1px 0 rgba(255,255,255,0.6);
+            padding: 22px 26px; margin-bottom: 20px;
+            transition: transform 0.25s cubic-bezier(0.4,0,0.2,1), box-shadow 0.25s cubic-bezier(0.4,0,0.2,1);
+            position: relative;
         }
-        .card:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.10); }
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow:
+                0 2px 4px rgba(15,30,80,0.05),
+                0 16px 40px rgba(60,90,180,0.16),
+                inset 0 1px 0 rgba(255,255,255,0.7);
+        }
+        /* hover 时浮现的渐变描边：蓝→紫→青 1.5px 线，与 hover 抬升同步 */
+        .card::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1.5px;
+            background: linear-gradient(135deg,
+                rgba(96,165,250,0.65),
+                rgba(167,139,250,0.65),
+                rgba(34,211,238,0.65));
+            -webkit-mask:
+                linear-gradient(#fff 0 0) content-box,
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask:
+                linear-gradient(#fff 0 0) content-box,
+                linear-gradient(#fff 0 0);
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .card:hover::after { opacity: 1; }
+        [data-theme="dark"] .card::after {
+            background: linear-gradient(135deg,
+                rgba(120,180,255,0.55),
+                rgba(180,150,255,0.55),
+                rgba(80,220,255,0.55));
+        }
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
         .card-title { font-size: 14px; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 6px; padding-left: 0; border-left: none; }
         .card-title-bar { width: 3px; height: 15px; border-radius: 0; flex-shrink: 0; background: #3b82f6; }
@@ -221,9 +328,22 @@
         .stats-item:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.10); cursor:pointer; }
         .stats-item-side { width: 5px; flex-shrink: 0; }
         .stats-item-body { padding: 12px 13px; flex: 1; }
-        .stats-number { font-size: 26px; font-weight: 800; line-height: 1.15; margin: 5px 0 3px; }
+        .stats-number {
+            font-size: 26px; font-weight: 800; line-height: 1.15; margin: 5px 0 3px;
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: 'tnum';
+            letter-spacing: -0.02em;
+        }
         .stats-sub { font-size: 10px; font-weight: 500; color: var(--text-secondary); margin-top: 2px; }
         .stats-label { font-size: 11px; color: var(--text-secondary); font-weight: 500; margin-bottom: 1px; }
+        /* KPI sparkline：迷你折线，紧贴 stats-item 底部，高度恒定不撑大卡片 */
+        .stats-spark {
+            margin-top: 8px;
+            height: 28px;
+            position: relative;
+            overflow: hidden;
+        }
+        .stats-spark svg { width: 100%; height: 100%; display: block; }
         .trend-chart-box { width: 100%; height: 380px; margin-top: 12px; }
         .insight-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; margin-top: 16px; align-items: start; }
         .obj-rank-wrapper { display: flex; flex-direction: column; min-width: 0; }
@@ -615,22 +735,26 @@
 
         /* 2. 卡片加载序列淡入 */
         @keyframes cardFadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to   { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translateY(16px) scale(0.985); filter: blur(4px); }
+            to   { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
         }
         .card {
-            animation: cardFadeIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+            animation: cardFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
             border-radius: var(--card-radius) !important;
-            box-shadow: var(--shadow) !important;
-            border: 0.5px solid var(--border-color) !important;
-            transition: transform var(--transition-fast), box-shadow var(--transition-fast) !important;
+            border: 0.5px solid rgba(255,255,255,0.85) !important;
+        }
+        [data-theme="dark"] .card {
+            background: rgba(255,255,255,0.08) !important;
+            border: 0.5px solid rgba(255,255,255,0.08) !important;
         }
         .card:nth-child(1) { animation-delay: 0ms; }
-        .card:nth-child(2) { animation-delay: 50ms; }
-        .card:nth-child(3) { animation-delay: 100ms; }
-        .card:nth-child(4) { animation-delay: 150ms; }
-        .card:nth-child(5) { animation-delay: 200ms; }
-        .card:nth-child(6) { animation-delay: 250ms; }
+        .card:nth-child(2) { animation-delay: 70ms; }
+        .card:nth-child(3) { animation-delay: 140ms; }
+        .card:nth-child(4) { animation-delay: 210ms; }
+        .card:nth-child(5) { animation-delay: 280ms; }
+        .card:nth-child(6) { animation-delay: 350ms; }
+        .card:nth-child(7) { animation-delay: 420ms; }
+        .card:nth-child(8) { animation-delay: 490ms; }
         .card:hover {
             transform: translateY(-2px) !important;
             box-shadow: var(--shadow-hover) !important;
@@ -1275,9 +1399,9 @@
         </div>
         <!-- KPI -->
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-bottom:0.5px solid #e8edf5;flex-shrink:0;">
-          <div style="padding:10px 18px;border-right:0.5px solid #e8edf5;"><div style="font-size:10px;color:#94a3b8;margin-bottom:2px;">本期差异量</div><div id="hdmKpi1" style="font-size:20px;font-weight:600;color:#dc2626;"></div></div>
-          <div style="padding:10px 18px;border-right:0.5px solid #e8edf5;"><div style="font-size:10px;color:#94a3b8;margin-bottom:2px;">涉及站点数</div><div id="hdmKpi2" style="font-size:20px;font-weight:600;color:#2563eb;"></div></div>
-          <div style="padding:10px 18px;"><div style="font-size:10px;color:#94a3b8;margin-bottom:2px;">涉及质检人</div><div id="hdmKpi3" style="font-size:20px;font-weight:600;color:#8b5cf6;"></div></div>
+          <div style="padding:10px 18px;border-right:0.5px solid #e8edf5;"><div style="font-size:10px;color:#94a3b8;margin-bottom:2px;">本期差异量</div><div id="hdmKpi1" style="font-size:26px;font-weight:600;color:#dc2626;"></div></div>
+          <div style="padding:10px 18px;border-right:0.5px solid #e8edf5;"><div style="font-size:10px;color:#94a3b8;margin-bottom:2px;">涉及站点数</div><div id="hdmKpi2" style="font-size:26px;font-weight:600;color:#2563eb;"></div></div>
+          <div style="padding:10px 18px;"><div style="font-size:10px;color:#94a3b8;margin-bottom:2px;">涉及质检人</div><div id="hdmKpi3" style="font-size:26px;font-weight:600;color:#8b5cf6;"></div></div>
         </div>
         <!-- 主体：左站点 + 右明细 -->
         <div style="display:grid;grid-template-columns:196px 1fr;gap:0;flex:1;overflow:hidden;min-height:0;">
@@ -1860,20 +1984,82 @@
                 }
                 const KPI_COLORS={total_checks:'#2563eb',subj_diff:'#f59e0b',obj_diff:'#10b981',exec_diff:'#8b5cf6'};
                 const KPI_NUM_COLORS={total_checks:'#1d4ed8',subj_diff:'#b45309',obj_diff:'#047857',exec_diff:'#6d28d9'};
-                const mk = (type, val, label, dc, yh) => {
+
+                // 按日聚合趋势序列。取筛选窗口内最近 N 天，每天一个点
+                // 返回 {total_checks:[...], subj_diff:[...], obj_diff:[...], exec_diff:[...]}
+                // 数值数组而非对象，避免渲染时多余的字段
+                function calcKpiTrend(diffRows, sumRows, days) {
+                    days = days || 14;
+                    // 收集筛选区间所有日期并排序
+                    var dateSet = {};
+                    sumRows.forEach(function(r){ if(r.date) dateSet[r.date] = true; });
+                    diffRows.forEach(function(r){ if(r.date) dateSet[r.date] = true; });
+                    var dates = Object.keys(dateSet).sort();
+                    if (dates.length < 4) return null; // 不足 4 天放弃画线
+                    // 取最近 N 天
+                    dates = dates.slice(-days);
+                    var tc = [], sR = [], oR = [], eR = [];
+                    dates.forEach(function(d){
+                        var dDiff = diffRows.filter(function(r){ return r.date === d; });
+                        var dSum  = sumRows.filter(function(r){ return r.date === d; });
+                        var checks = dSum.reduce(function(a,r){ return a + (r.totalChecks||0); }, 0);
+                        var sCnt = new Set(dDiff.filter(function(x){ return isSubjective(x.category); }).map(function(x){ return x.code; })).size;
+                        var oCnt = new Set(dDiff.filter(function(x){ return isObjective(x.category); }).map(function(x){ return x.code; })).size;
+                        var eSet = new Set();
+                        dDiff.forEach(function(x){ if(isObjective(x.category)&&isExecutionIssue(x.judgedIssueType)&&x.code) eSet.add(x.code); });
+                        tc.push(checks);
+                        sR.push(checks ? sCnt/checks : 0);
+                        oR.push(checks ? oCnt/checks : 0);
+                        eR.push(checks ? eSet.size/checks : 0);
+                    });
+                    return { total_checks: tc, subj_diff: sR, obj_diff: oR, exec_diff: eR };
+                }
+
+                // 生成 mini sparkline svg。color 为线条主色，series 为数值数组
+                function sparkSvg(series, color) {
+                    if (!series || series.length < 4) return '';
+                    var min = Math.min.apply(null, series);
+                    var max = Math.max.apply(null, series);
+                    var range = max - min;
+                    if (range < 1e-9) range = 1; // 平线兜底
+                    var W = 100, H = 28, padY = 3;
+                    var step = series.length > 1 ? W / (series.length - 1) : W;
+                    var pts = series.map(function(v, i){
+                        var x = (i * step).toFixed(2);
+                        var y = (H - padY - ((v - min) / range) * (H - 2*padY)).toFixed(2);
+                        return x + ',' + y;
+                    });
+                    var line = 'M' + pts.join(' L');
+                    var area = line + ' L' + W + ',' + H + ' L0,' + H + ' Z';
+                    var gid = 'spk' + Math.random().toString(36).slice(2,8);
+                    return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">'
+                        + '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1">'
+                        +   '<stop offset="0%" stop-color="' + color + '" stop-opacity="0.28"/>'
+                        +   '<stop offset="100%" stop-color="' + color + '" stop-opacity="0"/>'
+                        + '</linearGradient></defs>'
+                        + '<path d="' + area + '" fill="url(#' + gid + ')"/>'
+                        + '<path d="' + line + '" fill="none" stroke="' + color + '" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>'
+                        + '</svg>';
+                }
+
+                const mk = (type, val, label, dc, yh, sparkHtml) => {
                     var isPercent = typeof val === 'string' && val.includes('%');
                     var numVal = parseFloat(String(val).replace('%','').replace(/,/g,'')) || 0;
                     var countupAttr = !isNaN(numVal) ? ` data-countup="${numVal}" ${isPercent?'data-countup-percent="1"':''}` : '';
-                    return `<div class="stats-item" data-type="${type}" data-count="${dc||''}"><div class="stats-item-side" style="background:${KPI_COLORS[type]||'#2563eb'};"></div><div class="stats-item-body"><div class="stats-label">${label}</div><div class="stats-number" style="color:${KPI_NUM_COLORS[type]||'#1d4ed8'};"${countupAttr}>${val}</div>${yh||''}</div></div>`;
+                    return `<div class="stats-item" data-type="${type}" data-count="${dc||''}"><div class="stats-item-side" style="background:${KPI_COLORS[type]||'#2563eb'};"></div><div class="stats-item-body"><div class="stats-label">${label}</div><div class="stats-number" style="color:${KPI_NUM_COLORS[type]||'#1d4ed8'};"${countupAttr}>${val}</div>${yh||''}${sparkHtml?'<div class="stats-spark">'+sparkHtml+'</div>':''}</div></div>`;
                 };
 
-                function kpiHtml(k, yk) {
+                function kpiHtml(k, yk, trend) {
                     var tc=k.totalChecks;
                     var oR=tc?k.uniqueCodesObj/tc:0, sR=tc?k.uniqueCodesSubj/tc:0, eR=tc?k.execObjTotal/tc:0;
-                    return mk('total_checks',tc,'总抽检量','',fmtY(tc,yk?yk.tc:null,true))
-                        +mk('subj_diff',tc?(sR*100).toFixed(2)+'%':'0%','主观差异率（'+k.uniqueCodesSubj+'台）',k.uniqueCodesSubj,fmtY(sR,yk?yk.sR:null,false))
-                        +mk('obj_diff',tc?(oR*100).toFixed(2)+'%':'0%','客观差异率（'+k.uniqueCodesObj+'台）',k.uniqueCodesObj,fmtY(oR,yk?yk.oR:null,false))
-                        +mk('exec_diff',tc?(eR*100).toFixed(2)+'%':'0%','客观执行差异率（'+k.execObjTotal+'台）',k.execObjTotal,fmtY(eR,yk?yk.eR:null,false));
+                    var sp = function(type){
+                        if (!trend) return '';
+                        return sparkSvg(trend[type], KPI_COLORS[type]);
+                    };
+                    return mk('total_checks',tc,'总抽检量','',fmtY(tc,yk?yk.tc:null,true),sp('total_checks'))
+                        +mk('subj_diff',tc?(sR*100).toFixed(2)+'%':'0%','主观差异率（'+k.uniqueCodesSubj+'台）',k.uniqueCodesSubj,fmtY(sR,yk?yk.sR:null,false),sp('subj_diff'))
+                        +mk('obj_diff',tc?(oR*100).toFixed(2)+'%':'0%','客观差异率（'+k.uniqueCodesObj+'台）',k.uniqueCodesObj,fmtY(oR,yk?yk.oR:null,false),sp('obj_diff'))
+                        +mk('exec_diff',tc?(eR*100).toFixed(2)+'%':'0%','客观执行差异率（'+k.execObjTotal+'台）',k.execObjTotal,fmtY(eR,yk?yk.eR:null,false),sp('exec_diff'));
                 }
 
                 var html = '';
@@ -1932,7 +2118,8 @@
                         siteType==='ZX' ? diffData.filter(function(d){ return getSiteType(d.warehouse||'')==='ZX'; }) : diffData,
                         siteType==='ZX' ? summaryData.filter(function(s){ return getSiteType(s.siteName||'')==='ZX'; }) : summaryData
                     );
-                    html = kpiHtml(k, yk);
+                    var trend = calcKpiTrend(diffRows, sumRows, 14);
+                    html = kpiHtml(k, yk, trend);
                 }
 
                 statsArea.innerHTML = html;
@@ -10334,7 +10521,7 @@ function zbCheckDataHealth() {
     }).join('');
     var moreText = missing.length > 5 ? '<div style="font-size:11px;color:#92400e;margin-top:4px;">……共 '+missing.length+' 天有缺失</div>' : '';
     bar.style.display = 'block';
-    bar.innerHTML = '<div style="background:var(--color-background-primary,#fff);border:0.5px solid #fcd34d;border-radius:12px;padding:12px 16px;">'
+    bar.innerHTML = '<div style="background:rgba(254,243,199,0.7);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:0.5px solid rgba(252,211,77,0.5);border-radius:14px;padding:12px 16px;">'
         + '<div style="display:flex;align-items:flex-start;gap:10px;">'
         + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
         + '<div style="flex:1;min-width:0;">'
@@ -12153,5 +12340,42 @@ window.zbDoExport = function() {
     </div>
   </div>
 </div>
+
+<script>
+// 几何线框：淡蓝色三角/六边/圆环空心线条缓慢漂浮 + 旋转
+// 数量较少（线框比光点存在感强），三种形状交替分布
+(function(){
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var layer = document.createElement('div');
+    layer.className = 'bg-particles';
+    var SHAPES = ['circ', 'tri', 'hex'];
+    var COUNT = 18;
+    for (var i = 0; i < COUNT; i++) {
+        var span = document.createElement('span');
+        span.className = 'shape ' + SHAPES[i % SHAPES.length];
+        var x = (3 + Math.random() * 94).toFixed(1);    // 横向 3%-97%
+        var size = (16 + Math.random() * 14).toFixed(1); // 16-30px
+        var dur = (20 + Math.random() * 16).toFixed(1);  // 20-36s（慢一些显得高级）
+        var delay = (-Math.random() * 36).toFixed(1);    // 负延迟：页面打开就铺满
+        span.style.setProperty('--x', x + '%');
+        span.style.setProperty('--size', size + 'px');
+        span.style.setProperty('--dur', dur + 's');
+        span.style.setProperty('--delay', delay + 's');
+        layer.appendChild(span);
+    }
+    function insertParticles() {
+        if (document.body.firstChild) {
+            document.body.insertBefore(layer, document.body.firstChild);
+        } else {
+            document.body.appendChild(layer);
+        }
+    }
+    if (document.body) {
+        insertParticles();
+    } else {
+        document.addEventListener('DOMContentLoaded', insertParticles);
+    }
+})();
+</script>
 
 </html>
