@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.55H</title>
+    <title>培训部数据看板 v1.55I</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -775,7 +775,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55H</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55I</div>
     </div>
   </nav>
 
@@ -8878,7 +8878,7 @@ async function _doEditSave() {
     editLog.push(snap);
     localStorage.setItem('zb_edit_log', JSON.stringify(editLog.slice(-50)));
 
-    // ── 推送受影响月份到云端 ──
+    // ── 推送受影响月份到云端（写回 DATA.diff5 原始格式）──
     var token = zbGetToken ? zbGetToken() : null;
     if (!token) {
         showToast('⚠️ 未找到 token，改动已写入内存但未同步云端');
@@ -8887,22 +8887,51 @@ async function _doEditSave() {
         return;
     }
 
-    // 收集受影响月份
+    // mapped字段 → diff5原始字段 反向映射
+    // mapDiff5: warehouse←site, person←inspector, category←subjobj,
+    //           level3←level3_new, judgedIssueType←judgedType, model←cat
+    var MAPPED_TO_ORIG = {
+        warehouse:       'site',
+        person:          'inspector',
+        category:        'subjobj',
+        level3:          'level3_new',
+        judgedIssueType: 'judgedType'
+        // level1,level2,level3_orig,level2,issueType,date,code,cat,qaInspector 同名不需要转换
+    };
+
+    // 收集受影响月份（必须在清空_zbEditChanges/_zbEditResults之前）
     var touchedMonths = new Set();
-    var allDiff2 = window._allDiffData || [];
-    // 被编辑的行
+
+    // 把记录编辑的改动反向写回 DATA.diff5
+    var diff5 = (window._DATA && window._DATA.diff5) || [];
+    var codeMap5 = {};
+    diff5.forEach(function(r){ if(r.code) codeMap5[r.code] = r; });
+
     Object.keys(_zbEditChanges).forEach(function(key){
         var idx = parseInt(key.split('_')[0]);
-        var r = _zbEditResults[idx];
-        if (r) { var ym=(r.date||'').slice(0,7); if(ym&&ym.length===7) touchedMonths.add(ym); }
+        var mappedRow = _zbEditResults[idx];
+        if (!mappedRow) return;
+        var ym = (mappedRow.date||'').slice(0,7);
+        if (ym && ym.length===7) touchedMonths.add(ym);
+        // 找到 diff5 里对应的原始行
+        var origRow = codeMap5[mappedRow.code];
+        if (!origRow) return;
+        var changes = _zbEditChanges[key];
+        Object.keys(changes).forEach(function(mappedField){
+            var origField = MAPPED_TO_ORIG[mappedField] || mappedField;
+            origRow[origField] = changes[mappedField];
+        });
     });
-    // 被删除的行（已从allDiff移除，用key里的date字段取月份）
+
+    // 被删除的行：从 DATA.diff5 里也删掉
     _zbEditDeletes.forEach(function(key){
-        var parts = key.split('_');
-        // key格式: idx_code_date，date在最后
-        var date = parts.slice(2).join('_');
-        var ym = (date||'').slice(0,7);
-        if(ym&&ym.length===7) touchedMonths.add(ym);
+        var idx = parseInt(key.split('_')[0]);
+        var mappedRow = _zbEditResults[idx];
+        if (!mappedRow) return;
+        var ym = (mappedRow.date||'').slice(0,7);
+        if (ym && ym.length===7) touchedMonths.add(ym);
+        var i = diff5.findIndex(function(r){ return r.code === mappedRow.code && r.date === mappedRow.date; });
+        if (i !== -1) diff5.splice(i, 1);
     });
 
     if (!touchedMonths.size) {
@@ -8913,9 +8942,9 @@ async function _doEditSave() {
         return;
     }
 
-    // 按月分片
+    // 按月分片（从 DATA.diff5 原始数据分片，保持原始字段格式）
     var monthMap = {};
-    allDiff2.forEach(function(r){
+    diff5.forEach(function(r){
         var ym=(r.date||'').slice(0,7);
         if(!ym||ym.length<7) return;
         if(!monthMap[ym]) monthMap[ym]=[];
