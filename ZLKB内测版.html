@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.55J</title>
+    <title>培训部数据看板 v1.55I-debug</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -775,7 +775,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55J</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55I-debug</div>
     </div>
   </nav>
 
@@ -8644,11 +8644,13 @@ function zbSwitchDimTab(tab) {
 }
 
 // ══ 记录编辑：搜索、行内编辑、双轨保存 ══
+console.log('%c[DEBUG-BUILD] 记录编辑探针已加载 v1.55I-debug', 'background:#fef08a;color:#854d0e;font-weight:700;padding:4px 8px;border-radius:4px;');
 var _zbEditChanges = {}; // { rowKey: {field:newVal,...} }
 var _zbEditDeletes = new Set(); // 待删除的rowKey集合
 var _zbEditResults = []; // 搜索结果
 
 function zbEditSearch() {
+    console.log('[DEBUG] zbEditSearch called — will reset _zbEditChanges & _zbEditResults');
     var code = (document.getElementById('zbEditSearchInput')||{}).value||'';
     code = code.trim();
     var el = document.getElementById('zbEditResult');
@@ -8672,6 +8674,7 @@ var ZB_EDIT_FIELDS = ['date','warehouse','cat','brand','model','level1','level2'
 var ZB_EDIT_LABELS = {date:'抽检日期',warehouse:'站点',cat:'品类',brand:'品牌',model:'型号',level1:'一级项',level2:'二级项',level3_orig:'原三级项',level3:'新三级项',person:'原操作人',category:'主客观分类',issueType:'问题类型',judgedIssueType:'责任类型'};
 
 function zbEditRenderTable() {
+    console.log('[DEBUG] zbEditRenderTable called — will rebuild innerHTML, current changes:', JSON.parse(JSON.stringify(_zbEditChanges)));
     var el = document.getElementById('zbEditResult');
     if (!el) return;
     var results = _zbEditResults;
@@ -8732,8 +8735,10 @@ function zbEditRenderTable() {
 }
 
 function zbEditFieldChange(key, field, val) {
+    console.log('[DEBUG] zbEditFieldChange', { key: key, field: field, val: val, rowExists: !!_zbEditResults[parseInt(key.split('_')[0])] });
     if (!_zbEditChanges[key]) _zbEditChanges[key] = {};
     _zbEditChanges[key][field] = val;
+    console.log('[DEBUG]   → _zbEditChanges after write:', JSON.parse(JSON.stringify(_zbEditChanges)));
     // 更新状态栏
     var hint = document.querySelector('#zbEditResult > div > span');
     if (hint) {
@@ -8772,6 +8777,14 @@ function zbEditClearAll() {
 }
 
 async function zbEditSavePush() {
+    console.log('[DEBUG] zbEditSavePush ENTRY', {
+        changesKeys: Object.keys(_zbEditChanges),
+        changes: JSON.parse(JSON.stringify(_zbEditChanges)),
+        deletesCount: _zbEditDeletes.size,
+        resultsLen: _zbEditResults.length,
+        firstResultHasOrigRef: !!(_zbEditResults[0] && _zbEditResults[0]._origRef),
+        firstResultKeys: _zbEditResults[0] ? Object.keys(_zbEditResults[0]) : []
+    });
     var hasEdit = Object.keys(_zbEditChanges).length > 0;
     var hasDel  = _zbEditDeletes.size > 0;
     if (!hasEdit && !hasDel) { showToast('没有任何改动'); return; }
@@ -8974,7 +8987,6 @@ async function _doEditSave() {
     }
     if (typeof bridgeData==='function') bridgeData();
     if (typeof fullRefresh==='function') fullRefresh();
-    if (typeof _zbRenderLog==='function') _zbRenderLog();
 }
 
 function zbShowSkeleton() {
