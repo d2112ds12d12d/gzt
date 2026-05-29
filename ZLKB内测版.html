@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.55M</title>
+    <title>培训部数据看板 v1.55P</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -775,7 +775,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55M</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55P</div>
     </div>
   </nav>
 
@@ -3724,12 +3724,11 @@
             window._activeCat = currentCat; // 初始化同步，防止首次加载时_activeCat为undefined
 
             window.bridgeData = function bridgeData() {
-                const DW_INSPECTOR_SITES = ['转转-青岛智能验机中心','转转-成都智能验机中心','转转-深圳智能验机中心'];
                 function mapDiff5(r) {
                     return {
                         warehouse:       r.site,
                         cat:             r.cat,
-                        person:          DW_INSPECTOR_SITES.includes(r.site) ? '/' : r.inspector,
+                        person:          r.inspector,
                         qaInspector:     r.qaInspector,
                         category:        r.subjobj,
                         date:            r.date,
@@ -5853,9 +5852,42 @@ function zbShowImgPanel(cam, row, urls, readOnly) {
             input.click();
         };
         panel.appendChild(selBtn);
+
+        // 粘贴上传提示
+        var pasteHint = document.createElement('div');
+        pasteHint.style.cssText = 'text-align:center;margin-top:6px;font-size:9px;color:#94a3b8;';
+        pasteHint.textContent = '或 Ctrl/Cmd+V 粘贴图片';
+        panel.appendChild(pasteHint);
     }
 
     document.body.appendChild(panel);
+
+    // 粘贴上传监听（面板打开期间有效）
+    if (!readOnly) {
+        function zbPasteHandler(e) {
+            var items = e.clipboardData && e.clipboardData.items;
+            if (!items) return;
+            var files = [];
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].type.startsWith('image/')) {
+                    var file = items[i].getAsFile();
+                    if (file) files.push(file);
+                }
+            }
+            if (files.length) {
+                e.preventDefault();
+                zbDoUploadFiles(files, cam, row, panel);
+            }
+        }
+        document.addEventListener('paste', zbPasteHandler);
+        // 面板关闭时移除监听
+        var origRemove = panel.remove.bind(panel);
+        panel.remove = function() {
+            document.removeEventListener('paste', zbPasteHandler);
+            origRemove();
+        };
+    }
+
     setTimeout(function(){
         document.addEventListener('click', function handler(e){
             if (!panel.contains(e.target) && e.target !== cam) { panel.remove(); document.removeEventListener('click', handler); }
@@ -9068,7 +9100,7 @@ async function _doEditSave() {
 
     if (allOk) {
         showToast('✅ 改动已永久写入云端');
-        document.getElementById('zbEditResult').innerHTML='<div style="text-align:center;padding:24px;color:#10b981;font-size:13px;">✅ 已成功推送云端</div>';
+        document.getElementById('zbEditResult').innerHTML='<div style="text-align:center;padding:24px;color:#10b981;font-size:13px;">✅ 已成功推送云端，数据将在约 5 分钟后刷新生效</div>';
     } else {
         showToast('⚠️ 部分月份推送失败，请重试');
         document.getElementById('zbEditResult').innerHTML='<div style="text-align:center;padding:24px;color:#f59e0b;font-size:13px;">⚠️ 部分推送失败，请重试</div>';
