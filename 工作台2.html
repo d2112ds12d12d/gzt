@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>工作台 v2.0</title>
+<title>工作台 v2.0A</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;500&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -237,7 +237,7 @@ body{font-family:'Noto Serif SC',Georgia,serif;background:var(--bg);color:var(--
 <div class="sidebar">
   <div class="sb-header">
     <div class="sb-brand">工作<span>台</span></div>
-    <span class="sb-version">v2.0</span>
+    <span class="sb-version">v2.0A</span>
   </div>
   <div class="sb-stats">
     <div class="sb-stat"><span class="sb-num" id="cnt-notes">0</span><span class="sb-lbl">笔记</span></div>
@@ -426,8 +426,12 @@ function save(){saveToLocal();schedulePush();}
 /* ── GITHUB SYNC ── */
 function ghCfg(){try{return JSON.parse(localStorage.getItem('wb_gh')||'null');}catch(e){return null;}}
 function ghConfigured(){const c=ghCfg();return !!(c&&c.token&&c.owner&&c.repo);}
-function ghHeaders(){const c=ghCfg();return{'Authorization':'token '+c.token,'Content-Type':'application/json','Accept':'application/vnd.github.v3+json'};}
-function ghUrl(){const c=ghCfg();return'https://api.github.com/repos/'+c.owner+'/'+c.repo+'/contents/'+GH_FILE;}
+function ghHeaders(){
+  const c=ghCfg();
+  const authValue=c.token.startsWith('github_pat_')?'Bearer '+c.token:'token '+c.token;
+  return{'Authorization':authValue,'Content-Type':'application/json','Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};
+}
+function ghUrl(){const c=ghCfg();return'https://api.github.com/repos/'+c.owner.trim()+'/'+c.repo.trim()+'/contents/'+GH_FILE;}
 function setSyncStatus(state,msg){
   const dot=document.getElementById('sync-dot'),txt=document.getElementById('sync-text');
   if(dot)dot.className='sync-dot'+(state?' '+state:'');
