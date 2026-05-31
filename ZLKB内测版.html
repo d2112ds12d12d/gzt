@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.57G</title>
+    <title>培训部数据看板 v1.57H</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -899,7 +899,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.57G</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.57H</div>
     </div>
   </nav>
 
@@ -1360,7 +1360,7 @@
                         <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
                             <span id="modalTotalChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,.7);color:#64748b;border:0.5px solid #bfdbfe;">共 0 条</span>
                             <span id="modalUnitChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,.7);color:#2563eb;border:0.5px solid #bfdbfe;display:none;">0 台</span>
-                            <span id="modalFilteredChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:#2563eb;color:#fff;display:none;">已筛选 0 条</span>
+                            <span id="modalFilteredChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:#2563eb;color:#fff;display:none;cursor:pointer;align-items:center;gap:4px;" onclick="dtClearAllFilters()" title="点击清除所有列筛选">已筛选 0 条 ×</span>
                             <span id="modalCatChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:#dbeafe;color:#1d4ed8;display:none;"></span>
                             <span id="modalKouJingChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:#dbeafe;color:#1d4ed8;display:none;"></span>
                         </div>
@@ -2386,6 +2386,11 @@
                 dtUpdateFilterIcons();
             }
 
+            window.dtClearAllFilters = function() {
+                window._dtState.colFilters = {};
+                if (typeof renderModalTableVirtual === 'function') renderModalTableVirtual();
+                if (typeof dtUpdateFilterIcons === 'function') dtUpdateFilterIcons();
+            };
             function dtUpdateFilterIcons() {
                 document.querySelectorAll('.dt-filter-icon').forEach(function(icon) {
                     const col = icon.dataset.col;
