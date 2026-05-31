@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.57H</title>
+    <title>培训部数据看板 v1.57I</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -899,7 +899,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.57H</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.57I</div>
     </div>
   </nav>
 
@@ -2841,7 +2841,7 @@
                 }
                 if (filteredChip) {
                     if (filtered.length < currentModalRecords.length) {
-                        filteredChip.style.display=''; filteredChip.textContent='已筛选 '+filtered.length+' 条';
+                        filteredChip.style.display='inline-flex'; filteredChip.textContent='已筛选 '+filtered.length+' 条  ×';
                     } else filteredChip.style.display='none';
                 }
 
@@ -2960,6 +2960,8 @@
 
             window.openDetailWithData = function openDetailWithData(records, title, showCat) {
                 if (!records.length) { showToast('无明细数据'); return; }
+                // 每次打开新弹窗清空列筛选状态，避免跨站点污染
+                if (window._dtState) { window._dtState.colFilters = {}; window._dtState.popupCol = null; }
 
                 // 口径联动：读当前激活的口径按钮
                 var kouJing = 'ALL';
