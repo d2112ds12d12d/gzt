@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.57K</title>
+    <title>培训部数据看板 v1.58</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -899,7 +899,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.57K</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.58</div>
     </div>
   </nav>
 
@@ -1360,7 +1360,12 @@
                         <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
                             <span id="modalTotalChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,.7);color:#64748b;border:0.5px solid #bfdbfe;">共 0 条</span>
                             <span id="modalUnitChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,.7);color:#2563eb;border:0.5px solid #bfdbfe;display:none;">0 台</span>
-                            <span id="modalFilteredChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:#2563eb;color:#fff;display:none;cursor:pointer;align-items:center;gap:4px;" onclick="dtClearAllFilters()" title="点击清除所有列筛选">已筛选 0 条 ×</span>
+                            <span id="modalFilteredChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:#2563eb;color:#fff;display:none;cursor:pointer;align-items:center;gap:4px;" onclick="dtToggleFilterPanel()" title="查看/清除列筛选">已筛选 0列 · 0条 ▾</span>
+                            <!-- 筛选面板 -->
+                            <div id="dtFilterPanel" style="display:none;position:absolute;top:100%;left:0;z-index:3000;background:#fff;border-radius:10px;border:0.5px solid #bfdbfe;box-shadow:0 4px 16px rgba(37,99,235,0.1);padding:10px 12px;min-width:220px;margin-top:4px;">
+                              <div id="dtFilterPanelRows" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
+                              <button onclick="dtClearAllFilters();dtToggleFilterPanel();" style="width:100%;height:28px;border-radius:6px;border:0.5px solid #bfdbfe;background:#eff6ff;color:#2563eb;font-size:12px;cursor:pointer;">清除全部筛选</button>
+                            </div>
                             <span id="modalCatChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:#dbeafe;color:#1d4ed8;display:none;"></span>
                             <span id="modalKouJingChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:#dbeafe;color:#1d4ed8;display:none;"></span>
                         </div>
@@ -1380,11 +1385,27 @@
             <div style="display:flex;align-items:center;gap:6px;padding:6px 16px;background:#f8fafc;border-bottom:0.5px solid #e2e8f0;flex-shrink:0;">
                 <span id="modalKouJingHint" style="font-size:11px;color:#94a3b8;">数据口径：全部</span>
                 <span style="font-size:11px;color:#cbd5e1;margin-left:4px;">· 每列表头 ▾ 可独立筛选</span>
+                <button onclick="dtOpenPivot()" style="margin-left:auto;font-size:11px;padding:3px 10px;border-radius:6px;border:0.5px solid #bfdbfe;background:#eff6ff;color:#2563eb;cursor:pointer;">图表分析 ▾</button>
                 <!-- 保留隐藏的旧filter元素供JS引用，不展示 -->
                 <select id="modalSubjObjFilter" style="display:none;"></select>
                 <select id="modalIssueTypeFilter" style="display:none;"></select>
                 <span id="modalResetFilter" style="display:none;"></span>
                 <input id="modalKeywordFilter" style="display:none;">
+            </div>
+            <!-- 透视分析区域 -->
+            <div id="dtPivotWrap" style="display:none;flex-shrink:0;background:#f8fafc;border-bottom:0.5px solid #e2e8f0;padding:10px 16px;">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+                <span style="font-size:11px;color:#64748b;">按维度分析</span>
+                <button class="dt-dim-btn active" data-dim="level1" onclick="dtSetPivotDim(this)" style="font-size:11px;padding:3px 10px;border-radius:20px;border:0.5px solid #bfdbfe;background:#2563eb;color:#fff;cursor:pointer;">一级项</button>
+                <button class="dt-dim-btn" data-dim="level2" onclick="dtSetPivotDim(this)" style="font-size:11px;padding:3px 10px;border-radius:20px;border:0.5px solid #e0e8f5;background:#fff;color:#475569;cursor:pointer;">二级项</button>
+                <button class="dt-dim-btn" data-dim="person" onclick="dtSetPivotDim(this)" style="font-size:11px;padding:3px 10px;border-radius:20px;border:0.5px solid #e0e8f5;background:#fff;color:#475569;cursor:pointer;">原操作人</button>
+                <button class="dt-dim-btn" data-dim="date" onclick="dtSetPivotDim(this)" style="font-size:11px;padding:3px 10px;border-radius:20px;border:0.5px solid #e0e8f5;background:#fff;color:#475569;cursor:pointer;">日期</button>
+                <button class="dt-dim-btn" data-dim="issueType" onclick="dtSetPivotDim(this)" style="font-size:11px;padding:3px 10px;border-radius:20px;border:0.5px solid #e0e8f5;background:#fff;color:#475569;cursor:pointer;">问题类型</button>
+                <button class="dt-dim-btn" data-dim="category" onclick="dtSetPivotDim(this)" style="font-size:11px;padding:3px 10px;border-radius:20px;border:0.5px solid #e0e8f5;background:#fff;color:#475569;cursor:pointer;">主客观</button>
+                <span id="dtPivotSummary" style="font-size:11px;color:#94a3b8;margin-left:auto;"></span>
+                <button onclick="dtClosePivot()" style="font-size:11px;color:#94a3b8;background:none;border:none;cursor:pointer;">收起 ▲</button>
+              </div>
+              <div id="dtPivotChart" style="height:150px;"></div>
             </div>
             <div id="modalBody" style="flex:1;overflow:auto;">
                 <div class="virtual-scroll-container" id="virtualScrollContainer"></div>
@@ -2386,6 +2407,121 @@
                 dtUpdateFilterIcons();
             }
 
+            // ── 筛选面板展开/收起 ──
+            window.dtToggleFilterPanel = function() {
+                var panel = document.getElementById('dtFilterPanel');
+                var chip = document.getElementById('modalFilteredChip');
+                if (!panel) return;
+                if (panel.style.display === 'none') {
+                    dtRefreshFilterPanel();
+                    panel.style.display = 'block';
+                    // 点外部关闭
+                    setTimeout(function() {
+                        document.addEventListener('click', dtClosePanelOutside, true);
+                    }, 0);
+                } else {
+                    panel.style.display = 'none';
+                }
+            };
+            function dtClosePanelOutside(e) {
+                var panel = document.getElementById('dtFilterPanel');
+                var chip = document.getElementById('modalFilteredChip');
+                if (panel && !panel.contains(e.target) && chip && !chip.contains(e.target)) {
+                    panel.style.display = 'none';
+                    document.removeEventListener('click', dtClosePanelOutside, true);
+                }
+            }
+            function dtRefreshFilterPanel() {
+                var panel = document.getElementById('dtFilterPanelRows');
+                if (!panel) return;
+                var filters = window._dtState.colFilters;
+                var COL_LABELS = {date:'抽检日期',warehouse:'站点',code:'质检码',brand:'品牌',model:'型号',level1:'一级项',level2:'二级项',level3_orig:'原三级项',level3:'新三级项',person:'原操作人',category:'主客观',issueType:'问题类型',judgedIssueType:'责任类型'};
+                var keys = Object.keys(filters).filter(function(k){ return filters[k] && filters[k].size > 0; });
+                if (!keys.length) { panel.innerHTML = '<span style="font-size:12px;color:#94a3b8;">暂无筛选条件</span>'; return; }
+                panel.innerHTML = keys.map(function(k) {
+                    var vals = Array.from(filters[k]).join('、');
+                    if (vals.length > 20) vals = vals.slice(0, 20) + '…';
+                    return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:0.5px solid #f1f5f9;">'
+                        + '<span style="font-size:11px;color:#64748b;min-width:50px;">' + (COL_LABELS[k]||k) + '</span>'
+                        + '<span style="font-size:11px;color:#1e3a8a;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + vals + '</span>'
+                        + '<span onclick="dtRemoveColFilter(&quot;'+k+'&quot;)" style="font-size:13px;color:#94a3b8;cursor:pointer;flex-shrink:0;" title="清除此列筛选">×</span>'
+                        + '</div>';
+                }).join('');
+            }
+            window.dtRemoveColFilter = function(col) {
+                delete window._dtState.colFilters[col];
+                if (typeof renderModalTableVirtual === 'function') renderModalTableVirtual();
+                if (typeof dtUpdateFilterIcons === 'function') dtUpdateFilterIcons();
+                dtRefreshFilterPanel();
+                // 若全部清完则关闭面板
+                var keys = Object.keys(window._dtState.colFilters).filter(function(k){ return window._dtState.colFilters[k] && window._dtState.colFilters[k].size > 0; });
+                if (!keys.length) document.getElementById('dtFilterPanel').style.display = 'none';
+            };
+
+            // ── 透视图 ──
+            var _dtPivotChart = null;
+            var _dtPivotDim = 'level1';
+            var _dtPivotFilter = null;
+            window.dtSetPivotDim = function(btn) {
+                document.querySelectorAll('.dt-dim-btn').forEach(function(b){
+                    b.style.background='#fff'; b.style.color='#475569'; b.style.borderColor='#e0e8f5';
+                });
+                btn.style.background='#2563eb'; btn.style.color='#fff'; btn.style.borderColor='#bfdbfe';
+                _dtPivotDim = btn.dataset.dim;
+                _dtPivotFilter = null;
+                dtRenderPivotChart();
+                if (typeof renderModalTableVirtual === 'function') renderModalTableVirtual();
+            };
+            window.dtClosePivot = function() {
+                document.getElementById('dtPivotWrap').style.display = 'none';
+                _dtPivotFilter = null;
+                if (typeof renderModalTableVirtual === 'function') renderModalTableVirtual();
+            };
+            window.dtOpenPivot = function() {
+                document.getElementById('dtPivotWrap').style.display = '';
+                dtRenderPivotChart();
+            };
+            function dtRenderPivotChart() {
+                var wrap = document.getElementById('dtPivotWrap');
+                if (!wrap || wrap.style.display === 'none') return;
+                var records = window._dtCurrentPivotRecords || [];
+                if (!records.length) return;
+                var dim = _dtPivotDim;
+                var isDate = dim === 'date';
+                var map = {};
+                records.forEach(function(r){ var k = (r[dim]||'未知'); map[k]=(map[k]||0)+1; });
+                var entries = Object.entries(map).sort(function(a,b){ return isDate ? a[0].localeCompare(b[0]) : b[1]-a[1]; });
+                var labels = entries.map(function(e){return e[0];});
+                var vals = entries.map(function(e){return e[1];});
+                // 摘要
+                var summary = document.getElementById('dtPivotSummary');
+                if (summary && entries.length) {
+                    var top = entries[0];
+                    var pct = (top[1]/records.length*100).toFixed(0);
+                    summary.textContent = '共'+entries.length+'种 · 最多：'+top[0]+' '+pct+'%';
+                }
+                var el = document.getElementById('dtPivotChart');
+                if (!el) return;
+                if (!_dtPivotChart) _dtPivotChart = echarts.init(el);
+                var textColor = document.body.classList.contains('dark') ? '#94a3b8' : '#64748b';
+                var barColor = labels.map(function(l){ return l === _dtPivotFilter ? '#dc2626' : '#378ADD'; });
+                _dtPivotChart.setOption({
+                    tooltip:{ trigger:'axis', formatter:function(p){ return p[0].name+': '+p[0].value+'条'; } },
+                    grid:{ top:8, bottom:40, left:30, right:8, containLabel:true },
+                    xAxis:{ type:'category', data:labels, axisLabel:{ color:textColor, fontSize:10, rotate:labels.length>6?20:0, overflow:'truncate', width:60 }, axisLine:{lineStyle:{color:'#e2e8f0'}} },
+                    yAxis:{ type:'value', axisLabel:{ color:textColor, fontSize:10 }, splitLine:{ lineStyle:{ color:'#f1f5f9' } }, minInterval:1 },
+                    series:[{ type: isDate?'line':'bar', data:vals, itemStyle:{ color:function(p){ return labels[p.dataIndex]===_dtPivotFilter?'#dc2626':'#378ADD'; }, borderRadius:isDate?0:[3,3,0,0] }, lineStyle:{ color:'#378ADD', width:2 }, symbol:'circle', symbolSize:5 }]
+                }, true);
+                _dtPivotChart.off('click');
+                _dtPivotChart.on('click', function(params) {
+                    var label = labels[params.dataIndex];
+                    if (_dtPivotFilter === label) { _dtPivotFilter = null; }
+                    else { _dtPivotFilter = label; }
+                    dtRenderPivotChart();
+                    if (typeof renderModalTableVirtual === 'function') renderModalTableVirtual();
+                });
+            }
+
             window.dtClearAllFilters = function() {
                 window._dtState.colFilters = {};
                 if (typeof renderModalTableVirtual === 'function') renderModalTableVirtual();
@@ -2825,6 +2961,10 @@
                         });
                         if (!pass) return false;
                     }
+                    // 透视图点击过滤
+                    if (_dtPivotFilter && _dtPivotDim) {
+                        if ((d[_dtPivotDim]||'未知') !== _dtPivotFilter) return false;
+                    }
                     return true;
                 });
 
@@ -2845,8 +2985,12 @@
                     }
                 }
                 if (filteredChip) {
-                    if (filtered.length < currentModalRecords.length) {
-                        filteredChip.style.display='inline-flex'; filteredChip.textContent='已筛选 '+filtered.length+' 条  ×';
+                    var activeColCount = Object.keys(window._dtState.colFilters).filter(function(k){ return window._dtState.colFilters[k] && window._dtState.colFilters[k].size > 0; }).length;
+                    var hasPivotFilter = !!_dtPivotFilter;
+                    if (activeColCount > 0 || hasPivotFilter) {
+                        filteredChip.style.display='inline-flex';
+                        var colTxt = activeColCount > 0 ? activeColCount+'列' : '';
+                        filteredChip.textContent = '已筛选 ' + (colTxt ? colTxt+' · ' : '') + filtered.length+'条 ▾';
                     } else filteredChip.style.display='none';
                 }
 
@@ -2965,8 +3109,14 @@
 
             window.openDetailWithData = function openDetailWithData(records, title, showCat) {
                 if (!records.length) { showToast('无明细数据'); return; }
-                // 每次打开新弹窗清空列筛选状态，避免跨站点污染
+                // 每次打开新弹窗清空列筛选和透视过滤状态
                 if (window._dtState) { window._dtState.colFilters = {}; window._dtState.popupCol = null; }
+                _dtPivotFilter = null;
+                _dtPivotDim = 'level1';
+                document.querySelectorAll('.dt-dim-btn').forEach(function(b,i){
+                    if(i===0){b.style.background='#2563eb';b.style.color='#fff';b.style.borderColor='#bfdbfe';}
+                    else{b.style.background='#fff';b.style.color='#475569';b.style.borderColor='#e0e8f5';}
+                });
 
                 // 口径联动：读当前激活的口径按钮
                 var kouJing = 'ALL';
@@ -3006,6 +3156,7 @@
                 });
 
                 currentModalRecords = filteredByKJ.length ? filteredByKJ : records;
+                window._dtCurrentPivotRecords = currentModalRecords;
                 window._modalShowCat = (showCat !== false);
 
                 var modalTitleEl = document.getElementById('modalTitle');
