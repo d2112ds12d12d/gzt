@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.58E</title>
+    <title>培训部数据看板 v1.58D</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -899,7 +899,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.58E</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.58D</div>
     </div>
   </nav>
 
@@ -6825,27 +6825,6 @@ async function zbLoadCloudData(useApi) {
         const src = viaApi ? '（API直连）' : '';
         showToast('✅ 云端数据已加载（' + loaded + '/4）' + src);
         if (typeof zbSetCloudStatus === 'function') zbSetCloudStatus('ok');
-        // 数据源T-1：取数据源最新日期的前一天作为默认日期范围
-        (function() {
-            var allDates = [];
-            if (window._DATA.qa && window._DATA.qa.length) {
-                window._DATA.qa.forEach(function(r){ if(r.date) allDates.push(r.date); });
-            }
-            if (window._DATA.diff5 && window._DATA.diff5.length) {
-                window._DATA.diff5.forEach(function(r){ if(r.date) allDates.push(r.date); });
-            }
-            if (!allDates.length) return;
-            allDates.sort();
-            var latestDate = allDates[allDates.length - 1];
-            var d = new Date(latestDate);
-            d.setDate(d.getDate() - 1);
-            var pad = function(n){ return String(n).padStart(2,'0'); };
-            var t1 = d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
-            var sdf = document.getElementById('startDateFilter');
-            var edf = document.getElementById('endDateFilter');
-            if (sdf) sdf.value = t1;
-            if (edf) edf.value = t1;
-        })();
         if (typeof bridgeData === 'function') bridgeData();
         // 数据加载完立即应用操作人纠正（不等轮询，确保导出时person已是正确值）
         try {
