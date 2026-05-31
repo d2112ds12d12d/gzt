@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.57</title>
+    <title>培训部数据看板 v1.57B</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -899,7 +899,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.57</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.57B</div>
     </div>
   </nav>
 
@@ -7101,27 +7101,75 @@ function zbRenderSiteDetail(siteName) {
                 }).filter(function(r){ return r.rate !== null; })
                   .sort(function(a,b){ return a.rate - b.rate; });
 
-                var myIdx = ranked.findIndex(function(r){ return r.site === siteName; });
-                if (myIdx < 0) return;
-                var rank = myIdx + 1, total = ranked.length;
-                var myRate = ranked[myIdx].rate;
-                var prevRate = myIdx > 0 ? ranked[myIdx-1].rate : null;
-                var nextRate = myIdx < total-1 ? ranked[myIdx+1].rate : null;
-                var isFirst = rank === 1;
-                var barBg = '#f0f6ff';
-                var textColor = '#2563eb';
-                var borderColor = '#bfdbfe';
-                var gapText = isFirst && nextRate !== null
-                    ? '↓ 领先第2名 ' + Math.abs(nextRate - myRate).toFixed(2) + '%'
-                    : (!isFirst && prevRate !== null ? '↑ 距上一名差 ' + Math.abs(myRate - prevRate).toFixed(2) + '%' : '');
+                // ── 判断是否大仓配对，决定单行还是双行排名 ──
+                var _rankPairMap = [
+                    { line: '转转-深圳智能验机中心', post: '深圳后验中心仓' },
+                    { line: '转转-青岛智能验机中心', post: '青岛后验中心仓' },
+                    { line: '转转-成都智能验机中心', post: '成都后验中心仓' }
+                ];
+                var _rankPair = null;
+                _rankPairMap.forEach(function(p) {
+                    if (siteName === p.line || siteName === p.post) _rankPair = p;
+                });
+
+                function _calcRankRow(sn, color) {
+                    // 计算指定站点的排名信息
+                    var st = typeof zbGetSiteType === 'function' ? zbGetSiteType(sn) : '中心仓';
+                    var gs = allSites.filter(function(s) {
+                        if (SKIP_SITES.indexOf(s) >= 0) return false;
+                        return typeof zbGetSiteType === 'function' ? zbGetSiteType(s) === st : true;
+                    });
+                    var rd = gs.map(function(s) {
+                        return { site: s, rate: calcRate(s) };
+                    }).filter(function(r) { return r.rate !== null; })
+                      .sort(function(a, b) { return a.rate - b.rate; });
+                    var idx = rd.findIndex(function(r) { return r.site === sn; });
+                    if (idx < 0) return '';
+                    var rk = idx + 1, tot = rd.length;
+                    var rt = rd[idx].rate;
+                    var isF = rk === 1;
+                    var gt = isF && idx < tot-1
+                        ? '↓ 领先第2名 ' + Math.abs(rd[idx+1].rate - rt).toFixed(2) + '%'
+                        : (!isF && idx > 0 ? '↑ 距上一名差 ' + Math.abs(rt - rd[idx-1].rate).toFixed(2) + '%' : '');
+                    return '<div style="display:flex;align-items:center;gap:8px;">'
+                        + '<span style="width:7px;height:7px;border-radius:50%;background:'+color+';flex-shrink:0;display:inline-block;"></span>'
+                        + '<span style="font-size:11px;color:#64748b;min-width:130px;">'+sn+'</span>'
+                        + '<span style="font-size:15px;font-weight:700;color:'+color+';">'+(isF?'🏆 ':'')+'第 '+rk+' 名</span>'
+                        + '<span style="font-size:11px;color:#94a3b8;">/ 共'+tot+'个站点</span>'
+                        + (gt ? '<span style="font-size:11px;color:'+color+';background:rgba(255,255,255,0.8);padding:2px 8px;border-radius:10px;margin-left:auto;">'+gt+'</span>' : '')
+                        + '</div>';
+                }
+
                 var rankEl = document.getElementById('zbSiteRankBar');
                 if (!rankEl) { rankEl = document.createElement('div'); rankEl.id = 'zbSiteRankBar'; kpiEl.parentNode.insertBefore(rankEl, kpiEl); }
-                rankEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:7px 14px;border-radius:8px;background:'+barBg+';border:0.5px solid '+borderColor+';margin-bottom:8px;">'
-                    + '<span style="font-size:11px;color:#64748b;">'+siteType+'小组排名</span>'
-                    + '<span style="font-size:15px;font-weight:700;color:'+textColor+';">'+(isFirst?'🏆 ':'')+'第 '+rank+' 名</span>'
-                    + '<span style="font-size:11px;color:#94a3b8;">/ 共'+total+'个站点</span>'
-                    + (gapText ? '<span style="font-size:11px;color:'+textColor+';background:rgba(255,255,255,0.7);padding:2px 8px;border-radius:10px;margin-left:auto;">'+gapText+'</span>' : '')
-                    + '</div>';
+
+                if (_rankPair) {
+                    // 双行排名
+                    var row1 = _calcRankRow(_rankPair.line, '#185FA5');
+                    var row2 = _calcRankRow(_rankPair.post, '#534AB7');
+                    var divider = row1 && row2 ? '<div style="height:0.5px;background:#dce8f8;"></div>' : '';
+                    rankEl.innerHTML = '<div style="background:#f0f6ff;border-radius:10px;border:0.5px solid #e0e8f5;padding:10px 14px;margin-bottom:8px;display:flex;flex-direction:column;gap:10px;">'
+                        + row1 + divider + row2
+                        + '</div>';
+                } else {
+                    // 单行排名（原逻辑）
+                    var myIdx = ranked.findIndex(function(r){ return r.site === siteName; });
+                    if (myIdx < 0) return;
+                    var rank = myIdx + 1, total = ranked.length;
+                    var myRate = ranked[myIdx].rate;
+                    var prevRate = myIdx > 0 ? ranked[myIdx-1].rate : null;
+                    var nextRate = myIdx < total-1 ? ranked[myIdx+1].rate : null;
+                    var isFirst = rank === 1;
+                    var gapText = isFirst && nextRate !== null
+                        ? '↓ 领先第2名 ' + Math.abs(nextRate - myRate).toFixed(2) + '%'
+                        : (!isFirst && prevRate !== null ? '↑ 距上一名差 ' + Math.abs(myRate - prevRate).toFixed(2) + '%' : '');
+                    rankEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:7px 14px;border-radius:8px;background:#f0f6ff;border:0.5px solid #bfdbfe;margin-bottom:8px;">'
+                        + '<span style="font-size:11px;color:#64748b;">'+siteType+'小组排名</span>'
+                        + '<span style="font-size:15px;font-weight:700;color:#2563eb;">'+(isFirst?'🏆 ':'')+'第 '+rank+' 名</span>'
+                        + '<span style="font-size:11px;color:#94a3b8;">/ 共'+total+'个站点</span>'
+                        + (gapText ? '<span style="font-size:11px;color:#2563eb;background:rgba(255,255,255,0.7);padding:2px 8px;border-radius:10px;margin-left:auto;">'+gapText+'</span>' : '')
+                        + '</div>';
+                }
             })();
 
             // ── 判断是否为大仓配对站点 ──
