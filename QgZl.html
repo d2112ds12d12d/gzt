@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.54M</title>
+    <title>培训部数据看板 v1.58E</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -36,7 +36,7 @@
             --switch-btn-bg: #eff6ff;
             --progress-bg: #e2e8f0;
             --sidebar-width: 210px;
-            --card-radius: 12px;
+            --card-radius: 18px;
             --sidebar-bg: #ffffff;
             --sidebar-border: #f1f5f9;
             --sidebar-lbl: #94a3b8;
@@ -80,13 +80,79 @@
             --sidebar-active-color: #93c5fd;
             --sidebar-active-shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
+        html {
+            background: var(--bg-body);
+        }
         html, body { height: 100%; margin: 0; }
         body {
             font-family: -apple-system, 'PingFang SC', 'Microsoft YaHei', 'Segoe UI', Roboto, system-ui, sans-serif;
-            background: linear-gradient(135deg,#e8edf5 0%,#dce4f0 50%,#e4e8f4 100%);
-            background-attachment: fixed;
+            background: transparent;
             padding: 0;
             color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        body > * { position: relative; z-index: 1; }
+        [data-theme="dark"] html { background: var(--bg-body); }
+
+        /* 几何线框层：淡蓝色三角/六边/圆环空心线条缓慢漂浮 + 旋转 */
+        .bg-particles {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0 !important;
+            overflow: hidden;
+        }
+        .bg-particles .shape {
+            position: absolute;
+            left: var(--x, 50%);
+            width: var(--size, 20px);
+            height: var(--size, 20px);
+            opacity: 0;
+            animation: shapeRise var(--dur, 22s) linear infinite;
+            animation-delay: var(--delay, 0s);
+            will-change: transform, opacity;
+        }
+        /* 圆环 */
+        .bg-particles .shape.circ {
+            border: 1.5px solid rgba(100,140,220,0.55);
+            border-radius: 50%;
+        }
+        /* 三角形：用 border 技巧画空心三角 */
+        .bg-particles .shape.tri {
+            background: transparent;
+            border: none;
+            width: 0;
+            height: 0;
+            border-left: calc(var(--size, 20px) / 2) solid transparent;
+            border-right: calc(var(--size, 20px) / 2) solid transparent;
+            border-bottom: calc(var(--size, 20px) * 0.86) solid rgba(100,140,220,0.45);
+        }
+        /* 六边形：clip-path 切出形状，inset shadow 描边 */
+        .bg-particles .shape.hex {
+            clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0% 50%);
+            background: rgba(100,140,220,0.18);
+            box-shadow: inset 0 0 0 1.5px rgba(100,140,220,0.55);
+        }
+        @keyframes shapeRise {
+            0%   { transform: translate3d(0, 105vh, 0) rotate(0deg);   opacity: 0; }
+            12%  { opacity: 0.85; }
+            50%  { transform: translate3d(20px, 50vh, 0) rotate(180deg); opacity: 0.85; }
+            88%  { opacity: 0.6; }
+            100% { transform: translate3d(-20px, -15vh, 0) rotate(360deg); opacity: 0; }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .bg-particles { display: none; }
+        }
+        [data-theme="dark"] .bg-particles .shape.circ {
+            border-color: rgba(140,180,255,0.55);
+        }
+        [data-theme="dark"] .bg-particles .shape.tri {
+            border-bottom-color: rgba(140,180,255,0.45);
+        }
+        [data-theme="dark"] .bg-particles .shape.hex {
+            background: rgba(140,180,255,0.15);
+            box-shadow: inset 0 0 0 1.5px rgba(140,180,255,0.55);
         }
         .loading-bar {
             position: fixed; top: 0; left: 0; width: 100%; height: 4px; z-index: 10000;
@@ -182,15 +248,56 @@
         }
         .reset-filter-btn:hover { background: var(--reset-btn-hover); transform: scale(0.97); }
         .card {
-            background: rgba(255,255,255,0.65);
-            backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+            background: rgba(255,255,255,0.78);
+            backdrop-filter: blur(22px) saturate(180%); -webkit-backdrop-filter: blur(22px) saturate(180%);
             border-radius: var(--card-radius);
             border: 1px solid rgba(255,255,255,0.9);
-            box-shadow: 0 2px 10px rgba(100,120,180,0.08);
-            padding: 20px 24px; margin-bottom: 18px;
-            transition: transform 0.18s, box-shadow 0.18s;
+            box-shadow:
+                0 1px 2px rgba(15,30,80,0.04),
+                0 8px 24px rgba(60,90,180,0.10),
+                inset 0 1px 0 rgba(255,255,255,0.6);
+            padding: 22px 26px; margin-bottom: 20px;
+            transition: transform 0.25s cubic-bezier(0.4,0,0.2,1), box-shadow 0.25s cubic-bezier(0.4,0,0.2,1);
+            position: relative;
         }
-        .card:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.10); }
+        .card:hover {
+            transform: translateY(-3px);
+            box-shadow:
+                0 2px 4px rgba(15,30,80,0.05),
+                0 16px 40px rgba(60,90,180,0.16),
+                inset 0 1px 0 rgba(255,255,255,0.7);
+        }
+        /* hover 时浮现的渐变描边：蓝→紫→青 1.5px 线，与 hover 抬升同步 */
+        .card::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: inherit;
+            padding: 1.5px;
+            background: linear-gradient(135deg,
+                rgba(96,165,250,0.65),
+                rgba(167,139,250,0.65),
+                rgba(34,211,238,0.65));
+            -webkit-mask:
+                linear-gradient(#fff 0 0) content-box,
+                linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask:
+                linear-gradient(#fff 0 0) content-box,
+                linear-gradient(#fff 0 0);
+            mask-composite: exclude;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 1;
+        }
+        .card:hover::after { opacity: 1; }
+        [data-theme="dark"] .card::after {
+            background: linear-gradient(135deg,
+                rgba(120,180,255,0.55),
+                rgba(180,150,255,0.55),
+                rgba(80,220,255,0.55));
+        }
         .card-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; flex-wrap: wrap; gap: 12px; }
         .card-title { font-size: 14px; font-weight: 700; color: #334155; display: flex; align-items: center; gap: 6px; padding-left: 0; border-left: none; }
         .card-title-bar { width: 3px; height: 15px; border-radius: 0; flex-shrink: 0; background: #3b82f6; }
@@ -221,9 +328,22 @@
         .stats-item:hover { transform: translateY(-2px); box-shadow: 0 4px 20px rgba(0,0,0,0.10); cursor:pointer; }
         .stats-item-side { width: 5px; flex-shrink: 0; }
         .stats-item-body { padding: 12px 13px; flex: 1; }
-        .stats-number { font-size: 26px; font-weight: 800; line-height: 1.15; margin: 5px 0 3px; }
+        .stats-number {
+            font-size: 26px; font-weight: 800; line-height: 1.15; margin: 5px 0 3px;
+            font-variant-numeric: tabular-nums;
+            font-feature-settings: 'tnum';
+            letter-spacing: -0.02em;
+        }
         .stats-sub { font-size: 10px; font-weight: 500; color: var(--text-secondary); margin-top: 2px; }
         .stats-label { font-size: 11px; color: var(--text-secondary); font-weight: 500; margin-bottom: 1px; }
+        /* KPI sparkline：迷你折线，紧贴 stats-item 底部，高度恒定不撑大卡片 */
+        .stats-spark {
+            margin-top: 8px;
+            height: 28px;
+            position: relative;
+            overflow: hidden;
+        }
+        .stats-spark svg { width: 100%; height: 100%; display: block; }
         .trend-chart-box { width: 100%; height: 380px; margin-top: 12px; }
         .insight-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; margin-top: 16px; align-items: start; }
         .obj-rank-wrapper { display: flex; flex-direction: column; min-width: 0; }
@@ -615,22 +735,26 @@
 
         /* 2. 卡片加载序列淡入 */
         @keyframes cardFadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to   { opacity: 1; transform: translateY(0); }
+            from { opacity: 0; transform: translateY(16px) scale(0.985); filter: blur(4px); }
+            to   { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
         }
         .card {
-            animation: cardFadeIn 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94) both;
+            animation: cardFadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
             border-radius: var(--card-radius) !important;
-            box-shadow: var(--shadow) !important;
-            border: 0.5px solid var(--border-color) !important;
-            transition: transform var(--transition-fast), box-shadow var(--transition-fast) !important;
+            border: 0.5px solid rgba(255,255,255,0.85) !important;
+        }
+        [data-theme="dark"] .card {
+            background: rgba(255,255,255,0.08) !important;
+            border: 0.5px solid rgba(255,255,255,0.08) !important;
         }
         .card:nth-child(1) { animation-delay: 0ms; }
-        .card:nth-child(2) { animation-delay: 50ms; }
-        .card:nth-child(3) { animation-delay: 100ms; }
-        .card:nth-child(4) { animation-delay: 150ms; }
-        .card:nth-child(5) { animation-delay: 200ms; }
-        .card:nth-child(6) { animation-delay: 250ms; }
+        .card:nth-child(2) { animation-delay: 70ms; }
+        .card:nth-child(3) { animation-delay: 140ms; }
+        .card:nth-child(4) { animation-delay: 210ms; }
+        .card:nth-child(5) { animation-delay: 280ms; }
+        .card:nth-child(6) { animation-delay: 350ms; }
+        .card:nth-child(7) { animation-delay: 420ms; }
+        .card:nth-child(8) { animation-delay: 490ms; }
         .card:hover {
             transform: translateY(-2px) !important;
             box-shadow: var(--shadow-hover) !important;
@@ -775,7 +899,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.54M</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.58E</div>
     </div>
   </nav>
 
@@ -859,6 +983,13 @@
                     <span class="cat-tab active" id="globalSiteType-ALL" data-site-type="ALL" style="display:none;">全部</span>
                     <span class="cat-tab" id="globalSiteType-DW" data-site-type="DW" style="display:none;">大仓</span>
                     <span class="cat-tab" id="globalSiteType-ZX" data-site-type="ZX" id="siteTypeGroup" style="display:none;">中心仓</span>
+                    <!-- 站点类型胶囊下拉（质检排行榜+差异快报联动） -->
+                    <div id="zbSiteTypeDropWrap" style="position:relative;flex-shrink:0;">
+                        <div id="zbSiteTypeBtn" onclick="zbSiteTypeDropToggle()" style="display:inline-flex;align-items:center;height:28px;padding:0 26px 0 11px;border-radius:14px;border:0.5px solid var(--border-color);background:var(--filter-input-bg);font-size:11px;color:var(--text-primary);cursor:pointer;white-space:nowrap;user-select:none;position:relative;transition:all .15s;">
+                            <span id="zbSiteTypeBtnLabel">站点类型</span>
+                            <svg id="zbSiteTypeArrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);transition:transform .2s;flex-shrink:0;"><polyline points="6 9 12 15 18 9"/></svg>
+                        </div>
+                    </div>
                     <!-- 口径折叠标签（首页隐藏，站点页保留联动） -->
                     <div id="zbKouJingTag" onclick="zbToggleKouJingDropdown()" style="display:none;align-items:center;gap:4px;padding:4px 10px;border-radius:6px;background:#eff6ff;border:0.5px solid #bfdbfe;cursor:pointer;flex-shrink:0;user-select:none;white-space:nowrap;">
                         <div id="zbKouJingDot" style="width:6px;height:6px;border-radius:50%;background:#2563eb;flex-shrink:0;"></div>
@@ -947,10 +1078,10 @@
             <div class="card" style="padding:0;overflow:hidden;">
                 <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:0.5px solid var(--border-color);">
                     <div class="card-title" style="margin:0;">
-                        <div class="card-title-bar" style="background:#2563eb;"></div>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-                        全国质检排行榜（客观执行差异量）
-                    </div>
+                            <div class="card-title-bar" style="background:#2563eb;"></div>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+                            全国质检排行榜（客观执行差异量）
+                        </div>
                     <span id="rankPersonCnt" style="font-size:12px;color:var(--text-secondary);"></span>
                 </div>
                 <table style="width:100%;border-collapse:collapse;">
@@ -1003,11 +1134,11 @@
             <div class="card" id="issueHotspotCard" style="margin-top:0;">
               <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:13px;">
                 <div class="card-title" style="margin:0;display:flex;align-items:center;gap:7px;">
-                  <span style="display:inline-block;width:3px;height:15px;background:#3b82f6;border-radius:0;flex-shrink:0;"></span>
-                  <span style="font-size:15px;">📋</span>
-                  近期客观执行差异快报
-                  <span id="hotspotCatLabel" style="font-size:11px;color:var(--text-secondary);font-weight:400;margin-left:2px;"></span>
-                </div>
+                    <span style="display:inline-block;width:3px;height:15px;background:#3b82f6;border-radius:0;flex-shrink:0;"></span>
+                    <span style="font-size:15px;">📋</span>
+                    近期客观执行差异快报
+                    <span id="hotspotCatLabel" style="font-size:11px;color:var(--text-secondary);font-weight:400;margin-left:2px;"></span>
+                  </div>
                 <div style="display:flex;align-items:center;gap:6px;">
                   <span id="hotspotPeriodLabel" style="font-size:10px;color:var(--text-secondary);"></span>
                   <div id="hotspotTimeTabs" style="display:flex;gap:3px;">
@@ -1229,7 +1360,7 @@
                         <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
                             <span id="modalTotalChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,.7);color:#64748b;border:0.5px solid #bfdbfe;">共 0 条</span>
                             <span id="modalUnitChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,.7);color:#2563eb;border:0.5px solid #bfdbfe;display:none;">0 台</span>
-                            <span id="modalFilteredChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:#2563eb;color:#fff;display:none;">已筛选 0 条</span>
+                            <div id="dtFilterTagsWrap" style="display:none;display:flex;align-items:center;gap:5px;flex-wrap:wrap;"></div>
                             <span id="modalCatChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:#dbeafe;color:#1d4ed8;display:none;"></span>
                             <span id="modalKouJingChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:#dbeafe;color:#1d4ed8;display:none;"></span>
                         </div>
@@ -1239,20 +1370,39 @@
                             <button onclick="zbCopyWeekly()" style="height:24px;padding:0 10px;border-radius:6px;border:0.5px solid #93c5fd;background:#eff6ff;color:#2563eb;font-size:11px;cursor:pointer;flex-shrink:0;white-space:nowrap;">📋 复制</button>
                         </div>
                     </div>
-                    <span class="close-modal" style="flex-shrink:0;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#64748b;">&times;</span>
+                    <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                        <button id="modalJumpBtn" onclick="zbJumpTableLink()" style="display:none;align-items:center;gap:5px;padding:5px 14px;border-radius:7px;font-size:12px;font-weight:500;border:0.5px solid #93c5fd;background:#eff6ff;color:#2563eb;cursor:pointer;white-space:nowrap;" onmouseenter="this.style.background='#dbeafe'" onmouseleave="this.style.background='#eff6ff'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle;margin-right:2px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>跳转抽检登记表</button>
+                        <span class="close-modal" style="flex-shrink:0;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#64748b;">&times;</span>
+                    </div>
                 </div>
             </div>
             <!-- 副筛选栏：仅保留口径提示，列筛选在表头▾ -->
             <div style="display:flex;align-items:center;gap:6px;padding:6px 16px;background:#f8fafc;border-bottom:0.5px solid #e2e8f0;flex-shrink:0;">
                 <span id="modalKouJingHint" style="font-size:11px;color:#94a3b8;">数据口径：全部</span>
                 <span style="font-size:11px;color:#cbd5e1;margin-left:4px;">· 每列表头 ▾ 可独立筛选</span>
+                <button onclick="dtOpenPivot()" style="margin-left:auto;font-size:11px;padding:3px 10px;border-radius:6px;border:0.5px solid #bfdbfe;background:#eff6ff;color:#2563eb;cursor:pointer;">图表分析 ▾</button>
                 <!-- 保留隐藏的旧filter元素供JS引用，不展示 -->
                 <select id="modalSubjObjFilter" style="display:none;"></select>
                 <select id="modalIssueTypeFilter" style="display:none;"></select>
                 <span id="modalResetFilter" style="display:none;"></span>
                 <input id="modalKeywordFilter" style="display:none;">
             </div>
-            <div id="modalBody" style="flex:1;overflow:auto;">
+            <!-- 透视分析区域 -->
+            <div id="dtPivotWrap" style="display:none;flex-shrink:0;background:#f8fafc;border-bottom:0.5px solid #e2e8f0;padding:8px 16px 4px;">
+              <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
+                <span style="font-size:11px;color:#64748b;">按维度分析</span>
+                <button class="dt-dim-btn active" data-dim="level1" onclick="dtSetPivotDim(this)" style="font-size:11px;padding:3px 10px;border-radius:20px;border:0.5px solid #bfdbfe;background:#2563eb;color:#fff;cursor:pointer;">一级项</button>
+                <button class="dt-dim-btn" data-dim="level2" onclick="dtSetPivotDim(this)" style="font-size:11px;padding:3px 10px;border-radius:20px;border:0.5px solid #e0e8f5;background:#fff;color:#475569;cursor:pointer;">二级项</button>
+                <button class="dt-dim-btn" data-dim="person" onclick="dtSetPivotDim(this)" style="font-size:11px;padding:3px 10px;border-radius:20px;border:0.5px solid #e0e8f5;background:#fff;color:#475569;cursor:pointer;">原操作人</button>
+                <button class="dt-dim-btn" data-dim="date" onclick="dtSetPivotDim(this)" style="font-size:11px;padding:3px 10px;border-radius:20px;border:0.5px solid #e0e8f5;background:#fff;color:#475569;cursor:pointer;">日期</button>
+                <button class="dt-dim-btn" data-dim="issueType" onclick="dtSetPivotDim(this)" style="font-size:11px;padding:3px 10px;border-radius:20px;border:0.5px solid #e0e8f5;background:#fff;color:#475569;cursor:pointer;">问题类型</button>
+                <button class="dt-dim-btn" data-dim="category" onclick="dtSetPivotDim(this)" style="font-size:11px;padding:3px 10px;border-radius:20px;border:0.5px solid #e0e8f5;background:#fff;color:#475569;cursor:pointer;">主客观</button>
+                <span id="dtPivotSummary" style="font-size:11px;color:#94a3b8;margin-left:auto;"></span>
+                <button onclick="dtClosePivot()" style="font-size:11px;color:#94a3b8;background:none;border:none;cursor:pointer;">收起 ▲</button>
+              </div>
+              <div id="dtPivotChart" style="height:220px;"></div>
+            </div>
+            <div id="modalBody" style="flex:1;overflow:auto;min-height:0;">
                 <div class="virtual-scroll-container" id="virtualScrollContainer"></div>
             </div>
         </div>
@@ -1272,9 +1422,9 @@
         </div>
         <!-- KPI -->
         <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:0;border-bottom:0.5px solid #e8edf5;flex-shrink:0;">
-          <div style="padding:10px 18px;border-right:0.5px solid #e8edf5;"><div style="font-size:10px;color:#94a3b8;margin-bottom:2px;">本期差异量</div><div id="hdmKpi1" style="font-size:20px;font-weight:600;color:#dc2626;"></div></div>
-          <div style="padding:10px 18px;border-right:0.5px solid #e8edf5;"><div style="font-size:10px;color:#94a3b8;margin-bottom:2px;">涉及站点数</div><div id="hdmKpi2" style="font-size:20px;font-weight:600;color:#2563eb;"></div></div>
-          <div style="padding:10px 18px;"><div style="font-size:10px;color:#94a3b8;margin-bottom:2px;">涉及质检人</div><div id="hdmKpi3" style="font-size:20px;font-weight:600;color:#8b5cf6;"></div></div>
+          <div style="padding:10px 18px;border-right:0.5px solid #e8edf5;"><div style="font-size:10px;color:#94a3b8;margin-bottom:2px;">本期差异量</div><div id="hdmKpi1" style="font-size:26px;font-weight:600;color:#dc2626;"></div></div>
+          <div style="padding:10px 18px;border-right:0.5px solid #e8edf5;"><div style="font-size:10px;color:#94a3b8;margin-bottom:2px;">涉及站点数</div><div id="hdmKpi2" style="font-size:26px;font-weight:600;color:#2563eb;"></div></div>
+          <div style="padding:10px 18px;"><div style="font-size:10px;color:#94a3b8;margin-bottom:2px;">涉及质检人</div><div id="hdmKpi3" style="font-size:26px;font-weight:600;color:#8b5cf6;"></div></div>
         </div>
         <!-- 主体：左站点 + 右明细 -->
         <div style="display:grid;grid-template-columns:196px 1fr;gap:0;flex:1;overflow:hidden;min-height:0;">
@@ -1857,20 +2007,82 @@
                 }
                 const KPI_COLORS={total_checks:'#2563eb',subj_diff:'#f59e0b',obj_diff:'#10b981',exec_diff:'#8b5cf6'};
                 const KPI_NUM_COLORS={total_checks:'#1d4ed8',subj_diff:'#b45309',obj_diff:'#047857',exec_diff:'#6d28d9'};
-                const mk = (type, val, label, dc, yh) => {
+
+                // 按日聚合趋势序列。取筛选窗口内最近 N 天，每天一个点
+                // 返回 {total_checks:[...], subj_diff:[...], obj_diff:[...], exec_diff:[...]}
+                // 数值数组而非对象，避免渲染时多余的字段
+                function calcKpiTrend(diffRows, sumRows, days) {
+                    days = days || 14;
+                    // 收集筛选区间所有日期并排序
+                    var dateSet = {};
+                    sumRows.forEach(function(r){ if(r.date) dateSet[r.date] = true; });
+                    diffRows.forEach(function(r){ if(r.date) dateSet[r.date] = true; });
+                    var dates = Object.keys(dateSet).sort();
+                    if (dates.length < 4) return null; // 不足 4 天放弃画线
+                    // 取最近 N 天
+                    dates = dates.slice(-days);
+                    var tc = [], sR = [], oR = [], eR = [];
+                    dates.forEach(function(d){
+                        var dDiff = diffRows.filter(function(r){ return r.date === d; });
+                        var dSum  = sumRows.filter(function(r){ return r.date === d; });
+                        var checks = dSum.reduce(function(a,r){ return a + (r.totalChecks||0); }, 0);
+                        var sCnt = new Set(dDiff.filter(function(x){ return isSubjective(x.category); }).map(function(x){ return x.code; })).size;
+                        var oCnt = new Set(dDiff.filter(function(x){ return isObjective(x.category); }).map(function(x){ return x.code; })).size;
+                        var eSet = new Set();
+                        dDiff.forEach(function(x){ if(isObjective(x.category)&&isExecutionIssue(x.judgedIssueType)&&x.code) eSet.add(x.code); });
+                        tc.push(checks);
+                        sR.push(checks ? sCnt/checks : 0);
+                        oR.push(checks ? oCnt/checks : 0);
+                        eR.push(checks ? eSet.size/checks : 0);
+                    });
+                    return { total_checks: tc, subj_diff: sR, obj_diff: oR, exec_diff: eR };
+                }
+
+                // 生成 mini sparkline svg。color 为线条主色，series 为数值数组
+                function sparkSvg(series, color) {
+                    if (!series || series.length < 4) return '';
+                    var min = Math.min.apply(null, series);
+                    var max = Math.max.apply(null, series);
+                    var range = max - min;
+                    if (range < 1e-9) range = 1; // 平线兜底
+                    var W = 100, H = 28, padY = 3;
+                    var step = series.length > 1 ? W / (series.length - 1) : W;
+                    var pts = series.map(function(v, i){
+                        var x = (i * step).toFixed(2);
+                        var y = (H - padY - ((v - min) / range) * (H - 2*padY)).toFixed(2);
+                        return x + ',' + y;
+                    });
+                    var line = 'M' + pts.join(' L');
+                    var area = line + ' L' + W + ',' + H + ' L0,' + H + ' Z';
+                    var gid = 'spk' + Math.random().toString(36).slice(2,8);
+                    return '<svg viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">'
+                        + '<defs><linearGradient id="' + gid + '" x1="0" y1="0" x2="0" y2="1">'
+                        +   '<stop offset="0%" stop-color="' + color + '" stop-opacity="0.28"/>'
+                        +   '<stop offset="100%" stop-color="' + color + '" stop-opacity="0"/>'
+                        + '</linearGradient></defs>'
+                        + '<path d="' + area + '" fill="url(#' + gid + ')"/>'
+                        + '<path d="' + line + '" fill="none" stroke="' + color + '" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>'
+                        + '</svg>';
+                }
+
+                const mk = (type, val, label, dc, yh, sparkHtml) => {
                     var isPercent = typeof val === 'string' && val.includes('%');
                     var numVal = parseFloat(String(val).replace('%','').replace(/,/g,'')) || 0;
                     var countupAttr = !isNaN(numVal) ? ` data-countup="${numVal}" ${isPercent?'data-countup-percent="1"':''}` : '';
-                    return `<div class="stats-item" data-type="${type}" data-count="${dc||''}"><div class="stats-item-side" style="background:${KPI_COLORS[type]||'#2563eb'};"></div><div class="stats-item-body"><div class="stats-label">${label}</div><div class="stats-number" style="color:${KPI_NUM_COLORS[type]||'#1d4ed8'};"${countupAttr}>${val}</div>${yh||''}</div></div>`;
+                    return `<div class="stats-item" data-type="${type}" data-count="${dc||''}"><div class="stats-item-side" style="background:${KPI_COLORS[type]||'#2563eb'};"></div><div class="stats-item-body"><div class="stats-label">${label}</div><div class="stats-number" style="color:${KPI_NUM_COLORS[type]||'#1d4ed8'};"${countupAttr}>${val}</div>${yh||''}${sparkHtml?'<div class="stats-spark">'+sparkHtml+'</div>':''}</div></div>`;
                 };
 
-                function kpiHtml(k, yk) {
+                function kpiHtml(k, yk, trend) {
                     var tc=k.totalChecks;
                     var oR=tc?k.uniqueCodesObj/tc:0, sR=tc?k.uniqueCodesSubj/tc:0, eR=tc?k.execObjTotal/tc:0;
-                    return mk('total_checks',tc,'总抽检量','',fmtY(tc,yk?yk.tc:null,true))
-                        +mk('subj_diff',tc?(sR*100).toFixed(2)+'%':'0%','主观差异率（'+k.uniqueCodesSubj+'台）',k.uniqueCodesSubj,fmtY(sR,yk?yk.sR:null,false))
-                        +mk('obj_diff',tc?(oR*100).toFixed(2)+'%':'0%','客观差异率（'+k.uniqueCodesObj+'台）',k.uniqueCodesObj,fmtY(oR,yk?yk.oR:null,false))
-                        +mk('exec_diff',tc?(eR*100).toFixed(2)+'%':'0%','客观执行差异率（'+k.execObjTotal+'台）',k.execObjTotal,fmtY(eR,yk?yk.eR:null,false));
+                    var sp = function(type){
+                        if (!trend) return '';
+                        return sparkSvg(trend[type], KPI_COLORS[type]);
+                    };
+                    return mk('total_checks',tc,'总抽检量','',fmtY(tc,yk?yk.tc:null,true),sp('total_checks'))
+                        +mk('subj_diff',tc?(sR*100).toFixed(2)+'%':'0%','主观差异率（'+k.uniqueCodesSubj+'台）',k.uniqueCodesSubj,fmtY(sR,yk?yk.sR:null,false),sp('subj_diff'))
+                        +mk('obj_diff',tc?(oR*100).toFixed(2)+'%':'0%','客观差异率（'+k.uniqueCodesObj+'台）',k.uniqueCodesObj,fmtY(oR,yk?yk.oR:null,false),sp('obj_diff'))
+                        +mk('exec_diff',tc?(eR*100).toFixed(2)+'%':'0%','客观执行差异率（'+k.execObjTotal+'台）',k.execObjTotal,fmtY(eR,yk?yk.eR:null,false),sp('exec_diff'));
                 }
 
                 var html = '';
@@ -1929,7 +2141,8 @@
                         siteType==='ZX' ? diffData.filter(function(d){ return getSiteType(d.warehouse||'')==='ZX'; }) : diffData,
                         siteType==='ZX' ? summaryData.filter(function(s){ return getSiteType(s.siteName||'')==='ZX'; }) : summaryData
                     );
-                    html = kpiHtml(k, yk);
+                    var trend = calcKpiTrend(diffRows, sumRows, 14);
+                    html = kpiHtml(k, yk, trend);
                 }
 
                 statsArea.innerHTML = html;
@@ -2083,15 +2296,15 @@
             const DT_STORE_KEY = 'zb_detail_edits';
             let dtEdits = {};
             try { dtEdits = JSON.parse(localStorage.getItem(DT_STORE_KEY)||'{}'); } catch(e) {}
-            function dtSaveEdits() { localStorage.setItem(DT_STORE_KEY, JSON.stringify(dtEdits)); }
+            window._dtEdits = dtEdits; // 暴露给zbPushEdits访问
+            function dtSaveEdits() { localStorage.setItem(DT_STORE_KEY, JSON.stringify(dtEdits)); window._dtEdits = dtEdits; }
 
             // 可编辑列
-            const DT_EDITABLE_COLS = ['level1','level2','level3_orig','level3','category','issueType','judgedIssueType','person','qaInspector'];
+            const DT_EDITABLE_COLS = ['person'];
             const DT_COL_LABELS = { date:'日期', warehouse:'站点名称', cat:'品类', code:'质检码', level1:'一级项', level2:'二级项', level3_orig:'原三级项', level3:'新三级项', category:'主客观分类', issueType:'问题类型', judgedIssueType:'抽检判定类型', person:'质检人员', qaInspector:'QA抽检人' };
 
-            // 列筛选状态
-            let dtColFilters = {}; // { colKey: Set of selected values } — 空Set=不过滤
-            let dtPopupCol = null, dtPopupSelected = new Set(), dtAllVals = [];
+            // 列筛选状态（挂window保证跨闭包共享）
+            window._dtState = { colFilters:{}, popupCol:null, popupSelected:new Set(), allVals:[] };
 
             function dtGetVal(d, col) {
                 const editKey = d.code + '|' + col;
@@ -2105,8 +2318,8 @@
 
             function dtFilteredRows() {
                 return dtGetAllRows().filter(function(d) {
-                    return Object.keys(dtColFilters).every(function(col) {
-                        const f = dtColFilters[col];
+                    return Object.keys(window._dtState.colFilters).every(function(col) {
+                        const f = window._dtState.colFilters[col];
                         if (!f || f.size === 0) return true;
                         return f.has(dtGetVal(d, col));
                     });
@@ -2171,11 +2384,12 @@
                 const slice = filtered.slice(start, end);
                 const cols = ['date','warehouse','cat','code','level1','level2','level3_orig','level3','category','issueType','judgedIssueType','person','qaInspector'];
                 detailTableBody.innerHTML = slice.map(function(d) {
+                    var rowEditable = (typeof zbCanEditRow === 'function') ? zbCanEditRow(d) : false;
                     return '<tr>' + cols.map(function(col) {
                         const val = dtGetVal(d, col);
                         const editKey = d.code + '|' + col;
                         const isModified = dtEdits[editKey] !== undefined;
-                        const canEdit = DT_EDITABLE_COLS.includes(col);
+                        const canEdit = DT_EDITABLE_COLS.includes(col) && rowEditable;
                         if (canEdit) {
                             return '<td><span class="dt-cell-editable'+(isModified?' dt-cell-modified':'')+'" '
                                 +'data-code="'+d.code+'" data-col="'+col+'" data-orig="'+(d[col]||'-').replace(/"/g,'&quot;')+'">'
@@ -2188,10 +2402,134 @@
                 dtUpdateFilterIcons();
             }
 
+            // ── 筛选面板展开/收起 ──
+            window.dtToggleFilterPanel = function() {
+                var panel = document.getElementById('dtFilterPanel');
+                var chip = document.getElementById('modalFilteredChip');
+                if (!panel) return;
+                if (panel.style.display === 'none') {
+                    dtRefreshFilterPanel();
+                    panel.style.display = 'block';
+                    // 点外部关闭
+                    setTimeout(function() {
+                        document.addEventListener('click', dtClosePanelOutside, true);
+                    }, 0);
+                } else {
+                    panel.style.display = 'none';
+                }
+            };
+            function dtClosePanelOutside(e) {
+                var panel = document.getElementById('dtFilterPanel');
+                var chip = document.getElementById('modalFilteredChip');
+                if (panel && !panel.contains(e.target) && chip && !chip.contains(e.target)) {
+                    panel.style.display = 'none';
+                    document.removeEventListener('click', dtClosePanelOutside, true);
+                }
+            }
+            function dtRefreshFilterPanel() {
+                var panel = document.getElementById('dtFilterPanelRows');
+                if (!panel) return;
+                var filters = window._dtState.colFilters;
+                var COL_LABELS = {date:'抽检日期',warehouse:'站点',code:'质检码',brand:'品牌',model:'型号',level1:'一级项',level2:'二级项',level3_orig:'原三级项',level3:'新三级项',person:'原操作人',category:'主客观',issueType:'问题类型',judgedIssueType:'责任类型'};
+                var keys = Object.keys(filters).filter(function(k){ return filters[k] && filters[k].size > 0; });
+                if (!keys.length) { panel.innerHTML = '<span style="font-size:12px;color:#94a3b8;">暂无筛选条件</span>'; return; }
+                panel.innerHTML = keys.map(function(k) {
+                    var vals = Array.from(filters[k]).join('、');
+                    if (vals.length > 20) vals = vals.slice(0, 20) + '…';
+                    return '<div style="display:flex;align-items:center;gap:6px;padding:4px 0;border-bottom:0.5px solid #f1f5f9;">'
+                        + '<span style="font-size:11px;color:#64748b;min-width:50px;">' + (COL_LABELS[k]||k) + '</span>'
+                        + '<span style="font-size:11px;color:#1e3a8a;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + vals + '</span>'
+                        + '<span onclick="dtRemoveColFilter(&quot;'+k+'&quot;)" style="font-size:13px;color:#94a3b8;cursor:pointer;flex-shrink:0;" title="清除此列筛选">×</span>'
+                        + '</div>';
+                }).join('');
+            }
+            window.dtRemoveColFilter = function(col) {
+                delete window._dtState.colFilters[col];
+                if (typeof renderModalTableVirtual === 'function') renderModalTableVirtual();
+                if (typeof dtUpdateFilterIcons === 'function') dtUpdateFilterIcons();
+                dtRefreshFilterPanel();
+                // 若全部清完则关闭面板
+                var keys = Object.keys(window._dtState.colFilters).filter(function(k){ return window._dtState.colFilters[k] && window._dtState.colFilters[k].size > 0; });
+                if (!keys.length) document.getElementById('dtFilterPanel').style.display = 'none';
+            };
+
+            // ── 透视图 ──
+            var _dtPivotChart = null;
+            var _dtPivotDim = 'level1';
+            var _dtPivotFilter = null;
+            window.dtSetPivotDim = function(btn) {
+                document.querySelectorAll('.dt-dim-btn').forEach(function(b){
+                    b.style.background='#fff'; b.style.color='#475569'; b.style.borderColor='#e0e8f5';
+                });
+                btn.style.background='#2563eb'; btn.style.color='#fff'; btn.style.borderColor='#bfdbfe';
+                _dtPivotDim = btn.dataset.dim;
+                _dtPivotFilter = null;
+                dtRenderPivotChart();
+                if (typeof renderModalTableVirtual === 'function') renderModalTableVirtual();
+            };
+            window.dtClosePivot = function() {
+                document.getElementById('dtPivotWrap').style.display = 'none';
+                _dtPivotFilter = null;
+                if (typeof renderModalTableVirtual === 'function') renderModalTableVirtual();
+                if (_dtPivotChart) { setTimeout(function(){ _dtPivotChart.resize(); }, 50); }
+            };
+            window.dtOpenPivot = function() {
+                document.getElementById('dtPivotWrap').style.display = '';
+                setTimeout(function(){
+                    dtRenderPivotChart();
+                    if (_dtPivotChart) _dtPivotChart.resize();
+                }, 30);
+            };
+            function dtRenderPivotChart() {
+                var wrap = document.getElementById('dtPivotWrap');
+                if (!wrap || wrap.style.display === 'none') return;
+                var records = window._dtCurrentPivotRecords || [];
+                if (!records.length) return;
+                var dim = _dtPivotDim;
+                var isDate = dim === 'date';
+                var map = {};
+                records.forEach(function(r){ var k = (r[dim]||'未知'); map[k]=(map[k]||0)+1; });
+                var entries = Object.entries(map).sort(function(a,b){ return isDate ? a[0].localeCompare(b[0]) : b[1]-a[1]; });
+                var labels = entries.map(function(e){return e[0];});
+                var vals = entries.map(function(e){return e[1];});
+                // 摘要
+                var summary = document.getElementById('dtPivotSummary');
+                if (summary && entries.length) {
+                    var top = entries[0];
+                    var pct = (top[1]/records.length*100).toFixed(0);
+                    summary.textContent = '共'+entries.length+'种 · 最多：'+top[0]+' '+pct+'%';
+                }
+                var el = document.getElementById('dtPivotChart');
+                if (!el) return;
+                if (!_dtPivotChart) _dtPivotChart = echarts.init(el);
+                var textColor = document.body.classList.contains('dark') ? '#94a3b8' : '#64748b';
+                var barColor = labels.map(function(l){ return l === _dtPivotFilter ? '#dc2626' : '#378ADD'; });
+                _dtPivotChart.setOption({
+                    tooltip:{ trigger:'axis', formatter:function(p){ return p[0].name+': '+p[0].value+'条'; } },
+                    grid:{ top:24, bottom:48, left:30, right:8, containLabel:true },
+                    xAxis:{ type:'category', data:labels, axisLabel:{ color:textColor, fontSize:10, rotate:labels.length>6?20:0, overflow:'truncate', width:60 }, axisLine:{lineStyle:{color:'#e2e8f0'}} },
+                    yAxis:{ type:'value', axisLabel:{ color:textColor, fontSize:10 }, splitLine:{ lineStyle:{ color:'#f1f5f9' } }, minInterval:1 },
+                    series:[{ type: isDate?'line':'bar', data:vals, itemStyle:{ color:function(p){ return labels[p.dataIndex]===_dtPivotFilter?'#dc2626':'#378ADD'; }, borderRadius:isDate?0:[3,3,0,0] }, lineStyle:{ color:'#378ADD', width:2 }, symbol:'circle', symbolSize:5, label:{ show:true, position: isDate?'top':'top', color:'#475569', fontSize:11, formatter:'{c}' } }]
+                }, true);
+                _dtPivotChart.off('click');
+                _dtPivotChart.on('click', function(params) {
+                    var label = labels[params.dataIndex];
+                    if (_dtPivotFilter === label) { _dtPivotFilter = null; }
+                    else { _dtPivotFilter = label; }
+                    dtRenderPivotChart();
+                    if (typeof renderModalTableVirtual === 'function') renderModalTableVirtual();
+                });
+            }
+
+            window.dtClearAllFilters = function() {
+                window._dtState.colFilters = {};
+                if (typeof renderModalTableVirtual === 'function') renderModalTableVirtual();
+                if (typeof dtUpdateFilterIcons === 'function') dtUpdateFilterIcons();
+            };
             function dtUpdateFilterIcons() {
                 document.querySelectorAll('.dt-filter-icon').forEach(function(icon) {
                     const col = icon.dataset.col;
-                    const hasFilter = dtColFilters[col] && dtColFilters[col].size > 0;
+                    const hasFilter = window._dtState.colFilters[col] && window._dtState.colFilters[col].size > 0;
                     icon.classList.toggle('active', hasFilter);
                     icon.textContent = hasFilter ? '⏶' : '⏷';
                 });
@@ -2201,19 +2539,29 @@
             window.dtOpenColFilter = function dtOpenColFilter(col, iconEl) {
                 const popup = document.getElementById('dtColPopup');
                 // 面板已开且是同一列 → 关闭（切换）
-                if (popup && popup.style.display !== 'none' && dtPopupCol === col) {
+                if (popup && popup.style.display !== 'none' && window._dtState.popupCol === col) {
                     dtClosePopup();
                     return;
                 }
-                dtPopupCol = col;
+                window._dtState.popupCol = col;
+                // 从其他列已筛选后的数据中取当前列的可选值，实现联动
                 const allRows = currentModalRecords && currentModalRecords.length ? currentModalRecords : dtGetAllRows();
+                const filteredRows = allRows.filter(function(d) {
+                    return Object.keys(window._dtState.colFilters).every(function(fc) {
+                        if (fc === col) return true; // 跳过当前列自身，不限制自己
+                        var f = window._dtState.colFilters[fc];
+                        if (!f || f.size === 0) return true;
+                        return f.has(dtGetVal(d, fc));
+                    });
+                });
                 const valCounts = {};
-                allRows.forEach(function(d) {
+                filteredRows.forEach(function(d) {
                     const v = dtGetVal(d, col);
                     valCounts[v] = (valCounts[v]||0) + 1;
                 });
-                dtAllVals = Object.keys(valCounts).sort();
-                dtPopupSelected = dtColFilters[col] ? new Set(dtColFilters[col]) : new Set(dtAllVals);
+                window._dtState.allVals = Object.keys(valCounts).sort();
+                // 默认全不选；若已有筛选则恢复已选状态
+                window._dtState.popupSelected = window._dtState.colFilters[col] ? new Set(window._dtState.colFilters[col]) : new Set();
                 const rect = iconEl.getBoundingClientRect();
                 popup.style.display = 'flex';
                 // position:fixed 不加 scrollY，直接用 viewport 坐标
@@ -2227,9 +2575,10 @@
             }
 
             function dtRenderPopupList(kw) {
-                const filtered = kw ? dtAllVals.filter(function(v){ return v.toLowerCase().includes(kw.toLowerCase()); }) : dtAllVals;
+                const filtered = kw ? window._dtState.allVals.filter(function(v){ return v.toLowerCase().includes(kw.toLowerCase()); }) : window._dtState.allVals;
+                // 搜索只过滤列表显示，不自动勾选
                 document.getElementById('dtColList').innerHTML = filtered.map(function(v) {
-                    const checked = dtPopupSelected.has(v);
+                    const checked = window._dtState.popupSelected.has(v);
                     const chkBox = '<div class="dt-chk" style="width:14px;height:14px;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;'
                         +'border:1.5px solid '+(checked?'var(--btn-bg)':'var(--border-color)')+';'
                         +'background:'+(checked?'var(--btn-bg)':'transparent')+';">'
@@ -2244,7 +2593,7 @@
             function dtClosePopup() {
                 var _popup = document.getElementById('dtColPopup');
                 if (_popup) _popup.style.display = 'none';
-                dtPopupCol = null;
+                window._dtState.popupCol = null;
             }
 
             // 列筛选事件（差异明细弹窗）
@@ -2252,12 +2601,13 @@
                 // 列头筛选图标点击（virtualScroll动态生成的th）
                 const icon = e.target.closest('.dt-filter-icon');
                 if (icon) { e.stopPropagation(); dtOpenColFilter(icon.dataset.col, icon); return; }
-                // 弹出层内部点击
+                // 弹出层内部点击：不关闭，直接return让后续监听器处理
                 const popup = document.getElementById('dtColPopup');
                 if (!popup || popup.style.display === 'none') return;
                 if (popup.contains(e.target)) return;
+                // 点击弹窗外才关闭
                 dtClosePopup();
-            });
+            }, true);
             // 列表项勾选
             document.addEventListener('click', function(e) {
                 if (!document.getElementById('dtColPopup') || document.getElementById('dtColPopup').style.display==='none') return;
@@ -2265,8 +2615,8 @@
                 if (!item) return;
                 e.stopPropagation();
                 const v = item.dataset.val;
-                if (dtPopupSelected.has(v)) dtPopupSelected.delete(v);
-                else dtPopupSelected.add(v);
+                if (window._dtState.popupSelected.has(v)) window._dtState.popupSelected.delete(v);
+                else window._dtState.popupSelected.add(v);
                 dtRenderPopupList((document.getElementById('dtColSearch')||{}).value||'');
             });
             // 搜索框
@@ -2277,7 +2627,7 @@
             document.addEventListener('click', function(e) {
                 if (e.target && e.target.id === 'dtSelectAll') {
                     e.stopPropagation();
-                    dtAllVals.forEach(function(v){ dtPopupSelected.add(v); });
+                    window._dtState.allVals.forEach(function(v){ window._dtState.popupSelected.add(v); });
                     dtRenderPopupList((document.getElementById('dtColSearch')||{}).value||'');
                 }
             });
@@ -2285,7 +2635,7 @@
             document.addEventListener('click', function(e) {
                 if (e.target && e.target.id === 'dtClearAll') {
                     e.stopPropagation();
-                    dtPopupSelected.clear();
+                    window._dtState.popupSelected.clear();
                     dtRenderPopupList((document.getElementById('dtColSearch')||{}).value||'');
                 }
             });
@@ -2293,10 +2643,10 @@
             document.addEventListener('click', function(e) {
                 if (e.target && e.target.id === 'dtApplyFilter') {
                     e.stopPropagation();
-                    if (dtPopupCol) {
-                        var allSelected = dtAllVals.every(function(v){ return dtPopupSelected.has(v); });
-                        if (allSelected) delete dtColFilters[dtPopupCol];
-                        else dtColFilters[dtPopupCol] = new Set(dtPopupSelected);
+                    if (window._dtState.popupCol) {
+                        var allSelected = window._dtState.allVals.every(function(v){ return window._dtState.popupSelected.has(v); });
+                        if (allSelected) delete window._dtState.colFilters[window._dtState.popupCol];
+                        else window._dtState.colFilters[window._dtState.popupCol] = new Set(window._dtState.popupSelected);
                         renderModalTableVirtual();
                         dtUpdateFilterIcons();
                     }
@@ -2308,15 +2658,51 @@
                 if (e.target && e.target.id === 'dtCancelFilter') { e.stopPropagation(); dtClosePopup(); }
             });
 
-            // 单元格编辑：事件委托
-            var _dtBody = document.getElementById('detailTableBody');
-            if (_dtBody) _dtBody.addEventListener('click', function(e) {
+            // 单元格编辑：事件委托（挂在差异明细弹窗的虚拟滚动容器上）
+            var _vsContainer = document.getElementById('virtualScrollContainer');
+            if (_vsContainer) _vsContainer.addEventListener('click', function(e) {
                 const span = e.target.closest('.dt-cell-editable');
                 if (!span) return;
+                e.stopPropagation();
                 dtStartEdit(span);
             });
 
             /* ── 单元格编辑 ── */
+            // 把单元格编辑的新值同步回所有数据对象，避免排行榜/统计/导出读到旧值
+            // 导致"张三"和"张三*"被识别成两个人（已确认 bug）。
+            // mapped 字段 → 原始字段反向映射，与 zbEditSavePush 里的 MAPPED_TO_ORIG 保持一致
+            const DT_MAPPED_TO_ORIG = {
+                warehouse:       'site',
+                person:          'inspector',
+                category:        'subjobj',
+                level3:          'level3_new',
+                judgedIssueType: 'judgedType'
+            };
+            function dtApplyEditToData(code, col, newVal) {
+                if (!code) return;
+                // 1. _allDiffData：mapped 字段直接写
+                var allDiff = window._allDiffData || [];
+                for (var i = 0; i < allDiff.length; i++) {
+                    if (allDiff[i] && allDiff[i].code === code) {
+                        allDiff[i][col] = newVal;
+                    }
+                }
+                // 2. 三个原始数据源：通过反向映射写回原始字段
+                var origCol = DT_MAPPED_TO_ORIG[col] || col;
+                var sources = [
+                    (window._DATA && window._DATA.diff5)  || [],
+                    (window._DATA && window._DATA.diff4)  || [],
+                    (window._DATA && window._DATA.dw4cat) || []
+                ];
+                sources.forEach(function(arr){
+                    for (var i = 0; i < arr.length; i++) {
+                        if (arr[i] && arr[i].code === code) {
+                            arr[i][origCol] = newVal;
+                        }
+                    }
+                });
+            }
+
             function dtStartEdit(span) {
                 if (span.querySelector('input')) return;
                 const code = span.dataset.code;
@@ -2341,15 +2727,32 @@
                             delete dtEdits[editKey]; // 改回原值=清除覆盖
                         }
                         dtSaveEdits();
+                        // 同步回写到所有数据对象（_allDiffData 投影 + 三个原始源），
+                        // 让排行榜、统计、导出等读 d.person 的地方立刻拿到新值，
+                        // 否则同一个人会被识别成新旧两个人（已确认 bug）。
+                        dtApplyEditToData(code, col, newVal);
                         if (typeof zbPushEdits === 'function') setTimeout(zbPushEdits, 500);
                         // 写入修改日志
                         zbAddLog({ type:'edit', code:code, col:DT_COL_LABELS[col]||col, from:oldVal, to:newVal });
+                        // 数据变了，触发看板刷新（排行榜、人员维度等）
+                        if (typeof fullRefresh === 'function') setTimeout(fullRefresh, 0);
                     }
-                    renderDetailTable();
+                    // 弹窗里的虚拟滚动表用 renderModalTableVirtual 重渲；主表 stub 兜底
+                    if (typeof renderModalTableVirtual === 'function' && document.getElementById('detailModal') && document.getElementById('detailModal').style.display !== 'none') {
+                        renderModalTableVirtual();
+                    } else if (typeof renderDetailTable === 'function') {
+                        renderDetailTable();
+                    }
                 };
                 input.addEventListener('keydown', function(e) {
                     if (e.key === 'Enter') { e.preventDefault(); save(); }
-                    if (e.key === 'Escape') { renderDetailTable(); }
+                    if (e.key === 'Escape') {
+                        if (typeof renderModalTableVirtual === 'function' && document.getElementById('detailModal') && document.getElementById('detailModal').style.display !== 'none') {
+                            renderModalTableVirtual();
+                        } else if (typeof renderDetailTable === 'function') {
+                            renderDetailTable();
+                        }
+                    }
                 });
                 input.addEventListener('blur', save);
                 input.addEventListener('click', function(e) { e.stopPropagation(); });
@@ -2469,77 +2872,43 @@
                                     badge.textContent = '×' + row._groupCount + '条';
                                     td.appendChild(badge);
                                 }
-                                // 跳转图标
+                                // K: 去掉跳转图标，改为双击复制质检码
                                 var rowDate = row['_date']||row['date']||'';
                                 var rowCat  = row['_cat'] ||row['cat'] ||'';
                                 var rowSite = row['_warehouse']||row['warehouse']||'';
-                                var link = typeof zbGetTableLink === 'function' ? zbGetTableLink(rowDate, rowCat, rowSite) : null;
-                                if (link && val && val !== '—') {
-                                    const icon = document.createElement('span');
-                                    icon.title = '复制质检码并跳转原始表格';
-                                    icon.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:4px;background:#eff6ff;border:1px solid #bfdbfe;color:#2563eb;cursor:pointer;margin-left:5px;opacity:0;transition:opacity .15s,transform .15s;vertical-align:middle;';
-                                    icon.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
-                                    icon.onclick = function(e) {
-                                        e.stopPropagation();
-                                        try { navigator.clipboard.writeText(val); } catch(err) {}
-                                        icon.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
-                                        icon.style.background = '#f0fdf4';
-                                        icon.style.borderColor = '#bbf7d0';
-                                        showToast('✅ 已复制质检码 ' + val + '，正在跳转原始表格');
-                                        setTimeout(function(){ window.open(link, '_blank'); }, 300);
-                                        setTimeout(function(){
-                                            icon.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
-                                            icon.style.background = '#eff6ff';
-                                            icon.style.borderColor = '#bfdbfe';
-                                        }, 2500);
-                                    };
-                                    tr.addEventListener('mouseenter', function(){ icon.style.opacity='1'; });
-                                    tr.addEventListener('mouseleave', function(){ icon.style.opacity='0'; });
-                                    td.appendChild(icon);
-                                    // 📷图标注入（在链接图标左边）
-                                    zbInjectCamIcon(td, row, icon);
-                                } else {
-                                    zbInjectCamIcon(td, row, null);
+                                if (val && val !== '—') {
+                                    td.title = '双击复制质检码';
+                                    td.style.cursor = 'copy';
+                                    td.ondblclick = (function(v){ return function(e){ e.stopPropagation(); try{ navigator.clipboard.writeText(v); }catch(err){} showToast('✅ 已复制质检码 ' + v); }; })(val);
                                 }
+                                zbInjectCamIcon(td, row, null);
                             } else if (key === 'code') {
                                 td.style.cssText += 'font-weight:500;color:#2563eb;';
                                 td.textContent = val;
-                                // 跳转图标（普通行）
-                                var rowDate2 = row['_date']||row['date']||'';
-                                var rowCat2  = row['_cat'] ||row['cat'] ||'';
-                                var rowSite2 = row['_warehouse']||row['warehouse']||'';
-                                var link2 = typeof zbGetTableLink === 'function' ? zbGetTableLink(rowDate2, rowCat2, rowSite2) : null;
-                                if (link2 && val && val !== '—') {
-                                    const icon2 = document.createElement('span');
-                                    icon2.title = '复制质检码并跳转原始表格';
-                                    icon2.style.cssText = 'display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;border-radius:4px;background:#eff6ff;border:1px solid #bfdbfe;color:#2563eb;cursor:pointer;margin-left:5px;opacity:0;transition:opacity .15s;vertical-align:middle;';
-                                    icon2.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
-                                    icon2.onclick = function(e) {
-                                        e.stopPropagation();
-                                        try { navigator.clipboard.writeText(val); } catch(err) {}
-                                        icon2.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="#059669" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>';
-                                        icon2.style.background = '#f0fdf4';
-                                        icon2.style.borderColor = '#bbf7d0';
-                                        showToast('✅ 已复制质检码 ' + val + '，正在跳转原始表格');
-                                        setTimeout(function(){ window.open(link2, '_blank'); }, 300);
-                                        setTimeout(function(){
-                                            icon2.innerHTML = '<svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>';
-                                            icon2.style.background = '#eff6ff';
-                                            icon2.style.borderColor = '#bfdbfe';
-                                        }, 2500);
-                                    };
-                                    tr.addEventListener('mouseenter', function(){ icon2.style.opacity='1'; });
-                                    tr.addEventListener('mouseleave', function(){ icon2.style.opacity='0'; });
-                                    td.appendChild(icon2);
-                                    zbInjectCamIcon(td, row, icon2);
-                                } else {
-                                    zbInjectCamIcon(td, row, null);
+                                // K: 去掉跳转图标，改为双击复制质检码
+                                if (val && val !== '—') {
+                                    td.title = '双击复制质检码';
+                                    td.style.cursor = 'copy';
+                                    td.ondblclick = (function(v){ return function(e){ e.stopPropagation(); try{ navigator.clipboard.writeText(v); }catch(err){} showToast('✅ 已复制质检码 ' + v); }; })(val);
                                 }
+                                zbInjectCamIcon(td, row, null);
                             } else if (key === '_note') {
                                 // 备注列：显示内容+编辑图标（仅管理员）
                                 td.style.cssText += 'min-width:240px;max-width:480px;';
                                 var rawRow = row._rawRow || row;
                                 zbRenderNoteCell(td, rawRow);
+                            } else if (key === 'person' && !row._isSectionHeader && typeof zbCanEditRow === 'function' && zbCanEditRow(row)) {
+                                // 原操作人列：权限通过则启用单元格编辑（复用 dtEdits 通道）
+                                var editKey = (row.code||'') + '|person';
+                                var displayVal = (dtEdits[editKey] !== undefined) ? dtEdits[editKey] : (row.person || '');
+                                var isModified = dtEdits[editKey] !== undefined;
+                                var span = document.createElement('span');
+                                span.className = 'dt-cell-editable' + (isModified ? ' dt-cell-modified' : '');
+                                span.setAttribute('data-code', row.code||'');
+                                span.setAttribute('data-col', 'person');
+                                span.setAttribute('data-orig', row.person||'-');
+                                span.textContent = displayVal || '-';
+                                td.appendChild(span);
                             } else {
                                 td.textContent = val;
                             }
@@ -2582,14 +2951,18 @@
                         if (!subjMatch || !issueMatch) return false;
                     }
                     // 列筛选
-                    if (Object.keys(dtColFilters).length) {
-                        var pass = Object.keys(dtColFilters).every(function(col) {
-                            var f = dtColFilters[col];
+                    if (Object.keys(window._dtState.colFilters).length) {
+                        var pass = Object.keys(window._dtState.colFilters).every(function(col) {
+                            var f = window._dtState.colFilters[col];
                             if (!f || f.size === 0) return true;
-                            var val = (d[col] || '—');
+                            var val = typeof dtGetVal === 'function' ? dtGetVal(d, col) : (d[col] || '-');
                             return f.has(val);
                         });
                         if (!pass) return false;
+                    }
+                    // 透视图点击过滤
+                    if (_dtPivotFilter && _dtPivotDim) {
+                        if ((d[_dtPivotDim]||'未知') !== _dtPivotFilter) return false;
                     }
                     return true;
                 });
@@ -2610,10 +2983,27 @@
                         unitChip.style.display = 'none';
                     }
                 }
-                if (filteredChip) {
-                    if (filtered.length < currentModalRecords.length) {
-                        filteredChip.style.display=''; filteredChip.textContent='已筛选 '+filtered.length+' 条';
-                    } else filteredChip.style.display='none';
+                // 平铺筛选标签
+                var tagsWrap = document.getElementById('dtFilterTagsWrap');
+                if (tagsWrap) {
+                    var COL_LABELS2 = {date:'日期',warehouse:'站点',code:'质检码',brand:'品牌',model:'型号',level1:'一级项',level2:'二级项',level3_orig:'原三级项',level3:'新三级项',person:'操作人',category:'主客观',issueType:'问题类型',judgedIssueType:'责任类型'};
+                    var activeKeys = Object.keys(window._dtState.colFilters).filter(function(k){ return window._dtState.colFilters[k] && window._dtState.colFilters[k].size > 0; });
+                    var html = '';
+                    activeKeys.forEach(function(k) {
+                        var vals = Array.from(window._dtState.colFilters[k]).join('、');
+                        if (vals.length > 14) vals = vals.slice(0,14)+'…';
+                        html += '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 6px 2px 8px;border-radius:20px;background:#2563eb;color:#fff;">'
+                            + (COL_LABELS2[k]||k)+': '+vals
+                            + '<span onclick="dtRemoveColFilter(&quot;'+k+'&quot;)" style="cursor:pointer;font-size:12px;line-height:1;opacity:0.8;">×</span></span>';
+                    });
+                    if (activeKeys.length > 0) {
+                        html += '<span style="font-size:10px;color:#64748b;">共'+filtered.length+'条</span>';
+                        html += '<span onclick="dtClearAllFilters()" style="font-size:10px;color:#94a3b8;cursor:pointer;text-decoration:underline;">清除全部</span>';
+                        tagsWrap.style.display='flex';
+                    } else {
+                        tagsWrap.style.display='none';
+                    }
+                    tagsWrap.innerHTML = html;
                 }
 
                 // 同质检码多行相邻：先按质检码稳定排序，再按原始顺序排同码内部
@@ -2731,6 +3121,14 @@
 
             window.openDetailWithData = function openDetailWithData(records, title, showCat) {
                 if (!records.length) { showToast('无明细数据'); return; }
+                // 每次打开新弹窗清空列筛选和透视过滤状态
+                if (window._dtState) { window._dtState.colFilters = {}; window._dtState.popupCol = null; }
+                _dtPivotFilter = null;
+                _dtPivotDim = 'level1';
+                document.querySelectorAll('.dt-dim-btn').forEach(function(b,i){
+                    if(i===0){b.style.background='#2563eb';b.style.color='#fff';b.style.borderColor='#bfdbfe';}
+                    else{b.style.background='#fff';b.style.color='#475569';b.style.borderColor='#e0e8f5';}
+                });
 
                 // 口径联动：读当前激活的口径按钮
                 var kouJing = 'ALL';
@@ -2770,6 +3168,7 @@
                 });
 
                 currentModalRecords = filteredByKJ.length ? filteredByKJ : records;
+                window._dtCurrentPivotRecords = currentModalRecords;
                 window._modalShowCat = (showCat !== false);
 
                 var modalTitleEl = document.getElementById('modalTitle');
@@ -2807,6 +3206,19 @@
                 }
                 modal.classList.add('visible');
                 requestAnimationFrame(function(){ renderModalTableVirtual(); });
+
+                // K: 推断跳转链接
+                var jumpBtn = document.getElementById('modalJumpBtn');
+                if (jumpBtn) {
+                    var sampleRec = currentModalRecords[0] || {};
+                    var jDate = sampleRec.date || '';
+                    var jCat  = sampleRec.cat  || sampleRec._cat  || '';
+                    var jSite = sampleRec.warehouse || sampleRec.site || sampleRec._warehouse || '';
+                    var jUrl  = (typeof zbGetTableLink === 'function' && jDate && jCat && jSite)
+                        ? zbGetTableLink(jDate, jCat, jSite) : null;
+                    window._zbModalJumpUrl = jUrl || null;
+                    jumpBtn.style.display = jUrl ? 'inline-flex' : 'none';
+                }
             };
 
             // 生成周报句子
@@ -2850,6 +3262,12 @@
                 var txt = window._zbWeeklyText||'';
                 if (!txt) return;
                 navigator.clipboard.writeText(txt).then(function(){ showToast('✅ 已复制到剪贴板'); }).catch(function(){ showToast('复制失败，请手动复制'); });
+            };
+
+            window.zbJumpTableLink = function() {
+                var url = window._zbModalJumpUrl;
+                if (!url) { showToast('⚠️ 未配置该品类/月份的表格链接'); return; }
+                window.open(url, '_blank');
             };
 
             function exportToExcel(opts) {
@@ -2941,9 +3359,11 @@
                     const diffRows = DATA.diff5.filter(r => r.site === site && r.cat === cat && r.strategy === '大盘评估/站点' && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true));
                     execDiff = new Set(diffRows.map(r => r.code).filter(Boolean)).size;
                 } else {
-                    const smRows = DATA.sum.filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true));
+                    const smRows = [...DATA.sum.filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true)),
+                                    ...(DATA.dw4sum||[]).filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true))];
                     checks = smRows.reduce((s,r) => s + (r.checks||0), 0);
-                    const diffRows = DATA.diff4.filter(r => r.site === site && r.cat === cat && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true));
+                    const diffRows = [...DATA.diff4.filter(r => r.site === site && r.cat === cat && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true)),
+                                      ...(DATA.dw4cat||[]).filter(r => r.site === site && r.cat === cat && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true))];
                     execDiff = new Set(diffRows.map(r => r.code).filter(Boolean)).size;
                 }
                 return checks > 0 ? (execDiff / checks * 100) : null;
@@ -2979,9 +3399,11 @@
                         const diffRows = DATA.diff5.filter(r => r.site === site && r.cat === cat && r.strategy === '大盘评估/站点' && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true));
                         execDiff = new Set(diffRows.map(r => r.code).filter(Boolean)).size;
                     } else {
-                        const smRows = DATA.sum.filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true));
+                        const smRows = [...DATA.sum.filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true)),
+                                        ...(DATA.dw4sum||[]).filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true))];
                         checks = smRows.reduce((s,r) => s + (r.checks||0), 0);
-                        const diffRows = DATA.diff4.filter(r => r.site === site && r.cat === cat && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true));
+                        const diffRows = [...DATA.diff4.filter(r => r.site === site && r.cat === cat && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true)),
+                                          ...(DATA.dw4cat||[]).filter(r => r.site === site && r.cat === cat && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true))];
                         execDiff = new Set(diffRows.map(r => r.code).filter(Boolean)).size;
                     }
                     return { checks, execDiff };
@@ -3113,7 +3535,7 @@
                 if (document.getElementById('objRankBody')) document.getElementById('objRankBody').innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-secondary);">暂无数据</td></tr>';
                 if (document.getElementById('personTableBody')) document.getElementById('personTableBody').innerHTML = '';
                 if (document.getElementById('detailTableBody')) document.getElementById('detailTableBody').innerHTML = '';
-                dtColFilters = {};
+                window._dtState.colFilters = {};
                 if (document.getElementById('modelRankBody')) document.getElementById('modelRankBody').innerHTML = '';
                 if (document.getElementById('issueRankBody')) document.getElementById('issueRankBody').innerHTML = '';
                 if (trendChart) trendChart.clear();
@@ -3330,9 +3752,14 @@
                 if (!card || card.style.display === 'none') return;
 
                 // 1. 获取当前已过滤的客观执行差异数据（品类+站点+日期已经联动）
+                var _hstFilter = window._hotspotSiteTypeFilter || 'ALL';
                 var base = currentFilteredDiff.filter(function(d){
-                    return d.category && d.category.includes('客观')
-                        && d.judgedIssueType === '执行问题';
+                    if (!(d.category && d.category.includes('客观') && d.judgedIssueType === '执行问题')) return false;
+                    if (_hstFilter !== 'ALL') {
+                        var st = typeof getSiteType === 'function' ? getSiteType(d.warehouse||'') : 'ZX';
+                        if (st !== _hstFilter) return false;
+                    }
+                    return true;
                 });
 
                 // 2. 计算本期 / 上期的日期边界
@@ -3655,7 +4082,7 @@
             const DATA = window._DATA = { qa:[], diff5:[], sum:[], diff4:[], dw4cat:[], dw4sum:[] };
             const CAT_MAP = {'平板电脑':'平板','智能手表':'手表','耳机/耳麦':'耳机','手机':'手机','笔记本':'笔记本','相机':'相机'};
 
-            function nd(v){ if(!v)return ''; const s=String(v).trim(); if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10); const n=parseFloat(s); if(!isNaN(n)&&n>40000){const d=new Date((n-25569)*86400*1000);return d.toISOString().slice(0,10);} return s.slice(0,10); }
+            function nd(v){ if(!v)return ''; const s=String(v).trim(); if(/^\d{4}-\d{2}-\d{2}/.test(s))return s.slice(0,10); const n=parseFloat(s); if(!isNaN(n)&&n>40000){const d=new Date((n-25569)*86400*1000);return d.toISOString().slice(0,10);} const slash=/^(\d{4})\/(\d{1,2})\/(\d{1,2})/.exec(s); if(slash)return slash[1]+'-'+slash[2].padStart(2,'0')+'-'+slash[3].padStart(2,'0'); return s.slice(0,10); }
             function extractCN(str){ if(!str)return ''; const m=str.match(/[\u4e00-\u9fa5]+/g); if(m)return m.join(''); const m2=str.match(/[（(]([^）)]+)[）)]/); if(m2)return m2[1]; return str.trim(); }
             function setChipLoaded(id, ok) {
                 const el = document.getElementById(id);
@@ -3677,12 +4104,11 @@
             window._activeCat = currentCat; // 初始化同步，防止首次加载时_activeCat为undefined
 
             window.bridgeData = function bridgeData() {
-                const DW_INSPECTOR_SITES = ['转转-青岛智能验机中心','转转-成都智能验机中心','转转-深圳智能验机中心'];
                 function mapDiff5(r) {
                     return {
                         warehouse:       r.site,
                         cat:             r.cat,
-                        person:          DW_INSPECTOR_SITES.includes(r.site) ? '/' : r.inspector,
+                        person:          r.inspector,
                         qaInspector:     r.qaInspector,
                         category:        r.subjobj,
                         date:            r.date,
@@ -3692,8 +4118,10 @@
                         level3:          r.level3_new || r.level3_orig,
                         issueType:       r.issueType,
                         judgedIssueType: r.judgedType,
-                        model:           r.cat,
-                        code:            r.code
+                        brand:           r.brand||'',
+                        model:           r.model||'',
+                        code:            r.code,
+                        _origRef:        r
                     };
                 }
                 function mapDiff4(r) {
@@ -3710,8 +4138,10 @@
                         level3:          r.level3_new || r.level3_orig,
                         issueType:       r.issueType,
                         judgedIssueType: r.judgedType,
-                        model:           r.cat,
-                        code:            r.code
+                        brand:           r.brand||'',
+                        model:           r.model||'',
+                        code:            r.code,
+                        _origRef:        r
                     };
                 }
                 if (currentCat === '手机') {
@@ -3742,6 +4172,7 @@
                 if (!files.length) return;
                 showLoading();
                 showToast('正在解析…');
+                var _thisUploadKeys = new Set(); // 记录本次实际上传了哪些表
                 for (const file of files) {
                     try {
                         const buf = await file.arrayBuffer();
@@ -3764,6 +4195,7 @@
                             DATA.qa = smartMerge(DATA.qa, parsed, r => r.date+'|'+r.site+'|'+r.cat);
                         } else if ('主客观问题分类' in fr && '策略类别' in fr) {
                             tableType = 'diff5'; tableName = '手机差异明细';
+                            const DW_SITES_PARSE = new Set(['转转-深圳智能验机中心','转转-青岛智能验机中心','转转-成都智能验机中心','深圳后验中心仓','青岛后验中心仓','成都后验中心仓']);
                             parsed = rows.map(r => ({
                                 date: nd(r['日期']),
                                 code: String(r['质检码']||'').trim(),
@@ -3777,20 +4209,63 @@
                                 subjobj: String(r['主客观问题分类']||'').trim(),
                                 issueType: String(r['问题类型']||'').trim(),
                                 judgedType: String(r['抽检判定的问题类型']||'').trim(),
-                                inspector: extractCN(String(r['原操作人名称']||'')),
-                                qaInspector: extractCN(String(r['新操作人名称']||''))
+                                inspector: DW_SITES_PARSE.has(String(r['站点名称']||'').trim()) ? '/' : extractCN(String(r['原操作人名称']||'')),
+                                qaInspector: extractCN(String(r['新操作人名称']||'')),
+                                brand: String(r['品牌名称']||'').trim(),
+                                model: String(r['型号名称']||'').trim()
                             }));
-                            DATA.diff5 = smartMerge(DATA.diff5, parsed, r => r.date+'|'+r.code+'|'+r.site);
+                            // diff5合并：同key多条时优先保留judgedType=执行问题的那条
+                            (function(){
+                                var map = new Map();
+                                var all = DATA.diff5.concat(parsed);
+                                all.forEach(function(r) {
+                                    var k = r.date+'|'+r.code+'|'+r.site;
+                                    if (!map.has(k)) { map.set(k, r); return; }
+                                    var cur = map.get(k);
+                                    if (r.judgedType === '执行问题' && cur.judgedType !== '执行问题') map.set(k, r);
+                                });
+                                DATA.diff5 = Array.from(map.values());
+                            })();
                         } else if ('抽检总量' in fr && '品类' in fr && !('质检码' in fr)) {
                             tableType = 'sum'; tableName = '日汇总';
                             parsed = rows.map(r => ({ date:nd(r['日期']), site:(r['站点']||'').trim(), cat:CAT_MAP[r['品类']]||r['品类']||'', checks:parseFloat(r['抽检总量'])||0 }));
                             DATA.sum = smartMerge(DATA.sum, parsed);
                         } else if ('主客观分类' in fr && '问题分类' in fr) {
                             tableType = 'diff4'; tableName = '五品类差异明细';
-                            parsed = rows.map(r => ({ date:nd(r['抽检时间']), code:(r['质检码']||'').trim(), site:(r['站点']||'').trim(), cat:CAT_MAP[r['品类']]||r['品类']||'', level1:r['一级项']||'', level2:r['二级项']||'', level3_orig:r['原三级项']||'', level3_new:r['新三级项']||'', subjobj:(r['主客观分类']||'').trim(), issueType:(r['质检项类型']||'').trim(), judgedType:(r['问题分类']||'').trim(), inspector:extractCN(r['质检师']||''), qaInspector:extractCN(r['QA']||'') }));
+                            parsed = rows.map(r => ({ date:nd(r['抽检时间']), code:(r['质检码']||'').trim(), site:(r['站点']||'').trim(), cat:CAT_MAP[r['品类']]||r['品类']||'', level1:r['一级项']||'', level2:r['二级项']||'', level3_orig:r['原三级项']||'', level3_new:r['新三级项']||'', subjobj:(r['主客观分类']||'').trim(), issueType:(r['质检项类型']||'').trim(), judgedType:(r['问题分类']||'').trim(), inspector:extractCN(r['质检师']||''), qaInspector:extractCN(r['QA']||''), brand:String(r['品牌名称']||'').trim(), model:String(r['型号名称']||'').trim() }));
                             DATA.diff4 = smartMerge(DATA.diff4, parsed);
+                        } else if ('抽检设备数量' in fr && '站点名称' in fr && '品类名称' in fr && !('质检码' in fr) && !('主客观问题分类' in fr)) {
+                            // 四品类汇总表（中心仓+大仓混合），按站点分流
+                            var DW4_SITES_SUM = new Set(['转转-深圳智能验机中心','转转-青岛智能验机中心','转转-成都智能验机中心','深圳后验中心仓','青岛后验中心仓','成都后验中心仓']);
+                            var DW4_CAT_MAP_SUM = {'平板电脑':'平板','智能手表':'手表','耳机/耳麦':'耳机','笔记本':'笔记本'};
+                            var sumRows = [], dw4sumRows = [];
+                            rows.forEach(function(r) {
+                                var site = (r['站点名称']||'').trim();
+                                var cat  = DW4_CAT_MAP_SUM[r['品类名称']] || r['品类名称'] || '';
+                                var date = nd(r['抽检日期']||r['日期']);
+                                var checks = parseFloat(r['抽检设备数量'])||0;
+                                var objDiff  = parseFloat(r['客观差异设备量'])||0;
+                                var subjDiff = parseFloat(r['主观差异设备量'])||0;
+                                if (DW4_SITES_SUM.has(site)) {
+                                    dw4sumRows.push({ date, site, cat, checks, objDiff, subjDiff });
+                                } else {
+                                    sumRows.push({ date, site, cat, checks });
+                                }
+                            });
+                            if (sumRows.length) {
+                                tableType = 'sum'; tableName = '四品类汇总（中心仓）';
+                                parsed = sumRows;
+                                DATA.sum = smartMerge(DATA.sum, sumRows);
+                            }
+                            if (dw4sumRows.length) {
+                                tableType = tableType || 'dw4sum'; tableName = tableName ? tableName + '+大仓' : '四品类汇总（大仓）';
+                                if (!DATA.dw4sum) DATA.dw4sum = [];
+                                DATA.dw4sum = smartMerge(DATA.dw4sum, dw4sumRows, r => r.date+'|'+r.site+'|'+r.cat);
+                            }
+                            // parsed 取合并，用于日志记录
+                            parsed = sumRows.concat(dw4sumRows);
                         } else if (('抽检设备数量' in fr || '大盘抽检设备数量' in fr) && ('站点名称' in fr || ('品类名称' in fr && '抽检日期' in fr)) && !('质检码' in fr) && !('主客观问题分类' in fr)) {
-                            // 大仓四品类汇总表（兼容新旧两种字段名）
+                            // 大仓四品类汇总表（兼容旧字段名）
                             var DW4_SITES = new Set(['转转-深圳智能验机中心','转转-青岛智能验机中心','转转-成都智能验机中心','深圳后验中心仓','青岛后验中心仓','成都后验中心仓']);
                             var DW4_CAT_MAP = {'平板电脑':'平板','智能手表':'手表','耳机/耳麦':'耳机','笔记本':'笔记本'};
                             tableType = 'dw4sum'; tableName = '大仓四品类汇总';
@@ -3799,33 +4274,49 @@
                                 site:  (r['站点名称']||'').trim(),
                                 cat:   DW4_CAT_MAP[r['品类名称']] || r['品类名称'] || '',
                                 checks: parseFloat(r['抽检设备数量']||r['大盘抽检设备数量'])||0,
-                                objDiff: parseFloat(r['客观差异设备量']||r['客观差异设备量'])||0,
-                                subjDiff: parseFloat(r['主观差异设备量']||r['主观差异设备量'])||0
+                                objDiff: parseFloat(r['客观差异设备量'])||0,
+                                subjDiff: parseFloat(r['主观差异设备量'])||0
                             }));
                             if (!DATA.dw4sum) DATA.dw4sum = [];
                             DATA.dw4sum = smartMerge(DATA.dw4sum, parsed, r => r.date+'|'+r.site+'|'+r.cat);
                         } else if ('主客观问题分类' in fr && '抽检判定的问题类型' in fr && '站点名称' in fr && !('策略类别' in fr)) {
-                            // 大仓四品类差异明细表
+                            // 四品类差异明细表（中心仓+大仓混合），按站点分流
                             var DW4_SITES2 = new Set(['转转-深圳智能验机中心','转转-青岛智能验机中心','转转-成都智能验机中心','深圳后验中心仓','青岛后验中心仓','成都后验中心仓']);
                             var DW4_CAT_MAP2 = {'平板电脑':'平板','智能手表':'手表','耳机/耳麦':'耳机','笔记本':'笔记本'};
-                            tableType = 'dw4cat'; tableName = '大仓四品类差异明细';
-                            parsed = rows.filter(r => DW4_SITES2.has((r['站点名称']||'').trim())).map(r => ({
-                                date:     nd(r['日期']),
-                                code:     (r['质检码']||'').trim(),
-                                site:     (r['站点名称']||'').trim(),
-                                cat:      DW4_CAT_MAP2[r['品类名称']] || r['品类名称'] || '',
-                                level1:   r['一级项名称']||'',
-                                level2:   r['二级项名称']||'',
-                                level3_orig: r['原三级项名称']||'',
-                                level3_new:  r['新三级项名称']||'',
-                                subjobj:  (r['主客观问题分类']||'').trim(),
-                                issueType: (r['问题类型']||'').trim(),
-                                judgedType: (r['抽检判定的问题类型']||'').trim(),
-                                inspector:  extractCN(r['原操作人名称']||''),
-                                qaInspector: extractCN(r['新操作人名称']||'')
-                            }));
-                            if (!DATA.dw4cat) DATA.dw4cat = [];
-                            DATA.dw4cat = smartMerge(DATA.dw4cat, parsed, r => r.date+'|'+r.code+'|'+r.site);
+                            var diff4Rows = [], dw4catRows = [];
+                            rows.forEach(function(r) {
+                                var site = (r['站点名称']||'').trim();
+                                var rec = {
+                                    date:     nd(r['日期']),
+                                    code:     (r['质检码']||'').trim(),
+                                    site:     site,
+                                    cat:      DW4_CAT_MAP2[r['品类名称']] || r['品类名称'] || '',
+                                    level1:   r['一级项名称']||'',
+                                    level2:   r['二级项名称']||'',
+                                    level3_orig: r['原三级项名称']||'',
+                                    level3_new:  r['新三级项名称']||'',
+                                    subjobj:  (r['主客观问题分类']||'').trim(),
+                                    issueType: (r['问题类型']||'').trim(),
+                                    judgedType: (r['抽检判定的问题类型']||'').trim(),
+                                    inspector:  extractCN(r['原操作人名称']||''),
+                                    qaInspector: extractCN(r['新操作人名称']||'')
+                                };
+                                if (DW4_SITES2.has(site)) {
+                                    dw4catRows.push(rec);
+                                } else {
+                                    diff4Rows.push(rec);
+                                }
+                            });
+                            if (diff4Rows.length) {
+                                tableType = 'diff4'; tableName = '四品类差异明细（中心仓）';
+                                DATA.diff4 = smartMerge(DATA.diff4, diff4Rows);
+                            }
+                            if (dw4catRows.length) {
+                                tableType = tableType || 'dw4cat'; tableName = tableName ? tableName + '+大仓' : '四品类差异明细（大仓）';
+                                if (!DATA.dw4cat) DATA.dw4cat = [];
+                                DATA.dw4cat = smartMerge(DATA.dw4cat, dw4catRows, r => r.date+'|'+r.code+'|'+r.site);
+                            }
+                            parsed = diff4Rows.concat(dw4catRows);
                         } else {
                             const colNames = Object.keys(fr).slice(0,5).join('、');
                             showToast('⚠️ 无法识别表格格式: ' + file.name + '（前几列: ' + colNames + '）');
@@ -3838,6 +4329,7 @@
                         const _dMin = _parsedDates.length ? _parsedDates.reduce((a,b)=>a<b?a:b) : '—';
                         const _dMax = _parsedDates.length ? _parsedDates.reduce((a,b)=>a>b?a:b) : '—';
                         var _logRecord = zbAddLog({ type: tableType, tableName: tableName, rows: parsed.length, dateMin: _dMin, dateMax: _dMax, dates: [...new Set(_parsedDates)] });
+                        _thisUploadKeys.add(tableType);
                     } catch(e) {
                         console.error('解析失败:', file.name, e);
                         showToast('✗ 解析失败: ' + file.name + '（' + (e.message||'格式错误') + '）');
@@ -3858,7 +4350,7 @@
 
                 // 管理员及以上：带进度条推送到云端
                 if (typeof zbPushToGitHub === 'function' && (zbRole === 'admin' || zbRole === 'super')) {
-                    await zbPushAllWithProgress();
+                    await zbPushAllWithProgress(_thisUploadKeys);
                     setTimeout(() => { if (typeof zbPushLog === 'function') zbPushLog(); }, 800);
                     _zbHealthDismissed = false;
                     zbCheckDataHealth();
@@ -4172,6 +4664,83 @@
                 zbPersonRankRender();
             }
 
+            // ── 站点类型胶囊下拉 ──
+            window._zbSiteTypeFilter = 'ALL';
+
+            window.zbSiteTypeDropToggle = function() {
+                var btn = document.getElementById('zbSiteTypeBtn');
+                var arrow = document.getElementById('zbSiteTypeArrow');
+                if (!btn) return;
+                // 面板挂在body下，避免父容器overflow/transform影响fixed定位
+                var panel = document.getElementById('zbSiteTypeDropPanel');
+                if (!panel) {
+                    panel = document.createElement('div');
+                    panel.id = 'zbSiteTypeDropPanel';
+                    panel.style.cssText = 'display:none;position:fixed;z-index:99999;background:var(--bg-card,#fff);border:0.5px solid var(--border-color,#e2e8f0);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.12);min-width:120px;padding:5px;';
+                    var items = [
+                        {val:'ALL', label:'全部站点', extra:'background:#eff6ff;font-weight:500;'},
+                        {val:'DW', label:'验机中心', extra:''},
+                        {val:'ZX', label:'中心仓', extra:''}
+                    ];
+                    panel.innerHTML = items.map(function(it){
+                        return '<div class="zb-st-item" data-val="'+it.val+'" onclick="zbSiteTypeSelect(\'' + it.val + '\')" style="padding:7px 12px;border-radius:7px;font-size:12px;cursor:pointer;color:var(--text-primary);'+it.extra+'">'+it.label+'</div>';
+                    }).join('');
+                    document.body.appendChild(panel);
+                }
+                var open = panel.style.display !== 'none';
+                if (open) {
+                    panel.style.display = 'none';
+                    if (arrow) arrow.style.transform = 'translateY(-50%)';
+                } else {
+                    var rect = btn.getBoundingClientRect();
+                    panel.style.top = (rect.bottom + 4) + 'px';
+                    panel.style.left = rect.left + 'px';
+                    panel.style.display = 'block';
+                    if (arrow) arrow.style.transform = 'translateY(-50%) rotate(180deg)';
+                    setTimeout(function(){
+                        document.addEventListener('click', function _close(e){
+                            var wrap = document.getElementById('zbSiteTypeDropWrap');
+                            if (wrap && !wrap.contains(e.target) && !panel.contains(e.target)) {
+                                panel.style.display = 'none';
+                                if (arrow) arrow.style.transform = 'translateY(-50%)';
+                                document.removeEventListener('click', _close);
+                            }
+                        });
+                    }, 50);
+                }
+            };
+
+            window.zbSiteTypeSelect = function(val) {
+                window._zbSiteTypeFilter = val;
+                // 更新按钮文字和样式
+                var labelMap = { ALL: '站点类型', DW: '验机中心', ZX: '中心仓' };
+                var btn = document.getElementById('zbSiteTypeBtn');
+                var lbl = document.getElementById('zbSiteTypeBtnLabel');
+                var panel = document.getElementById('zbSiteTypeDropPanel');
+                var arrow = document.getElementById('zbSiteTypeArrow');
+                if (lbl) lbl.textContent = labelMap[val] || '全部站点';
+                if (btn) {
+                    btn.style.background = val !== 'ALL' ? '#eff6ff' : 'var(--filter-input-bg)';
+                    btn.style.borderColor = val !== 'ALL' ? '#2563eb' : 'var(--border-color)';
+                    btn.style.color = val !== 'ALL' ? '#1d4ed8' : 'var(--text-primary)';
+                }
+                // 更新选项高亮
+                document.querySelectorAll('.zb-st-item').forEach(function(el){
+                    el.style.background = el.dataset.val === val ? '#eff6ff' : 'transparent';
+                    el.style.color = el.dataset.val === val ? '#1d4ed8' : 'var(--text-primary)';
+                    el.style.fontWeight = el.dataset.val === val ? '500' : '400';
+                });
+                // 关闭面板
+                if (panel) panel.style.display = 'none';
+                if (arrow) arrow.style.transform = 'translateY(-50%)';
+                // 联动质检排行榜和差异快报
+                window._personRankSiteTypeFilter = val;
+                window._hotspotSiteTypeFilter = val;
+                window._personRankPage = 1;
+                if (typeof zbPersonRankRender === 'function') zbPersonRankRender();
+                if (typeof renderHotspot === 'function') renderHotspot();
+            };
+
             window.zbPersonRankToggleSort = function() {
                 window._personRankAsc = !window._personRankAsc;
                 var indicator = document.getElementById('personRankSortIndicator');
@@ -4204,6 +4773,7 @@
                     whGroups[wh].sort(function(a,b){ return asc ? a.total-b.total : b.total-a.total; });
                     whGroups[wh].forEach(function(p, i){ whRankMap[p.name] = i + 1; });
                 });
+                var _prstFilter = window._personRankSiteTypeFilter || 'ALL';
                 var list = allData.filter(function(p){
                     if (filters.person && !filters.person.has(p.name)) return false;
                     if (filters.wh) {
@@ -4214,6 +4784,11 @@
                         var whArr2 = Array.from(p.whs||[]);
                         var types = whArr2.map(function(w){ return getSiteType && getSiteType(w) === 'DW' ? '大仓' : '中心仓'; });
                         if (!types.some(function(t){ return filters.type.has(t); })) return false;
+                    }
+                    // 站点类型Tab过滤
+                    if (_prstFilter !== 'ALL') {
+                        var whArr3 = Array.from(p.whs||[]);
+                        if (!whArr3.some(function(w){ return typeof getSiteType === 'function' && getSiteType(w) === _prstFilter; })) return false;
                     }
                     return true;
                 });
@@ -5265,7 +5840,7 @@ function zbCompressImage(file, maxKB) {
 // 上传单个文件到COS，返回公开URL
 async function zbUploadToCos(file, imgKey) {
     var sts = await zbGetSts();
-    var blob = await zbCompressImage(file, 400);
+    var blob = await zbCompressImage(file, 1024);
     var ext  = (file.name.match(/\.[^.]+$/) || ['.jpg'])[0].toLowerCase();
     var fileName = imgKey.replace(/[|\/\\:*?"<>]/g, '_') + '_' + Date.now() + ext;
     var cosKey = 'qc-images/' + fileName;
@@ -5631,7 +6206,7 @@ async function zbDoUploadFiles(files, cam, row, panel) {
     try {
         var totalSizeKB = 0;
         for (var i = 0; i < files.length; i++) {
-            var blob = await zbCompressImage(files[i], 400);
+            var blob = await zbCompressImage(files[i], 1024);
             totalSizeKB += blob.size / 1024;
             var url = await zbUploadToCos(files[i], key);
             await zbAddRowImage(row, url);
@@ -5650,7 +6225,7 @@ async function zbDoUploadFiles(files, cam, row, panel) {
 function zbMakeDropZone(cam, row, panel) {
     var zone = document.createElement('div');
     zone.style.cssText = 'border:1.5px dashed #bfdbfe;border-radius:8px;padding:14px 10px;text-align:center;background:#f8faff;cursor:pointer;transition:background .15s;margin-bottom:8px;';
-    zone.innerHTML = '<div style="font-size:10px;color:#64748b;line-height:1.6">拖拽图片到此处<br><span style="color:#94a3b8;font-size:9px">支持 JPG、PNG，自动压缩至 400KB</span></div>';
+    zone.innerHTML = '<div style="font-size:10px;color:#64748b;line-height:1.6">拖拽图片到此处<br><span style="color:#94a3b8;font-size:9px">支持 JPG、PNG，自动压缩至 1MB</span></div>';
     zone.ondragover = function(e){ e.preventDefault(); zone.style.background='#eff6ff'; };
     zone.ondragleave = function(){ zone.style.background='#f8faff'; };
     zone.ondrop = function(e){
@@ -5756,9 +6331,42 @@ function zbShowImgPanel(cam, row, urls, readOnly) {
             input.click();
         };
         panel.appendChild(selBtn);
+
+        // 粘贴上传提示
+        var pasteHint = document.createElement('div');
+        pasteHint.style.cssText = 'text-align:center;margin-top:6px;font-size:9px;color:#94a3b8;';
+        pasteHint.textContent = '或 Ctrl/Cmd+V 粘贴图片';
+        panel.appendChild(pasteHint);
     }
 
     document.body.appendChild(panel);
+
+    // 粘贴上传监听（面板打开期间有效）
+    if (!readOnly) {
+        function zbPasteHandler(e) {
+            var items = e.clipboardData && e.clipboardData.items;
+            if (!items) return;
+            var files = [];
+            for (var i = 0; i < items.length; i++) {
+                if (items[i].type.startsWith('image/')) {
+                    var file = items[i].getAsFile();
+                    if (file) files.push(file);
+                }
+            }
+            if (files.length) {
+                e.preventDefault();
+                zbDoUploadFiles(files, cam, row, panel);
+            }
+        }
+        document.addEventListener('paste', zbPasteHandler);
+        // 面板关闭时移除监听
+        var origRemove = panel.remove.bind(panel);
+        panel.remove = function() {
+            document.removeEventListener('paste', zbPasteHandler);
+            origRemove();
+        };
+    }
+
     setTimeout(function(){
         document.addEventListener('click', function handler(e){
             if (!panel.contains(e.target) && e.target !== cam) { panel.remove(); document.removeEventListener('click', handler); }
@@ -6150,7 +6758,20 @@ async function zbLoadCloudData(useApi) {
 
     // 加载 diff5 / diff4（按月分片）
     const diff5 = await loadSharded('phone_diff_');
-    if (diff5.length > 0) { window._DATA.diff5 = diff5; loaded++; }
+    if (diff5.length > 0) {
+        // 云端数据去重：同key多条时优先保留执行问题
+        (function(){
+            var map = new Map();
+            diff5.forEach(function(r) {
+                var k = r.date+'|'+r.code+'|'+r.site;
+                if (!map.has(k)) { map.set(k, r); return; }
+                var cur = map.get(k);
+                if (r.judgedType === '执行问题' && cur.judgedType !== '执行问题') map.set(k, r);
+            });
+            window._DATA.diff5 = Array.from(map.values());
+        })();
+        loaded++;
+    }
     const diff4 = await loadSharded('five_cat_');
     if (diff4.length > 0) { window._DATA.diff4 = diff4; loaded++; }
 
@@ -6176,10 +6797,55 @@ async function zbLoadCloudData(useApi) {
         if (json && json.logs) { _zbLog = json.logs; localStorage.setItem('zb_upload_log', JSON.stringify(_zbLog)); }
     } catch(e) {}
 
+    // H: 格式清洗——把 qa/sum 里历史遗留斜杠日期统一转成横线格式
+    function fixSlashDate(s) {
+        if (!s) return s;
+        var slash = /^(\d{4})\/(\d{1,2})\/(\d{1,2})$/.exec(String(s).trim());
+        return slash ? slash[1]+'-'+slash[2].padStart(2,'0')+'-'+slash[3].padStart(2,'0') : s;
+    }
+    ['qa','sum'].forEach(function(key) {
+        if (window._DATA[key]) {
+            window._DATA[key].forEach(function(r){ if(r.date) r.date = fixSlashDate(r.date); });
+        }
+    });
+
+    // 去重清洗：qa 按 date|site|cat 去重，保留最后一条（最新上传的）
+    if (window._DATA.qa && window._DATA.qa.length) {
+        var qaMap = new Map();
+        window._DATA.qa.forEach(function(r) {
+            qaMap.set(r.date+'|'+r.site+'|'+r.cat, r);
+        });
+        var before = window._DATA.qa.length;
+        window._DATA.qa = Array.from(qaMap.values());
+        var removed = before - window._DATA.qa.length;
+        if (removed > 0) console.log('[看板] qa去重清洗：移除重复行', removed, '条');
+    }
+
     if (loaded > 0) {
         const src = viaApi ? '（API直连）' : '';
         showToast('✅ 云端数据已加载（' + loaded + '/4）' + src);
         if (typeof zbSetCloudStatus === 'function') zbSetCloudStatus('ok');
+        // 数据源T-1：取数据源最新日期的前一天作为默认日期范围
+        (function() {
+            var allDates = [];
+            if (window._DATA.qa && window._DATA.qa.length) {
+                window._DATA.qa.forEach(function(r){ if(r.date) allDates.push(r.date); });
+            }
+            if (window._DATA.diff5 && window._DATA.diff5.length) {
+                window._DATA.diff5.forEach(function(r){ if(r.date) allDates.push(r.date); });
+            }
+            if (!allDates.length) return;
+            allDates.sort();
+            var latestDate = allDates[allDates.length - 1];
+            var d = new Date(latestDate);
+            d.setDate(d.getDate() - 1);
+            var pad = function(n){ return String(n).padStart(2,'0'); };
+            var t1 = d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate());
+            var sdf = document.getElementById('startDateFilter');
+            var edf = document.getElementById('endDateFilter');
+            if (sdf) sdf.value = t1;
+            if (edf) edf.value = t1;
+        })();
         if (typeof bridgeData === 'function') bridgeData();
         // 数据加载完立即应用操作人纠正（不等轮询，确保导出时person已是正确值）
         try {
@@ -6199,7 +6865,7 @@ async function zbLoadCloudData(useApi) {
 
 // ── 推送到GitHub ──
 // ── 带进度遮罩的批量云端推送 ──
-async function zbPushAllWithProgress() {
+async function zbPushAllWithProgress(uploadedKeys) {
     var tasks = [
         { key: 'qa',    label: 'QA差异率' },
         { key: 'diff5', label: '手机差异明细' },
@@ -6210,6 +6876,10 @@ async function zbPushAllWithProgress() {
     ];
     // 过滤掉无数据的任务
     tasks = tasks.filter(function(t) { return window._DATA && (window._DATA[t.key]||[]).length > 0; });
+    // 进度条只展示本次实际上传的项
+    if (uploadedKeys && uploadedKeys.size > 0) {
+        tasks = tasks.filter(function(t) { return uploadedKeys.has(t.key); });
+    }
     var total = tasks.length;
     if (!total) return;
 
@@ -6364,13 +7034,56 @@ async function _zbPushFile(fname, content, token) {
 async function zbPushEdits() {
     if (zbRole !== 'admin' && zbRole !== 'super') return;
     const token = zbGetToken();
-    const fname = GH_FILES.inspector;
-    const content = { edits: (typeof dtEdits !== 'undefined' ? dtEdits : {}), updated: new Date().toISOString() };
-    const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 0))));
-    let sha = '';
-    try { const r = await fetch(ghUrl(fname), { headers: { Authorization: 'token ' + token } }); if (r.ok) { const j = await r.json(); sha = j.sha||''; } } catch(e) {}
-    const body = { message: 'Update inspector_override.json', content: b64 }; if (sha) body.sha = sha;
-    try { await fetch(ghUrl(fname), { method: 'PUT', headers: { Authorization: 'token ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); } catch(e) {}
+    if (!token) return;
+
+    const edits = window._dtEdits || {};
+    if (!Object.keys(edits).length) return;
+
+    var diff5 = window._DATA && window._DATA.diff5;
+    if (!diff5) return;
+
+    var codeMap = {};
+    diff5.forEach(function(r) { if (r.code) codeMap[r.code] = r; });
+
+    var touchedMonths = new Set();
+    Object.keys(edits).forEach(function(editKey) {
+        var parts = editKey.split('|');
+        var code = parts[0], col = parts[1], val = edits[editKey];
+        var rec = codeMap[code];
+        if (!rec) return;
+        rec[col] = val;
+        var ym = (rec.date||'').slice(0,7);
+        if (ym && ym.length === 7) touchedMonths.add(ym);
+    });
+
+    if (!touchedMonths.size) return;
+
+    var monthMap = {};
+    diff5.forEach(function(r) {
+        var ym = (r.date||'').slice(0,7);
+        if (!ym || ym.length < 7) return;
+        if (!monthMap[ym]) monthMap[ym] = [];
+        monthMap[ym].push(r);
+    });
+
+    var allOk = true;
+    for (var ym of touchedMonths) {
+        if (!monthMap[ym]) continue;
+        var fname = 'phone_diff_' + ym + '.json';
+        var ok = await _zbPushFile(fname, { rows: monthMap[ym], updated: new Date().toISOString() }, token);
+        if (!ok) { allOk = false; console.error('编辑推送失败:', fname); }
+    }
+
+    if (allOk) {
+        var editsCopy = Object.assign({}, edits);
+        Object.keys(editsCopy).forEach(function(k) { delete window._dtEdits[k]; });
+        if (window._dtEdits) {
+            try { localStorage.setItem('zb_dt_edits', JSON.stringify(window._dtEdits)); } catch(e) {}
+        }
+        showToast('✅ 改动已永久写入云端');
+    } else {
+        showToast('⚠️ 部分改动推送失败，请重试');
+    }
 }
 
 // ── 推送日志 ──
@@ -6395,7 +7108,7 @@ if (!window._dashboardStarted) {
     // 初始化角色badge
     setTimeout(() => {
         zbUpdateRoleBadge();
-        zbLoadCloudData();
+        zbLoadCloudData(true);
         setTimeout(zbCheckDataHealth, 800);
     }, 300);
 }
@@ -6515,16 +7228,25 @@ function zbRenderSiteDetail(siteName) {
             // 读当前口径
             var kjScope = window._siteDataScope || 'exec';
 
-            // 总抽检量
+            // 总抽检量：与排行榜逻辑一致，手机走DATA.qa，其他品类走DATA.sum/DATA.dw4sum
             var siteChecks = 0;
-            var _sumData = window._getSummaryData ? window._getSummaryData() : [];
-            _sumData.forEach(function(s){
-                if (s.siteName !== siteName) return;
-                // 联动顶部日期：只统计日期范围内的抽检量
-                if (startD && s.date && s.date < startD) return;
-                if (endD   && s.date && s.date > endD)   return;
-                siteChecks += (s.totalChecks||0);
-            });
+            (function() {
+                if (!window._DATA) return;
+                var DATA = window._DATA;
+                var cat = activeCat || '手机';
+                var inRng = function(d){ if(!d)return false; if(startD&&d<startD)return false; if(endD&&d>endD)return false; return true; };
+                var isDW = (typeof zbGetSiteType==='function') ? zbGetSiteType(siteName)==='大仓' : false;
+                if (cat === '手机') {
+                    siteChecks = (DATA.qa||[]).filter(function(r){ return r.site===siteName && r.cat===cat && inRng(r.date); })
+                        .reduce(function(s,r){ return s+(r.checks||0); }, 0);
+                } else if (isDW) {
+                    siteChecks = (DATA.dw4sum||[]).filter(function(r){ return r.site===siteName && r.cat===cat && inRng(r.date); })
+                        .reduce(function(s,r){ return s+(r.checks||0); }, 0);
+                } else {
+                    siteChecks = (DATA.sum||[]).filter(function(r){ return r.site===siteName && r.cat===cat && inRng(r.date); })
+                        .reduce(function(s,r){ return s+(r.checks||0); }, 0);
+                }
+            })();
 
             // 按口径计算差异量
             var diffFilter;
@@ -6609,41 +7331,168 @@ function zbRenderSiteDetail(siteName) {
                 }).filter(function(r){ return r.rate !== null; })
                   .sort(function(a,b){ return a.rate - b.rate; });
 
-                var myIdx = ranked.findIndex(function(r){ return r.site === siteName; });
-                if (myIdx < 0) return;
-                var rank = myIdx + 1, total = ranked.length;
-                var myRate = ranked[myIdx].rate;
-                var prevRate = myIdx > 0 ? ranked[myIdx-1].rate : null;
-                var nextRate = myIdx < total-1 ? ranked[myIdx+1].rate : null;
-                var isFirst = rank === 1;
-                var barBg = '#f0f6ff';
-                var textColor = '#2563eb';
-                var borderColor = '#bfdbfe';
-                var gapText = isFirst && nextRate !== null
-                    ? '↓ 领先第2名 ' + Math.abs(nextRate - myRate).toFixed(2) + '%'
-                    : (!isFirst && prevRate !== null ? '↑ 距上一名差 ' + Math.abs(myRate - prevRate).toFixed(2) + '%' : '');
+                // ── 判断是否大仓配对，决定单行还是双行排名 ──
+                var _rankPairMap = [
+                    { line: '转转-深圳智能验机中心', post: '深圳后验中心仓' },
+                    { line: '转转-青岛智能验机中心', post: '青岛后验中心仓' },
+                    { line: '转转-成都智能验机中心', post: '成都后验中心仓' }
+                ];
+                var _rankPair = null;
+                _rankPairMap.forEach(function(p) {
+                    if (siteName === p.line || siteName === p.post) _rankPair = p;
+                });
+
+                function _calcRankRow(sn, color) {
+                    // 计算指定站点的排名信息
+                    var st = typeof zbGetSiteType === 'function' ? zbGetSiteType(sn) : '中心仓';
+                    var gs = allSites.filter(function(s) {
+                        if (SKIP_SITES.indexOf(s) >= 0) return false;
+                        return typeof zbGetSiteType === 'function' ? zbGetSiteType(s) === st : true;
+                    });
+                    var rd = gs.map(function(s) {
+                        return { site: s, rate: calcRate(s) };
+                    }).filter(function(r) { return r.rate !== null; })
+                      .sort(function(a, b) { return a.rate - b.rate; });
+                    var idx = rd.findIndex(function(r) { return r.site === sn; });
+                    if (idx < 0) return '';
+                    var rk = idx + 1, tot = rd.length;
+                    var rt = rd[idx].rate;
+                    var isF = rk === 1;
+                    var gt = isF && idx < tot-1
+                        ? '↓ 领先第2名 ' + Math.abs(rd[idx+1].rate - rt).toFixed(2) + '%'
+                        : (!isF && idx > 0 ? '↑ 距上一名差 ' + Math.abs(rt - rd[idx-1].rate).toFixed(2) + '%' : '');
+                    return '<div style="display:flex;align-items:center;gap:8px;">'
+                        + '<span style="width:7px;height:7px;border-radius:50%;background:'+color+';flex-shrink:0;display:inline-block;"></span>'
+                        + '<span style="font-size:11px;color:#64748b;min-width:130px;">'+sn+'</span>'
+                        + '<span style="font-size:15px;font-weight:700;color:'+color+';">'+(isF?'🏆 ':'')+'第 '+rk+' 名</span>'
+                        + '<span style="font-size:11px;color:#94a3b8;">/ 共'+tot+'个站点</span>'
+                        + (gt ? '<span style="font-size:11px;color:'+color+';background:rgba(255,255,255,0.8);padding:2px 8px;border-radius:10px;margin-left:auto;">'+gt+'</span>' : '')
+                        + '</div>';
+                }
+
                 var rankEl = document.getElementById('zbSiteRankBar');
                 if (!rankEl) { rankEl = document.createElement('div'); rankEl.id = 'zbSiteRankBar'; kpiEl.parentNode.insertBefore(rankEl, kpiEl); }
-                rankEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:7px 14px;border-radius:8px;background:'+barBg+';border:0.5px solid '+borderColor+';margin-bottom:8px;">'
-                    + '<span style="font-size:11px;color:#64748b;">'+siteType+'小组排名</span>'
-                    + '<span style="font-size:15px;font-weight:700;color:'+textColor+';">'+(isFirst?'🏆 ':'')+'第 '+rank+' 名</span>'
-                    + '<span style="font-size:11px;color:#94a3b8;">/ 共'+total+'个站点</span>'
-                    + (gapText ? '<span style="font-size:11px;color:'+textColor+';background:rgba(255,255,255,0.7);padding:2px 8px;border-radius:10px;margin-left:auto;">'+gapText+'</span>' : '')
-                    + '</div>';
+
+                if (_rankPair) {
+                    // 双行排名
+                    var row1 = _calcRankRow(_rankPair.line, '#185FA5');
+                    var row2 = _calcRankRow(_rankPair.post, '#534AB7');
+                    var divider = row1 && row2 ? '<div style="height:0.5px;background:#dce8f8;"></div>' : '';
+                    rankEl.innerHTML = '<div style="background:#f0f6ff;border-radius:10px;border:0.5px solid #e0e8f5;padding:10px 14px;margin-bottom:8px;display:flex;flex-direction:column;gap:10px;">'
+                        + row1 + divider + row2
+                        + '</div>';
+                } else {
+                    // 单行排名（原逻辑）
+                    var myIdx = ranked.findIndex(function(r){ return r.site === siteName; });
+                    if (myIdx < 0) return;
+                    var rank = myIdx + 1, total = ranked.length;
+                    var myRate = ranked[myIdx].rate;
+                    var prevRate = myIdx > 0 ? ranked[myIdx-1].rate : null;
+                    var nextRate = myIdx < total-1 ? ranked[myIdx+1].rate : null;
+                    var isFirst = rank === 1;
+                    var gapText = isFirst && nextRate !== null
+                        ? '↓ 领先第2名 ' + Math.abs(nextRate - myRate).toFixed(2) + '%'
+                        : (!isFirst && prevRate !== null ? '↑ 距上一名差 ' + Math.abs(myRate - prevRate).toFixed(2) + '%' : '');
+                    rankEl.innerHTML = '<div style="display:flex;align-items:center;gap:10px;padding:7px 14px;border-radius:8px;background:#f0f6ff;border:0.5px solid #bfdbfe;margin-bottom:8px;">'
+                        + '<span style="font-size:11px;color:#64748b;">'+siteType+'小组排名</span>'
+                        + '<span style="font-size:15px;font-weight:700;color:#2563eb;">'+(isFirst?'🏆 ':'')+'第 '+rank+' 名</span>'
+                        + '<span style="font-size:11px;color:#94a3b8;">/ 共'+total+'个站点</span>'
+                        + (gapText ? '<span style="font-size:11px;color:#2563eb;background:rgba(255,255,255,0.7);padding:2px 8px;border-radius:10px;margin-left:auto;">'+gapText+'</span>' : '')
+                        + '</div>';
+                }
             })();
 
-            kpiEl.innerHTML =
-                mk('总抽检量', siteChecks || '—', 'checks', '抽检量', '#2563eb', '#1d4ed8') +
-                mk('差异量', diffCnt, 'diff', kjLabel + '差异', kjColor.side, kjColor.num) +
-                mk('差异率', diffRate, 'rate', kjLabel + '差异率', kjColor.side, kjColor.num);
+            // ── 判断是否为大仓配对站点 ──
+            var _kpiPairMap = [
+                { line: '转转-深圳智能验机中心', post: '深圳后验中心仓' },
+                { line: '转转-青岛智能验机中心', post: '青岛后验中心仓' },
+                { line: '转转-成都智能验机中心', post: '成都后验中心仓' }
+            ];
+            var _kpiPair = null;
+            _kpiPairMap.forEach(function(p) {
+                if (siteName === p.line || siteName === p.post) _kpiPair = p;
+            });
 
-            kpiEl._siteDiff  = siteDiff.filter(diffFilter);
-            kpiEl._siteName  = siteName;
-            kpiEl._filters   = {
-                checks: function(){ return []; }, // 抽检量无明细
-                diff:   diffFilter,
-                rate:   diffFilter
-            };
+            if (_kpiPair) {
+                // ── 双卡片模式：计算配对站点数据 ──
+                var _calcKpi = function(sn) {
+                    var sc = 0;
+                    (function() {
+                        if (!window._DATA) return;
+                        var DATA = window._DATA;
+                        var cat = activeCat || '手机';
+                        var inRng = function(d){ if(!d)return false; if(startD&&d<startD)return false; if(endD&&d>endD)return false; return true; };
+                        if (cat === '手机') {
+                            sc = (DATA.qa||[]).filter(function(r){ return r.site===sn && r.cat===cat && inRng(r.date); })
+                                .reduce(function(s,r){ return s+(r.checks||0); }, 0);
+                        } else {
+                            sc = (DATA.sum||[]).filter(function(r){ return r.site===sn && r.cat===cat && inRng(r.date); })
+                                .reduce(function(s,r){ return s+(r.checks||0); }, 0);
+                        }
+                    })();
+                    var _diff = allDiff.filter(function(d) {
+                        if (d.warehouse !== sn) return false;
+                        if (activeCat && d.cat !== activeCat) return false;
+                        if (window._zbCompareOpen) return true;
+                        if (!d.date) return true;
+                        if (startD && d.date < startD) return false;
+                        if (endD   && d.date > endD)   return false;
+                        return true;
+                    });
+                    var dc = new Set(_diff.filter(diffFilter).filter(function(d){ return d.code; }).map(function(d){ return d.code; })).size;
+                    var dr = sc ? (dc / sc * 100).toFixed(2) + '%' : '—';
+                    return { checks: sc, diffCnt: dc, diffRate: dr, siteDiff: _diff };
+                };
+
+                var _lineKpi = _calcKpi(_kpiPair.line);
+                var _postKpi = _calcKpi(_kpiPair.post);
+
+                var _mkCard = function(label, kpi, borderColor, numColor) {
+                    return '<div style="background:var(--color-background-primary,#fff);border-radius:10px;border:0.5px solid #e0e8f5;border-left:4px solid ' + borderColor + ';padding:12px 14px;">'
+                        + '<div style="font-size:12px;font-weight:500;color:' + borderColor + ';margin-bottom:10px;">' + label + '</div>'
+                        + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">'
+                        + '<div><div style="font-size:11px;color:#aaa;margin-bottom:2px;">总抽检量</div><div style="font-size:20px;font-weight:500;color:' + numColor + ';">' + (kpi.checks || '—') + '</div></div>'
+                        + '<div data-site-kpi="diff" data-site-name="' + label + '" style="cursor:pointer;"><div style="font-size:11px;color:#aaa;margin-bottom:2px;">差异量</div><div style="font-size:20px;font-weight:500;color:' + numColor + ';">' + kpi.diffCnt + '</div></div>'
+                        + '<div data-site-kpi="diff" data-site-name="' + label + '" style="cursor:pointer;"><div style="font-size:11px;color:#aaa;margin-bottom:2px;">差异率</div><div style="font-size:20px;font-weight:500;color:' + numColor + ';">' + kpi.diffRate + '</div></div>'
+                        + '</div></div>';
+                };
+
+                kpiEl.style.display = 'grid';
+                kpiEl.style.gridTemplateColumns = '1fr 1fr';
+                kpiEl.style.gap = '10px';
+                kpiEl.innerHTML =
+                    _mkCard(_kpiPair.line, _lineKpi, '#185FA5', '#185FA5') +
+                    _mkCard(_kpiPair.post, _postKpi, '#534AB7', '#534AB7');
+
+                kpiEl._siteDiff  = siteDiff.filter(diffFilter);
+                kpiEl._siteName  = siteName;
+                kpiEl._filters   = {
+                    checks: function(){ return []; },
+                    diff:   diffFilter,
+                    rate:   diffFilter
+                };
+                // 双卡片：各站点diff数据分别挂载
+                kpiEl._pairDiff = {};
+                kpiEl._pairDiff[_kpiPair.line] = _lineKpi.siteDiff.filter(diffFilter);
+                kpiEl._pairDiff[_kpiPair.post] = _postKpi.siteDiff.filter(diffFilter);
+            } else {
+                // ── 普通站点：原有三格布局不变 ──
+                kpiEl.style.display = '';
+                kpiEl.style.gridTemplateColumns = '';
+                kpiEl.style.gap = '';
+                kpiEl.innerHTML =
+                    mk('总抽检量', siteChecks || '—', 'checks', '抽检量', '#2563eb', '#1d4ed8') +
+                    mk('差异量', diffCnt, 'diff', kjLabel + '差异', kjColor.side, kjColor.num) +
+                    mk('差异率', diffRate, 'rate', kjLabel + '差异率', kjColor.side, kjColor.num);
+
+                kpiEl._siteDiff  = siteDiff.filter(diffFilter);
+                kpiEl._siteName  = siteName;
+                kpiEl._filters   = {
+                    checks: function(){ return []; }, // 抽检量无明细
+                    diff:   diffFilter,
+                    rate:   diffFilter
+                };
+            }
         }
     }
 
@@ -7620,7 +8469,7 @@ function zbRenderSitePersonList() {
         var thPrevS = pSortKey==='prev'  ? 'text-align:center;color:#2563eb;font-weight:500;width:110px;cursor:pointer;user-select:none;' : 'text-align:center;width:110px;cursor:pointer;user-select:none;';
         var thCurS  = pSortKey==='cur'   ? 'text-align:center;color:#2563eb;font-weight:500;width:110px;cursor:pointer;user-select:none;' : 'text-align:center;width:110px;cursor:pointer;user-select:none;';
         var thDeltaS= pSortKey==='delta' ? 'text-align:center;color:#2563eb;font-weight:500;width:80px;cursor:pointer;user-select:none;'  : 'text-align:center;width:80px;cursor:pointer;user-select:none;';
-        if(headEl) headEl.innerHTML='<tr><th style="width:50px;">排名</th><th style="width:120px;">质检人员</th>'
+        if(headEl) headEl.innerHTML='<tr><th style="width:50px;">排名</th><th>质检人员</th>'
             +'<th style="'+thCurS+'" onclick="window._zbPersonSortKey=\'cur\';window._zbPersonPage=1;zbRenderSitePersonList();">'+pillTextB+(pSortKey==='cur'?' ↓':'')+'</th>'
             +'<th style="'+thPrevS+'" onclick="window._zbPersonSortKey=\'prev\';window._zbPersonPage=1;zbRenderSitePersonList();">'+pillTextA+(pSortKey==='prev'?' ↓':'')+'</th>'
             +'<th style="'+thDeltaS+'" onclick="window._zbPersonSortKey=\'delta\';window._zbPersonPage=1;zbRenderSitePersonList();">变化'+(pSortKey==='delta'?' ↓':'')+'</th>'
@@ -8113,15 +8962,22 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!item) return;
             var filterKey = item.dataset.siteKpi;
             if (filterKey === 'checks') return; // 抽检量无明细
-            var diff = siteKpiRow._siteDiff || [];
+            var pairSiteName = item.dataset.siteName; // 双卡片时有此属性
             var fn = (siteKpiRow._filters || {})[filterKey];
             if (!fn) return;
-            var filtered = diff.filter(fn);
-            var sn = siteKpiRow._siteName || '';
+            var diff, sn;
+            if (pairSiteName && siteKpiRow._pairDiff && siteKpiRow._pairDiff[pairSiteName]) {
+                // 双卡片：用对应站点的diff数据
+                diff = siteKpiRow._pairDiff[pairSiteName].filter(fn);
+                sn = pairSiteName;
+            } else {
+                diff = (siteKpiRow._siteDiff || []).filter(fn);
+                sn = siteKpiRow._siteName || '';
+            }
             var labelMap = { diff:'差异', rate:'差异', checks:'抽检量' };
-            if (typeof openDetailWithData === 'function' && filtered.length) {
-                openDetailWithData(filtered, '🏢 ' + sn + ' · ' + (labelMap[filterKey]||filterKey) + '明细（' + filtered.length + '条）', false);
-            } else if (!filtered.length) {
+            if (typeof openDetailWithData === 'function' && diff.length) {
+                openDetailWithData(diff, '🏢 ' + sn + ' · ' + (labelMap[filterKey]||filterKey) + '明细（' + diff.length + '条）', false);
+            } else if (!diff.length) {
                 showToast('暂无明细数据');
             }
         });
@@ -8566,8 +9422,8 @@ function zbEditSearch() {
     zbEditRenderTable();
 }
 
-var ZB_EDIT_FIELDS = ['date','warehouse','cat','person','qaInspector','category','judgedIssueType','issueType','level1','level2','level3','model'];
-var ZB_EDIT_LABELS = {date:'日期',warehouse:'站点',cat:'品类',person:'质检人',qaInspector:'QA',category:'问题类别',judgedIssueType:'执行类型',issueType:'问题类型',level1:'一级项',level2:'二级项',level3:'三级项',model:'型号'};
+var ZB_EDIT_FIELDS = ['date','warehouse','cat','brand','model','level1','level2','level3_orig','level3','person','category','issueType','judgedIssueType'];
+var ZB_EDIT_LABELS = {date:'抽检日期',warehouse:'站点',cat:'品类',brand:'品牌',model:'型号',level1:'一级项',level2:'二级项',level3_orig:'原三级项',level3:'新三级项',person:'原操作人',category:'主客观分类',issueType:'问题类型',judgedIssueType:'责任类型'};
 
 function zbEditRenderTable() {
     var el = document.getElementById('zbEditResult');
@@ -8608,6 +9464,11 @@ function zbEditRenderTable() {
             + '<td style="text-align:center;padding:6px 8px;border-bottom:0.5px solid var(--border-color);"><input type="checkbox" class="zb-edit-chk" data-key="'+key+'" '+(isDel?'checked':'')+' onchange="zbEditMarkDelByEl(this)"></td>'
             + '<td style="padding:6px 8px;border-bottom:0.5px solid var(--border-color);color:#94a3b8;white-space:nowrap;">'+( row.code||'—')+'</td>';
         FIELDS.forEach(function(f){
+            // brand字段数据里没有，固定显示—且只读
+            if (f === 'brand') {
+                html += '<td style="padding:4px 6px;border-bottom:0.5px solid var(--border-color);color:#94a3b8;text-align:center;">—</td>';
+                return;
+            }
             var cur = (_zbEditChanges[key]&&_zbEditChanges[key][f]!==undefined) ? _zbEditChanges[key][f] : (row[f]||'');
             var edited = _zbEditChanges[key] && _zbEditChanges[key][f] !== undefined;
             var inputStyle = 'width:100%;min-width:70px;box-sizing:border-box;height:26px;border:1px solid '+(edited?'#2563eb':'#e2e8f0')+';border-radius:5px;padding:0 6px;font-size:11px;background:'+(isDel?'transparent':edited?'#eff6ff':'transparent')+';color:'+(isDel?'#94a3b8':'var(--text-primary)')+';outline:none;'+(isDel?'pointer-events:none;':'');
@@ -8719,7 +9580,7 @@ async function zbEditSavePush() {
     });
 }
 
-function _doEditSave() {
+async function _doEditSave() {
     var allDiff = window._allDiffData || [];
     var delKeys = new Set();
     _zbEditDeletes.forEach(function(key){
@@ -8773,9 +9634,134 @@ function _doEditSave() {
     editLog.push(snap);
     localStorage.setItem('zb_edit_log', JSON.stringify(editLog.slice(-50)));
 
-    showToast('✅ 改动已应用，可在日志-云端管理里撤回');
+    // ── 推送受影响月份到云端（写回 DATA.diff5 原始格式）──
+    var token = zbGetToken ? zbGetToken() : null;
+    if (!token) {
+        showToast('⚠️ 未找到 token，改动已写入内存但未同步云端');
+        _zbEditChanges={}; _zbEditDeletes=new Set(); _zbEditResults=[];
+        document.getElementById('zbEditResult').innerHTML='<div style="text-align:center;padding:24px;color:#f59e0b;font-size:13px;">⚠️ 未找到 token，请重新登录后推送</div>';
+        return;
+    }
+
+    // mapped字段 → 原始字段 反向映射
+    // mapDiff5/mapDiff4: warehouse←site, person←inspector, category←subjobj,
+    //                    level3←level3_new, judgedIssueType←judgedType
+    var MAPPED_TO_ORIG = {
+        warehouse:       'site',
+        person:          'inspector',
+        category:        'subjobj',
+        level3:          'level3_new',
+        judgedIssueType: 'judgedType'
+        // level1,level2,level3_orig,level2,issueType,date,code,cat,qaInspector 同名不需要转换
+    };
+
+    // 三个数据源：手机 diff5 / 五品类 diff4 / 大仓 dw4cat
+    // _origRef 在 bridgeData 投影时建立，直接指向原始行，避免按 code 查表时同质检码多行被覆盖的问题
+    var diff5  = (window._DATA && window._DATA.diff5)  || [];
+    var diff4  = (window._DATA && window._DATA.diff4)  || [];
+    var dw4cat = (window._DATA && window._DATA.dw4cat) || [];
+
+    // 判断 _origRef 落在哪个源里，返回 'diff5' / 'diff4' / 'dw4cat' / null
+    function locateSource(origRow) {
+        if (!origRow) return null;
+        if (diff5.indexOf(origRow)  !== -1) return 'diff5';
+        if (diff4.indexOf(origRow)  !== -1) return 'diff4';
+        if (dw4cat.indexOf(origRow) !== -1) return 'dw4cat';
+        return null;
+    }
+
+    // 每个源各自记录"被改动 / 被删除的月份"
+    var touchedMonths = { diff5: new Set(), diff4: new Set(), dw4cat: new Set() };
+
+    // 反向写回原始行
+    Object.keys(_zbEditChanges).forEach(function(key){
+        var idx = parseInt(key.split('_')[0]);
+        var mappedRow = _zbEditResults[idx];
+        if (!mappedRow) return;
+        var origRow = mappedRow._origRef;
+        var src = locateSource(origRow);
+        if (!src) return;
+        var ym = (mappedRow.date||'').slice(0,7);
+        if (ym && ym.length===7) touchedMonths[src].add(ym);
+        var changes = _zbEditChanges[key];
+        Object.keys(changes).forEach(function(mappedField){
+            var origField = MAPPED_TO_ORIG[mappedField] || mappedField;
+            origRow[origField] = changes[mappedField];
+        });
+    });
+
+    // 删除原始行
+    _zbEditDeletes.forEach(function(key){
+        var idx = parseInt(key.split('_')[0]);
+        var mappedRow = _zbEditResults[idx];
+        if (!mappedRow) return;
+        var origRow = mappedRow._origRef;
+        var src = locateSource(origRow);
+        if (!src) return;
+        var ym = (mappedRow.date||'').slice(0,7);
+        if (ym && ym.length===7) touchedMonths[src].add(ym);
+        var arr = src === 'diff5' ? diff5 : src === 'diff4' ? diff4 : dw4cat;
+        var i = arr.indexOf(origRow);
+        if (i !== -1) arr.splice(i, 1);
+    });
+
+    var totalTouched = touchedMonths.diff5.size + touchedMonths.diff4.size + touchedMonths.dw4cat.size;
+    if (!totalTouched) {
+        showToast('✅ 改动已应用');
+        _zbEditChanges={}; _zbEditDeletes=new Set(); _zbEditResults=[];
+        document.getElementById('zbEditResult').innerHTML='<div style="text-align:center;padding:24px;color:#10b981;font-size:13px;">✅ 已保存</div>';
+        if (typeof bridgeData==='function') bridgeData();
+        if (typeof fullRefresh==='function') fullRefresh();
+        return;
+    }
+
+    // 按月分片（每个源独立分片）
+    function buildMonthMap(arr) {
+        var m = {};
+        arr.forEach(function(r){
+            var ym=(r.date||'').slice(0,7);
+            if(!ym||ym.length<7) return;
+            if(!m[ym]) m[ym]=[];
+            m[ym].push(r);
+        });
+        return m;
+    }
+    var monthMap5  = buildMonthMap(diff5);
+    var monthMap4  = buildMonthMap(diff4);
+
+    document.getElementById('zbEditResult').innerHTML='<div style="text-align:center;padding:24px;color:#2563eb;font-size:13px;">⏳ 正在推送云端，请稍候…</div>';
     _zbEditChanges={}; _zbEditDeletes=new Set(); _zbEditResults=[];
-    document.getElementById('zbEditResult').innerHTML='<div style="text-align:center;padding:24px;color:#10b981;font-size:13px;">✅ 已保存，在上传页重新推送云端以同步</div>';
+
+    var allOk = true;
+
+    // 推 手机 diff5（phone_diff_<YM>.json）
+    for (var ym of touchedMonths.diff5) {
+        if (!monthMap5[ym]) continue;
+        var fname = 'phone_diff_' + ym + '.json';
+        var ok = await _zbPushFile(fname, { rows: monthMap5[ym], updated: new Date().toISOString() }, token);
+        if (!ok) { allOk = false; console.error('[记录编辑] 推送失败:', fname); }
+    }
+    // 推 五品类 diff4（five_cat_<YM>.json）
+    for (var ym of touchedMonths.diff4) {
+        if (!monthMap4[ym]) continue;
+        var fname = 'five_cat_' + ym + '.json';
+        var ok = await _zbPushFile(fname, { rows: monthMap4[ym], updated: new Date().toISOString() }, token);
+        if (!ok) { allOk = false; console.error('[记录编辑] 推送失败:', fname); }
+    }
+    // 推 大仓 dw4cat（不分片，整文件覆盖）
+    if (touchedMonths.dw4cat.size > 0) {
+        var ok = await _zbPushFile(GH_FILES.dw4cat, { rows: dw4cat, updated: new Date().toISOString() }, token);
+        if (!ok) { allOk = false; console.error('[记录编辑] 推送失败:', GH_FILES.dw4cat); }
+    }
+
+    if (allOk) {
+        showToast('✅ 改动已永久写入云端');
+        document.getElementById('zbEditResult').innerHTML='<div style="text-align:center;padding:24px;color:#10b981;font-size:13px;">✅ 已成功推送云端，数据将在约 5 分钟后刷新生效</div>';
+    } else {
+        showToast('⚠️ 部分月份推送失败，请重试');
+        document.getElementById('zbEditResult').innerHTML='<div style="text-align:center;padding:24px;color:#f59e0b;font-size:13px;">⚠️ 部分推送失败，请重试</div>';
+    }
+    if (typeof bridgeData==='function') bridgeData();
     if (typeof fullRefresh==='function') fullRefresh();
 }
 
@@ -9977,21 +10963,23 @@ function zbCheckDataHealth() {
     if (zbRole !== 'admin' && zbRole !== 'super') return;
     var bar = document.getElementById('zbDataHealthBar');
     if (!bar || _zbHealthDismissed) return;
-    var ALL_TYPES = ['qa','diff5','sum','diff4'];
-    var TYPE_NAMES = { qa:'QA差异率', diff5:'手机差异明细', sum:'日汇总', diff4:'五品类明细' };
+    var TYPE_NAMES = { qa:'QA差异率', diff5:'手机差异明细', sum:'四品类汇总', diff4:'四品类明细' };
+    var DATA = window._DATA || {};
+    // 从各数据桶提取已有日期集合
+    var datesQa   = new Set((DATA.qa   ||[]).map(function(r){ return r.date; }));
+    var datesDiff5 = new Set((DATA.diff5||[]).map(function(r){ return r.date; }));
+    var datesSum  = new Set((DATA.sum  ||[]).map(function(r){ return r.date; }));
+    var datesDiff4 = new Set((DATA.diff4||[]).map(function(r){ return r.date; }));
     var today = new Date();
     var missing = [];
     for (var i = 1; i <= 15; i++) {
         var d = new Date(today); d.setDate(today.getDate() - i);
         var dateStr = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-        var uploaded = {};
-        _zbLog.forEach(function(log) {
-            if (!log.dates) return;
-            if (log.dates.indexOf(dateStr) !== -1 && ALL_TYPES.indexOf(log.type) !== -1) {
-                uploaded[log.type] = true;
-            }
-        });
-        var missingTypes = ALL_TYPES.filter(function(t){ return !uploaded[t]; });
+        var missingTypes = [];
+        if (!datesQa.has(dateStr))    missingTypes.push('qa');
+        if (!datesDiff5.has(dateStr)) missingTypes.push('diff5');
+        if (!datesSum.has(dateStr))   missingTypes.push('sum');
+        if (!datesDiff4.has(dateStr)) missingTypes.push('diff4');
         if (missingTypes.length > 0) {
             missing.push({ date: dateStr, types: missingTypes });
         }
@@ -10003,7 +10991,7 @@ function zbCheckDataHealth() {
     }).join('');
     var moreText = missing.length > 5 ? '<div style="font-size:11px;color:#92400e;margin-top:4px;">……共 '+missing.length+' 天有缺失</div>' : '';
     bar.style.display = 'block';
-    bar.innerHTML = '<div style="background:var(--color-background-primary,#fff);border:0.5px solid #fcd34d;border-radius:12px;padding:12px 16px;">'
+    bar.innerHTML = '<div style="background:rgba(254,243,199,0.7);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:0.5px solid rgba(252,211,77,0.5);border-radius:14px;padding:12px 16px;">'
         + '<div style="display:flex;align-items:flex-start;gap:10px;">'
         + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:1px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
         + '<div style="flex:1;min-width:0;">'
@@ -10330,7 +11318,7 @@ async function zbRevertEdit(logIdx) {
     editLog[logIdx].canRevert = false;
     localStorage.setItem('zb_edit_log', JSON.stringify(editLog));
     if (typeof zbLoadCloudData === 'function') {
-        await zbLoadCloudData();
+        await zbLoadCloudData(true);
         showToast('✅ 已撤回，云端数据已重新加载');
     }
 }
@@ -10511,7 +11499,7 @@ function zbRenderCloudManager() {
   var toolbarHtml = '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;flex-wrap:wrap;">'
     + '<div style="display:flex;align-items:center;gap:0;background:var(--kpi-bg);border-radius:20px;border:0.5px solid var(--border-color);overflow:hidden;flex-shrink:0;">'
     + '<button id="zbCloudTabPhone" onclick="zbSwitchCloudTab(&quot;phone&quot;)" style="font-size:12px;padding:5px 16px;border:none;background:'+((_zbCloudTab==='phone')?'#2563eb':'transparent')+';color:'+((_zbCloudTab==='phone')?'#fff':'var(--text-secondary)')+';cursor:pointer;font-weight:'+((_zbCloudTab==='phone')?'500':'400')+';">手机</button>'
-    + '<button id="zbCloudTabFive" onclick="zbSwitchCloudTab(&quot;five&quot;)" style="font-size:12px;padding:5px 16px;border:none;background:'+((_zbCloudTab==='five')?'#2563eb':'transparent')+';color:'+((_zbCloudTab==='five')?'#fff':'var(--text-secondary)')+';cursor:pointer;font-weight:'+((_zbCloudTab==='five')?'500':'400')+';">五品类</button>'
+    + '<button id="zbCloudTabFive" onclick="zbSwitchCloudTab(&quot;five&quot;)" style="font-size:12px;padding:5px 16px;border:none;background:'+((_zbCloudTab==='five')?'#2563eb':'transparent')+';color:'+((_zbCloudTab==='five')?'#fff':'var(--text-secondary)')+';cursor:pointer;font-weight:'+((_zbCloudTab==='five')?'500':'400')+';">四品类</button>'
     + '</div>'
     + '<div style="flex:1;min-width:140px;position:relative;">'
     + '<input type="text" id="zbCloudSearch" oninput="zbFilterCloudList()" placeholder="搜索日期，如 2026-05" style="width:100%;height:30px;padding:0 8px 0 30px;border-radius:8px;border:0.5px solid var(--border-color);background:var(--filter-input-bg);font-size:12px;color:var(--text-primary);box-sizing:border-box;outline:none;">'
@@ -10540,25 +11528,54 @@ function zbRenderCloudManager() {
   }
   phoneHtml += '</div>';
 
-  // 五品类列表
+  // 四品类列表（按日期折叠）
   var fiveHtml = '<div id="zbCloudFiveList" style="'+((_zbCloudTab!=='five')?'display:none;':'')+'border:0.5px solid var(--border-color);border-radius:8px;overflow:hidden;">';
   if (!fiveList.length) {
     fiveHtml += '<div style="font-size:12px;color:var(--text-secondary);padding:16px;text-align:center;">暂无数据</div>';
   } else {
-    fiveList.forEach(function(key, i) {
+    // 按日期分组
+    var fiveDateMap = {};
+    fiveList.forEach(function(key) {
       var parts = key.split('||'), date = parts[0], cat = parts[1];
-      var cc = catColors[cat] || '#64748b';
-      fiveHtml += '<div id="zb-five-row-'+i+'" data-date="'+date+'" style="display:flex;align-items:center;padding:9px 14px;border-bottom:0.5px solid var(--border-color);cursor:'+(canEdit?'pointer':'default')+'" '
-        + (canEdit?'onclick="zbToggleSelect(\'five\',\''+key+'\','+i+')"':'')+' >'
-        + (canEdit?'<input type="checkbox" id="zb-five-cb-'+i+'" data-key="'+key+'" style="margin-right:10px;width:14px;height:14px;cursor:pointer;accent-color:#dc2626;" onclick="event.stopPropagation()" onchange="zbToggleSelect(\'five\',\''+key+'\','+i+',true)">':'')
+      if (!fiveDateMap[date]) fiveDateMap[date] = [];
+      fiveDateMap[date].push({ key: key, cat: cat });
+    });
+    var fiveDates = Object.keys(fiveDateMap).sort().reverse();
+    var rowIdx = 0;
+    fiveDates.forEach(function(date, di) {
+      var cats = fiveDateMap[date];
+      var groupId = 'zb-five-group-' + di;
+      // 顶部折叠行
+      var catBadges = cats.map(function(c) {
+        var cc = catColors[c.cat] || '#64748b';
+        return '<span style="font-size:11px;color:'+cc+';background:'+cc+'18;padding:2px 7px;border-radius:5px;margin-left:3px;">'+c.cat+'</span>';
+      }).join('');
+      fiveHtml += '<div style="border-bottom:0.5px solid var(--border-color);background:var(--bg-card,#fff);">';
+      // 折叠头行
+      fiveHtml += '<div data-date="'+date+'" style="display:flex;align-items:center;padding:9px 14px;cursor:pointer;" onclick="zbToggleFiveGroup(\''+groupId+'\')">'
+        + (canEdit ? '<input type="checkbox" id="zb-five-group-cb-'+di+'" style="margin-right:10px;width:14px;height:14px;cursor:pointer;accent-color:#dc2626;" onclick="event.stopPropagation()" onchange="zbToggleFiveGroupSelect(\''+date+'\','+di+',this.checked)">' : '')
         + '<span class="zb-date-label" style="font-size:12px;color:var(--text-primary);flex:1;">'+date+'</span>'
-        + '<span style="font-size:11px;color:'+cc+';background:'+cc+'18;padding:2px 8px;border-radius:6px;">'+cat+'</span>'
+        + catBadges
+        + '<svg id="'+groupId+'-arrow" style="width:13px;height:13px;margin-left:6px;color:var(--text-secondary);transition:transform .15s;flex-shrink:0;" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="6 9 12 15 18 9"/></svg>'
         + '</div>';
+      // 子行（默认隐藏）
+      fiveHtml += '<div id="'+groupId+'" style="display:none;background:var(--filter-input-bg,#f8fafc);">';
+      cats.forEach(function(c, ci) {
+        var cc = catColors[c.cat] || '#64748b';
+        var idx = rowIdx++;
+        fiveHtml += '<div id="zb-five-row-'+idx+'" data-date="'+date+'" style="display:flex;align-items:center;padding:7px 14px 7px 36px;border-top:0.5px solid var(--border-color);cursor:'+(canEdit?'pointer':'default')+'" '
+          + (canEdit ? 'onclick="zbToggleSelect(\'five\',\''+c.key+'\','+idx+')"' : '') + '>'
+          + (canEdit ? '<input type="checkbox" id="zb-five-cb-'+idx+'" data-key="'+c.key+'" style="margin-right:10px;width:13px;height:13px;cursor:pointer;accent-color:#dc2626;" onclick="event.stopPropagation()" onchange="zbToggleSelect(\'five\',\''+c.key+'\','+idx+',true)">' : '')
+          + '<span class="zb-date-label" style="font-size:12px;color:var(--text-secondary);flex:1;">'+date+'</span>'
+          + '<span style="font-size:11px;color:'+cc+';background:'+cc+'18;padding:2px 8px;border-radius:5px;">'+c.cat+'</span>'
+          + '</div>';
+      });
+      fiveHtml += '</div></div>';
     });
   }
   fiveHtml += '</div>';
 
-  var totalCount = _zbCloudTab === 'phone' ? phoneDateList.length : fiveList.length;
+  var totalCount = _zbCloudTab === 'phone' ? phoneDateList.length : Object.keys(fiveDateMap||{}).length;
   var footerHtml = '<div style="margin-top:8px;font-size:11px;color:var(--text-secondary);">共 '+totalCount+' 条 · 已选 <span id="zbCloudSelCount">0</span> 条</div>';
 
   el.innerHTML = alertHtml + toolbarHtml + phoneHtml + fiveHtml + footerHtml;
@@ -10571,24 +11588,76 @@ function zbSwitchCloudTab(tab) {
   zbRenderCloudManager();
 }
 
+// 四品类折叠展开
+function zbToggleFiveGroup(groupId) {
+  var el = document.getElementById(groupId);
+  var arrow = document.getElementById(groupId + '-arrow');
+  if (!el) return;
+  var isOpen = el.style.display !== 'none';
+  el.style.display = isOpen ? 'none' : '';
+  if (arrow) arrow.style.transform = isOpen ? '' : 'rotate(180deg)';
+}
+
+// 四品类头行checkbox：选中/取消该日期下所有品类
+function zbToggleFiveGroupSelect(date, di, checked) {
+  var DATA = window._DATA;
+  if (!DATA) return;
+  var keys = [];
+  (DATA.sum||[]).forEach(function(r){ if(r.date===date&&r.cat) keys.push(r.date+'||'+r.cat); });
+  (DATA.diff4||[]).forEach(function(r){ if(r.date===date&&r.cat){ var k=r.date+'||'+r.cat; if(keys.indexOf(k)<0) keys.push(k); }});
+  (DATA.dw4cat||[]).forEach(function(r){ if(r.date===date&&r.cat){ var k=r.date+'||'+r.cat; if(keys.indexOf(k)<0) keys.push(k); }});
+  (DATA.dw4sum||[]).forEach(function(r){ if(r.date===date&&r.cat){ var k=r.date+'||'+r.cat; if(keys.indexOf(k)<0) keys.push(k); }});
+  keys.forEach(function(k) {
+    if (checked) _zbSelected.five.add(k);
+    else _zbSelected.five.delete(k);
+  });
+  // 同步子行checkbox
+  var group = document.getElementById('zb-five-group-' + di);
+  if (group) {
+    group.querySelectorAll('input[type=checkbox]').forEach(function(cb) {
+      cb.checked = checked;
+      var row = cb.closest('[id^=zb-five-row-]');
+      if (row) row.style.background = checked ? '#fef2f2' : '';
+    });
+  }
+  // 更新删除按钮和计数
+  var btn = document.getElementById('zbBatchDeleteBtn');
+  if (btn) btn.style.display = _zbSelected.five.size > 0 ? '' : 'none';
+  var cnt = document.getElementById('zbCloudSelCount');
+  if (cnt) cnt.textContent = _zbSelected.five.size;
+}
+
 function zbFilterCloudList() {
   var q = (document.getElementById('zbCloudSearch')||{}).value || '';
   q = q.trim().toLowerCase();
   var listId = _zbCloudTab === 'phone' ? 'zbCloudPhoneList' : 'zbCloudFiveList';
   var list = document.getElementById(listId);
   if (!list) return;
-  list.querySelectorAll('[data-date]').forEach(function(row) {
-    var date = (row.dataset.date||'').toLowerCase();
-    var match = !q || date.includes(q);
-    row.style.display = match ? '' : 'none';
-    if (match && q) {
-      var lbl = row.querySelector('.zb-date-label');
-      if (lbl) lbl.innerHTML = date.replace(new RegExp('('+q.replace(/[-\/\^$*+?.()|[\]{}]/g,'\$&')+')','gi'),'<mark style="background:#fef08a;border-radius:2px;">$1</mark>');
-    } else {
-      var lbl2 = row.querySelector('.zb-date-label');
-      if (lbl2) lbl2.innerHTML = row.dataset.date;
-    }
-  });
+  if (_zbCloudTab === 'phone') {
+    list.querySelectorAll('[data-date]').forEach(function(row) {
+      var date = (row.dataset.date||'').toLowerCase();
+      var match = !q || date.includes(q);
+      row.style.display = match ? '' : 'none';
+      if (match && q) {
+        var lbl = row.querySelector('.zb-date-label');
+        if (lbl) lbl.innerHTML = date.replace(new RegExp('('+q.replace(/[-\/\^$*+?.()|[\]{}]/g,'\$&')+')','gi'),'<mark style="background:#fef08a;border-radius:2px;">$1</mark>');
+      } else {
+        var lbl2 = row.querySelector('.zb-date-label');
+        if (lbl2) lbl2.innerHTML = row.dataset.date;
+      }
+    });
+  } else {
+    // 四品类：过滤折叠头行
+    list.querySelectorAll('[data-date]').forEach(function(row) {
+      // 只处理头行（直接子div含data-date）
+      if (row.parentElement && row.parentElement.style !== undefined) {
+        var date = (row.dataset.date||'').toLowerCase();
+        var match = !q || date.includes(q);
+        var wrapper = row.closest('[style*="border-bottom"]') || row.parentElement;
+        if (wrapper && wrapper !== list) wrapper.style.display = match ? '' : 'none';
+      }
+    });
+  }
 }
 
 // ── 勾选逻辑 ──
@@ -10728,12 +11797,12 @@ function zbCloseUpload() {
         </div>
       </div>
 
-      <!-- 框2：五品类 -->
+      <!-- 框2：四品类数据（大仓+中心仓合并） -->
       <div style="border:1.5px dashed #a7f3d0;border-radius:12px;padding:14px 16px;background:#f8fdfb;transition:all .15s;position:relative;" id="zbUpBox2">
         <div style="display:flex;align-items:center;gap:12px;">
           <div style="width:40px;height:40px;border-radius:10px;background:#ecfdf5;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">📦</div>
           <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:600;color:#1e293b;">大仓四品类数据</div>
+            <div style="font-size:13px;font-weight:600;color:#1e293b;">四品类数据</div>
             <div style="font-size:11px;color:#64748b;margin-top:1px;">汇总数据表 · 差异明细数据表</div>
             <div id="zbUpFile2Name" style="font-size:11px;color:#059669;margin-top:4px;display:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
           </div>
@@ -10741,22 +11810,8 @@ function zbCloseUpload() {
         </div>
       </div>
 
-      <!-- 框2.5：中心仓四品类数据 -->
-      <div style="border:1.5px dashed #93c5fd;border-radius:12px;padding:14px 16px;background:#f0f7ff;transition:all .15s;position:relative;" id="zbUpBox25">
-        <div style="display:flex;align-items:center;gap:12px;">
-          <div style="width:40px;height:40px;border-radius:10px;background:#dbeafe;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🏪</div>
-          <div style="flex:1;min-width:0;">
-            <div style="font-size:13px;font-weight:600;color:#1e3a8a;">中心仓四品类数据</div>
-            <div style="font-size:11px;color:#64748b;margin-top:1px;">日汇总表 · 差异明细表（笔记本/平板/手表/耳机）</div>
-            <div id="zbUpFile25Name" style="font-size:11px;color:#059669;margin-top:4px;display:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
-          </div>
-          <label for="zbZxCatInput" style="padding:6px 14px;border-radius:8px;background:#2563eb;color:#fff;font-size:12px;font-weight:500;cursor:pointer;flex-shrink:0;white-space:nowrap;">选择文件</label>
-        </div>
-      </div>
-      <input type="file" id="zbZxCatInput" style="display:none;" accept=".xlsx,.xls" multiple>
-
       <!-- 框3：三大仓操作人纠正表 -->
-      <div style="border:1.5px dashed #fbbf24;border-radius:12px;padding:14px 16px;background:#fffbeb;transition:all .15s;position:relative;" id="zbUpBox3">
+      <div style="display:none;" id="zbUpBox3">
         <div style="display:flex;align-items:center;gap:12px;">
           <div style="width:40px;height:40px;border-radius:10px;background:#fef3c7;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;">🔧</div>
           <div style="flex:1;min-width:0;">
@@ -10808,21 +11863,6 @@ document.getElementById('zbFiveCatInput').addEventListener('change', function(e)
   box.style.background = '#ecfdf5';
 });
 
-// 中心仓四品类文件选择预览
-document.getElementById('zbZxCatInput').addEventListener('change', function(e){
-  var files = e.target.files;
-  var nameEl = document.getElementById('zbUpFile25Name');
-  var box = document.getElementById('zbUpBox25');
-  if (files.length) {
-    var names = Array.from(files).map(function(f){ return f.name; }).join('、');
-    if (nameEl) { nameEl.textContent = '✓ ' + names; nameEl.style.display = 'block'; }
-    if (box) { box.style.borderColor = '#2563eb'; box.style.background = '#dbeafe'; }
-  } else {
-    if (nameEl) nameEl.style.display = 'none';
-    if (box) { box.style.borderColor = '#93c5fd'; box.style.background = '#f0f7ff'; }
-  }
-});
-
 // 确认上传
 // 纠正表文件选择预览
 document.getElementById('zbCorrectionInput').addEventListener('change', function() {
@@ -10841,31 +11881,26 @@ document.getElementById('zbCorrectionInput').addEventListener('change', function
 window.zbConfirmUpload = function() {
   var f1 = document.getElementById('zbPhoneInput').files;
   var f2 = document.getElementById('zbFiveCatInput').files;
-  var f25 = document.getElementById('zbZxCatInput').files;
   var f3 = document.getElementById('zbCorrectionInput').files;
   var hint = document.getElementById('zbUploadHint');
-  if (!f1.length && !f2.length && !f25.length && !f3.length) {
+  if (!f1.length && !f2.length && !f3.length) {
     hint.style.display = 'block';
     return;
   }
   hint.style.display = 'none';
-  var mainFiles = Array.from(f1).concat(Array.from(f2)).concat(Array.from(f25));
+  var mainFiles = Array.from(f1).concat(Array.from(f2));
   var correctionFile = f3.length ? f3[0] : null;
   zbCloseUpload();
   document.getElementById('zbPhoneInput').value = '';
   document.getElementById('zbFiveCatInput').value = '';
-  document.getElementById('zbZxCatInput').value = '';
   document.getElementById('zbCorrectionInput').value = '';
   document.getElementById('zbUpFile1Name').style.display = 'none';
   document.getElementById('zbUpFile2Name').style.display = 'none';
-  document.getElementById('zbUpFile25Name').style.display = 'none';
   document.getElementById('zbUpFile3Name').style.display = 'none';
   document.getElementById('zbUpBox1').style.borderColor = '#bfdbfe';
   document.getElementById('zbUpBox1').style.background = '#f8fbff';
   document.getElementById('zbUpBox2').style.borderColor = '#a7f3d0';
   document.getElementById('zbUpBox2').style.background = '#f8fdfb';
-  document.getElementById('zbUpBox25').style.borderColor = '#93c5fd';
-  document.getElementById('zbUpBox25').style.background = '#f0f7ff';
   document.getElementById('zbUpBox3').style.borderColor = '#fbbf24';
   document.getElementById('zbUpBox3').style.background = '#fffbeb';
   // 处理纠正表
@@ -11775,5 +12810,42 @@ window.zbDoExport = function() {
     </div>
   </div>
 </div>
+
+<script>
+// 几何线框：淡蓝色三角/六边/圆环空心线条缓慢漂浮 + 旋转
+// 数量较少（线框比光点存在感强），三种形状交替分布
+(function(){
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    var layer = document.createElement('div');
+    layer.className = 'bg-particles';
+    var SHAPES = ['circ', 'tri', 'hex'];
+    var COUNT = 18;
+    for (var i = 0; i < COUNT; i++) {
+        var span = document.createElement('span');
+        span.className = 'shape ' + SHAPES[i % SHAPES.length];
+        var x = (3 + Math.random() * 94).toFixed(1);    // 横向 3%-97%
+        var size = (16 + Math.random() * 14).toFixed(1); // 16-30px
+        var dur = (20 + Math.random() * 16).toFixed(1);  // 20-36s（慢一些显得高级）
+        var delay = (-Math.random() * 36).toFixed(1);    // 负延迟：页面打开就铺满
+        span.style.setProperty('--x', x + '%');
+        span.style.setProperty('--size', size + 'px');
+        span.style.setProperty('--dur', dur + 's');
+        span.style.setProperty('--delay', delay + 's');
+        layer.appendChild(span);
+    }
+    function insertParticles() {
+        if (document.body.firstChild) {
+            document.body.insertBefore(layer, document.body.firstChild);
+        } else {
+            document.body.appendChild(layer);
+        }
+    }
+    if (document.body) {
+        insertParticles();
+    } else {
+        document.addEventListener('DOMContentLoaded', insertParticles);
+    }
+})();
+</script>
 
 </html>
