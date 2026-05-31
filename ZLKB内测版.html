@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.58A</title>
+    <title>培训部数据看板 v1.58B</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -899,7 +899,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.58A</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.58B</div>
     </div>
   </nav>
 
@@ -1388,7 +1388,7 @@
                 <input id="modalKeywordFilter" style="display:none;">
             </div>
             <!-- 透视分析区域 -->
-            <div id="dtPivotWrap" style="display:none;flex-shrink:0;background:#f8fafc;border-bottom:0.5px solid #e2e8f0;padding:10px 16px;">
+            <div id="dtPivotWrap" style="display:none;flex-shrink:0;background:#f8fafc;border-bottom:0.5px solid #e2e8f0;padding:8px 16px 4px;">
               <div style="display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap;">
                 <span style="font-size:11px;color:#64748b;">按维度分析</span>
                 <button class="dt-dim-btn active" data-dim="level1" onclick="dtSetPivotDim(this)" style="font-size:11px;padding:3px 10px;border-radius:20px;border:0.5px solid #bfdbfe;background:#2563eb;color:#fff;cursor:pointer;">一级项</button>
@@ -1402,7 +1402,7 @@
               </div>
               <div id="dtPivotChart" style="height:220px;"></div>
             </div>
-            <div id="modalBody" style="flex:1;overflow:auto;">
+            <div id="modalBody" style="flex:1;overflow:auto;min-height:0;">
                 <div class="virtual-scroll-container" id="virtualScrollContainer"></div>
             </div>
         </div>
@@ -2471,10 +2471,14 @@
                 document.getElementById('dtPivotWrap').style.display = 'none';
                 _dtPivotFilter = null;
                 if (typeof renderModalTableVirtual === 'function') renderModalTableVirtual();
+                if (_dtPivotChart) { setTimeout(function(){ _dtPivotChart.resize(); }, 50); }
             };
             window.dtOpenPivot = function() {
                 document.getElementById('dtPivotWrap').style.display = '';
-                dtRenderPivotChart();
+                setTimeout(function(){
+                    dtRenderPivotChart();
+                    if (_dtPivotChart) _dtPivotChart.resize();
+                }, 30);
             };
             function dtRenderPivotChart() {
                 var wrap = document.getElementById('dtPivotWrap');
