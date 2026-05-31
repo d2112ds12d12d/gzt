@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.55X</title>
+    <title>培训部数据看板 v1.55Y</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -899,7 +899,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55X</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55Y</div>
     </div>
   </nav>
 
@@ -10590,21 +10590,23 @@ function zbCheckDataHealth() {
     if (zbRole !== 'admin' && zbRole !== 'super') return;
     var bar = document.getElementById('zbDataHealthBar');
     if (!bar || _zbHealthDismissed) return;
-    var ALL_TYPES = ['qa','diff5','sum','diff4'];
-    var TYPE_NAMES = { qa:'QA差异率', diff5:'手机差异明细', sum:'日汇总', diff4:'五品类明细' };
+    var TYPE_NAMES = { qa:'QA差异率', diff5:'手机差异明细', sum:'四品类汇总', diff4:'四品类明细' };
+    var DATA = window._DATA || {};
+    // 从各数据桶提取已有日期集合
+    var datesQa   = new Set((DATA.qa   ||[]).map(function(r){ return r.date; }));
+    var datesDiff5 = new Set((DATA.diff5||[]).map(function(r){ return r.date; }));
+    var datesSum  = new Set((DATA.sum  ||[]).map(function(r){ return r.date; }));
+    var datesDiff4 = new Set((DATA.diff4||[]).map(function(r){ return r.date; }));
     var today = new Date();
     var missing = [];
     for (var i = 1; i <= 15; i++) {
         var d = new Date(today); d.setDate(today.getDate() - i);
         var dateStr = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-        var uploaded = {};
-        _zbLog.forEach(function(log) {
-            if (!log.dates) return;
-            if (log.dates.indexOf(dateStr) !== -1 && ALL_TYPES.indexOf(log.type) !== -1) {
-                uploaded[log.type] = true;
-            }
-        });
-        var missingTypes = ALL_TYPES.filter(function(t){ return !uploaded[t]; });
+        var missingTypes = [];
+        if (!datesQa.has(dateStr))    missingTypes.push('qa');
+        if (!datesDiff5.has(dateStr)) missingTypes.push('diff5');
+        if (!datesSum.has(dateStr))   missingTypes.push('sum');
+        if (!datesDiff4.has(dateStr)) missingTypes.push('diff4');
         if (missingTypes.length > 0) {
             missing.push({ date: dateStr, types: missingTypes });
         }
