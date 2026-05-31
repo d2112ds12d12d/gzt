@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.55Z</title>
+    <title>培训部数据看板 v1.56</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -899,7 +899,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.55Z</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.56</div>
     </div>
   </nav>
 
@@ -7115,18 +7115,89 @@ function zbRenderSiteDetail(siteName) {
                     + '</div>';
             })();
 
-            kpiEl.innerHTML =
-                mk('总抽检量', siteChecks || '—', 'checks', '抽检量', '#2563eb', '#1d4ed8') +
-                mk('差异量', diffCnt, 'diff', kjLabel + '差异', kjColor.side, kjColor.num) +
-                mk('差异率', diffRate, 'rate', kjLabel + '差异率', kjColor.side, kjColor.num);
+            // ── 判断是否为大仓配对站点 ──
+            var _kpiPairMap = [
+                { line: '转转-深圳智能验机中心', post: '深圳后验中心仓' },
+                { line: '转转-青岛智能验机中心', post: '青岛后验中心仓' },
+                { line: '转转-成都智能验机中心', post: '成都后验中心仓' }
+            ];
+            var _kpiPair = null;
+            _kpiPairMap.forEach(function(p) {
+                if (siteName === p.line || siteName === p.post) _kpiPair = p;
+            });
 
-            kpiEl._siteDiff  = siteDiff.filter(diffFilter);
-            kpiEl._siteName  = siteName;
-            kpiEl._filters   = {
-                checks: function(){ return []; }, // 抽检量无明细
-                diff:   diffFilter,
-                rate:   diffFilter
-            };
+            if (_kpiPair) {
+                // ── 双卡片模式：计算配对站点数据 ──
+                var _calcKpi = function(sn) {
+                    var sc = 0;
+                    var _sd = window._getSummaryData ? window._getSummaryData() : [];
+                    _sd.forEach(function(s) {
+                        if (s.siteName !== sn) return;
+                        if (startD && s.date && s.date < startD) return;
+                        if (endD   && s.date && s.date > endD)   return;
+                        sc += (s.totalChecks || 0);
+                    });
+                    var _diff = allDiff.filter(function(d) {
+                        if (d.warehouse !== sn) return false;
+                        if (activeCat && d.cat !== activeCat) return false;
+                        if (window._zbCompareOpen) return true;
+                        if (!d.date) return true;
+                        if (startD && d.date < startD) return false;
+                        if (endD   && d.date > endD)   return false;
+                        return true;
+                    });
+                    var dc = new Set(_diff.filter(diffFilter).filter(function(d){ return d.code; }).map(function(d){ return d.code; })).size;
+                    var dr = sc ? (dc / sc * 100).toFixed(2) + '%' : '—';
+                    return { checks: sc, diffCnt: dc, diffRate: dr, siteDiff: _diff };
+                };
+
+                var _lineKpi = _calcKpi(_kpiPair.line);
+                var _postKpi = _calcKpi(_kpiPair.post);
+
+                var _mkCard = function(label, kpi, dotColor, numColor) {
+                    return '<div style="background:var(--bg-secondary,#f7f9fc);border-radius:8px;border:0.5px solid #e0e8f5;padding:12px 14px;">'
+                        + '<div style="font-size:12px;color:#888;font-weight:500;margin-bottom:10px;display:flex;align-items:center;gap:6px;">'
+                        + '<span style="width:6px;height:6px;border-radius:50%;background:' + dotColor + ';display:inline-block;flex-shrink:0;"></span>'
+                        + label + '</div>'
+                        + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">'
+                        + '<div><div style="font-size:11px;color:#aaa;margin-bottom:2px;">总抽检量</div><div style="font-size:20px;font-weight:500;color:' + numColor + ';">' + (kpi.checks || '—') + '</div></div>'
+                        + '<div><div style="font-size:11px;color:#aaa;margin-bottom:2px;">差异量</div><div style="font-size:20px;font-weight:500;color:' + numColor + ';">' + kpi.diffCnt + '</div></div>'
+                        + '<div><div style="font-size:11px;color:#aaa;margin-bottom:2px;">差异率</div><div style="font-size:20px;font-weight:500;color:' + numColor + ';">' + kpi.diffRate + '</div></div>'
+                        + '</div></div>';
+                };
+
+                kpiEl.style.display = 'grid';
+                kpiEl.style.gridTemplateColumns = '1fr 1fr';
+                kpiEl.style.gap = '10px';
+                kpiEl.innerHTML =
+                    _mkCard(_kpiPair.line, _lineKpi, '#185FA5', '#185FA5') +
+                    _mkCard(_kpiPair.post, _postKpi, '#534AB7', '#534AB7');
+
+                kpiEl._siteDiff  = siteDiff.filter(diffFilter);
+                kpiEl._siteName  = siteName;
+                kpiEl._filters   = {
+                    checks: function(){ return []; },
+                    diff:   diffFilter,
+                    rate:   diffFilter
+                };
+            } else {
+                // ── 普通站点：原有三格布局不变 ──
+                kpiEl.style.display = '';
+                kpiEl.style.gridTemplateColumns = '';
+                kpiEl.style.gap = '';
+                kpiEl.innerHTML =
+                    mk('总抽检量', siteChecks || '—', 'checks', '抽检量', '#2563eb', '#1d4ed8') +
+                    mk('差异量', diffCnt, 'diff', kjLabel + '差异', kjColor.side, kjColor.num) +
+                    mk('差异率', diffRate, 'rate', kjLabel + '差异率', kjColor.side, kjColor.num);
+
+                kpiEl._siteDiff  = siteDiff.filter(diffFilter);
+                kpiEl._siteName  = siteName;
+                kpiEl._filters   = {
+                    checks: function(){ return []; }, // 抽检量无明细
+                    diff:   diffFilter,
+                    rate:   diffFilter
+                };
+            }
         }
     }
 
