@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.57E</title>
+    <title>培训部数据看板 v1.57F</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -899,7 +899,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.57E</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.57F</div>
     </div>
   </nav>
 
@@ -2287,9 +2287,8 @@
             const DT_EDITABLE_COLS = ['person'];
             const DT_COL_LABELS = { date:'日期', warehouse:'站点名称', cat:'品类', code:'质检码', level1:'一级项', level2:'二级项', level3_orig:'原三级项', level3:'新三级项', category:'主客观分类', issueType:'问题类型', judgedIssueType:'抽检判定类型', person:'质检人员', qaInspector:'QA抽检人' };
 
-            // 列筛选状态
-            let dtColFilters = {}; // { colKey: Set of selected values } — 空Set=不过滤
-            let dtPopupCol = null, dtPopupSelected = new Set(), dtAllVals = [];
+            // 列筛选状态（挂window保证跨闭包共享）
+            window._dtState = { colFilters:{}, popupCol:null, popupSelected:new Set(), allVals:[] };
 
             function dtGetVal(d, col) {
                 const editKey = d.code + '|' + col;
@@ -2303,8 +2302,8 @@
 
             function dtFilteredRows() {
                 return dtGetAllRows().filter(function(d) {
-                    return Object.keys(dtColFilters).every(function(col) {
-                        const f = dtColFilters[col];
+                    return Object.keys(window._dtState.colFilters).every(function(col) {
+                        const f = window._dtState.colFilters[col];
                         if (!f || f.size === 0) return true;
                         return f.has(dtGetVal(d, col));
                     });
@@ -2390,7 +2389,7 @@
             function dtUpdateFilterIcons() {
                 document.querySelectorAll('.dt-filter-icon').forEach(function(icon) {
                     const col = icon.dataset.col;
-                    const hasFilter = dtColFilters[col] && dtColFilters[col].size > 0;
+                    const hasFilter = window._dtState.colFilters[col] && window._dtState.colFilters[col].size > 0;
                     icon.classList.toggle('active', hasFilter);
                     icon.textContent = hasFilter ? '⏶' : '⏷';
                 });
@@ -2400,19 +2399,19 @@
             window.dtOpenColFilter = function dtOpenColFilter(col, iconEl) {
                 const popup = document.getElementById('dtColPopup');
                 // 面板已开且是同一列 → 关闭（切换）
-                if (popup && popup.style.display !== 'none' && dtPopupCol === col) {
+                if (popup && popup.style.display !== 'none' && window._dtState.popupCol === col) {
                     dtClosePopup();
                     return;
                 }
-                dtPopupCol = col;
+                window._dtState.popupCol = col;
                 const allRows = currentModalRecords && currentModalRecords.length ? currentModalRecords : dtGetAllRows();
                 const valCounts = {};
                 allRows.forEach(function(d) {
                     const v = dtGetVal(d, col);
                     valCounts[v] = (valCounts[v]||0) + 1;
                 });
-                dtAllVals = Object.keys(valCounts).sort();
-                dtPopupSelected = dtColFilters[col] ? new Set(dtColFilters[col]) : new Set(dtAllVals);
+                window._dtState.allVals = Object.keys(valCounts).sort();
+                window._dtState.popupSelected = window._dtState.colFilters[col] ? new Set(window._dtState.colFilters[col]) : new Set(window._dtState.allVals);
                 const rect = iconEl.getBoundingClientRect();
                 popup.style.display = 'flex';
                 // position:fixed 不加 scrollY，直接用 viewport 坐标
@@ -2426,9 +2425,9 @@
             }
 
             function dtRenderPopupList(kw) {
-                const filtered = kw ? dtAllVals.filter(function(v){ return v.toLowerCase().includes(kw.toLowerCase()); }) : dtAllVals;
+                const filtered = kw ? window._dtState.allVals.filter(function(v){ return v.toLowerCase().includes(kw.toLowerCase()); }) : window._dtState.allVals;
                 document.getElementById('dtColList').innerHTML = filtered.map(function(v) {
-                    const checked = dtPopupSelected.has(v);
+                    const checked = window._dtState.popupSelected.has(v);
                     const chkBox = '<div class="dt-chk" style="width:14px;height:14px;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;'
                         +'border:1.5px solid '+(checked?'var(--btn-bg)':'var(--border-color)')+';'
                         +'background:'+(checked?'var(--btn-bg)':'transparent')+';">'
@@ -2443,7 +2442,7 @@
             function dtClosePopup() {
                 var _popup = document.getElementById('dtColPopup');
                 if (_popup) _popup.style.display = 'none';
-                dtPopupCol = null;
+                window._dtState.popupCol = null;
             }
 
             // 列筛选事件（差异明细弹窗）
@@ -2464,8 +2463,8 @@
                 if (!item) return;
                 e.stopPropagation();
                 const v = item.dataset.val;
-                if (dtPopupSelected.has(v)) dtPopupSelected.delete(v);
-                else dtPopupSelected.add(v);
+                if (window._dtState.popupSelected.has(v)) window._dtState.popupSelected.delete(v);
+                else window._dtState.popupSelected.add(v);
                 dtRenderPopupList((document.getElementById('dtColSearch')||{}).value||'');
             });
             // 搜索框
@@ -2476,7 +2475,7 @@
             document.addEventListener('click', function(e) {
                 if (e.target && e.target.id === 'dtSelectAll') {
                     e.stopPropagation();
-                    dtAllVals.forEach(function(v){ dtPopupSelected.add(v); });
+                    window._dtState.allVals.forEach(function(v){ window._dtState.popupSelected.add(v); });
                     dtRenderPopupList((document.getElementById('dtColSearch')||{}).value||'');
                 }
             });
@@ -2484,7 +2483,7 @@
             document.addEventListener('click', function(e) {
                 if (e.target && e.target.id === 'dtClearAll') {
                     e.stopPropagation();
-                    dtPopupSelected.clear();
+                    window._dtState.popupSelected.clear();
                     dtRenderPopupList((document.getElementById('dtColSearch')||{}).value||'');
                 }
             });
@@ -2492,10 +2491,10 @@
             document.addEventListener('click', function(e) {
                 if (e.target && e.target.id === 'dtApplyFilter') {
                     e.stopPropagation();
-                    if (dtPopupCol) {
-                        var allSelected = dtAllVals.every(function(v){ return dtPopupSelected.has(v); });
-                        if (allSelected) delete dtColFilters[dtPopupCol];
-                        else dtColFilters[dtPopupCol] = new Set(dtPopupSelected);
+                    if (window._dtState.popupCol) {
+                        var allSelected = window._dtState.allVals.every(function(v){ return window._dtState.popupSelected.has(v); });
+                        if (allSelected) delete window._dtState.colFilters[window._dtState.popupCol];
+                        else window._dtState.colFilters[window._dtState.popupCol] = new Set(window._dtState.popupSelected);
                         renderModalTableVirtual();
                         dtUpdateFilterIcons();
                     }
@@ -2800,9 +2799,9 @@
                         if (!subjMatch || !issueMatch) return false;
                     }
                     // 列筛选
-                    if (Object.keys(dtColFilters).length) {
-                        var pass = Object.keys(dtColFilters).every(function(col) {
-                            var f = dtColFilters[col];
+                    if (Object.keys(window._dtState.colFilters).length) {
+                        var pass = Object.keys(window._dtState.colFilters).every(function(col) {
+                            var f = window._dtState.colFilters[col];
                             if (!f || f.size === 0) return true;
                             var val = typeof dtGetVal === 'function' ? dtGetVal(d, col) : (d[col] || '-');
                             return f.has(val);
@@ -3354,7 +3353,7 @@
                 if (document.getElementById('objRankBody')) document.getElementById('objRankBody').innerHTML = '<tr><td colspan="3" style="text-align:center;color:var(--text-secondary);">暂无数据</td></tr>';
                 if (document.getElementById('personTableBody')) document.getElementById('personTableBody').innerHTML = '';
                 if (document.getElementById('detailTableBody')) document.getElementById('detailTableBody').innerHTML = '';
-                dtColFilters = {};
+                window._dtState.colFilters = {};
                 if (document.getElementById('modelRankBody')) document.getElementById('modelRankBody').innerHTML = '';
                 if (document.getElementById('issueRankBody')) document.getElementById('issueRankBody').innerHTML = '';
                 if (trendChart) trendChart.clear();
