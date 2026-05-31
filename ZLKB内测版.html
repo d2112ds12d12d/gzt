@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.57I</title>
+    <title>培训部数据看板 v1.57J</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -899,7 +899,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.57I</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.57J</div>
     </div>
   </nav>
 
@@ -2416,7 +2416,8 @@
                     valCounts[v] = (valCounts[v]||0) + 1;
                 });
                 window._dtState.allVals = Object.keys(valCounts).sort();
-                window._dtState.popupSelected = window._dtState.colFilters[col] ? new Set(window._dtState.colFilters[col]) : new Set(window._dtState.allVals);
+                // 默认全不选；若已有筛选则恢复已选状态
+                window._dtState.popupSelected = window._dtState.colFilters[col] ? new Set(window._dtState.colFilters[col]) : new Set();
                 const rect = iconEl.getBoundingClientRect();
                 popup.style.display = 'flex';
                 // position:fixed 不加 scrollY，直接用 viewport 坐标
@@ -2431,13 +2432,7 @@
 
             function dtRenderPopupList(kw) {
                 const filtered = kw ? window._dtState.allVals.filter(function(v){ return v.toLowerCase().includes(kw.toLowerCase()); }) : window._dtState.allVals;
-                // 有搜索词时自动只选中搜索结果，用户直接点确认即可
-                if (kw && filtered.length) {
-                    window._dtState.popupSelected = new Set(filtered);
-                } else if (!kw) {
-                    // 清空搜索词时恢复全选
-                    window._dtState.popupSelected = new Set(window._dtState.allVals);
-                }
+                // 搜索只过滤列表显示，不自动勾选
                 document.getElementById('dtColList').innerHTML = filtered.map(function(v) {
                     const checked = window._dtState.popupSelected.has(v);
                     const chkBox = '<div class="dt-chk" style="width:14px;height:14px;border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;'
@@ -2462,12 +2457,13 @@
                 // 列头筛选图标点击（virtualScroll动态生成的th）
                 const icon = e.target.closest('.dt-filter-icon');
                 if (icon) { e.stopPropagation(); dtOpenColFilter(icon.dataset.col, icon); return; }
-                // 弹出层内部点击
+                // 弹出层内部点击：不关闭，直接return让后续监听器处理
                 const popup = document.getElementById('dtColPopup');
                 if (!popup || popup.style.display === 'none') return;
                 if (popup.contains(e.target)) return;
+                // 点击弹窗外才关闭
                 dtClosePopup();
-            });
+            }, true);
             // 列表项勾选
             document.addEventListener('click', function(e) {
                 if (!document.getElementById('dtColPopup') || document.getElementById('dtColPopup').style.display==='none') return;
