@@ -7139,13 +7139,19 @@ function zbRenderSiteDetail(siteName) {
                 // ── 双卡片模式：计算配对站点数据 ──
                 var _calcKpi = function(sn) {
                     var sc = 0;
-                    var _sd = window._getSummaryData ? window._getSummaryData() : [];
-                    _sd.forEach(function(s) {
-                        if (s.siteName !== sn) return;
-                        if (startD && s.date && s.date < startD) return;
-                        if (endD   && s.date && s.date > endD)   return;
-                        sc += (s.totalChecks || 0);
-                    });
+                    (function() {
+                        if (!window._DATA) return;
+                        var DATA = window._DATA;
+                        var cat = activeCat || '手机';
+                        var inRng = function(d){ if(!d)return false; if(startD&&d<startD)return false; if(endD&&d>endD)return false; return true; };
+                        if (cat === '手机') {
+                            sc = (DATA.qa||[]).filter(function(r){ return r.site===sn && r.cat===cat && inRng(r.date); })
+                                .reduce(function(s,r){ return s+(r.checks||0); }, 0);
+                        } else {
+                            sc = (DATA.sum||[]).filter(function(r){ return r.site===sn && r.cat===cat && inRng(r.date); })
+                                .reduce(function(s,r){ return s+(r.checks||0); }, 0);
+                        }
+                    })();
                     var _diff = allDiff.filter(function(d) {
                         if (d.warehouse !== sn) return false;
                         if (activeCat && d.cat !== activeCat) return false;
