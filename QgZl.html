@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.58I</title>
+    <title>培训部数据看板 v1.58J</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -899,7 +899,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.58I</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.58J</div>
     </div>
   </nav>
 
@@ -6806,6 +6806,24 @@ async function zbLoadCloudData(useApi) {
         const src = viaApi ? '（API直连）' : '';
         showToast('✅ 云端数据已加载（' + loaded + '/4）' + src);
         if (typeof zbSetCloudStatus === 'function') zbSetCloudStatus('ok');
+        // 默认日期：数据源最新月份的完整月（1号到月底）
+        (function() {
+            var allDates = [];
+            (window._DATA.qa||[]).forEach(function(r){ if(r.date) allDates.push(r.date); });
+            (window._DATA.diff5||[]).forEach(function(r){ if(r.date) allDates.push(r.date); });
+            if (!allDates.length) return;
+            allDates.sort();
+            var latest = allDates[allDates.length - 1];
+            var y = latest.slice(0,4), m = latest.slice(5,7);
+            var lastDay = new Date(parseInt(y), parseInt(m), 0).getDate();
+            var pad = function(n){ return String(n).padStart(2,'0'); };
+            var startVal = y + '-' + m + '-01';
+            var endVal   = y + '-' + m + '-' + pad(lastDay);
+            var sdf = document.getElementById('startDateFilter');
+            var edf = document.getElementById('endDateFilter');
+            if (sdf) sdf.value = startVal;
+            if (edf) edf.value = endVal;
+        })();
         if (typeof bridgeData === 'function') bridgeData();
         // 数据加载完立即应用操作人纠正（不等轮询，确保导出时person已是正确值）
         try {
@@ -10923,41 +10941,31 @@ function zbCheckDataHealth() {
     if (zbRole !== 'admin' && zbRole !== 'super') return;
     var bar = document.getElementById('zbDataHealthBar');
     if (!bar || _zbHealthDismissed) return;
-    var TYPE_NAMES = { qa:'QA差异率', sum:'四品类汇总' };
     var DATA = window._DATA || {};
-    // 只检查每天必须上传的汇总文件，diff5/diff4无差异时可以为空不算缺失
     var datesQa  = new Set((DATA.qa ||[]).map(function(r){ return r.date; }));
     var datesSum = new Set((DATA.sum||[]).map(function(r){ return r.date; }));
     var today = new Date();
-    var missing = [];
+    var missingQa = [], missingSum = [];
     for (var i = 1; i <= 15; i++) {
         var d = new Date(today); d.setDate(today.getDate() - i);
         var dateStr = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-        var missingTypes = [];
-        if (!datesQa.has(dateStr))  missingTypes.push('qa');
-        if (!datesSum.has(dateStr)) missingTypes.push('sum');
-        if (missingTypes.length > 0) missing.push({ date: dateStr, types: missingTypes });
+        if (!datesQa.has(dateStr))  missingQa.push(dateStr.slice(5));
+        if (!datesSum.has(dateStr)) missingSum.push(dateStr.slice(5));
     }
-    if (!missing.length) { bar.style.display = 'none'; return; }
-    // 按缺失类型分组，紧凑横向展示
-    var byType = {};
-    missing.forEach(function(m) {
-        var key = m.types.join('+');
-        if (!byType[key]) byType[key] = { types: m.types, dates: [] };
-        byType[key].dates.push(m.date.slice(5));
-    });
-    var lines = Object.values(byType).map(function(g) {
-        var typeStr = g.types.map(function(t){ return TYPE_NAMES[t]; }).join('、');
-        var dateStr = g.dates.join(' · ');
-        return '<span style="font-size:11px;color:#92400e;margin-right:12px;">缺'+typeStr+'：'+dateStr+'</span>';
-    }).join('');
+    if (!missingQa.length && !missingSum.length) { bar.style.display = 'none'; return; }
+    var totalDays = new Set([...missingQa, ...missingSum]).size;
+    var lines = '';
+    if (missingQa.length)  lines += '<div style="font-size:11px;color:#92400e;">缺手机QA差异率：' + missingQa.join(' · ') + '</div>';
+    if (missingSum.length) lines += '<div style="font-size:11px;color:#92400e;margin-top:2px;">缺四品类汇总：' + missingSum.join(' · ') + '</div>';
     bar.style.display = 'block';
     bar.innerHTML = '<div style="background:rgba(254,243,199,0.7);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:0.5px solid rgba(252,211,77,0.5);border-radius:10px;padding:8px 14px;">'
-        + '<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">'
-        + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
-        + '<span style="font-size:12px;font-weight:500;color:#92400e;white-space:nowrap;">近15天 '+missing.length+' 天不完整</span>'
+        + '<div style="display:flex;align-items:flex-start;gap:10px;">'
+        + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+        + '<div style="flex:1;min-width:0;">'
+        + '<div style="font-size:12px;font-weight:500;color:#92400e;margin-bottom:4px;">近15天 '+totalDays+' 天不完整</div>'
         + lines
-        + '<button onclick="_zbHealthDismissed=true;document.getElementById(&quot;zbDataHealthBar&quot;).style.display=&quot;none&quot;;" style="font-size:16px;line-height:1;color:#b45309;background:none;border:none;cursor:pointer;flex-shrink:0;padding:0;margin-left:auto;">×</button>'
+        + '</div>'
+        + '<button onclick="_zbHealthDismissed=true;document.getElementById(&quot;zbDataHealthBar&quot;).style.display=&quot;none&quot;;" style="font-size:16px;line-height:1;color:#b45309;background:none;border:none;cursor:pointer;flex-shrink:0;padding:0;">×</button>'
         + '</div></div>';
 }
 var _zbImageLog = (function(){
