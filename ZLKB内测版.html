@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.57C</title>
+    <title>培训部数据看板 v1.57D</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -899,7 +899,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.57C</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.57D</div>
     </div>
   </nav>
 
@@ -3937,7 +3937,8 @@
                         level3:          r.level3_new || r.level3_orig,
                         issueType:       r.issueType,
                         judgedIssueType: r.judgedType,
-                        model:           r.cat,
+                        brand:           r.brand||'',
+                        model:           r.model||'',
                         code:            r.code,
                         _origRef:        r
                     };
@@ -3956,7 +3957,8 @@
                         level3:          r.level3_new || r.level3_orig,
                         issueType:       r.issueType,
                         judgedIssueType: r.judgedType,
-                        model:           r.cat,
+                        brand:           r.brand||'',
+                        model:           r.model||'',
                         code:            r.code,
                         _origRef:        r
                     };
@@ -4027,7 +4029,9 @@
                                 issueType: String(r['问题类型']||'').trim(),
                                 judgedType: String(r['抽检判定的问题类型']||'').trim(),
                                 inspector: DW_SITES_PARSE.has(String(r['站点名称']||'').trim()) ? '/' : extractCN(String(r['原操作人名称']||'')),
-                                qaInspector: extractCN(String(r['新操作人名称']||''))
+                                qaInspector: extractCN(String(r['新操作人名称']||'')),
+                                brand: String(r['品牌名称']||'').trim(),
+                                model: String(r['型号名称']||'').trim()
                             }));
                             DATA.diff5 = smartMerge(DATA.diff5, parsed, r => r.date+'|'+r.code+'|'+r.site);
                         } else if ('抽检总量' in fr && '品类' in fr && !('质检码' in fr)) {
@@ -4036,7 +4040,7 @@
                             DATA.sum = smartMerge(DATA.sum, parsed);
                         } else if ('主客观分类' in fr && '问题分类' in fr) {
                             tableType = 'diff4'; tableName = '五品类差异明细';
-                            parsed = rows.map(r => ({ date:nd(r['抽检时间']), code:(r['质检码']||'').trim(), site:(r['站点']||'').trim(), cat:CAT_MAP[r['品类']]||r['品类']||'', level1:r['一级项']||'', level2:r['二级项']||'', level3_orig:r['原三级项']||'', level3_new:r['新三级项']||'', subjobj:(r['主客观分类']||'').trim(), issueType:(r['质检项类型']||'').trim(), judgedType:(r['问题分类']||'').trim(), inspector:extractCN(r['质检师']||''), qaInspector:extractCN(r['QA']||'') }));
+                            parsed = rows.map(r => ({ date:nd(r['抽检时间']), code:(r['质检码']||'').trim(), site:(r['站点']||'').trim(), cat:CAT_MAP[r['品类']]||r['品类']||'', level1:r['一级项']||'', level2:r['二级项']||'', level3_orig:r['原三级项']||'', level3_new:r['新三级项']||'', subjobj:(r['主客观分类']||'').trim(), issueType:(r['质检项类型']||'').trim(), judgedType:(r['问题分类']||'').trim(), inspector:extractCN(r['质检师']||''), qaInspector:extractCN(r['QA']||''), brand:String(r['品牌名称']||'').trim(), model:String(r['型号名称']||'').trim() }));
                             DATA.diff4 = smartMerge(DATA.diff4, parsed);
                         } else if ('抽检设备数量' in fr && '站点名称' in fr && '品类名称' in fr && !('质检码' in fr) && !('主客观问题分类' in fr)) {
                             // 四品类汇总表（中心仓+大仓混合），按站点分流
