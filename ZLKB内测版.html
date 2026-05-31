@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.58</title>
+    <title>培训部数据看板 v1.58A</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -899,7 +899,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.58</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.58A</div>
     </div>
   </nav>
 
@@ -1360,12 +1360,7 @@
                         <div style="display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:8px;">
                             <span id="modalTotalChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,.7);color:#64748b;border:0.5px solid #bfdbfe;">共 0 条</span>
                             <span id="modalUnitChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:rgba(255,255,255,.7);color:#2563eb;border:0.5px solid #bfdbfe;display:none;">0 台</span>
-                            <span id="modalFilteredChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:#2563eb;color:#fff;display:none;cursor:pointer;align-items:center;gap:4px;" onclick="dtToggleFilterPanel()" title="查看/清除列筛选">已筛选 0列 · 0条 ▾</span>
-                            <!-- 筛选面板 -->
-                            <div id="dtFilterPanel" style="display:none;position:absolute;top:100%;left:0;z-index:3000;background:#fff;border-radius:10px;border:0.5px solid #bfdbfe;box-shadow:0 4px 16px rgba(37,99,235,0.1);padding:10px 12px;min-width:220px;margin-top:4px;">
-                              <div id="dtFilterPanelRows" style="display:flex;flex-direction:column;gap:6px;margin-bottom:8px;"></div>
-                              <button onclick="dtClearAllFilters();dtToggleFilterPanel();" style="width:100%;height:28px;border-radius:6px;border:0.5px solid #bfdbfe;background:#eff6ff;color:#2563eb;font-size:12px;cursor:pointer;">清除全部筛选</button>
-                            </div>
+                            <div id="dtFilterTagsWrap" style="display:none;display:flex;align-items:center;gap:5px;flex-wrap:wrap;"></div>
                             <span id="modalCatChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:#dbeafe;color:#1d4ed8;display:none;"></span>
                             <span id="modalKouJingChip" style="font-size:10px;padding:2px 8px;border-radius:20px;background:#dbeafe;color:#1d4ed8;display:none;"></span>
                         </div>
@@ -1405,7 +1400,7 @@
                 <span id="dtPivotSummary" style="font-size:11px;color:#94a3b8;margin-left:auto;"></span>
                 <button onclick="dtClosePivot()" style="font-size:11px;color:#94a3b8;background:none;border:none;cursor:pointer;">收起 ▲</button>
               </div>
-              <div id="dtPivotChart" style="height:150px;"></div>
+              <div id="dtPivotChart" style="height:220px;"></div>
             </div>
             <div id="modalBody" style="flex:1;overflow:auto;">
                 <div class="virtual-scroll-container" id="virtualScrollContainer"></div>
@@ -2507,10 +2502,10 @@
                 var barColor = labels.map(function(l){ return l === _dtPivotFilter ? '#dc2626' : '#378ADD'; });
                 _dtPivotChart.setOption({
                     tooltip:{ trigger:'axis', formatter:function(p){ return p[0].name+': '+p[0].value+'条'; } },
-                    grid:{ top:8, bottom:40, left:30, right:8, containLabel:true },
+                    grid:{ top:24, bottom:48, left:30, right:8, containLabel:true },
                     xAxis:{ type:'category', data:labels, axisLabel:{ color:textColor, fontSize:10, rotate:labels.length>6?20:0, overflow:'truncate', width:60 }, axisLine:{lineStyle:{color:'#e2e8f0'}} },
                     yAxis:{ type:'value', axisLabel:{ color:textColor, fontSize:10 }, splitLine:{ lineStyle:{ color:'#f1f5f9' } }, minInterval:1 },
-                    series:[{ type: isDate?'line':'bar', data:vals, itemStyle:{ color:function(p){ return labels[p.dataIndex]===_dtPivotFilter?'#dc2626':'#378ADD'; }, borderRadius:isDate?0:[3,3,0,0] }, lineStyle:{ color:'#378ADD', width:2 }, symbol:'circle', symbolSize:5 }]
+                    series:[{ type: isDate?'line':'bar', data:vals, itemStyle:{ color:function(p){ return labels[p.dataIndex]===_dtPivotFilter?'#dc2626':'#378ADD'; }, borderRadius:isDate?0:[3,3,0,0] }, lineStyle:{ color:'#378ADD', width:2 }, symbol:'circle', symbolSize:5, label:{ show:true, position: isDate?'top':'top', color:'#475569', fontSize:11, formatter:'{c}' } }]
                 }, true);
                 _dtPivotChart.off('click');
                 _dtPivotChart.on('click', function(params) {
@@ -2984,14 +2979,27 @@
                         unitChip.style.display = 'none';
                     }
                 }
-                if (filteredChip) {
-                    var activeColCount = Object.keys(window._dtState.colFilters).filter(function(k){ return window._dtState.colFilters[k] && window._dtState.colFilters[k].size > 0; }).length;
-                    var hasPivotFilter = !!_dtPivotFilter;
-                    if (activeColCount > 0 || hasPivotFilter) {
-                        filteredChip.style.display='inline-flex';
-                        var colTxt = activeColCount > 0 ? activeColCount+'列' : '';
-                        filteredChip.textContent = '已筛选 ' + (colTxt ? colTxt+' · ' : '') + filtered.length+'条 ▾';
-                    } else filteredChip.style.display='none';
+                // 平铺筛选标签
+                var tagsWrap = document.getElementById('dtFilterTagsWrap');
+                if (tagsWrap) {
+                    var COL_LABELS2 = {date:'日期',warehouse:'站点',code:'质检码',brand:'品牌',model:'型号',level1:'一级项',level2:'二级项',level3_orig:'原三级项',level3:'新三级项',person:'操作人',category:'主客观',issueType:'问题类型',judgedIssueType:'责任类型'};
+                    var activeKeys = Object.keys(window._dtState.colFilters).filter(function(k){ return window._dtState.colFilters[k] && window._dtState.colFilters[k].size > 0; });
+                    var html = '';
+                    activeKeys.forEach(function(k) {
+                        var vals = Array.from(window._dtState.colFilters[k]).join('、');
+                        if (vals.length > 14) vals = vals.slice(0,14)+'…';
+                        html += '<span style="display:inline-flex;align-items:center;gap:4px;font-size:10px;padding:2px 6px 2px 8px;border-radius:20px;background:#2563eb;color:#fff;">'
+                            + (COL_LABELS2[k]||k)+': '+vals
+                            + '<span onclick="dtRemoveColFilter(&quot;'+k+'&quot;)" style="cursor:pointer;font-size:12px;line-height:1;opacity:0.8;">×</span></span>';
+                    });
+                    if (activeKeys.length > 0) {
+                        html += '<span style="font-size:10px;color:#64748b;">共'+filtered.length+'条</span>';
+                        html += '<span onclick="dtClearAllFilters()" style="font-size:10px;color:#94a3b8;cursor:pointer;text-decoration:underline;">清除全部</span>';
+                        tagsWrap.style.display='flex';
+                    } else {
+                        tagsWrap.style.display='none';
+                    }
+                    tagsWrap.innerHTML = html;
                 }
 
                 // 同质检码多行相邻：先按质检码稳定排序，再按原始顺序排同码内部
