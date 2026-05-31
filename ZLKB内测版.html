@@ -6998,16 +6998,25 @@ function zbRenderSiteDetail(siteName) {
             // 读当前口径
             var kjScope = window._siteDataScope || 'exec';
 
-            // 总抽检量
+            // 总抽检量：与排行榜逻辑一致，手机走DATA.qa，其他品类走DATA.sum/DATA.dw4sum
             var siteChecks = 0;
-            var _sumData = window._getSummaryData ? window._getSummaryData() : [];
-            _sumData.forEach(function(s){
-                if (s.siteName !== siteName) return;
-                // 联动顶部日期：只统计日期范围内的抽检量
-                if (startD && s.date && s.date < startD) return;
-                if (endD   && s.date && s.date > endD)   return;
-                siteChecks += (s.totalChecks||0);
-            });
+            (function() {
+                if (!window._DATA) return;
+                var DATA = window._DATA;
+                var cat = activeCat || '手机';
+                var inRng = function(d){ if(!d)return false; if(startD&&d<startD)return false; if(endD&&d>endD)return false; return true; };
+                var isDW = (typeof zbGetSiteType==='function') ? zbGetSiteType(siteName)==='大仓' : false;
+                if (cat === '手机') {
+                    siteChecks = (DATA.qa||[]).filter(function(r){ return r.site===siteName && r.cat===cat && inRng(r.date); })
+                        .reduce(function(s,r){ return s+(r.checks||0); }, 0);
+                } else if (isDW) {
+                    siteChecks = (DATA.dw4sum||[]).filter(function(r){ return r.site===siteName && r.cat===cat && inRng(r.date); })
+                        .reduce(function(s,r){ return s+(r.checks||0); }, 0);
+                } else {
+                    siteChecks = (DATA.sum||[]).filter(function(r){ return r.site===siteName && r.cat===cat && inRng(r.date); })
+                        .reduce(function(s,r){ return s+(r.checks||0); }, 0);
+                }
+            })();
 
             // 按口径计算差异量
             var diffFilter;
@@ -7154,11 +7163,9 @@ function zbRenderSiteDetail(siteName) {
                 var _lineKpi = _calcKpi(_kpiPair.line);
                 var _postKpi = _calcKpi(_kpiPair.post);
 
-                var _mkCard = function(label, kpi, dotColor, numColor) {
-                    return '<div style="background:var(--bg-secondary,#f7f9fc);border-radius:8px;border:0.5px solid #e0e8f5;padding:12px 14px;">'
-                        + '<div style="font-size:12px;color:#888;font-weight:500;margin-bottom:10px;display:flex;align-items:center;gap:6px;">'
-                        + '<span style="width:6px;height:6px;border-radius:50%;background:' + dotColor + ';display:inline-block;flex-shrink:0;"></span>'
-                        + label + '</div>'
+                var _mkCard = function(label, kpi, borderColor, numColor) {
+                    return '<div style="background:var(--color-background-primary,#fff);border-radius:10px;border:0.5px solid #e0e8f5;border-left:4px solid ' + borderColor + ';padding:12px 14px;">'
+                        + '<div style="font-size:12px;font-weight:500;color:' + borderColor + ';margin-bottom:10px;">' + label + '</div>'
                         + '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">'
                         + '<div><div style="font-size:11px;color:#aaa;margin-bottom:2px;">总抽检量</div><div style="font-size:20px;font-weight:500;color:' + numColor + ';">' + (kpi.checks || '—') + '</div></div>'
                         + '<div><div style="font-size:11px;color:#aaa;margin-bottom:2px;">差异量</div><div style="font-size:20px;font-weight:500;color:' + numColor + ';">' + kpi.diffCnt + '</div></div>'
