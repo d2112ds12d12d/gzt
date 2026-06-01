@@ -7062,7 +7062,7 @@ async function _zbPushMonthlyMerge(fname, memRows, rowKey, token, label) {
 
 // ── 推送修改记录 ──
 async function zbPushEdits() {
-    if (zbRole !== 'admin' && zbRole !== 'super') return;
+    if (zbRole !== 'admin' && zbRole !== 'super' && zbRole !== 'trainer') return;
     const token = zbGetToken();
     if (!token) return;
 
