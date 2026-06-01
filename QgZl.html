@@ -1971,7 +1971,6 @@
 
                 function calcKpi(diffRows, summaryRows) {
                     var filteredSum = filterSummaryData(summaryRows);
-                    console.log('[KPI诊断] calcKpi 入参 summaryRows.length:', summaryRows.length, '| filterSummaryData 后 filteredSum.length:', filteredSum.length, '| filteredSum 日期种类:', new Set(filteredSum.map(r=>r.date)).size, '| filteredSum 累计 totalChecks:', filteredSum.reduce((a,r)=>a+(r.totalChecks||0),0));
                     var totalChecks = filteredSum.reduce((acc, r) => acc + (r.totalChecks || 0), 0);
                     var uniqueCodesObj  = new Set(diffRows.filter(d => isObjective(d.category)).map(d => d.code)).size;
                     var uniqueCodesSubj = new Set(diffRows.filter(d => isSubjective(d.category)).map(d => d.code)).size;
