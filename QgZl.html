@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.58R</title>
+    <title>培训部数据看板 v1.58S</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -902,7 +902,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.58R</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.58S</div>
     </div>
   </nav>
 
@@ -5698,13 +5698,25 @@ function _tk() { return _t.join(''); }
 function ghUrl(file) { return `https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${GH_FOLDER}/${file}`; }
 function ghRaw(file) { return `https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/${GH_FOLDER}/${file}?t=${Date.now()}`; }
 // GitHub Contents API — 绕过 CDN，推送后几乎立即可读，需要 Token
+// 大文件兜底：Contents API 对 >1MB 文件返回 encoding:'none' 且 content 为空，
+// 此时必须改走 Git Blob API（/git/blobs/{sha}，上限 100MB，同样不经 CDN）。
+// 不处理这条分支会让本函数返回 null → 调用方退回 raw.githubusercontent.com，
+// 而 raw CDN 有 ~5min Fastly 缓存且 ?t= 不会绕过它，导致推送后其他人刷新看不到。
 async function ghApiFetch(fname, token) {
     const r = await fetch(ghUrl(fname) + '?t=' + Date.now(), { headers: { Authorization: 'token ' + token } });
     if (!r.ok) return null;
     const meta = await r.json();
-    if (!meta.content) return null;
-    // contents API 返回 base64，需要解码成 JSON
-    const binary = atob(meta.content.replace(/\n/g,''));
+    let b64 = meta.content;
+    if (!b64 || meta.encoding === 'none') {
+        if (!meta.sha) return null;
+        const blobR = await fetch('https://api.github.com/repos/' + GH_USER + '/' + GH_REPO + '/git/blobs/' + meta.sha,
+            { headers: { Authorization: 'token ' + token } });
+        if (!blobR.ok) return null;
+        const blobMeta = await blobR.json();
+        b64 = blobMeta.content;
+        if (!b64) return null;
+    }
+    const binary = atob(b64.replace(/\n/g,''));
     const bytes = new Uint8Array(binary.length);
     for(let i=0;i<binary.length;i++) bytes[i]=binary.charCodeAt(i);
     return JSON.parse(new TextDecoder().decode(bytes));
