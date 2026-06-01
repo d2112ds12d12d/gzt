@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.58U</title>
+    <title>培训部数据看板 v1.58V</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -874,7 +874,7 @@
     <div class="zb-sidebar-footer" id="zbSidebarFooter">
       <!-- 操作图标行：刷新 / 上传（仅管理员）/ 导出 -->
       <div id="zbSidebarActionRow" style="display:flex;align-items:center;gap:2px;padding:10px 10px 4px;">
-        <button id="zbRefreshBtn" onclick="zbRefreshCloudManual()" title="刷新数据" aria-label="刷新数据" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:7px;border:none;background:transparent;color:var(--sidebar-item);cursor:pointer;transition:background .15s,color .15s;flex-shrink:0;">
+        <button id="zbRefreshBtn" onclick="zbRefreshCloudManual()" oncontextmenu="event.preventDefault(); zbDeepRefresh(); return false;" title="左键：刷新数据 · 右键：深度刷新（清本地缓存）" aria-label="刷新数据" style="display:inline-flex;align-items:center;justify-content:center;width:28px;height:28px;border-radius:7px;border:none;background:transparent;color:var(--sidebar-item);cursor:pointer;transition:background .15s,color .15s;flex-shrink:0;">
           <svg id="zbRefreshIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
         </button>
         <button id="zbUploadBtnLabel" onclick="zbOpenUpload()" title="上传数据" aria-label="上传数据" style="display:none;align-items:center;justify-content:center;width:28px;height:28px;border-radius:7px;border:none;background:transparent;color:var(--sidebar-item);cursor:pointer;transition:background .15s,color .15s;flex-shrink:0;">
@@ -902,7 +902,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.58U</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.58V</div>
     </div>
   </nav>
 
@@ -11716,6 +11716,25 @@ function _zbShowRefreshResult(success, elapsed) {
 
 function zbRefreshCloud() {
   zbRefreshCloudManual();
+}
+
+// ── 深度刷新（右键刷新按钮触发）──
+// 普通"刷新云端"无法清掉的本地 cache 残留（实测：某些用户切版本/历史 bug 留下的脏数据）
+// 一键 localStorage.clear() + reload，强制从云端拉全新状态。
+// ⚠️ 会清掉登录状态、深色模式等用户设置，所以二次确认。
+function zbDeepRefresh() {
+    var confirmed = confirm(
+        '⚠️ 深度刷新（清本地缓存）\n\n' +
+        '当出现 "改完别人看不到" 或 "刷新云端后数据仍是旧的" 时使用。\n\n' +
+        '将会：\n' +
+        '· 清空本地所有缓存（包括登录状态、深色模式等设置）\n' +
+        '· 重新从云端加载全部数据\n\n' +
+        '清完后需要重新登录。确定继续吗？'
+    );
+    if (!confirmed) return;
+    try { localStorage.clear(); } catch(e) {}
+    try { sessionStorage.clear(); } catch(e) {}
+    location.reload();
 }
 
 // ── 云端管理：多选批量删除 ──
