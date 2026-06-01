@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.58S</title>
+    <title>培训部数据看板 v1.58T</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -902,7 +902,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.58S</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.58T</div>
     </div>
   </nav>
 
@@ -2737,7 +2737,14 @@
                         // 让排行榜、统计、导出等读 d.person 的地方立刻拿到新值，
                         // 否则同一个人会被识别成新旧两个人（已确认 bug）。
                         dtApplyEditToData(code, col, newVal);
-                        if (typeof zbPushEdits === 'function') setTimeout(zbPushEdits, 500);
+                        // 500ms debounce：连续改多格只触发一次 zbPushEdits，避免并发 PUT 撞 409
+                        if (typeof zbPushEdits === 'function') {
+                            if (window._zbPushEditsDebounce) clearTimeout(window._zbPushEditsDebounce);
+                            window._zbPushEditsDebounce = setTimeout(function(){
+                                window._zbPushEditsDebounce = null;
+                                zbPushEdits();
+                            }, 500);
+                        }
                         // 写入修改日志
                         zbAddLog({ type:'edit', code:code, col:DT_COL_LABELS[col]||col, from:oldVal, to:newVal });
                         // 数据变了，触发看板刷新（排行榜、人员维度等）
@@ -7016,6 +7023,7 @@ async function zbPushToGitHub(tableType, force) {
 }
 
 // 通用文件推送（获取SHA + PUT）
+// 409 = 乐观锁冲突（拿到的 sha 已陈旧），自动重新拉 sha 再 PUT，最多重试 2 次
 async function _zbPushFile(fname, content, token) {
     let b64 = '';
     try {
@@ -7025,21 +7033,37 @@ async function _zbPushFile(fname, content, token) {
         bytes.forEach(function(b){ binary += String.fromCharCode(b); });
         b64 = btoa(binary);
     } catch(e) { console.error('base64编码失败:', e); return false; }
-    let sha = '';
-    for (let retry = 0; retry < 3; retry++) {
-        try {
-            const r = await fetch(ghUrl(fname) + '?t=' + Date.now(), { headers: { Authorization: 'token ' + token } });
-            if (r.ok) { const j = await r.json(); sha = j.sha || ''; break; }
-            else { break; }
-        } catch(e) { break; }
+
+    async function fetchSha() {
+        for (let retry = 0; retry < 3; retry++) {
+            try {
+                const r = await fetch(ghUrl(fname) + '?t=' + Date.now(), { headers: { Authorization: 'token ' + token } });
+                if (r.ok) { const j = await r.json(); return j.sha || ''; }
+                else { return ''; }
+            } catch(e) { /* 网络抖动，retry */ }
+        }
+        return '';
     }
-    const body = { message: 'Update ' + fname + ' via dashboard', content: b64 };
-    if (sha) body.sha = sha;
-    try {
-        const res = await fetch(ghUrl(fname), { method: 'PUT', headers: { Authorization: 'token ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-        if (!res.ok) { const errText = await res.text(); console.error('推送失败 ' + fname + ':', res.status, errText); }
-        return res.ok;
-    } catch(e) { console.error('推送异常:', e); return false; }
+
+    let sha = await fetchSha();
+    for (let attempt = 0; attempt < 3; attempt++) {
+        const body = { message: 'Update ' + fname + ' via dashboard', content: b64 };
+        if (sha) body.sha = sha;
+        try {
+            const res = await fetch(ghUrl(fname), { method: 'PUT', headers: { Authorization: 'token ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+            if (res.ok) return true;
+            if (res.status === 409 && attempt < 2) {
+                // sha 已陈旧（并发或刚被别人 PUT），重新拉再试
+                console.warn('[_zbPushFile] 409 conflict, refetching sha and retrying:', fname, 'attempt', attempt + 1);
+                sha = await fetchSha();
+                continue;
+            }
+            const errText = await res.text();
+            console.error('推送失败 ' + fname + ':', res.status, errText);
+            return false;
+        } catch(e) { console.error('推送异常:', e); return false; }
+    }
+    return false;
 }
 
 // 月度分片 merge 推送：先拉云端、用内存行按 key 覆盖、保留云端独有行
@@ -7075,18 +7099,138 @@ async function _zbPushMonthlyMerge(fname, memRows, rowKey, token, label) {
     return await _zbPushFile(fname, { rows: merged, updated: new Date().toISOString() }, token);
 }
 
+// ── 推送进度全屏遮罩（防呆：推送期间锁死整屏，禁止再次编辑导致并发 PUT 409）──
+// state: 'pushing' | 'success' | 'failure' | 'timeout' | 'close'
+// opts:  { msg?, onRetry?, onAbandon? }
+// pushing：spinner 不可关；success：✅ 1.5s 自动关；failure/timeout：❌ + [重试] [放弃改动]
+window._zbPushOverlay = window._zbPushOverlay || null;
+function zbShowPushOverlay(state, opts) {
+    opts = opts || {};
+    if (state === 'close') {
+        if (window._zbPushOverlay && window._zbPushOverlay.parentNode) {
+            window._zbPushOverlay.parentNode.removeChild(window._zbPushOverlay);
+        }
+        window._zbPushOverlay = null;
+        return;
+    }
+    // 复用已存在的遮罩，避免叠多层
+    var overlay = window._zbPushOverlay;
+    if (!overlay) {
+        overlay = document.createElement('div');
+        overlay.id = 'zbPushOverlay';
+        overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,0.55);z-index:99999;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px);';
+        // 阻止任何点击穿透到下层
+        overlay.addEventListener('click', function(e){ e.stopPropagation(); });
+        overlay.addEventListener('keydown', function(e){ e.stopPropagation(); });
+        document.body.appendChild(overlay);
+        window._zbPushOverlay = overlay;
+        if (!document.getElementById('zbPushOverlayStyle')) {
+            var st = document.createElement('style');
+            st.id = 'zbPushOverlayStyle';
+            st.textContent = '@keyframes zbSpinAnim { to { transform: rotate(360deg); } } .zb-push-spin { width:36px;height:36px;border:3px solid #e2e8f0;border-top-color:#2563eb;border-radius:50%;animation:zbSpinAnim 0.8s linear infinite;margin:0 auto 14px;}';
+            document.head.appendChild(st);
+        }
+    }
+    var box = '';
+    if (state === 'pushing') {
+        box = '<div style="background:#fff;border-radius:12px;padding:30px 40px;min-width:280px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,0.2);">'
+            + '<div class="zb-push-spin"></div>'
+            + '<div style="font-size:15px;font-weight:600;color:#1e293b;">⏳ 正在推送云端，请稍候…</div>'
+            + '<div style="font-size:12px;color:#64748b;margin-top:8px;">请勿关闭页面或继续编辑</div>'
+            + '</div>';
+        overlay.innerHTML = box;
+    } else if (state === 'success') {
+        box = '<div style="background:#fff;border-radius:12px;padding:30px 40px;min-width:280px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,0.2);">'
+            + '<div style="font-size:36px;margin-bottom:10px;">✅</div>'
+            + '<div style="font-size:15px;font-weight:600;color:#15803d;">改动已永久写入云端</div>'
+            + '</div>';
+        overlay.innerHTML = box;
+        setTimeout(function(){ zbShowPushOverlay('close'); }, 1500);
+    } else if (state === 'failure' || state === 'timeout') {
+        var title = state === 'timeout' ? '❌ 网络超时（30s 未响应）' : '❌ 推送失败';
+        var detail = opts.msg || (state === 'timeout' ? '请检查网络后重试' : '请重试或放弃本次改动');
+        box = '<div style="background:#fff;border-radius:12px;padding:28px 36px;min-width:320px;max-width:480px;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,0.2);">'
+            + '<div style="font-size:16px;font-weight:700;color:#dc2626;margin-bottom:10px;">' + title + '</div>'
+            + '<div style="font-size:13px;color:#475569;margin-bottom:20px;word-break:break-all;">' + String(detail).replace(/[<>]/g, '') + '</div>'
+            + '<div style="display:flex;gap:10px;justify-content:center;">'
+            + '<button id="zbPushRetryBtn" style="padding:8px 22px;background:#2563eb;color:#fff;border:none;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">重试</button>'
+            + '<button id="zbPushAbandonBtn" style="padding:8px 22px;background:#fff;color:#475569;border:1px solid #cbd5e1;border-radius:6px;font-size:13px;font-weight:600;cursor:pointer;">放弃改动</button>'
+            + '</div></div>';
+        overlay.innerHTML = box;
+        var retryBtn = document.getElementById('zbPushRetryBtn');
+        var abandonBtn = document.getElementById('zbPushAbandonBtn');
+        if (retryBtn) retryBtn.addEventListener('click', function(){
+            zbShowPushOverlay('close');
+            if (typeof opts.onRetry === 'function') opts.onRetry();
+        });
+        if (abandonBtn) abandonBtn.addEventListener('click', function(){
+            zbShowPushOverlay('close');
+            if (typeof opts.onAbandon === 'function') opts.onAbandon();
+            else location.reload();
+        });
+    }
+}
+
 // ── 推送修改记录 ──
+// 外层包装：全屏遮罩 + 30s 超时 + 失败重试/放弃
+// 内层 _doPushEdits 才是真正干活的逻辑
 async function zbPushEdits() {
-    // 培训师也允许推送：inline 编辑入口 dtStartEdit 已在 rowEditable=zbCanEditRow(d) 处
-    // 按 site/cat 做了行级权限校验，能写进 _dtEdits 的都在该用户授权范围内。
-    // 此前只允许 admin/super 会导致培训师 inline 改动只更新本地、不落 GitHub，
-    // 其他人刷新看不到。
     if (zbRole !== 'admin' && zbRole !== 'super' && zbRole !== 'trainer') return;
     const token = zbGetToken();
     if (!token) return;
-
     const edits = window._dtEdits || {};
     if (!Object.keys(edits).length) return;
+
+    // 推送期间防呆：禁止再次触发（避免遮罩还没出来用户又改一格）
+    if (window._zbPushInFlight) return;
+    window._zbPushInFlight = true;
+
+    zbShowPushOverlay('pushing');
+
+    // 30s 超时：Promise.race
+    var timeoutHandle;
+    var timeoutPromise = new Promise(function(_, reject){
+        timeoutHandle = setTimeout(function(){ reject(new Error('TIMEOUT')); }, 30000);
+    });
+
+    try {
+        var result = await Promise.race([_doPushEdits(token), timeoutPromise]);
+        clearTimeout(timeoutHandle);
+        if (result && result.allOk) {
+            zbShowPushOverlay('success');
+            // success：立刻释放推送锁（1.5s 后遮罩自动关，不阻塞下次推送）
+            window._zbPushInFlight = false;
+        } else {
+            var msg = (result && result.errMsg) || '部分文件推送失败';
+            zbShowPushOverlay('failure', {
+                msg: msg,
+                onRetry: function(){ window._zbPushInFlight = false; zbPushEdits(); },
+                onAbandon: function(){ location.reload(); }
+            });
+            // 失败：保持锁，由 retry/放弃 按钮重置
+        }
+    } catch(e) {
+        clearTimeout(timeoutHandle);
+        if (e && e.message === 'TIMEOUT') {
+            zbShowPushOverlay('timeout', {
+                onRetry: function(){ window._zbPushInFlight = false; zbPushEdits(); },
+                onAbandon: function(){ location.reload(); }
+            });
+        } else {
+            zbShowPushOverlay('failure', {
+                msg: (e && e.message) || '推送异常',
+                onRetry: function(){ window._zbPushInFlight = false; zbPushEdits(); },
+                onAbandon: function(){ location.reload(); }
+            });
+        }
+        // 异常/超时：保持锁，由 retry/放弃 按钮重置
+    }
+}
+
+// 真正干活的内层：扫 _dtEdits → 推三源 → 删 corrections → 清 _dtEdits
+// 返回 { allOk: bool, errMsg?: string }
+async function _doPushEdits(token) {
+    const edits = window._dtEdits || {};
 
     // 三个源都覆盖：手机 diff5(phone_diff_YM)/ 五品类 diff4(five_cat_YM)/ 大仓 dw4cat(整文件)
     // dtApplyEditToData 已经按 DT_MAPPED_TO_ORIG 反向映射把 orig 字段写回内存，
@@ -7094,12 +7238,17 @@ async function zbPushEdits() {
     var diff5  = (window._DATA && window._DATA.diff5)  || [];
     var diff4  = (window._DATA && window._DATA.diff4)  || [];
     var dw4cat = (window._DATA && window._DATA.dw4cat) || [];
-    if (!diff5.length && !diff4.length && !dw4cat.length) return;
+    if (!diff5.length && !diff4.length && !dw4cat.length) return { allOk: false, errMsg: '本地数据为空' };
 
     var codes = new Set();
+    var personEditedCodes = new Set();  // 改了 person 列的 code，用于触发 zbRemoveCorrection
     Object.keys(edits).forEach(function(editKey) {
-        var code = editKey.split('|')[0];
-        if (code) codes.add(code);
+        var parts = editKey.split('|');
+        var code = parts[0], col = parts[1];
+        if (code) {
+            codes.add(code);
+            if (col === 'person') personEditedCodes.add(code);
+        }
     });
 
     var touched5 = new Set();
@@ -7119,7 +7268,7 @@ async function zbPushEdits() {
         if (codes.has(dw4cat[i].code)) { touchedDw4 = true; break; }
     }
 
-    if (!touched5.size && !touched4.size && !touchedDw4) return;
+    if (!touched5.size && !touched4.size && !touchedDw4) return { allOk: true };
 
     function buildMonthMap(arr) {
         var m = {};
@@ -7135,36 +7284,52 @@ async function zbPushEdits() {
     var monthMap4 = buildMonthMap(diff4);
 
     var allOk = true;
+    var failedFiles = [];
     // 行身份 key：date|code|site 三联，跟 import 端 smartMerge 一致
     var rowKey = function(r){ return (r.date||'') + '|' + (r.code||'') + '|' + (r.site||''); };
     for (var ym of touched5) {
         if (!monthMap5[ym]) continue;
         var fname = 'phone_diff_' + ym + '.json';
         var ok = await _zbPushMonthlyMerge(fname, monthMap5[ym], rowKey, token, '[zbPushEdits]');
-        if (!ok) { allOk = false; console.error('编辑推送失败:', fname); }
+        if (!ok) { allOk = false; failedFiles.push(fname); console.error('编辑推送失败:', fname); }
     }
     for (var ym of touched4) {
         if (!monthMap4[ym]) continue;
         var fname = 'five_cat_' + ym + '.json';
         var ok = await _zbPushMonthlyMerge(fname, monthMap4[ym], rowKey, token, '[zbPushEdits]');
-        if (!ok) { allOk = false; console.error('编辑推送失败:', fname); }
+        if (!ok) { allOk = false; failedFiles.push(fname); console.error('编辑推送失败:', fname); }
     }
     if (touchedDw4) {
-        // dw4cat 不分月，整文件覆盖
         var ok = await _zbPushFile(GH_FILES.dw4cat, { rows: dw4cat, updated: new Date().toISOString() }, token);
-        if (!ok) { allOk = false; console.error('编辑推送失败:', GH_FILES.dw4cat); }
+        if (!ok) { allOk = false; failedFiles.push(GH_FILES.dw4cat); console.error('编辑推送失败:', GH_FILES.dw4cat); }
+    }
+
+    // 改 person 列触发 corrections 删除（本地 + 云端 person_corrections.json）
+    // 必须在 phone_diff 推送之后做：即便 corrections 删失败，phone_diff 已经是新值，
+    // 损害面是"corrections cache 可能再次把新值盖回旧值"，下次再有人 inline 编辑同一行会再删一次
+    var correctionWarn = '';
+    if (allOk && personEditedCodes.size) {
+        for (var code of personEditedCodes) {
+            try {
+                var rmRes = await zbRemoveCorrection(code);
+                if (rmRes.removedKeys.length && !rmRes.cloudOk) {
+                    correctionWarn = '（注意：纠正表云端同步失败，可能需要再次编辑或上传新纠正表）';
+                }
+            } catch(e) {
+                console.error('[_doPushEdits] zbRemoveCorrection 异常:', e);
+                correctionWarn = '（注意：纠正表删除异常）';
+            }
+        }
     }
 
     if (allOk) {
+        // 清 _dtEdits（推成功的部分）
         var editsCopy = Object.assign({}, edits);
         Object.keys(editsCopy).forEach(function(k) { delete window._dtEdits[k]; });
-        if (window._dtEdits) {
-            try { localStorage.setItem('zb_dt_edits', JSON.stringify(window._dtEdits)); } catch(e) {}
-        }
-        showToast('✅ 改动已永久写入云端');
-    } else {
-        showToast('⚠️ 部分改动推送失败，请重试');
+        try { localStorage.setItem('zb_dt_edits', JSON.stringify(window._dtEdits)); } catch(e) {}
+        return { allOk: true, errMsg: correctionWarn || undefined };
     }
+    return { allOk: false, errMsg: '推送失败：' + failedFiles.join(', ') };
 }
 
 // ── 推送日志 ──
@@ -12134,6 +12299,82 @@ function zbApplyPersonCorrections(corrections) {
         }
     });
     return { matched: matched, okRows: okRows, failRows: failRows };
+}
+
+// 用户 inline 编辑了 person 后，把对应的 correction 条目从本地 cache + 云端 person_corrections.json 删掉
+// 否则下次 zbLoadCloudData 末尾应用 corrections 会把 inline 改的新值覆盖回旧值（实测 bug 根因）
+// 返回 Promise<{localRemoved, cloudOk, removedKeys}>
+async function zbRemoveCorrection(code) {
+    var result = { localRemoved: 0, cloudOk: true, removedKeys: [] };
+    if (!code) return result;
+    var allDiff = window._allDiffData || [];
+    // 一个 code 可能对应多行（同一质检码不同问题），五元组才能唯一定位
+    var matchedRows = allDiff.filter(function(d){ return d.code === code; });
+    if (!matchedRows.length) return result;
+    var keysToRemove = matchedRows.map(function(d){
+        return [d.code||'',d.level1||'',d.level2||'',d.level3_orig||'',d.level3||''].join('|');
+    });
+
+    // 1. 删本地 cache
+    var localCorr = {};
+    try { localCorr = JSON.parse(localStorage.getItem(_ZB_CORRECTION_KEY) || '{}'); } catch(e) {}
+    var localHit = false;
+    keysToRemove.forEach(function(k){
+        if (localCorr[k] !== undefined) {
+            result.removedKeys.push({ key: k, oldPerson: localCorr[k] });
+            delete localCorr[k];
+            result.localRemoved++;
+            localHit = true;
+        }
+    });
+    if (localHit) {
+        try { localStorage.setItem(_ZB_CORRECTION_KEY, JSON.stringify(localCorr)); } catch(e) {}
+    }
+
+    // 2. 删云端 person_corrections.json
+    // 先拉云端最新（走 ghApiFetch，自动支持大文件 Git Blob 分支），删 key，再 PUT 回去
+    // 即便本地没命中也尝试拉云端——可能本地 cache 比云端旧
+    var token = (typeof zbGetToken === 'function') ? zbGetToken() : '';
+    if (token) {
+        try {
+            var cloudCorr = await ghApiFetch(GH_FILES.personCorrections, token) || {};
+            var cloudHit = false;
+            keysToRemove.forEach(function(k){
+                if (cloudCorr[k] !== undefined) {
+                    // 如果本地没记到，这里补一下 oldPerson
+                    if (!result.removedKeys.find(function(x){ return x.key === k; })) {
+                        result.removedKeys.push({ key: k, oldPerson: cloudCorr[k] });
+                    }
+                    delete cloudCorr[k];
+                    cloudHit = true;
+                }
+            });
+            if (cloudHit) {
+                var ok = await _zbPushFile(GH_FILES.personCorrections, cloudCorr, token);
+                result.cloudOk = !!ok;
+                if (!ok) console.error('[zbRemoveCorrection] 云端推送失败:', GH_FILES.personCorrections);
+            }
+        } catch(e) {
+            console.error('[zbRemoveCorrection] 云端处理异常:', e);
+            result.cloudOk = false;
+        }
+    }
+
+    // 3. 写 audit log（不论本地/云端有没有命中，都记一笔，便于追溯）
+    if (result.removedKeys.length) {
+        try {
+            var logs = JSON.parse(localStorage.getItem('zb_correction_log_v1') || '[]');
+            logs.unshift({
+                ts: Date.now(),
+                action: 'auto-remove-by-inline-edit',
+                code: code,
+                removed: result.removedKeys,
+                cloudOk: result.cloudOk
+            });
+            localStorage.setItem('zb_correction_log_v1', JSON.stringify(logs.slice(0, 200)));
+        } catch(e) {}
+    }
+    return result;
 }
 
 // 页面加载时自动从 localStorage 恢复纠正（快速），后台再从 GitHub 拉最新
