@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.58T</title>
+    <title>培训部数据看板 v1.58U</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -902,7 +902,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.58T</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.58U</div>
     </div>
   </nav>
 
@@ -6791,11 +6791,11 @@ async function zbLoadCloudData(useApi) {
         window._DATA.dw4sum = dw4sumJson.rows;
     }
 
-    // 加载修改记录
-    try {
-        const json = viaApi ? await ghApiFetch(GH_FILES.inspector, token) : await fetchFile(GH_FILES.inspector);
-        if (json && json.edits) { try { dtEdits = json.edits; } catch(e) {} }
-    } catch(e) {}
+    // 已废弃：旧版 inspector_override.json 是 inline edits 的"云端覆盖层"，
+    // 每次 zbLoadCloudData 会用它覆盖局部 dtEdits 变量，导致刷新云端反而把刚改的新值
+    // 盖回早期脏数据（实测 bug 根因，2026-06-01）。
+    // 现在 phone_diff_YM.json 才是 inspector 字段的唯一真相，覆盖层已无用且有害。
+    // 老文件留在 GitHub 上当历史归档，不再读取。
 
     // 加载日志
     try {
