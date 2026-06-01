@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.58L</title>
+    <title>培训部数据看板 v1.58M</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -899,7 +899,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.58L</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.58M</div>
     </div>
   </nav>
 
@@ -2066,6 +2066,7 @@
                 }
 
                 const mk = (type, val, label, dc, yh, sparkHtml) => {
+                    console.log('[KPI诊断 mk] type:', type, '| val:', val, '| label:', label);
                     var isPercent = typeof val === 'string' && val.includes('%');
                     var numVal = parseFloat(String(val).replace('%','').replace(/,/g,'')) || 0;
                     var countupAttr = !isNaN(numVal) ? ` data-countup="${numVal}" ${isPercent?'data-countup-percent="1"':''}` : '';
@@ -2136,7 +2137,9 @@
                     var sumRows = siteType === 'ZX'
                         ? summaryData.filter(s => typeof getSiteType === 'function' && getSiteType(s.siteName||'') === 'ZX')
                         : summaryData;
+                    console.log('[KPI诊断] siteType:', siteType, '| summaryData 全量行数:', summaryData.length, '| 进入 calcKpi 的 sumRows 行数:', sumRows.length, '| sumRows 日期种类:', new Set(sumRows.map(r=>r.date)).size);
                     var k = calcKpi(diffRows, sumRows);
+                    console.log('[KPI诊断] calcKpi 返回 totalChecks:', k.totalChecks);
                     var yk = calcYestKpi(
                         siteType==='ZX' ? diffData.filter(function(d){ return getSiteType(d.warehouse||'')==='ZX'; }) : diffData,
                         siteType==='ZX' ? summaryData.filter(function(s){ return getSiteType(s.siteName||'')==='ZX'; }) : summaryData
@@ -6965,10 +6968,47 @@ async function zbPushToGitHub(tableType, force) {
         });
         const months = Object.keys(monthMap).sort();
         if (!months.length) { console.warn('zbPushToGitHub: 无有效日期数据 -', tableType); return false; }
+
+        // 行身份 key：date|code|site 三联，跟 import 端 smartMerge 一致
+        const rowKey = function(r){ return (r.date||'') + '|' + (r.code||'') + '|' + (r.site||''); };
+
+        // 拉云端单月文件的辅助函数（zbPushToGitHub 是全局，不能复用 zbLoadFromCloud 闭包里的 fetchFile）
+        async function fetchMonthFile(fname) {
+            try {
+                if (token) {
+                    const json = await ghApiFetch(fname, token);
+                    if (json) return json;
+                }
+                const r = await fetch(ghRaw(fname));
+                if (r.ok) return await r.json();
+            } catch(e) { console.warn('云端拉取失败:', fname, e); }
+            return null;
+        }
+
         let allOk = true;
         for (const ym of months) {
             const fname = prefix + ym + '.json';
-            const ok = await _zbPushFile(fname, { rows: monthMap[ym], updated: new Date().toISOString() }, token);
+            let payload;
+            if (force) {
+                // 强制覆盖：内存 = 云端，绕过 merge
+                payload = { rows: monthMap[ym], updated: new Date().toISOString() };
+            } else {
+                // 默认 merge：拉云端 → 同 key 用内存覆盖、云端独有行保留
+                const cloudJson = await fetchMonthFile(fname);
+                const cloudRows = (cloudJson && Array.isArray(cloudJson.rows)) ? cloudJson.rows : [];
+                const memRows   = monthMap[ym];
+                const memKeys   = new Set(memRows.map(rowKey));
+                // 云端中 key 不在内存的 → 保留；内存的全部接入
+                const merged    = cloudRows.filter(function(r){ return !memKeys.has(rowKey(r)); }).concat(memRows);
+                payload = { rows: merged, updated: new Date().toISOString() };
+                console.log('[zbPushToGitHub] merge', fname, {
+                    cloudCount: cloudRows.length,
+                    memCount: memRows.length,
+                    mergedCount: merged.length,
+                    keptFromCloud: merged.length - memRows.length
+                });
+            }
+            const ok = await _zbPushFile(fname, payload, token);
             if (!ok) { allOk = false; console.error('月度文件推送失败:', fname); }
         }
         return allOk;
