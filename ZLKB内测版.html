@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.58M</title>
+    <title>培训部数据看板 v1.58N</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -899,7 +899,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.58M</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.58N</div>
     </div>
   </nav>
 
@@ -6972,43 +6972,17 @@ async function zbPushToGitHub(tableType, force) {
         // 行身份 key：date|code|site 三联，跟 import 端 smartMerge 一致
         const rowKey = function(r){ return (r.date||'') + '|' + (r.code||'') + '|' + (r.site||''); };
 
-        // 拉云端单月文件的辅助函数（zbPushToGitHub 是全局，不能复用 zbLoadFromCloud 闭包里的 fetchFile）
-        async function fetchMonthFile(fname) {
-            try {
-                if (token) {
-                    const json = await ghApiFetch(fname, token);
-                    if (json) return json;
-                }
-                const r = await fetch(ghRaw(fname));
-                if (r.ok) return await r.json();
-            } catch(e) { console.warn('云端拉取失败:', fname, e); }
-            return null;
-        }
-
         let allOk = true;
         for (const ym of months) {
             const fname = prefix + ym + '.json';
-            let payload;
+            let ok;
             if (force) {
                 // 强制覆盖：内存 = 云端，绕过 merge
-                payload = { rows: monthMap[ym], updated: new Date().toISOString() };
+                ok = await _zbPushFile(fname, { rows: monthMap[ym], updated: new Date().toISOString() }, token);
             } else {
-                // 默认 merge：拉云端 → 同 key 用内存覆盖、云端独有行保留
-                const cloudJson = await fetchMonthFile(fname);
-                const cloudRows = (cloudJson && Array.isArray(cloudJson.rows)) ? cloudJson.rows : [];
-                const memRows   = monthMap[ym];
-                const memKeys   = new Set(memRows.map(rowKey));
-                // 云端中 key 不在内存的 → 保留；内存的全部接入
-                const merged    = cloudRows.filter(function(r){ return !memKeys.has(rowKey(r)); }).concat(memRows);
-                payload = { rows: merged, updated: new Date().toISOString() };
-                console.log('[zbPushToGitHub] merge', fname, {
-                    cloudCount: cloudRows.length,
-                    memCount: memRows.length,
-                    mergedCount: merged.length,
-                    keptFromCloud: merged.length - memRows.length
-                });
+                // 默认 merge
+                ok = await _zbPushMonthlyMerge(fname, monthMap[ym], rowKey, token, '[zbPushToGitHub]');
             }
-            const ok = await _zbPushFile(fname, payload, token);
             if (!ok) { allOk = false; console.error('月度文件推送失败:', fname); }
         }
         return allOk;
@@ -7048,6 +7022,39 @@ async function _zbPushFile(fname, content, token) {
     } catch(e) { console.error('推送异常:', e); return false; }
 }
 
+// 月度分片 merge 推送：先拉云端、用内存行按 key 覆盖、保留云端独有行
+// 用于 zbPushToGitHub / _doEditSave / zbPushEdits 三条路径
+// rowKey: r => string，必须能稳定标识"同一条记录"（diff5 用 date|code|site）
+// label: 日志前缀
+async function _zbPushMonthlyMerge(fname, memRows, rowKey, token, label) {
+    label = label || '[月度推送]';
+    // 拉云端
+    let cloudRows = [];
+    try {
+        if (token) {
+            const cloudJson = await ghApiFetch(fname, token);
+            if (cloudJson && Array.isArray(cloudJson.rows)) cloudRows = cloudJson.rows;
+        } else {
+            const r = await fetch(ghRaw(fname));
+            if (r.ok) {
+                const cloudJson = await r.json();
+                if (cloudJson && Array.isArray(cloudJson.rows)) cloudRows = cloudJson.rows;
+            }
+        }
+    } catch(e) { console.warn(label, '拉取云端失败，按"云端为空"处理:', fname, e); }
+
+    // merge：同 key 用内存覆盖、云端独有的保留
+    const memKeys = new Set(memRows.map(rowKey));
+    const merged = cloudRows.filter(function(r){ return !memKeys.has(rowKey(r)); }).concat(memRows);
+    console.log(label, 'merge', fname, {
+        cloudCount: cloudRows.length,
+        memCount: memRows.length,
+        mergedCount: merged.length,
+        keptFromCloud: merged.length - memRows.length
+    });
+    return await _zbPushFile(fname, { rows: merged, updated: new Date().toISOString() }, token);
+}
+
 // ── 推送修改记录 ──
 async function zbPushEdits() {
     if (zbRole !== 'admin' && zbRole !== 'super') return;
@@ -7085,10 +7092,12 @@ async function zbPushEdits() {
     });
 
     var allOk = true;
+    // 行身份 key：date|code|site 三联，跟 import 端 smartMerge 一致
+    var rowKey = function(r){ return (r.date||'') + '|' + (r.code||'') + '|' + (r.site||''); };
     for (var ym of touchedMonths) {
         if (!monthMap[ym]) continue;
         var fname = 'phone_diff_' + ym + '.json';
-        var ok = await _zbPushFile(fname, { rows: monthMap[ym], updated: new Date().toISOString() }, token);
+        var ok = await _zbPushMonthlyMerge(fname, monthMap[ym], rowKey, token, '[zbPushEdits]');
         if (!ok) { allOk = false; console.error('编辑推送失败:', fname); }
     }
 
@@ -9751,19 +9760,21 @@ async function _doEditSave() {
     _zbEditChanges={}; _zbEditDeletes=new Set(); _zbEditResults=[];
 
     var allOk = true;
+    // _doEditSave 用 date|code|site 三联 key，与 import 端 smartMerge 口径一致
+    var rowKey = function(r){ return (r.date||'') + '|' + (r.code||'') + '|' + (r.site||''); };
 
-    // 推 手机 diff5（phone_diff_<YM>.json）
+    // 推 手机 diff5（phone_diff_<YM>.json），走 merge
     for (var ym of touchedMonths.diff5) {
         if (!monthMap5[ym]) continue;
         var fname = 'phone_diff_' + ym + '.json';
-        var ok = await _zbPushFile(fname, { rows: monthMap5[ym], updated: new Date().toISOString() }, token);
+        var ok = await _zbPushMonthlyMerge(fname, monthMap5[ym], rowKey, token, '[记录编辑]');
         if (!ok) { allOk = false; console.error('[记录编辑] 推送失败:', fname); }
     }
-    // 推 五品类 diff4（five_cat_<YM>.json）
+    // 推 五品类 diff4（five_cat_<YM>.json），走 merge
     for (var ym of touchedMonths.diff4) {
         if (!monthMap4[ym]) continue;
         var fname = 'five_cat_' + ym + '.json';
-        var ok = await _zbPushFile(fname, { rows: monthMap4[ym], updated: new Date().toISOString() }, token);
+        var ok = await _zbPushMonthlyMerge(fname, monthMap4[ym], rowKey, token, '[记录编辑]');
         if (!ok) { allOk = false; console.error('[记录编辑] 推送失败:', fname); }
     }
     // 推 大仓 dw4cat（不分片，整文件覆盖）
@@ -10982,16 +10993,27 @@ function zbCheckDataHealth() {
     var bar = document.getElementById('zbDataHealthBar');
     if (!bar || _zbHealthDismissed) return;
     var DATA = window._DATA || {};
-    var datesQa  = new Set((DATA.qa ||[]).map(function(r){ return r.date; }));
-    var datesSum = new Set((DATA.sum||[]).map(function(r){ return r.date; }));
+    // 手机：qa（大盘抽检）+ diff5（差异明细）都齐才算完整
+    var datesQa    = new Set((DATA.qa   ||[]).map(function(r){ return r.date; }));
+    var datesDiff5 = new Set((DATA.diff5||[]).map(function(r){ return r.date; }));
+    // 四品类：sum + diff4，每个品类单独判断，任一品类双轨齐才算该品类该日完整
+    var fiveSumKeys   = new Set((DATA.sum  ||[]).filter(function(r){ return r.date&&r.cat; }).map(function(r){ return r.date+'||'+r.cat; }));
+    var fiveDiff4Keys = new Set((DATA.diff4||[]).filter(function(r){ return r.date&&r.cat; }).map(function(r){ return r.date+'||'+r.cat; }));
+    var fiveCats = ['笔记本','平板','手表','耳机'];
     var today = new Date();
     var missingPhone = [], missingFive = [];
     for (var i = 1; i <= 15; i++) {
         var d = new Date(today); d.setDate(today.getDate() - i);
         var dateStr = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
         var ds = dateStr.slice(5);
-        if (!datesQa.has(dateStr))  missingPhone.push(ds);
-        if (!datesSum.has(dateStr)) missingFive.push(ds);
+        // 手机：qa 或 diff5 任一缺，都算缺
+        if (!datesQa.has(dateStr) || !datesDiff5.has(dateStr)) missingPhone.push(ds);
+        // 四品类：任一品类的 sum 或 diff4 缺，就算这天四品类有缺失
+        var allFourComplete = fiveCats.every(function(cat){
+            var k = dateStr + '||' + cat;
+            return fiveSumKeys.has(k) && fiveDiff4Keys.has(k);
+        });
+        if (!allFourComplete) missingFive.push(ds);
     }
     if (!missingPhone.length && !missingFive.length) { bar.style.display = 'none'; return; }
     var totalDays = new Set([...missingPhone, ...missingFive]).size;
@@ -11003,8 +11025,9 @@ function zbCheckDataHealth() {
         + '<div style="display:flex;align-items:flex-start;gap:10px;">'
         + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
         + '<div style="flex:1;min-width:0;">'
-        + '<div style="font-size:12px;font-weight:500;color:#92400e;margin-bottom:4px;">近15天 '+totalDays+' 天数据未上传</div>'
+        + '<div style="font-size:12px;font-weight:500;color:#92400e;margin-bottom:4px;">近15天 '+totalDays+' 天数据未上传或缺失</div>'
         + lines
+        + '<div style="font-size:10px;color:#a16207;margin-top:4px;">※ 完整 = 手机需 qa+差异明细、四品类需 汇总+差异明细 都齐</div>'
         + '</div>'
         + '<button onclick="_zbHealthDismissed=true;document.getElementById(&quot;zbDataHealthBar&quot;).style.display=&quot;none&quot;;" style="font-size:16px;line-height:1;color:#b45309;background:none;border:none;cursor:pointer;flex-shrink:0;padding:0;">×</button>'
         + '</div></div>';
@@ -11492,11 +11515,19 @@ function zbRenderCloudManager() {
   (DATA.diff5||[]).forEach(function(r){ if(r.date) phoneDates.add(r.date); });
   var phoneDateList = Array.from(phoneDates).sort().reverse();
 
+  // 完整度：手机每天必须同时有 qa（大盘抽检）和 diff5（差异明细）才算完整
+  var phoneHasQa    = new Set((DATA.qa   ||[]).map(function(r){ return r.date; }).filter(Boolean));
+  var phoneHasDiff5 = new Set((DATA.diff5||[]).map(function(r){ return r.date; }).filter(Boolean));
+
   var fiveCatMap = {};
   (DATA.sum||[]).forEach(function(r){ if(r.date&&r.cat) fiveCatMap[r.date+'||'+r.cat]=true; });
   (DATA.diff4||[]).forEach(function(r){ if(r.date&&r.cat) fiveCatMap[r.date+'||'+r.cat]=true; });
   var fiveList = Object.keys(fiveCatMap).sort().reverse();
   var catColors = { '笔记本':'#7c3aed','平板':'#059669','手表':'#d97706','耳机':'#db2777','相机':'#0284c7' };
+
+  // 完整度：四品类每个 date|cat 必须同时有 sum 和 diff4 才算完整
+  var fiveHasSum   = new Set((DATA.sum  ||[]).filter(function(r){ return r.date&&r.cat; }).map(function(r){ return r.date+'||'+r.cat; }));
+  var fiveHasDiff4 = new Set((DATA.diff4||[]).filter(function(r){ return r.date&&r.cat; }).map(function(r){ return r.date+'||'+r.cat; }));
 
   var alertHtml = !canEdit
     ? '<div style="background:#fef9c3;border:0.5px solid #fde047;border-radius:8px;padding:8px 12px;font-size:12px;color:#854d0e;margin-bottom:12px;">⚠️ 仅管理员及以上可删除数据</div>'
@@ -11524,10 +11555,22 @@ function zbRenderCloudManager() {
     phoneHtml += '<div style="font-size:12px;color:var(--text-secondary);padding:16px;text-align:center;">暂无数据</div>';
   } else {
     phoneDateList.forEach(function(date, i) {
+      // 完整度标签
+      var hasQa    = phoneHasQa.has(date);
+      var hasDiff5 = phoneHasDiff5.has(date);
+      var healthTag = '';
+      if (hasQa && hasDiff5) {
+        // 完整：不显示标签
+      } else if (hasDiff5 && !hasQa) {
+        healthTag = '<span title="该日只有差异明细，缺少大盘抽检（KPI 总抽检量不准）" style="font-size:10px;color:#b45309;background:#fef3c7;padding:2px 7px;border-radius:5px;margin-right:6px;">⚠ 缺大盘</span>';
+      } else if (hasQa && !hasDiff5) {
+        healthTag = '<span title="该日只有大盘抽检，缺少差异明细" style="font-size:10px;color:#b45309;background:#fef3c7;padding:2px 7px;border-radius:5px;margin-right:6px;">⚠ 缺明细</span>';
+      }
       phoneHtml += '<div id="zb-phone-row-'+i+'" data-date="'+date+'" style="display:flex;align-items:center;padding:9px 14px;border-bottom:0.5px solid var(--border-color);cursor:'+(canEdit?'pointer':'default')+'" '
         + (canEdit?'onclick="zbToggleSelect(\'phone\',\''+date+'\','+i+')"':'')+' >'
         + (canEdit?'<input type="checkbox" id="zb-phone-cb-'+i+'" data-key="'+date+'" style="margin-right:10px;width:14px;height:14px;cursor:pointer;accent-color:#dc2626;" onclick="event.stopPropagation()" onchange="zbToggleSelect(\'phone\',\''+date+'\','+i+',true)">':'')
         + '<span class="zb-date-label" style="font-size:12px;color:var(--text-primary);flex:1;">'+date+'</span>'
+        + healthTag
         + '<span style="font-size:11px;color:#2563eb;background:#2563eb18;padding:2px 8px;border-radius:6px;">手机</span>'
         + '</div>';
     });
@@ -11554,7 +11597,12 @@ function zbRenderCloudManager() {
       // 顶部折叠行
       var catBadges = cats.map(function(c) {
         var cc = catColors[c.cat] || '#64748b';
-        return '<span style="font-size:11px;color:'+cc+';background:'+cc+'18;padding:2px 7px;border-radius:5px;margin-left:3px;">'+c.cat+'</span>';
+        var sumOk   = fiveHasSum.has(c.key);
+        var diffOk  = fiveHasDiff4.has(c.key);
+        var warn = '';
+        if (sumOk && !diffOk) warn = '<span title="该日'+c.cat+'缺少差异明细" style="font-size:9px;color:#b45309;margin-left:2px;">⚠缺明细</span>';
+        else if (!sumOk && diffOk) warn = '<span title="该日'+c.cat+'缺少汇总（KPI 不准）" style="font-size:9px;color:#b45309;margin-left:2px;">⚠缺汇总</span>';
+        return '<span style="font-size:11px;color:'+cc+';background:'+cc+'18;padding:2px 7px;border-radius:5px;margin-left:3px;">'+c.cat+warn+'</span>';
       }).join('');
       fiveHtml += '<div style="border-bottom:0.5px solid var(--border-color);background:var(--bg-card,#fff);">';
       // 折叠头行
