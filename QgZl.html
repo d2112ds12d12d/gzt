@@ -2067,6 +2067,7 @@
                 }
 
                 const mk = (type, val, label, dc, yh, sparkHtml) => {
+                    console.log('[KPI诊断 mk] type:', type, '| val:', val, '| label:', label);
                     var isPercent = typeof val === 'string' && val.includes('%');
                     var numVal = parseFloat(String(val).replace('%','').replace(/,/g,'')) || 0;
                     var countupAttr = !isNaN(numVal) ? ` data-countup="${numVal}" ${isPercent?'data-countup-percent="1"':''}` : '';
