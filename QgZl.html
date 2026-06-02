@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.58X</title>
+    <title>培训部数据看板 v1.59A</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -902,7 +902,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.58X</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.59A</div>
     </div>
   </nav>
 
@@ -4282,10 +4282,9 @@
                             if (!DATA.dw4sum) DATA.dw4sum = [];
                             DATA.dw4sum = smartMerge(DATA.dw4sum, parsed, r => r.date+'|'+r.site+'|'+r.cat);
                         } else if ('主客观问题分类' in fr && '抽检判定的问题类型' in fr && '站点名称' in fr && !('策略类别' in fr)) {
-                            // 四品类差异明细表（中心仓+大仓混合），按站点分流
-                            var DW4_SITES2 = new Set(['转转-深圳智能验机中心','转转-青岛智能验机中心','转转-成都智能验机中心','深圳后验中心仓','青岛后验中心仓','成都后验中心仓']);
+                            // 四品类差异明细表（中心仓+大仓统一存入diff4，按月分片推送）
                             var DW4_CAT_MAP2 = {'平板电脑':'平板','智能手表':'手表','耳机/耳麦':'耳机','笔记本':'笔记本'};
-                            var diff4Rows = [], dw4catRows = [];
+                            var diff4Rows = [];
                             rows.forEach(function(r) {
                                 var site = (r['站点名称']||'').trim();
                                 var rec = {
@@ -4303,22 +4302,13 @@
                                     inspector:  extractCN(r['原操作人名称']||''),
                                     qaInspector: extractCN(r['新操作人名称']||'')
                                 };
-                                if (DW4_SITES2.has(site)) {
-                                    dw4catRows.push(rec);
-                                } else {
-                                    diff4Rows.push(rec);
-                                }
+                                diff4Rows.push(rec);
                             });
                             if (diff4Rows.length) {
-                                tableType = 'diff4'; tableName = '四品类差异明细（中心仓）';
+                                tableType = 'diff4'; tableName = '四品类差异明细';
                                 DATA.diff4 = smartMerge(DATA.diff4, diff4Rows);
                             }
-                            if (dw4catRows.length) {
-                                tableType = tableType || 'dw4cat'; tableName = tableName ? tableName + '+大仓' : '四品类差异明细（大仓）';
-                                if (!DATA.dw4cat) DATA.dw4cat = [];
-                                DATA.dw4cat = smartMerge(DATA.dw4cat, dw4catRows, r => r.date+'|'+r.code+'|'+r.site);
-                            }
-                            parsed = diff4Rows.concat(dw4catRows);
+                            parsed = diff4Rows;
                         } else {
                             const colNames = Object.keys(fr).slice(0,5).join('、');
                             showToast('⚠️ 无法识别表格格式: ' + file.name + '（前几列: ' + colNames + '）');
@@ -6782,14 +6772,18 @@ async function zbLoadCloudData(useApi) {
     const diff4 = await loadSharded('five_cat_');
     if (diff4.length > 0) { window._DATA.diff4 = diff4; loaded++; }
 
-    // 加载大仓四品类差异明细和汇总（小文件，不分片）
+    // 兼容迁移：读旧的大仓单文件，合并进diff4（历史数据兜底，新数据已统一存入five_cat_YM分片）
     const dw4catJson = await fetchFile(GH_FILES.dw4cat);
     if (dw4catJson && dw4catJson.rows && dw4catJson.rows.length > 0) {
-        window._DATA.dw4cat = dw4catJson.rows; loaded++;
-    }
-    const dw4sumJson = await fetchFile(GH_FILES.dw4sum);
-    if (dw4sumJson && dw4sumJson.rows && dw4sumJson.rows.length > 0) {
-        window._DATA.dw4sum = dw4sumJson.rows;
+        window._DATA.dw4cat = dw4catJson.rows;
+        // 将旧大仓数据合并进diff4，避免历史数据丢失
+        if (!window._DATA.diff4) window._DATA.diff4 = [];
+        var existingKeys = new Set(window._DATA.diff4.map(function(r){ return (r.date||'')+'|'+(r.code||'')+'|'+(r.site||''); }));
+        var toMerge = dw4catJson.rows.filter(function(r){ return !existingKeys.has((r.date||'')+'|'+(r.code||'')+'|'+(r.site||'')); });
+        if (toMerge.length) {
+            window._DATA.diff4 = window._DATA.diff4.concat(toMerge);
+            console.log('[迁移] 旧大仓数据合并进diff4:', toMerge.length, '条');
+        }
     }
 
     // 已废弃：旧版 inspector_override.json 是 inline edits 的"云端覆盖层"，
@@ -6982,8 +6976,9 @@ async function zbPushToGitHub(tableType, force) {
     const allRows = window._DATA[dataKey] || [];
     if (!allRows.length && !force) { console.warn('zbPushToGitHub: 拒绝推送空数组，保护云端数据安全 -', tableType); return false; }
 
-    // diff5/diff4 按月分片：找出本次数据涉及的所有月份，逐月推送
-    if (tableType === 'diff5' || tableType === 'diff4') {
+    // diff5/diff4/dw4cat 按月分片：找出本次数据涉及的所有月份，逐月推送
+    // dw4cat 已合并进 diff4，但保留此分支以兼容老路径调用
+    if (tableType === 'diff5' || tableType === 'diff4' || tableType === 'dw4cat') {
         const prefix = tableType === 'diff5' ? 'phone_diff_' : 'five_cat_';
         // 按月分组
         const monthMap = {};
@@ -7233,13 +7228,12 @@ async function zbPushEdits() {
 async function _doPushEdits(token) {
     const edits = window._dtEdits || {};
 
-    // 三个源都覆盖：手机 diff5(phone_diff_YM)/ 五品类 diff4(five_cat_YM)/ 大仓 dw4cat(整文件)
+    // 两个源：手机 diff5(phone_diff_YM)/ 四品类 diff4(five_cat_YM，含大仓数据)
     // dtApplyEditToData 已经按 DT_MAPPED_TO_ORIG 反向映射把 orig 字段写回内存，
     // 这里只负责按"哪些源/哪些月份被 touched"分片推送对应文件。
     var diff5  = (window._DATA && window._DATA.diff5)  || [];
     var diff4  = (window._DATA && window._DATA.diff4)  || [];
-    var dw4cat = (window._DATA && window._DATA.dw4cat) || [];
-    if (!diff5.length && !diff4.length && !dw4cat.length) return { allOk: false, errMsg: '本地数据为空' };
+    if (!diff5.length && !diff4.length) return { allOk: false, errMsg: '本地数据为空' };
 
     var codes = new Set();
     var personEditedCodes = new Set();  // 改了 person 列的 code，用于触发 zbRemoveCorrection
@@ -7254,7 +7248,6 @@ async function _doPushEdits(token) {
 
     var touched5 = new Set();
     var touched4 = new Set();
-    var touchedDw4 = false;
     diff5.forEach(function(r) {
         if (!codes.has(r.code)) return;
         var ym = (r.date||'').slice(0,7);
@@ -7265,11 +7258,8 @@ async function _doPushEdits(token) {
         var ym = (r.date||'').slice(0,7);
         if (ym && ym.length === 7) touched4.add(ym);
     });
-    for (var i = 0; i < dw4cat.length; i++) {
-        if (codes.has(dw4cat[i].code)) { touchedDw4 = true; break; }
-    }
 
-    if (!touched5.size && !touched4.size && !touchedDw4) return { allOk: true };
+    if (!touched5.size && !touched4.size) return { allOk: true };
 
     function buildMonthMap(arr) {
         var m = {};
@@ -7299,10 +7289,6 @@ async function _doPushEdits(token) {
         var fname = 'five_cat_' + ym + '.json';
         var ok = await _zbPushMonthlyMerge(fname, monthMap4[ym], rowKey, token, '[zbPushEdits]');
         if (!ok) { allOk = false; failedFiles.push(fname); console.error('编辑推送失败:', fname); }
-    }
-    if (touchedDw4) {
-        var ok = await _zbPushFile(GH_FILES.dw4cat, { rows: dw4cat, updated: new Date().toISOString() }, token);
-        if (!ok) { allOk = false; failedFiles.push(GH_FILES.dw4cat); console.error('编辑推送失败:', GH_FILES.dw4cat); }
     }
 
     // 改 person 列触发 corrections 删除（本地 + 云端 person_corrections.json）
@@ -9902,23 +9888,21 @@ async function _doEditSave() {
         // level1,level2,level3_orig,level2,issueType,date,code,cat,qaInspector 同名不需要转换
     };
 
-    // 三个数据源：手机 diff5 / 五品类 diff4 / 大仓 dw4cat
+    // 两个数据源：手机 diff5 / 四品类 diff4（含大仓数据，已统一）
     // _origRef 在 bridgeData 投影时建立，直接指向原始行，避免按 code 查表时同质检码多行被覆盖的问题
     var diff5  = (window._DATA && window._DATA.diff5)  || [];
     var diff4  = (window._DATA && window._DATA.diff4)  || [];
-    var dw4cat = (window._DATA && window._DATA.dw4cat) || [];
 
-    // 判断 _origRef 落在哪个源里，返回 'diff5' / 'diff4' / 'dw4cat' / null
+    // 判断 _origRef 落在哪个源里，返回 'diff5' / 'diff4' / null
     function locateSource(origRow) {
         if (!origRow) return null;
         if (diff5.indexOf(origRow)  !== -1) return 'diff5';
         if (diff4.indexOf(origRow)  !== -1) return 'diff4';
-        if (dw4cat.indexOf(origRow) !== -1) return 'dw4cat';
         return null;
     }
 
     // 每个源各自记录"被改动 / 被删除的月份"
-    var touchedMonths = { diff5: new Set(), diff4: new Set(), dw4cat: new Set() };
+    var touchedMonths = { diff5: new Set(), diff4: new Set() };
 
     // 反向写回原始行
     Object.keys(_zbEditChanges).forEach(function(key){
@@ -9947,12 +9931,12 @@ async function _doEditSave() {
         if (!src) return;
         var ym = (mappedRow.date||'').slice(0,7);
         if (ym && ym.length===7) touchedMonths[src].add(ym);
-        var arr = src === 'diff5' ? diff5 : src === 'diff4' ? diff4 : dw4cat;
+        var arr = src === 'diff5' ? diff5 : diff4;
         var i = arr.indexOf(origRow);
         if (i !== -1) arr.splice(i, 1);
     });
 
-    var totalTouched = touchedMonths.diff5.size + touchedMonths.diff4.size + touchedMonths.dw4cat.size;
+    var totalTouched = touchedMonths.diff5.size + touchedMonths.diff4.size;
     if (!totalTouched) {
         showToast('✅ 改动已应用');
         _zbEditChanges={}; _zbEditDeletes=new Set(); _zbEditResults=[];
@@ -9990,17 +9974,12 @@ async function _doEditSave() {
         var ok = await _zbPushMonthlyMerge(fname, monthMap5[ym], rowKey, token, '[记录编辑]');
         if (!ok) { allOk = false; console.error('[记录编辑] 推送失败:', fname); }
     }
-    // 推 五品类 diff4（five_cat_<YM>.json），走 merge
+    // 推 四品类 diff4（five_cat_<YM>.json），走 merge
     for (var ym of touchedMonths.diff4) {
         if (!monthMap4[ym]) continue;
         var fname = 'five_cat_' + ym + '.json';
         var ok = await _zbPushMonthlyMerge(fname, monthMap4[ym], rowKey, token, '[记录编辑]');
         if (!ok) { allOk = false; console.error('[记录编辑] 推送失败:', fname); }
-    }
-    // 推 大仓 dw4cat（不分片，整文件覆盖）
-    if (touchedMonths.dw4cat.size > 0) {
-        var ok = await _zbPushFile(GH_FILES.dw4cat, { rows: dw4cat, updated: new Date().toISOString() }, token);
-        if (!ok) { allOk = false; console.error('[记录编辑] 推送失败:', GH_FILES.dw4cat); }
     }
 
     if (allOk) {
@@ -11779,6 +11758,25 @@ function zbRenderCloudManager() {
       .map(function(r){ return r.date+'||'+r.cat; })
   );
 
+  // 迁移卡片：仅 super 可见，一次性操作
+  var migrateHtml = '';
+  if (zbRole === 'super') {
+    var migDone = localStorage.getItem('zb_dw4_migrated') === '1';
+    migrateHtml = '<div id="zbMigrateCard" style="border:0.5px solid #fcd34d;border-radius:8px;padding:12px 14px;margin-bottom:12px;background:#fffbeb;">'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
+      + '<span style="font-size:12px;font-weight:500;color:#92400e;">旧格式数据迁移</span>'
+      + (migDone
+          ? '<span style="font-size:11px;background:#dcfce7;color:#16a34a;padding:2px 8px;border-radius:5px;">已完成</span>'
+          : '<span style="font-size:11px;background:#fef3c7;color:#b45309;padding:2px 8px;border-radius:5px;">待处理</span>')
+      + '</div>'
+      + (migDone
+          ? '<p style="font-size:12px;color:#6b7280;margin:0;">旧文件已删除，数据已迁移至月度分片，无需再操作。</p>'
+          : '<p style="font-size:12px;color:#92400e;margin:0 0 8px;line-height:1.6;">检测到旧格式大仓数据文件（dw_four_cat_detail.json 等），点击可将其合并至月度分片文件，完成后旧文件将从云端删除。</p>'
+            + '<div style="font-size:11px;color:#b45309;background:#fef3c7;border-radius:6px;padding:6px 10px;margin-bottom:10px;">⚠️ 操作不可撤销，建议先在 GitHub 备份旧文件。操作完成前请勿关闭看板。</div>'
+            + '<button id="zbMigrateBtn" onclick="zbMigrateDw4Legacy()" style="font-size:12px;padding:5px 14px;border-radius:7px;border:0.5px solid #fcd34d;background:#fef9c3;color:#92400e;cursor:pointer;">执行迁移并清理旧文件</button>')
+      + '</div>';
+  }
+
   var alertHtml = !canEdit
     ? '<div style="background:#fef9c3;border:0.5px solid #fde047;border-radius:8px;padding:8px 12px;font-size:12px;color:#854d0e;margin-bottom:12px;">⚠️ 仅管理员及以上可删除数据</div>'
     : '<div style="background:#fef2f2;border:0.5px solid #fca5a5;border-radius:8px;padding:8px 12px;font-size:12px;color:#dc2626;margin-bottom:12px;">⚠️ 删除操作不可撤销，将同步更新云端文件</div>';
@@ -11882,7 +11880,82 @@ function zbRenderCloudManager() {
   var totalCount = _zbCloudTab === 'phone' ? phoneDateList.length : Object.keys(fiveDateMap||{}).length;
   var footerHtml = '<div style="margin-top:8px;font-size:11px;color:var(--text-secondary);">共 '+totalCount+' 条 · 已选 <span id="zbCloudSelCount">0</span> 条</div>';
 
-  el.innerHTML = alertHtml + toolbarHtml + phoneHtml + fiveHtml + footerHtml;
+  el.innerHTML = migrateHtml + alertHtml + toolbarHtml + phoneHtml + fiveHtml + footerHtml;
+}
+
+async function zbMigrateDw4Legacy() {
+  var btn = document.getElementById('zbMigrateBtn');
+  if (btn) { btn.textContent = '迁移中…'; btn.disabled = true; btn.style.opacity = '0.5'; }
+  var token = zbGetToken();
+  if (!token) { showToast('⚠️ 未找到 Token，请先登录管理员账号'); if (btn) { btn.textContent = '执行迁移并清理旧文件'; btn.disabled = false; btn.style.opacity = '1'; } return; }
+
+  try {
+    var rowKey = function(r){ return (r.date||'')+'|'+(r.code||'')+'|'+(r.site||''); };
+    var legacyFiles = [GH_FILES.dw4cat, GH_FILES.dw4sum];
+    var mergedRows = [];
+
+    // 读旧文件
+    for (var i = 0; i < legacyFiles.length; i++) {
+      var fname = legacyFiles[i];
+      var data = await ghApiFetch(fname, token);
+      if (data && data.rows && data.rows.length) {
+        // dw4sum 字段不同，只迁移 dw4cat（差异明细）
+        if (fname === GH_FILES.dw4cat) mergedRows = mergedRows.concat(data.rows);
+      }
+    }
+
+    if (!mergedRows.length) {
+      showToast('旧文件无数据，直接删除旧文件');
+    } else {
+      // 按月分片合并进 five_cat_YM.json
+      var monthMap = {};
+      mergedRows.forEach(function(r){
+        var ym = (r.date||'').slice(0,7);
+        if (!ym || ym.length < 7) return;
+        if (!monthMap[ym]) monthMap[ym] = [];
+        monthMap[ym].push(r);
+      });
+      var allOk = true;
+      for (var ym in monthMap) {
+        var shardName = 'five_cat_' + ym + '.json';
+        var ok = await _zbPushMonthlyMerge(shardName, monthMap[ym], rowKey, token, '[迁移]');
+        if (!ok) { allOk = false; showToast('⚠️ ' + shardName + ' 写入失败，迁移中止'); return; }
+      }
+      if (!allOk) return;
+      showToast('✅ 旧数据已合并至分片文件');
+    }
+
+    // 删除旧文件（写入空内容占位，GitHub不支持直接删除，用API删）
+    var delOk = true;
+    for (var j = 0; j < legacyFiles.length; j++) {
+      var fn = legacyFiles[j];
+      // 获取当前 SHA
+      var meta = await fetch(ghUrl(fn) + '?t=' + Date.now(), { headers: { Authorization: 'token ' + token } }).then(function(r){ return r.ok ? r.json() : null; });
+      if (!meta || !meta.sha) continue; // 文件不存在，跳过
+      var delRes = await fetch(ghUrl(fn), {
+        method: 'DELETE',
+        headers: { Authorization: 'token ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: '[看板] 迁移完成，删除旧格式大仓文件: ' + fn, sha: meta.sha })
+      });
+      if (!delRes.ok) { delOk = false; console.error('删除失败:', fn, delRes.status); }
+    }
+
+    if (delOk) {
+      localStorage.setItem('zb_dw4_migrated', '1');
+      showToast('✅ 迁移完成，旧文件已从云端删除');
+    } else {
+      showToast('⚠️ 数据已迁移，但部分旧文件删除失败，可手动到 GitHub 删除');
+      localStorage.setItem('zb_dw4_migrated', '1');
+    }
+
+    // 刷新界面
+    zbRenderCloudManager();
+
+  } catch(e) {
+    console.error('[zbMigrateDw4Legacy]', e);
+    showToast('⚠️ 迁移出错: ' + e.message);
+    if (btn) { btn.textContent = '执行迁移并清理旧文件'; btn.disabled = false; btn.style.opacity = '1'; }
+  }
 }
 
 function zbSwitchCloudTab(tab) {
