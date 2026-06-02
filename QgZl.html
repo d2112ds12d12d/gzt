@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.58W</title>
+    <title>培训部数据看板 v1.58X</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -902,7 +902,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.58W</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.58X</div>
     </div>
   </nav>
 
@@ -11218,7 +11218,11 @@ function zbCheckDataHealth() {
     var datesDiff5 = new Set((DATA.diff5||[]).map(function(r){ return r.date; }));
     // 四品类：sum + diff4，每个品类单独判断，任一品类双轨齐才算该品类该日完整
     var fiveSumKeys   = new Set((DATA.sum  ||[]).filter(function(r){ return r.date&&r.cat; }).map(function(r){ return r.date+'||'+r.cat; }));
-    var fiveDiff4Keys = new Set((DATA.diff4||[]).filter(function(r){ return r.date&&r.cat; }).map(function(r){ return r.date+'||'+r.cat; }));
+    var fiveDiff4Keys = new Set(
+        [...(DATA.diff4||[]), ...(DATA.dw4cat||[])]
+        .filter(function(r){ return r.date&&r.cat; })
+        .map(function(r){ return r.date+'||'+r.cat; })
+    );
     var fiveCats = ['笔记本','平板','手表','耳机'];
     var today = new Date();
     var missingPhone = [], missingFive = [];
@@ -11769,7 +11773,11 @@ function zbRenderCloudManager() {
 
   // 完整度：四品类每个 date|cat 必须同时有 sum 和 diff4 才算完整
   var fiveHasSum   = new Set((DATA.sum  ||[]).filter(function(r){ return r.date&&r.cat; }).map(function(r){ return r.date+'||'+r.cat; }));
-  var fiveHasDiff4 = new Set((DATA.diff4||[]).filter(function(r){ return r.date&&r.cat; }).map(function(r){ return r.date+'||'+r.cat; }));
+  var fiveHasDiff4 = new Set(
+      [...(DATA.diff4||[]), ...(DATA.dw4cat||[])]
+      .filter(function(r){ return r.date&&r.cat; })
+      .map(function(r){ return r.date+'||'+r.cat; })
+  );
 
   var alertHtml = !canEdit
     ? '<div style="background:#fef9c3;border:0.5px solid #fde047;border-radius:8px;padding:8px 12px;font-size:12px;color:#854d0e;margin-bottom:12px;">⚠️ 仅管理员及以上可删除数据</div>'
