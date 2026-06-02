@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.59</title>
+    <title>培训部数据看板 v1.60</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -902,7 +902,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.59</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.60</div>
     </div>
   </nav>
 
@@ -4161,22 +4161,21 @@
                     summaryData = DATA.qa.map(r => ({ siteName: r.site, totalChecks: r.checks, date: r.date }));
                     diffData = DATA.diff5.filter(r => r.strategy === '大盘评估/站点').map(mapDiff5);
                 } else {
-                    // 中心仓四品类
-                    var zxSum  = DATA.sum.filter(r => r.cat === currentCat).map(r => ({ siteName: r.site, totalChecks: r.checks, date: r.date }));
-                    // 大仓四品类汇总
-                    var dw4Sum = (DATA.dw4sum||[]).filter(r => r.cat === currentCat).map(r => ({ siteName: r.site, totalChecks: r.checks, date: r.date }));
-                    summaryData = zxSum.concat(dw4Sum);
-                    // 中心仓四品类差异明细
-                    var zxDiff = DATA.diff4.filter(r => r.cat === currentCat).map(mapDiff4);
-                    // 大仓四品类差异明细
-                    var dw4Diff = (DATA.dw4cat||[]).filter(r => r.cat === currentCat).map(mapDiff4);
-                    diffData = zxDiff.concat(dw4Diff);
+                    // 四品类汇总（大仓+中心仓已统一存入sum）
+                    summaryData = DATA.sum.filter(r => r.cat === currentCat).map(r => ({ siteName: r.site, totalChecks: r.checks, date: r.date }));
+                    // 兼容旧dw4sum数据（历史遗留，新数据已合并进sum）
+                    var legacyDw4Sum = (DATA.dw4sum||[]).filter(r => r.cat === currentCat).map(r => ({ siteName: r.site, totalChecks: r.checks, date: r.date }));
+                    if (legacyDw4Sum.length) {
+                        var sumKeys = new Set(summaryData.map(r => r.date+'|'+r.siteName));
+                        legacyDw4Sum.forEach(function(r){ if (!sumKeys.has(r.date+'|'+r.siteName)) summaryData.push(r); });
+                    }
+                    // 四品类差异明细（大仓+中心仓已统一存入diff4）
+                    diffData = DATA.diff4.filter(r => r.cat === currentCat).map(mapDiff4);
                 }
-                // 差异明细页全量数据（所有品类）
+                // 差异明细页全量数据（所有品类，dw4cat已合并进diff4）
                 window._allDiffData = [
                     ...DATA.diff5.filter(r => r.strategy === '大盘评估/站点').map(mapDiff5),
-                    ...DATA.diff4.map(mapDiff4),
-                    ...(DATA.dw4cat||[]).map(mapDiff4)
+                    ...DATA.diff4.map(mapDiff4)
                 ].sort((a,b) => (a.date||'').localeCompare(b.date||''));
             }
 
@@ -4237,10 +4236,9 @@
                             parsed = rows.map(r => ({ date:nd(r['抽检时间']), code:(r['质检码']||'').trim(), site:(r['站点']||'').trim(), cat:CAT_MAP[r['品类']]||r['品类']||'', level1:r['一级项']||'', level2:r['二级项']||'', level3_orig:r['原三级项']||'', level3_new:r['新三级项']||'', subjobj:(r['主客观分类']||'').trim(), issueType:(r['质检项类型']||'').trim(), judgedType:(r['问题分类']||'').trim(), inspector:extractCN(r['质检师']||''), qaInspector:extractCN(r['QA']||''), brand:String(r['品牌名称']||'').trim(), model:String(r['型号名称']||'').trim() }));
                             DATA.diff4 = smartMerge(DATA.diff4, parsed);
                         } else if ('抽检设备数量' in fr && '站点名称' in fr && '品类名称' in fr && !('质检码' in fr) && !('主客观问题分类' in fr)) {
-                            // 四品类汇总表（中心仓+大仓混合），按站点分流
-                            var DW4_SITES_SUM = new Set(['转转-深圳智能验机中心','转转-青岛智能验机中心','转转-成都智能验机中心','深圳后验中心仓','青岛后验中心仓','成都后验中心仓']);
+                            // 四品类汇总表（中心仓+大仓统一存入sum，不再分流）
                             var DW4_CAT_MAP_SUM = {'平板电脑':'平板','智能手表':'手表','耳机/耳麦':'耳机','笔记本':'笔记本'};
-                            var sumRows = [], dw4sumRows = [];
+                            var sumRows = [];
                             rows.forEach(function(r) {
                                 var site = (r['站点名称']||'').trim();
                                 var cat  = DW4_CAT_MAP_SUM[r['品类名称']] || r['品类名称'] || '';
@@ -4248,24 +4246,13 @@
                                 var checks = parseFloat(r['抽检设备数量'])||0;
                                 var objDiff  = parseFloat(r['客观差异设备量'])||0;
                                 var subjDiff = parseFloat(r['主观差异设备量'])||0;
-                                if (DW4_SITES_SUM.has(site)) {
-                                    dw4sumRows.push({ date, site, cat, checks, objDiff, subjDiff });
-                                } else {
-                                    sumRows.push({ date, site, cat, checks });
-                                }
+                                sumRows.push({ date, site, cat, checks, objDiff, subjDiff });
                             });
                             if (sumRows.length) {
-                                tableType = 'sum'; tableName = '四品类汇总（中心仓）';
-                                parsed = sumRows;
-                                DATA.sum = smartMerge(DATA.sum, sumRows);
+                                tableType = 'sum'; tableName = '四品类汇总';
+                                DATA.sum = smartMerge(DATA.sum, sumRows, r => r.date+'|'+r.site+'|'+r.cat);
                             }
-                            if (dw4sumRows.length) {
-                                tableType = tableType || 'dw4sum'; tableName = tableName ? tableName + '+大仓' : '四品类汇总（大仓）';
-                                if (!DATA.dw4sum) DATA.dw4sum = [];
-                                DATA.dw4sum = smartMerge(DATA.dw4sum, dw4sumRows, r => r.date+'|'+r.site+'|'+r.cat);
-                            }
-                            // parsed 取合并，用于日志记录
-                            parsed = sumRows.concat(dw4sumRows);
+                            parsed = sumRows;
                         } else if (('抽检设备数量' in fr || '大盘抽检设备数量' in fr) && ('站点名称' in fr || ('品类名称' in fr && '抽检日期' in fr)) && !('质检码' in fr) && !('主客观问题分类' in fr)) {
                             // 大仓四品类汇总表（兼容旧字段名）
                             var DW4_SITES = new Set(['转转-深圳智能验机中心','转转-青岛智能验机中心','转转-成都智能验机中心','深圳后验中心仓','青岛后验中心仓','成都后验中心仓']);
@@ -6783,6 +6770,19 @@ async function zbLoadCloudData(useApi) {
         if (toMerge.length) {
             window._DATA.diff4 = window._DATA.diff4.concat(toMerge);
             console.log('[迁移] 旧大仓数据合并进diff4:', toMerge.length, '条');
+        }
+    }
+
+    // 兼容迁移：读旧的dw4sum单文件，合并进sum（历史数据兜底）
+    const dw4sumJson = await fetchFile(GH_FILES.dw4sum);
+    if (dw4sumJson && dw4sumJson.rows && dw4sumJson.rows.length > 0) {
+        window._DATA.dw4sum = dw4sumJson.rows;
+        if (!window._DATA.sum) window._DATA.sum = [];
+        var existingSumKeys = new Set(window._DATA.sum.map(function(r){ return (r.date||'')+'|'+(r.site||'')+'|'+(r.cat||''); }));
+        var toMergeSum = dw4sumJson.rows.filter(function(r){ return !existingSumKeys.has((r.date||'')+'|'+(r.site||'')+'|'+(r.cat||'')); });
+        if (toMergeSum.length) {
+            window._DATA.sum = window._DATA.sum.concat(toMergeSum);
+            console.log('[迁移] 旧大仓汇总数据合并进sum:', toMergeSum.length, '条');
         }
     }
 
