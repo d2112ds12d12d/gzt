@@ -11760,7 +11760,7 @@ function zbRenderCloudManager() {
 
   // 迁移卡片：仅 super 可见，一次性操作
   var migrateHtml = '';
-  if (zbRole === 'super') {
+  if (zbRole === 'admin' || zbRole === 'super') {
     var migDone = localStorage.getItem('zb_dw4_migrated') === '1';
     migrateHtml = '<div id="zbMigrateCard" style="border:0.5px solid #fcd34d;border-radius:8px;padding:12px 14px;margin-bottom:12px;background:#fffbeb;">'
       + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">'
