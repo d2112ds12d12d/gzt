@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.60C</title>
+    <title>培训部数据看板 v1.61</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -902,7 +902,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.60C</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.61</div>
     </div>
   </nav>
 
@@ -5675,7 +5675,8 @@ const GH_FILES = {
     tableLinks: 'table_links.json',
     qcAttachments: 'qc_attachments.json',
     personCorrections: 'person_corrections.json',
-    feedback: 'feedback.json'
+    feedback: 'feedback.json',
+    mainboard: 'mainboard_data.json'
 };
 // 超管Token拆分混淆（运行时拼接，防扫描）
 const _t = ['github_pat_','11BMTOZFI0','c1Zh3zsjA4','ep_3DbEX3c','8xDGxNPAwa','IOB4RsDKRd','tI0VtxSQwM','b6yrkRBGWH','2AOJbL2jHnWF'];
@@ -6776,8 +6777,7 @@ async function zbLoadCloudData(useApi) {
     }
 
     // 兼容迁移：读旧的dw4sum单文件，合并进sum（历史数据兜底）
-    const dw4sumJson = await fetchFile(GH_FILES.dw4sum);
-    if (dw4sumJson && dw4sumJson.rows && dw4sumJson.rows.length > 0) {
+    const dw4sumJson = await fetchFile(GH_FILES.dw4sum);    if (dw4sumJson && dw4sumJson.rows && dw4sumJson.rows.length > 0) {
         window._DATA.dw4sum = dw4sumJson.rows;
         if (!window._DATA.sum) window._DATA.sum = [];
         var existingSumKeys = new Set(window._DATA.sum.map(function(r){ return (r.date||'')+'|'+(r.site||'')+'|'+(r.cat||''); }));
@@ -6793,6 +6793,12 @@ async function zbLoadCloudData(useApi) {
     // 盖回早期脏数据（实测 bug 根因，2026-06-01）。
     // 现在 phone_diff_YM.json 才是 inspector 字段的唯一真相，覆盖层已无用且有害。
     // 老文件留在 GitHub 上当历史归档，不再读取。
+
+    // 加载主板审核数据
+    try {
+        const mbJson = await fetchFile(GH_FILES.mainboard);
+        window._mainboardData = (mbJson && typeof mbJson === 'object') ? mbJson : {};
+    } catch(e) { window._mainboardData = {}; }
 
     // 加载日志
     try {
@@ -7803,9 +7809,9 @@ function zbRenderSiteDetail(siteName) {
         });
         var _isDW4 = !!_dwPair4;
         var FIXED_CATS = _isDW4
-            ? ['手机-线体','手机-后验','笔记本','平板','手表','耳机']
+            ? ['手机-线体','手机-后验','手机-主板','笔记本','平板','手表','耳机']
             : ['手机','笔记本','平板','手表','耳机'];
-        var CAT_COLORS_EXT = Object.assign({}, CAT_COLORS, {'手机-线体':'#2563eb','手机-后验':'#f59e0b'});
+        var CAT_COLORS_EXT = Object.assign({}, CAT_COLORS, {'手机-线体':'#2563eb','手机-后验':'#f59e0b','手机-主板':'#94a3b8'});
         var VIS_KEY4 = 'site4w_cat_vis__' + siteName;
         var savedVis4 = {};
         try { var sv4=localStorage.getItem(VIS_KEY4); savedVis4=sv4?JSON.parse(sv4):{}; } catch(e4){}
@@ -7818,6 +7824,7 @@ function zbRenderSiteDetail(siteName) {
             var allDiff = window._allDiffData || [];
             if (c === '手机-线体') return allDiff.some(function(d){ return d.cat==='手机' && d.warehouse===_dwPair4.line; });
             if (c === '手机-后验') return allDiff.some(function(d){ return d.cat==='手机' && d.warehouse===_dwPair4.post; });
+            if (c === '手机-主板') return true; // 主板数据手动填写，始终显示按钮
             return catList4.indexOf(c) !== -1;
         }
 
@@ -7935,6 +7942,16 @@ function zbRenderSiteDetail(siteName) {
                     var sumData5 = (window._DATA && window._DATA.sum) ? window._DATA.sum : [];
                     var catDiff4 = _filterExecDiffByCat4(execDiff4, c);
                     var catQA4   = _filterQAByCat4(siteQA4, c);
+
+                    // 手机-主板：直接从云端手动录入数据取值
+                    if (c === '手机-主板') {
+                        var mbSiteData = (window._mainboardData && window._mainboardData[siteName]) || {};
+                        var wkData = weeks4.map(function(wk) {
+                            var val = mbSiteData[wk.start];
+                            return (val !== undefined && val !== null && val !== '') ? parseFloat(val) : null;
+                        });
+                        return { name:c, type:'line', data:wkData, _diffCnt:[], _chks:[], smooth:false, connectNulls:false, symbol:'circle', symbolSize:7, lineStyle:{color:col4,width:2,type:'dashed'}, itemStyle:{color:col4}, label:{show:true,position:'top',color:col4,fontSize:10,formatter:function(p){return p.value===null?'':p.value+'%';}} };
+                    }
                     var wkDiffCnt = [], wkChks = [];
                     var wkData = weeks4.map(function(wk, wi) {
                         var diffs4 = new Set();
@@ -7992,7 +8009,36 @@ function zbRenderSiteDetail(siteName) {
                 tbl4el.style.display='';
                 var head4='<tr style="background:var(--kpi-bg);"><th style="padding:6px 10px;text-align:left;font-size:11px;font-weight:500;color:var(--text-secondary);">品类</th>'+weeks4.map(function(w,i){return '<th style="padding:6px 10px;text-align:center;font-size:11px;font-weight:500;color:'+(i===3?'#2563eb':'var(--text-secondary)')+';">'+w.label+(i===3?' ↓':'')+'</th>';}).join('')+'<th style="padding:6px 10px;text-align:center;font-size:11px;font-weight:500;color:var(--text-secondary);">环比</th></tr>';
                 var rows4=visCats4.map(function(c,ci){
-                    var col4=CAT_COLORS[c]||DEFAULT_COLORS[ci%DEFAULT_COLORS.length];
+                    var col4=CAT_COLORS_EXT[c]||CAT_COLORS[c]||DEFAULT_COLORS[ci%DEFAULT_COLORS.length];
+
+                    // 手机-主板：可编辑行
+                    if (c === '手机-主板') {
+                        var mbSiteData = (window._mainboardData && window._mainboardData[siteName]) || {};
+                        var canEditMb = (zbRole==='admin'||zbRole==='super') || (zbRole==='trainer'&&zbTrainerInfo&&zbTrainerInfo.sites&&zbTrainerInfo.sites.includes(siteName)&&zbTrainerInfo.cats&&(Array.isArray(zbTrainerInfo.cats)?zbTrainerInfo.cats.join('').includes('手机'):String(zbTrainerInfo.cats).includes('手机')));
+                        var dot='<span style="width:7px;height:7px;border-radius:50%;background:'+col4+';display:inline-block;margin-right:5px;vertical-align:middle;"></span>';
+                        var cells = weeks4.map(function(wk) {
+                            var val = mbSiteData[wk.start];
+                            var dispVal = (val!==undefined&&val!==null&&val!=='')?val:'';
+                            if (canEditMb) {
+                                return '<td style="padding:4px 6px;text-align:center;font-size:11px;">'
+                                    +'<input type="number" step="0.01" min="0" max="100" data-wkstart="'+wk.start+'" value="'+dispVal+'" placeholder="—" '
+                                    +'style="width:60px;text-align:center;border:0.5px solid var(--border-color);border-radius:5px;padding:3px 6px;font-size:11px;background:var(--kpi-bg);color:var(--text-primary);outline:none;" '
+                                    +'onchange="if(!window._mbPendingEdits)window._mbPendingEdits={};if(!window._mbPendingEdits[this.dataset.site])window._mbPendingEdits[this.dataset.site]={};window._mbPendingEdits[this.dataset.site][this.dataset.wkstart]=this.value;" data-site="'+siteName+'" data-wkstart="'+wk.start+'">'
+                                    +'</td>';
+                            } else {
+                                return '<td style="padding:6px 10px;text-align:center;font-size:11px;">'+(dispVal!==''?dispVal+'%':'—')+'</td>';
+                            }
+                        }).join('');
+                        var saveBtn = canEditMb
+                            ? '<button onclick="zbSaveMainboard(this.dataset.site)" data-site="'+siteName+'" style="font-size:11px;padding:3px 10px;border-radius:6px;border:0.5px solid #2563eb;background:#eff6ff;color:#2563eb;cursor:pointer;white-space:nowrap;margin-left:6px;">保存</button>'
+                            : '';
+                        var mbVals = weeks4.map(function(wk){ var v=mbSiteData[wk.start]; return (v!==undefined&&v!==null&&v!=='')?parseFloat(v):null; });
+                        var last4mb=mbVals[3], prev4mb=mbVals[2];
+                        var delta4mb=(last4mb!==null&&prev4mb!==null&&prev4mb>0)?parseFloat(((last4mb-prev4mb)/prev4mb*100).toFixed(1)):null;
+                        var dStr4mb=delta4mb===null?'<span style="color:#94a3b8;">—</span>':delta4mb>0?'<span style="color:#dc2626;">↑+'+delta4mb+'%</span>':delta4mb<0?'<span style="color:#16a34a;">↓'+delta4mb+'%</span>':'<span style="color:#94a3b8;">—</span>';
+                        return '<tr style="border-top:0.5px solid var(--border-color);"><td style="padding:6px 10px;font-size:11px;">'+dot+c+saveBtn+'</td>'+cells+'<td style="padding:6px 10px;text-align:center;font-size:11px;">'+dStr4mb+'</td></tr>';
+                    }
+
                     var s4=series4.find(function(s){return s.name===c;});
                     if(!s4) return '';
                     var d4=s4.data, last4=d4[3], prev4=d4[2];
@@ -11941,6 +11987,34 @@ async function zbMigrateDw4Legacy() {
     showToast('⚠️ 迁移出错: ' + e.message);
     if (btn) { btn.textContent = '执行迁移并清理旧文件'; btn.disabled = false; btn.style.opacity = '1'; }
   }
+}
+
+async function zbSaveMainboard(siteName) {
+    var token = zbGetToken();
+    if (!token) { showToast('⚠️ 未找到Token，请先登录管理员账号'); return; }
+    var pending = window._mbPendingEdits && window._mbPendingEdits[siteName];
+    if (!pending || !Object.keys(pending).length) { showToast('没有待保存的改动'); return; }
+    if (!window._mainboardData) window._mainboardData = {};
+    if (!window._mainboardData[siteName]) window._mainboardData[siteName] = {};
+    Object.keys(pending).forEach(function(wkStart) {
+        var val = pending[wkStart];
+        if (val === '' || val === null || val === undefined) {
+            delete window._mainboardData[siteName][wkStart];
+        } else {
+            window._mainboardData[siteName][wkStart] = parseFloat(parseFloat(val).toFixed(2));
+        }
+    });
+    showToast('⏳ 正在保存主板数据…');
+    var ok = await _zbPushFile(GH_FILES.mainboard, window._mainboardData, token);
+    if (ok) {
+        window._mbPendingEdits = window._mbPendingEdits || {};
+        window._mbPendingEdits[siteName] = {};
+        showToast('✅ 主板数据已保存');
+        // 刷新趋势图
+        if (typeof zbRenderSiteDetail === 'function') zbRenderSiteDetail(siteName);
+    } else {
+        showToast('⚠️ 保存失败，请重试');
+    }
 }
 
 function zbSwitchCloudTab(tab) {
