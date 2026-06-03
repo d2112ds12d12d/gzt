@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.60A</title>
+    <title>培训部数据看板 v1.60C</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
@@ -902,7 +902,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.60A</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.60C</div>
     </div>
   </nav>
 
@@ -5516,10 +5516,10 @@
                         var prev = vals[vals.length-2].rate;
                         var curr = lastVal.rate;
                         if (prev && prev > 0) {
-                            var pct = (curr-prev)/prev*100;
-                            var cls = pct>0?'wt-up':(pct<0?'wt-down':'wt-flat');
-                            var arrow = pct>0?'↑ +':(pct<0?'↓ ':'— ');
-                            tbHtml += '<td class="'+cls+'">'+arrow+Math.abs(pct).toFixed(1)+'%</td>';
+                            var pct = (curr - prev) / prev * 100;
+                            var cls = pct > 0 ? 'wt-up' : (pct < 0 ? 'wt-down' : 'wt-flat');
+                            var arrow = pct > 0 ? '↑ +' : (pct < 0 ? '↓ ' : '— ');
+                            tbHtml += '<td class="' + cls + '">' + arrow + Math.abs(pct).toFixed(1) + '%</td>';
                         } else {
                             tbHtml += '<td class="wt-flat">—</td>';
                         }
@@ -7996,7 +7996,7 @@ function zbRenderSiteDetail(siteName) {
                     var s4=series4.find(function(s){return s.name===c;});
                     if(!s4) return '';
                     var d4=s4.data, last4=d4[3], prev4=d4[2];
-                    var delta4=(last4!==null&&prev4!==null)?parseFloat((last4-prev4).toFixed(2)):null;
+                    var delta4=(last4!==null&&prev4!==null&&prev4>0)?parseFloat(((last4-prev4)/prev4*100).toFixed(1)):null;
                     var dStr4=delta4===null?'<span style="color:#94a3b8;">—</span>':delta4>0?'<span style="color:#dc2626;">↑+'+delta4+'%</span>':delta4<0?'<span style="color:#16a34a;">↓'+delta4+'%</span>':'<span style="color:#94a3b8;">—</span>';
                     return '<tr style="border-top:0.5px solid var(--border-color);"><td style="padding:6px 10px;font-size:11px;"><span style="width:7px;height:7px;border-radius:50%;background:'+col4+';display:inline-block;margin-right:5px;vertical-align:middle;"></span>'+c+'</td>'+d4.map(function(v,i){return '<td style="padding:6px 10px;text-align:center;font-size:11px;'+(i===3?'font-weight:500;color:#2563eb;':'')+'">'+(v!==null?v+'%':'—')+'</td>';}).join('')+'<td style="padding:6px 10px;text-align:center;font-size:11px;">'+dStr4+'</td></tr>';
                 }).join('');
