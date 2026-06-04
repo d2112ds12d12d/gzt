@@ -6,12 +6,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>培训部数据看板 v1.61A</title>
+    <title>培训部数据看板 v1.61B</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
     </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <!-- html2canvas / cos-js-sdk 改为按需懒加载（v1.61B 性能优化） -->
+    <script>
+    // 懒加载脚本通用工具：按 URL 缓存 Promise，重复调用不重复请求
+    window._zbScriptCache = window._zbScriptCache || {};
+    window.zbLoadScript = function(url) {
+        if (window._zbScriptCache[url]) return window._zbScriptCache[url];
+        window._zbScriptCache[url] = new Promise(function(resolve, reject) {
+            var s = document.createElement('script');
+            s.src = url;
+            s.onload = function(){ resolve(); };
+            s.onerror = function(){ delete window._zbScriptCache[url]; reject(new Error('加载失败: '+url)); };
+            document.head.appendChild(s);
+        });
+        return window._zbScriptCache[url];
+    };
+    window.zbEnsureHtml2Canvas = function(){
+        if (typeof html2canvas !== 'undefined') return Promise.resolve();
+        return window.zbLoadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js');
+    };
+    window.zbEnsureCosSdk = function(){
+        if (typeof window.COS !== 'undefined') return Promise.resolve();
+        return window.zbLoadScript('https://cdn.jsdelivr.net/npm/cos-js-sdk-v5/dist/cos-js-sdk-v5.min.js');
+    };
+    </script>
     <style>
         * { box-sizing: border-box; margin: 0; padding: 0; }
         :root {
@@ -850,7 +873,7 @@
             transition: transform 0.1s ease;
         }
         </style>
-    <script src="https://cdn.jsdelivr.net/npm/cos-js-sdk-v5/dist/cos-js-sdk-v5.min.js"></script>
+    <!-- cos-js-sdk 已改为按需懒加载（见 head 中 zbEnsureCosSdk） v1.61B -->
 </head>
 <body>
 <div id="zb-layout">
@@ -902,7 +925,7 @@
         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color:#cbd5e1;flex-shrink:0;"><polyline points="9 18 15 12 9 6"/></svg>
       </div>
       <!-- 版本号：双击触发管理员登录（无感知） -->
-      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.61A</div>
+      <div id="zbVersionTag" ondblclick="zbOpenAdminLogin()" style="padding:6px 14px;font-size:10px;color:#c8d0dc;cursor:default;user-select:none;letter-spacing:.04em;">v1.61B</div>
     </div>
   </nav>
 
@@ -5834,6 +5857,7 @@ function zbCompressImage(file, maxKB) {
 
 // 上传单个文件到COS，返回公开URL
 async function zbUploadToCos(file, imgKey) {
+    await window.zbEnsureCosSdk(); // v1.61B 懒加载
     var sts = await zbGetSts();
     var blob = await zbCompressImage(file, 1024);
     var ext  = (file.name.match(/\.[^.]+$/) || ['.jpg'])[0].toLowerCase();
@@ -6673,6 +6697,9 @@ function zbLogout() { zbSidebarUserClick(); }
 async function zbLoadCloudData(useApi) {
     zbShowSkeleton();
     showToast('⏳ 正在加载云端数据…');
+    // v1.61B 性能埋点
+    window._zbPerf = [];
+    const _zbT0 = performance.now();
     const token = zbGetToken();
     const viaApi = !!(useApi && token);
 
@@ -6714,6 +6741,7 @@ async function zbLoadCloudData(useApi) {
     // 加载分片文件（diff5/diff4），合并所有月份数据
     async function loadSharded(prefix) {
         // 固定加载最近6个月，不依赖顶部日期筛选，确保数据完整
+        // v1.61B: 6 个月文件并发拉取（Promise.all 保序，merged 顺序与串行版完全一致）
         const now = new Date();
         const months = [];
         for (let i = 5; i >= 0; i--) {
@@ -6721,15 +6749,17 @@ async function zbLoadCloudData(useApi) {
             const ym = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
             months.push(ym);
         }
+        const _t0 = performance.now();
+        const results = await Promise.all(months.map(function(ym){
+            return fetchFile(prefix + ym + '.json');
+        }));
         let merged = [];
-        for (const ym of months) {
-            const fname = prefix + ym + '.json';
-            const json = await fetchFile(fname);
-            if (json && json.rows && json.rows.length > 0) {
-                merged = merged.concat(json.rows);
-            }
+        for (let i = 0; i < results.length; i++) {
+            const json = results[i];
+            if (json && json.rows && json.rows.length > 0) merged = merged.concat(json.rows);
             // 文件不存在（404）属正常情况，静默跳过
         }
+        if (window._zbPerf) window._zbPerf.push({ stage: 'loadSharded('+prefix+')', ms: Math.round(performance.now()-_t0), rows: merged.length });
         // 兜底：若全部为空，尝试旧的整体文件（兼容迁移期）
         if (!merged.length) {
             var legacyName = prefix === 'phone_diff_' ? 'phone_diff_detail.json'
@@ -6745,8 +6775,27 @@ async function zbLoadCloudData(useApi) {
     let loaded = 0;
     if (!window._DATA) window._DATA = {};
 
+    // v1.61B 性能优化：所有数据桶并发拉取（原串行 7 个 await，约 14+ 个 RTT；并发后压到 ~1 个 RTT）
+    // Promise.all 保证结果顺序，loadSharded 内部已并行 6 个月文件
+    // 后处理仍然按原顺序串行，保留兜底/合并/完整性判断逻辑完全不变
+    const _tAll = performance.now();
+    const _parallel = await Promise.all([
+        loadSharded('qa_diff_'),                 // 0 qa 分片
+        fetchFile(GH_FILES.sum),                 // 1 sum 单文件
+        loadSharded('phone_diff_'),              // 2 diff5 分片
+        loadSharded('five_cat_'),                // 3 diff4 分片
+        fetchFile(GH_FILES.dw4cat),              // 4 旧大仓明细
+        fetchFile(GH_FILES.dw4sum)               // 5 旧大仓汇总
+    ]);
+    if (window._zbPerf) window._zbPerf.push({ stage: '并发拉取(6 桶)', ms: Math.round(performance.now()-_tAll), rows: '-' });
+    const qa       = _parallel[0];
+    const sumJson  = _parallel[1];
+    const diff5    = _parallel[2];
+    const diff4    = _parallel[3];
+    const dw4catJson = _parallel[4];
+    const dw4sumJson = _parallel[5];
+
     // 加载 qa（按月分片，同时兼容旧单文件）
-    const qa = await loadSharded('qa_diff_');
     if (qa.length > 0) {
         window._DATA.qa = qa; loaded++;
     } else {
@@ -6758,7 +6807,6 @@ async function zbLoadCloudData(useApi) {
     }
 
     // 加载 sum（单文件，保持原逻辑）
-    const sumJson = await fetchFile(GH_FILES.sum);
     if (sumJson && sumJson.rows && sumJson.rows.length > 0) {
         window._DATA.sum = sumJson.rows; loaded++;
     } else if (sumJson && sumJson.rows && sumJson.rows.length === 0) {
@@ -6767,13 +6815,10 @@ async function zbLoadCloudData(useApi) {
     }
 
     // 加载 diff5 / diff4（按月分片）
-    const diff5 = await loadSharded('phone_diff_');
     if (diff5.length > 0) { window._DATA.diff5 = diff5; loaded++; }
-    const diff4 = await loadSharded('five_cat_');
     if (diff4.length > 0) { window._DATA.diff4 = diff4; loaded++; }
 
     // 兼容迁移：读旧的大仓单文件，合并进diff4（历史数据兜底，新数据已统一存入five_cat_YM分片）
-    const dw4catJson = await fetchFile(GH_FILES.dw4cat);
     if (dw4catJson && dw4catJson.rows && dw4catJson.rows.length > 0) {
         window._DATA.dw4cat = dw4catJson.rows;
         // 将旧大仓数据合并进diff4，避免历史数据丢失
@@ -6787,7 +6832,8 @@ async function zbLoadCloudData(useApi) {
     }
 
     // 兼容迁移：读旧的dw4sum单文件，合并进sum（历史数据兜底）
-    const dw4sumJson = await fetchFile(GH_FILES.dw4sum);    if (dw4sumJson && dw4sumJson.rows && dw4sumJson.rows.length > 0) {
+    // v1.61B: dw4sumJson 已在上方 Promise.all 中并发取到，这里只做合并
+    if (dw4sumJson && dw4sumJson.rows && dw4sumJson.rows.length > 0) {
         window._DATA.dw4sum = dw4sumJson.rows;
         if (!window._DATA.sum) window._DATA.sum = [];
         var existingSumKeys = new Set(window._DATA.sum.map(function(r){ return (r.date||'')+'|'+(r.site||'')+'|'+(r.cat||''); }));
@@ -6804,17 +6850,17 @@ async function zbLoadCloudData(useApi) {
     // 现在 phone_diff_YM.json 才是 inspector 字段的唯一真相，覆盖层已无用且有害。
     // 老文件留在 GitHub 上当历史归档，不再读取。
 
-    // 加载主板审核数据
-    try {
-        const mbJson = await fetchFile(GH_FILES.mainboard);
-        window._mainboardData = (mbJson && typeof mbJson === 'object') ? mbJson : {};
-    } catch(e) { window._mainboardData = {}; }
-
-    // 加载日志
-    try {
-        const json = await fetchFile(GH_FILES.log);
-        if (json && json.logs) { _zbLog = json.logs; localStorage.setItem('zb_upload_log', JSON.stringify(_zbLog)); }
-    } catch(e) {}
+    // v1.61B: 主板审核 + 日志 并发取（互不依赖）
+    const _tAux = performance.now();
+    const _aux = await Promise.all([
+        fetchFile(GH_FILES.mainboard).catch(function(){ return null; }),
+        fetchFile(GH_FILES.log).catch(function(){ return null; })
+    ]);
+    if (window._zbPerf) window._zbPerf.push({ stage: '并发拉取(mainboard+log)', ms: Math.round(performance.now()-_tAux), rows: '-' });
+    const mbJson = _aux[0];
+    window._mainboardData = (mbJson && typeof mbJson === 'object') ? mbJson : {};
+    const logJson = _aux[1];
+    if (logJson && logJson.logs) { _zbLog = logJson.logs; localStorage.setItem('zb_upload_log', JSON.stringify(_zbLog)); }
 
     // H: 格式清洗——把 qa/sum 里历史遗留斜杠日期统一转成横线格式
     function fixSlashDate(s) {
@@ -6881,6 +6927,14 @@ async function zbLoadCloudData(useApi) {
         showToast('云端暂无数据，请上传文件');
         if (typeof zbSetCloudStatus === 'function') zbSetCloudStatus('err');
     }
+    // v1.61B 性能埋点：打印各阶段耗时
+    try {
+        if (window._zbPerf && window._zbPerf.length) {
+            window._zbPerf.push({ stage: '【zbLoadCloudData 总】', ms: Math.round(performance.now()-_zbT0), rows: '-' });
+            console.log('[v1.61B perf] 云端加载阶段耗时：');
+            console.table(window._zbPerf);
+        }
+    } catch(e) {}
     zbHideSkeleton();
 }
 
@@ -10561,9 +10615,10 @@ function zbSiteTrendRange(range, btn) {
 }
 
 // ── 趋势图板块：复制图片到剪贴板（F风格卡片） ──
-function zbCopyTrendImg() {
-    if (typeof html2canvas === 'undefined') { showToast('截图库未加载，请刷新重试'); return; }
+async function zbCopyTrendImg() {
     if (!window._siteChart_trend) { showToast('趋势图尚未渲染'); return; }
+    try { await window.zbEnsureHtml2Canvas(); }
+    catch(e) { showToast('截图库加载失败，请检查网络'); return; }
 
     showToast('正在生成图片…');
 
