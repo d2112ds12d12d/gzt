@@ -5770,7 +5770,7 @@ const _t = ['github_pat_','11BMTOZFI0','c1Zh3zsjA4','ep_3DbEX3c','8xDGxNPAwa','I
 function _tk() { return _t.join(''); }
 
 function ghUrl(file) { return `https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${GH_FOLDER}/${file}`; }
-function ghRaw(file) { return `https://raw.githubusercontent.com/${GH_USER}/${GH_REPO}/main/${GH_FOLDER}/${file}?t=${Date.now()}`; }
+function ghRaw(file) { var base = location.hostname.indexOf('github.io') !== -1 ? 'https://raw.githubusercontent.com/' + GH_USER + '/' + GH_REPO + '/main/' + GH_FOLDER : 'https://kanban.zhuanzhuan.tw.cn/' + GH_FOLDER; return base + '/' + file + '?t=' + Date.now(); }
 // GitHub Contents API — 绕过 CDN，推送后几乎立即可读，需要 Token
 // 大文件兜底：Contents API 对 >1MB 文件返回 encoding:'none' 且 content 为空，
 // 此时必须改走 Git Blob API（/git/blobs/{sha}，上限 100MB，同样不经 CDN）。
