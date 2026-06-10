@@ -15238,9 +15238,9 @@ function zbSiteBcDrawCanvas(data) {
         sf(9.5,'500'); cx.fillStyle='#64748b'; rt(k.label, kx+22, ky+20);
         sf(24,'800'); cx.fillStyle=k.vc; rt(k.val, kx+22, ky+52);
         if(k.unit){
-            var valW = cx.measureText(k.val).width; // 先量（字体还是 24px）
-            sf(11,'400'); cx.fillStyle='#94a3b8';
-            rt(k.unit, kx+22+valW+4, ky+52);        // 再画
+            var valW = cx.measureText(k.val).width; // 先量宽度（字体还是 24px）
+            sf(13,'500'); cx.fillStyle='#94a3b8';
+            rt(k.unit, kx+22+valW+5, ky+47);        // 提高 y：让单位居于大数字中下段
         }
         sf(9.5,'400'); cx.fillStyle='#94a3b8'; rt(k.sub, kx+22, ky+70);
     });
