@@ -7851,6 +7851,61 @@ async function zbPushLog() {
     try { await fetch(ghUrl(fname), { method: 'PUT', headers: { Authorization: 'token ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); } catch(e) {}
 }
 
+
+// ── 一次性迁移：旧 access_log.json → 新月度分片（F12 控制台执行 zbMigrateAccessLog()）──
+window.zbMigrateAccessLog = async function() {
+    var token = zbGetToken();
+    if (!token) { console.error('[迁移] 需要管理员 Token'); return; }
+    console.log('[迁移] 开始拉取旧 access_log.json…');
+    var oldJson = await ghApiFetch('access_log.json', token).catch(function(){ return null; });
+    if (!oldJson || !Array.isArray(oldJson.records)) { console.error('[迁移] 拉取旧数据失败或为空'); return; }
+    var oldRecs = oldJson.records;
+    console.log('[迁移] 旧记录数:', oldRecs.length);
+
+    // 按月分桶
+    var buckets = {};
+    oldRecs.forEach(function(r) {
+        var t = r.lastTime || r.firstTime || '';
+        if (!t) return;
+        var ym   = t.slice(0, 7);
+        var date = t.slice(0, 10);
+        var hour = t.slice(11, 13) || '00';
+        var event = {
+            ip:        r.ip || '未知',
+            loc:       r.loc || '',
+            role:      r.role || '',
+            roleName:  r.roleName || '',
+            date:      date,
+            hour:      hour,
+            firstTime: r.firstTime || t,
+            lastTime:  r.lastTime  || t,
+            cnt:       r.todayCnt  || 1
+        };
+        if (!buckets[ym]) buckets[ym] = [];
+        buckets[ym].push(event);
+    });
+
+    var months = Object.keys(buckets);
+    console.log('[迁移] 涉及月份:', months);
+    for (var i = 0; i < months.length; i++) {
+        var ym = months[i];
+        var fname = 'access_log_' + ym + '.json';
+        // 拉取新分片（若已有则合并，防止覆盖今天新写的记录）
+        var existing = [];
+        try {
+            var ex = await ghApiFetch(fname, token);
+            if (ex && Array.isArray(ex.records)) existing = ex.records;
+        } catch(e) {}
+        // merge：以 ip|date|hour 为 key，旧数据不覆盖已有新记录
+        var keySet = new Set(existing.map(function(e){ return (e.ip||'未知')+'|'+e.date+'|'+(e.hour||'00'); }));
+        var toAdd = buckets[ym].filter(function(e){ return !keySet.has((e.ip||'未知')+'|'+e.date+'|'+(e.hour||'00')); });
+        var merged = existing.concat(toAdd);
+        var ok = await _zbPushFile(fname, { records: merged, updated: new Date().toISOString() }, token, '[迁移]');
+        console.log('[迁移]', ym, '→', fname, '写入', toAdd.length, '条新记录，ok:', ok);
+    }
+    console.log('[迁移] 完成！刷新访问日志面板即可看到历史数据。');
+};
+
 // ── v1.61M 访问日志 ──
 // ── v1.62B 访问日志（按月分片 access_log_YYYY-MM.json，1事件=1行）──
 async function zbLogAccess() {
