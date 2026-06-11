@@ -14738,7 +14738,8 @@ window.zbDoExport = function() {
 // 企业微信播报功能  v1.61M
 // ─────────────────────────────────────────────────────────────
 const ZB_BC_WEBHOOK = 'https://1423465873-fdowo5a5wb.ap-guangzhou.tencentscf.com';
-const ZB_BC_TEXT    = '数据异常请及时反馈区域培训师\n查看完整看板 → https://zhuanzhuan.tw.cn';
+const ZB_BC_TEXT      = '数据异常请及时反馈王晨辉修改，看板BUG请反馈王礼宇\n查看完整看板 → https://zhuanzhuan.tw.cn';  // 管理员播报
+const ZB_BC_TEXT_SITE = '数据异常请及时反馈区域培训师\n查看完整看板 → https://zhuanzhuan.tw.cn';               // 站点播报
 
 // ── 日期工具 ──
 function _zbBcFmt(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -15524,7 +15525,7 @@ async function zbSiteBcConfirmSend() {
         var r1 = await fetch(ZB_BC_WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({_wxkey:wxKey,msgtype:'image',image:{base64:b64,md5:md5}})});
         var d1 = await r1.json();
         if(d1.errcode!==0) throw new Error('图片发送失败：'+d1.errmsg);
-        var r2 = await fetch(ZB_BC_WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({_wxkey:wxKey,msgtype:'markdown',markdown:{content:ZB_BC_TEXT}})});
+        var r2 = await fetch(ZB_BC_WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({_wxkey:wxKey,msgtype:'markdown',markdown:{content:ZB_BC_TEXT_SITE}})});
         var d2 = await r2.json();
         if(d2.errcode!==0) throw new Error('文字发送失败：'+d2.errmsg);
         zbSiteBcClose();
