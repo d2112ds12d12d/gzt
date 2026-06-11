@@ -15139,293 +15139,253 @@ function zbSiteBcCalcData(site, cat, date, prevDate) {
 }
 
 function zbSiteBcDrawCanvas(data) {
-    var W=900, DPR=2;
-    var FONT="'PingFang SC','Microsoft YaHei',Arial,sans-serif";
-    var PAD=24;
-    var HDR_H=78, KPI_H=86, KPI_GAP=12;
-    var SEC_H=30, TH_H=24, ROW_H=50, FTR_H=36;
-    var MONTH_ROW_H=46, MONTH_SEC_H=30, MONTH_NOTE_H=52;
-    var persons = data.persons;
-    var monthTop5 = (data.monthPersons||[]).slice(0,5);
+    var W = 900, DPR = 2;
+    var F = "'PingFang SC','Microsoft YaHei',Arial,sans-serif";
+    var persons = data.persons || [];
+    var monthTop5 = (data.monthPersons || []).slice(0, 5);
 
-    // 左右分栏宽度（左 60% 右 38% 中间 gap 2%）
-    var LW = Math.floor(W * 0.60) - PAD;    // ~516
-    var RW = W - PAD*2 - LW - 12;            // ~324
-    var RX = PAD + LW + 12;
-
-    var bodyY = HDR_H + KPI_H + KPI_GAP + 12;
-    var leftH  = SEC_H + TH_H + Math.max(persons.length,1) * ROW_H;
-    var rightH = MONTH_SEC_H + Math.max(monthTop5.length,1) * MONTH_ROW_H + MONTH_NOTE_H;
-    var contentH = Math.max(leftH, rightH);
-    var H = bodyY + contentH + FTR_H + 8;
+    // 高度计算
+    var HDR = 90, KPI = 100, GAP = 12;
+    var LW = 540, RW = 300, RX = W - RW - 24;
+    var ROW = 52, MROW = 48;
+    var leftH  = 32 + 26 + Math.max(persons.length, 1) * ROW;
+    var rightH = 32 + 20 + Math.max(monthTop5.length, 1) * MROW + 50;
+    var bodyH  = Math.max(leftH, rightH);
+    var H = HDR + KPI + GAP*2 + bodyH + 44;
 
     var cv = document.createElement('canvas');
-    cv.width = W*DPR; cv.height = H*DPR;
-    var cx = cv.getContext('2d'); cx.scale(DPR,DPR);
+    cv.width = W * DPR; cv.height = H * DPR;
+    var c = cv.getContext('2d');
+    c.scale(DPR, DPR);
 
-    function sf(size, weight){ cx.font=(weight||'400')+' '+size+'px '+FONT; }
-    function rt(t,x,y,mw){ cx.fillText(t,x,y,mw||9999); }
-    function pill(x,y,w,h,r){
-        cx.beginPath(); cx.moveTo(x+r,y); cx.lineTo(x+w-r,y);
-        cx.arcTo(x+w,y,x+w,y+r,r); cx.lineTo(x+w,y+h-r);
-        cx.arcTo(x+w,y+h,x+w-r,y+h,r); cx.lineTo(x+r,y+h);
-        cx.arcTo(x,y+h,x,y+h-r,r); cx.lineTo(x,y+r);
-        cx.arcTo(x,y,x+r,y,r); cx.closePath();
+    function f(sz, w) { c.font = (w||'400') + ' ' + sz + 'px ' + F; }
+    function txt(s, x, y, mw) { c.fillText(s, x, y, mw||9999); }
+    function rnd(x, y, w, h, r) {
+        c.beginPath();
+        c.moveTo(x+r, y); c.lineTo(x+w-r, y);
+        c.arcTo(x+w,y, x+w,y+r, r); c.lineTo(x+w, y+h-r);
+        c.arcTo(x+w,y+h, x+w-r,y+h, r); c.lineTo(x+r, y+h);
+        c.arcTo(x,y+h, x,y+h-r, r); c.lineTo(x, y+r);
+        c.arcTo(x,y, x+r,y, r); c.closePath();
     }
 
-    // ── 全局背景 ──
-    cx.fillStyle='#f4f6f8'; cx.fillRect(0,0,W,H);
-
-    // ── 顶部光晕装饰 ──
-    var glow = cx.createRadialGradient(W/2,0,0,W/2,0,W*0.6);
-    glow.addColorStop(0,'rgba(219,234,254,0.55)'); glow.addColorStop(1,'transparent');
-    cx.fillStyle=glow; cx.fillRect(0,0,W,HDR_H*1.5);
+    // ── 背景 ──
+    c.fillStyle = '#f1f5f9'; c.fillRect(0, 0, W, H);
 
     // ── Header ──
-    // 左侧：站点名 + 品类胶囊
-    sf(20,'800'); cx.fillStyle='#0f172a';
-    rt(data.site, PAD, HDR_H*0.48);
-    sf(10,'600');
-    var siteW = cx.measureText(data.site).width;
-    var catLabel = data.cat==='手机'?'手机品类':'四品类';
-    var catW = cx.measureText(catLabel).width + 14;
-    pill(PAD+siteW+10, HDR_H*0.48-13, catW, 17, 4);
-    cx.fillStyle='#eff6ff'; cx.fill();
-    cx.strokeStyle='#bfdbfe'; cx.lineWidth=1; cx.stroke();
-    cx.fillStyle='#2563eb'; rt(catLabel, PAD+siteW+17, HDR_H*0.48-1);
-    sf(10,'400'); cx.fillStyle='#94a3b8';
-    rt('质执播报 · T-1 · 培训部数据看板', PAD, HDR_H*0.48+16);
+    c.fillStyle = '#fff';
+    rnd(0, 0, W, HDR, 0); c.fill();
+    // 站点名 + 品类胶囊（流式布局：胶囊跟着站点名宽度自然移动）
+    f(20, '800'); c.fillStyle = '#0f172a';
+    txt(data.site, 24, 38);
+    var sw = c.measureText(data.site).width;  // 先量（字体还是20px）
+    var cl = data.cat === '手机' ? '手机品类' : '四品类';
+    f(10, '600');
+    var cw = c.measureText(cl).width + 14;
+    var badgeX = 24 + sw + 12;
+    rnd(badgeX, 22, cw, 18, 4); c.fillStyle = '#eff6ff'; c.fill();
+    c.strokeStyle = '#bfdbfe'; c.lineWidth = 1; rnd(badgeX, 22, cw, 18, 4); c.stroke();
+    f(10, '600'); c.fillStyle = '#2563eb';
+    txt(cl, badgeX+7, 34);
+    f(10, '400'); c.fillStyle = '#94a3b8';
+    txt('质执播报 · T-1 · 培训部数据看板', 24, 58);
+    // 日期胶囊
+    f(14, '700'); c.fillStyle = '#1d4ed8';
+    var ds = data.date;
+    var dw = c.measureText(ds).width + 28;
+    rnd(W-24-dw, 16, dw, 30, 8); c.fillStyle = '#eff6ff'; c.fill();
+    c.strokeStyle = '#bfdbfe'; c.lineWidth = 1.5; rnd(W-24-dw, 16, dw, 30, 8); c.stroke();
+    f(14, '700'); c.fillStyle = '#1d4ed8';
+    txt(ds, W-24-dw+14, 36);
+    f(9, '400'); c.fillStyle = '#94a3b8';
+    c.textAlign = 'right'; txt('T-1 · 昨日数据', W-24, 58); c.textAlign = 'left';
 
-    // 右侧：日期蓝色胶囊
-    sf(14,'700');
-    var dStr = data.date;
-    var dW = cx.measureText(dStr).width + 28;
-    var dX = W - PAD - dW;
-    pill(dX, 14, dW, 30, 9);
-    cx.fillStyle='#eff6ff'; cx.fill();
-    cx.strokeStyle='#bfdbfe'; cx.lineWidth=1.5; cx.stroke();
-    cx.fillStyle='#1d4ed8'; rt(dStr, dX+14, 33);
-    sf(9.5,'500'); cx.fillStyle='#6b7280';
-    cx.textAlign='right'; rt('T-1 · 昨日数据', W-PAD, 57); cx.textAlign='left';
-
-    // ── KPI 卡片（白底+左侧色带）──
-    var kpiY = HDR_H + 10;
-    var kpiW = Math.floor((W - PAD*2 - 20) / 3);
-    var DIFF_DIR = data.totalDiffs > data.prevTotalDiffs;
-    var DIFF_SAME = data.totalDiffs === data.prevTotalDiffs;
-    var kpiDefs = [
-        { label:'本站总抽检', val:String(data.checks), unit:'台',
-          sub:data.cat==='手机'?'手机品类合计':'四品类合计', bc:'#3b82f6', vc:'#0f172a' },
-        { label:'执行差异量', val:String(data.totalDiffs), unit:'条',
-          sub:'较前日 '+(DIFF_SAME?'持平':(DIFF_DIR?'↑':'↓')+Math.abs(data.totalDiffs-data.prevTotalDiffs)+'条'),
-          bc:'#ef4444', vc: DIFF_DIR?'#dc2626': DIFF_SAME?'#0f172a':'#16a34a' },
-        { label:'有差异人数', val:data.withDiffs+' / '+data.total,
-          unit:'人', sub:'其中新增 '+data.newPeople+' 人', bc:'#f59e0b', vc:'#0f172a' }
+    // ── KPI 三卡片 ──
+    var kpiY = HDR + GAP;
+    var kpiW = Math.floor((W - 48 - 20) / 3);
+    var DIFF_UP = data.totalDiffs > data.prevTotalDiffs;
+    var DIFF_EQ = data.totalDiffs === data.prevTotalDiffs;
+    var kpis = [
+        { label:'本站总抽检', big: String(data.checks), unit:'台',
+          sub: data.cat==='手机'?'手机品类合计':'四品类合计', bar:'#3b82f6', nc:'#0f172a' },
+        { label:'执行差异量', big: String(data.totalDiffs), unit:'条',
+          sub:'较前日 '+(DIFF_EQ?'持平':(DIFF_UP?'↑':'↓')+Math.abs(data.totalDiffs-data.prevTotalDiffs)+'条'),
+          bar:'#ef4444', nc: DIFF_UP?'#dc2626':DIFF_EQ?'#0f172a':'#16a34a' },
+        { label:'有差异人数', big: data.withDiffs+' / '+data.total, unit:'人',
+          sub:'其中新增 '+data.newPeople+' 人', bar:'#f59e0b', nc:'#0f172a' }
     ];
-    kpiDefs.forEach(function(k,i){
-        var kx = PAD + i*(kpiW+10), ky = kpiY;
-        // card shadow
-        cx.save(); cx.shadowColor='rgba(0,0,0,0.07)'; cx.shadowBlur=16; cx.shadowOffsetY=4;
-        pill(kx,ky,kpiW,KPI_H,10); cx.fillStyle='#fff'; cx.fill();
-        cx.restore();
-        // left color bar
-        cx.fillStyle=k.bc; cx.beginPath();
-        cx.moveTo(kx+10,ky); cx.lineTo(kx+14,ky);
-        cx.lineTo(kx+14,ky+KPI_H); cx.lineTo(kx+10,ky+KPI_H);
-        cx.arcTo(kx,ky+KPI_H,kx,ky+KPI_H-10,10);
-        cx.lineTo(kx,ky+10); cx.arcTo(kx,ky,kx+10,ky,10); cx.closePath(); cx.fill();
-        // text
-        sf(9.5,'500'); cx.fillStyle='#64748b'; rt(k.label, kx+22, ky+20);
-        sf(24,'800'); cx.fillStyle=k.vc; rt(k.val, kx+22, ky+52);
-        if(k.unit){
-            var valW = cx.measureText(k.val).width; // 先量宽度（字体还是 24px）
-            sf(13,'500'); cx.fillStyle='#94a3b8';
-            rt(k.unit, kx+22+valW+5, ky+47);        // 提高 y：让单位居于大数字中下段
-        }
-        sf(9.5,'400'); cx.fillStyle='#94a3b8'; rt(k.sub, kx+22, ky+70);
+    kpis.forEach(function(k, i) {
+        var kx = 24 + i*(kpiW+10);
+        // 白色卡片
+        c.save(); c.shadowColor='rgba(0,0,0,0.08)'; c.shadowBlur=16; c.shadowOffsetY=4;
+        rnd(kx, kpiY, kpiW, KPI, 10); c.fillStyle='#fff'; c.fill();
+        c.restore();
+        // 左色条
+        rnd(kx, kpiY, kpiW, KPI, 10); c.fillStyle='#fff'; c.fill();
+        c.fillStyle = k.bar;
+        c.fillRect(kx, kpiY+10, 4, KPI-20);
+        rnd(kx, kpiY, 4, KPI, 2); c.fillStyle=k.bar; c.fill();
+        // 标签
+        f(10, '500'); c.fillStyle='#64748b';
+        txt(k.label, kx+16, kpiY+18);
+        // 大数字 —— 先画，记录宽度
+        f(30, '800'); c.fillStyle = k.nc;
+        txt(k.big, kx+16, kpiY+58);
+        var bigW = c.measureText(k.big).width;
+        // 单位：14px，y 比大数字基线上移 10px，视觉上贴近大数字中段
+        f(14, '500'); c.fillStyle = '#94a3b8';
+        txt(k.unit, kx+16+bigW+6, kpiY+48);
+        // 副文字
+        f(9.5, '400'); c.fillStyle='#94a3b8';
+        txt(k.sub, kx+16, kpiY+82);
     });
 
-    // ── 左侧：操作人差异明细 ──
-    var leftX = PAD;
+    // ── 两栏内容区 ──
+    var BY = HDR + KPI + GAP*3;
 
-    // 白色卡片背景
-    cx.save(); cx.shadowColor='rgba(0,0,0,0.05)'; cx.shadowBlur=16; cx.shadowOffsetY=4;
-    pill(leftX, bodyY, LW, contentH, 12); cx.fillStyle='#fff'; cx.fill();
-    cx.restore();
+    // 左侧白卡
+    c.save(); c.shadowColor='rgba(0,0,0,0.05)'; c.shadowBlur=14; c.shadowOffsetY=3;
+    rnd(24, BY, LW, bodyH, 12); c.fillStyle='#fff'; c.fill();
+    c.restore();
+    // Section bar
+    c.fillStyle='#f8fafc'; rnd(24, BY, LW, 32, 12); c.fill();
+    c.fillStyle='#e2e8f0'; c.fillRect(24, BY+31, LW, 1);
+    f(10.5,'700'); c.fillStyle='#334155'; txt('操作人差异明细', 38, BY+21);
+    // Table head
+    var THY = BY+32;
+    c.fillStyle='#f8fafc'; c.fillRect(24, THY, LW, 26);
+    c.fillStyle='#e2e8f0'; c.fillRect(24, THY+25, LW, 1);
+    f(9,'600'); c.fillStyle='#94a3b8';
+    txt('#', 36, THY+17);
+    txt('姓名 / 状态及原因', 70, THY+17);
+    c.textAlign='center'; txt('趋势对比(日)', 24+LW*0.72, THY+17); c.textAlign='left';
+    c.textAlign='right';  txt('昨日差异量', 24+LW-12, THY+17); c.textAlign='left';
 
-    // Section header bar
-    cx.fillStyle='#f8fafc'; pill(leftX,bodyY,LW,SEC_H,12); cx.fill();
-    cx.fillStyle='#e2e8f0'; cx.fillRect(leftX, bodyY+SEC_H-1, LW, 1);
-    sf(10.5,'700'); cx.fillStyle='#334155';
-    rt('操作人差异明细', leftX+14, bodyY+SEC_H-9);
+    var S_BG={new:'#fef2f2',cont:'#fffbeb',clr:'#f0fdf4',safe:'#f8fafc'};
+    var S_FG={new:'#ef4444',cont:'#d97706',clr:'#16a34a',safe:'#cbd5e1'};
+    var S_LB={new:'新增',cont:'持续',clr:'清零',safe:''};
 
-    // Table header
-    var lthY = bodyY + SEC_H;
-    cx.fillStyle='#f8fafc'; cx.fillRect(leftX, lthY, LW, TH_H);
-    cx.fillStyle='#e2e8f0'; cx.fillRect(leftX, lthY+TH_H-1, LW, 1);
-    sf(9,'600'); cx.fillStyle='#94a3b8';
-    rt('#', leftX+12, lthY+TH_H-7);
-    rt('姓名 / 状态及原因', leftX+46, lthY+TH_H-7);
-    var trendX = leftX + LW - 200;
-    cx.textAlign='center'; rt('趋势对比 (日)', trendX+50, lthY+TH_H-7);
-    cx.textAlign='right';  rt('昨日差异量', leftX+LW-10, lthY+TH_H-7);
-    cx.textAlign='left';
-
-    // Person rows
-    var STATUS_LABELS={new:'新增',cont:'持续',clr:'清零',safe:''};
-    var STATUS_BG={new:'#fef2f2',cont:'#fffbeb',clr:'#f0fdf4',safe:'#f8fafc'};
-    var STATUS_FG={new:'#ef4444',cont:'#d97706',clr:'#16a34a',safe:'#cbd5e1'};
-
-    if (persons.length === 0) {
-        sf(11,'400'); cx.fillStyle='#94a3b8';
-        cx.textAlign='center'; rt('昨日暂无差异数据', leftX+LW/2, lthY+TH_H+32); cx.textAlign='left';
+    if (!persons.length) {
+        f(11,'400'); c.fillStyle='#94a3b8';
+        c.textAlign='center'; txt('昨日暂无差异数据', 24+LW/2, THY+26+28); c.textAlign='left';
     }
-
-    persons.forEach(function(p,idx){
-        var ry = lthY + TH_H + idx * ROW_H;
-        // subtle row bg
-        if(p.diffCount>0){
-            var rg=cx.createLinearGradient(leftX,ry,leftX+LW*0.5,ry);
-            rg.addColorStop(0, p.diffCount>=3?'rgba(239,68,68,0.03)':'rgba(245,158,11,0.025)');
-            rg.addColorStop(1,'transparent');
-            cx.fillStyle=rg; cx.fillRect(leftX,ry,LW,ROW_H);
+    persons.forEach(function(p, idx) {
+        var ry = THY + 26 + idx*ROW;
+        // row bg
+        if (p.diffCount > 0) {
+            c.fillStyle = p.diffCount>=3?'rgba(239,68,68,0.025)':'rgba(245,158,11,0.02)';
+            c.fillRect(24, ry, LW, ROW);
         }
-        cx.fillStyle='#f1f5f9'; cx.fillRect(leftX,ry+ROW_H-1,LW,1);
-
-        // Rank box
+        c.fillStyle='#f1f5f9'; c.fillRect(24, ry+ROW-1, LW, 1);
+        // rank
         var rc = p.diffCount>=3?['#fef2f2','#ef4444']:p.diffCount>=1?['#fffbeb','#d97706']:p.status==='clr'?['#f0fdf4','#16a34a']:['#f8fafc','#cbd5e1'];
-        pill(leftX+10, ry+13, 22, 22, 5); cx.fillStyle=rc[0]; cx.fill();
-        sf(10,'700'); cx.fillStyle=rc[1]; cx.textAlign='center';
-        rt(String(idx+1), leftX+21, ry+28); cx.textAlign='left';
-
-        // Name
-        sf(12,'600'); cx.fillStyle='#1e293b';
-        rt(p.name, leftX+42, ry+25, 110);
-
-        // Status tag
-        var sLabel=STATUS_LABELS[p.status];
-        if(sLabel){
-            sf(8.5,'600');
-            var sW=cx.measureText(sLabel).width+10;
-            var sX=leftX+42+cx.measureText(p.name).width+5;
-            if(sX+sW>leftX+LW-220) sX=leftX+42;
-            pill(sX,ry+13,sW,14,3); cx.fillStyle=STATUS_BG[p.status]; cx.fill();
-            cx.strokeStyle=STATUS_FG[p.status]+'66'; cx.lineWidth=0.8; cx.stroke();
-            cx.fillStyle=STATUS_FG[p.status]; rt(sLabel,sX+5,ry+23);
+        rnd(32, ry+14, 22, 22, 5); c.fillStyle=rc[0]; c.fill();
+        f(10,'700'); c.fillStyle=rc[1]; c.textAlign='center';
+        txt(String(idx+1), 43, ry+28); c.textAlign='left';
+        // name
+        f(12,'700'); c.fillStyle='#1e293b'; txt(p.name, 64, ry+24, 120);
+        // status tag
+        var sl = S_LB[p.status];
+        if (sl) {
+            f(8.5,'600');
+            var sw2 = c.measureText(sl).width+10;
+            var sx = 64 + c.measureText(p.name).width + 14;
+            rnd(sx, ry+13, sw2, 14, 3); c.fillStyle=S_BG[p.status]; c.fill();
+            c.strokeStyle=S_FG[p.status]+'66'; c.lineWidth=0.8; rnd(sx,ry+13,sw2,14,3); c.stroke();
+            c.fillStyle=S_FG[p.status]; txt(sl, sx+5, ry+23);
         }
-
-        // Item chip (max 2)
-        var chipX=leftX+42, chipY=ry+34;
+        // chips
+        var cx2=64, cy2=ry+36;
         p.items.slice(0,2).forEach(function(it){
-            sf(8.5,'400');
-            var cl=it.name+(it.count>1?' ×'+it.count:'');
-            var cW=cx.measureText(cl).width+8;
-            if(chipX+cW>leftX+LW-220) return;
-            pill(chipX,chipY,cW,13,3);
-            cx.fillStyle=p.status==='new'||p.diffCount>=3?'#fef2f2':'#fffbeb'; cx.fill();
-            cx.strokeStyle=(p.status==='new'||p.diffCount>=3?'#ef4444':'#d97706')+'44'; cx.lineWidth=0.7; cx.stroke();
-            cx.fillStyle=p.status==='new'||p.diffCount>=3?'#ef4444':'#d97706';
-            rt(cl,chipX+4,chipY+10); chipX+=cW+4;
+            f(8.5,'400');
+            var cl2=it.name+(it.count>1?' ×'+it.count:'');
+            var cw2=c.measureText(cl2).width+8;
+            if(cx2+cw2>24+LW-230) return;
+            rnd(cx2,cy2,cw2,12,3);
+            c.fillStyle=p.diffCount>=3||p.status==='new'?'#fef2f2':'#fffbeb'; c.fill();
+            c.strokeStyle=(p.diffCount>=3||p.status==='new'?'#ef4444':'#d97706')+'44'; c.lineWidth=0.7; rnd(cx2,cy2,cw2,12,3); c.stroke();
+            c.fillStyle=p.diffCount>=3||p.status==='new'?'#ef4444':'#d97706';
+            txt(cl2, cx2+4, cy2+9); cx2+=cw2+4;
         });
-        if(p.items.length>2){ sf(8,'400'); cx.fillStyle='#94a3b8'; rt('+'+(p.items.length-2)+'项',chipX,chipY+10); }
-
-        // 趋势对比（日）
-        var cStr,cClr;
-        if(p.diffCount>p.prevCount){ cStr='↑'+(p.diffCount-p.prevCount); cClr='#ef4444'; }
-        else if(p.diffCount<p.prevCount){ cStr='↓'+(p.prevCount-p.diffCount); cClr='#16a34a'; }
-        else if(p.diffCount===0){ cStr='—'; cClr='#cbd5e1'; }
-        else{ cStr='持平'; cClr='#94a3b8'; }
-        sf(12,'700'); cx.fillStyle=cClr;
-        cx.textAlign='center'; rt(cStr, trendX+50, ry+25); cx.textAlign='left';
-        sf(9,'400'); cx.fillStyle='#94a3b8';
-        cx.textAlign='center'; rt('前日'+p.prevCount+'条', trendX+50, ry+38); cx.textAlign='left';
-
-        // Diff big number
-        sf(22,'800'); cx.fillStyle=p.diffCount>=3?'#ef4444':p.diffCount>=1?'#d97706':'#e2e8f0';
-        cx.textAlign='right'; rt(String(p.diffCount), leftX+LW-24, ry+29);
-        sf(9.5,'400'); cx.fillStyle='#94a3b8'; rt('条', leftX+LW-10, ry+29);
-        cx.textAlign='left';
+        // trend
+        var tx = 24 + LW*0.72;
+        var cs, cc;
+        if(p.diffCount>p.prevCount){cs='↑'+(p.diffCount-p.prevCount);cc='#ef4444';}
+        else if(p.diffCount<p.prevCount){cs='↓'+(p.prevCount-p.diffCount);cc='#16a34a';}
+        else if(p.diffCount===0){cs='—';cc='#cbd5e1';}
+        else{cs='持平';cc='#94a3b8';}
+        f(12,'700'); c.fillStyle=cc; c.textAlign='center'; txt(cs, tx, ry+24); c.textAlign='left';
+        f(9,'400'); c.fillStyle='#94a3b8'; c.textAlign='center'; txt('前日'+p.prevCount+'条', tx, ry+37); c.textAlign='left';
+        // diff count
+        f(22,'800'); c.fillStyle=p.diffCount>=3?'#ef4444':p.diffCount>=1?'#d97706':'#e2e8f0';
+        c.textAlign='right'; txt(String(p.diffCount), 24+LW-26, ry+28);
+        f(9.5,'400'); c.fillStyle='#94a3b8'; txt('条', 24+LW-12, ry+28);
+        c.textAlign='left';
     });
 
-    // ── 右侧：本月差异累计预警 ──
-    cx.save(); cx.shadowColor='rgba(0,0,0,0.05)'; cx.shadowBlur=16; cx.shadowOffsetY=4;
-    pill(RX, bodyY, RW, contentH, 12); cx.fillStyle='#fff'; cx.fill();
-    cx.restore();
-    // top red accent bar
-    cx.fillStyle='#ef4444'; cx.beginPath();
-    cx.moveTo(RX+12, bodyY); cx.lineTo(RX+RW-12, bodyY);
-    cx.arcTo(RX+RW, bodyY, RX+RW, bodyY+12, 12);
-    cx.lineTo(RX+RW, bodyY+4); cx.lineTo(RX, bodyY+4);
-    cx.arcTo(RX, bodyY, RX+12, bodyY, 12); cx.closePath(); cx.fill();
+    // 右侧白卡
+    c.save(); c.shadowColor='rgba(0,0,0,0.05)'; c.shadowBlur=14; c.shadowOffsetY=3;
+    rnd(RX, BY, RW, bodyH, 12); c.fillStyle='#fff'; c.fill();
+    c.restore();
+    // 顶部红条
+    c.fillStyle='#ef4444'; c.fillRect(RX+12, BY, RW-24, 4);
+    rnd(RX, BY, RW, bodyH, 12); c.fillStyle='#fff'; // 重画遮住直角部分
+    // section
+    c.fillStyle='#fff5f5'; rnd(RX, BY, RW, 32, 12); c.fill();
+    c.fillStyle='#fecaca'; c.fillRect(RX, BY+31, RW, 1);
+    f(10.5,'700'); c.fillStyle='#dc2626'; txt('本月差异累计预警', RX+14, BY+21);
+    // column labels
+    f(9,'600'); c.fillStyle='#94a3b8';
+    txt('预警人员', RX+10, BY+32+14);
+    c.textAlign='right'; txt('本月累计(条)', RX+RW-10, BY+32+14); c.textAlign='left';
 
-    cx.fillStyle='#fff5f5'; pill(RX,bodyY,RW,MONTH_SEC_H,12); cx.fill();
-    cx.fillStyle='#fecaca'; cx.fillRect(RX, bodyY+MONTH_SEC_H-1, RW, 1);
-    sf(10.5,'700'); cx.fillStyle='#dc2626';
-    rt('本月差异累计预警', RX+14, bodyY+MONTH_SEC_H-9);
-
-    // Column header
-    sf(9,'600'); cx.fillStyle='#94a3b8';
-    rt('预警人员', RX+10, bodyY+MONTH_SEC_H+14);
-    cx.textAlign='right'; rt('本月累计 (条)', RX+RW-10, bodyY+MONTH_SEC_H+14); cx.textAlign='left';
-
-    var RANK_COLORS=[['#fef2f2','#ef4444'],['#fff7ed','#ea580c'],['#fefce8','#ca8a04'],['#f8fafc','#94a3b8'],['#f8fafc','#94a3b8']];
-    if(monthTop5.length===0){
-        sf(10,'400'); cx.fillStyle='#94a3b8';
-        cx.textAlign='center'; rt('本月暂无差异记录', RX+RW/2, bodyY+MONTH_SEC_H+30); cx.textAlign='left';
+    var RANK_C=[['#fef2f2','#ef4444'],['#fff7ed','#ea580c'],['#fefce8','#ca8a04'],['#f8fafc','#94a3b8'],['#f8fafc','#94a3b8']];
+    if (!monthTop5.length) {
+        f(10,'400'); c.fillStyle='#94a3b8';
+        c.textAlign='center'; txt('本月暂无差异记录', RX+RW/2, BY+32+30); c.textAlign='left';
     }
-    monthTop5.forEach(function(mp,i){
-        var mry = bodyY + MONTH_SEC_H + 18 + i*MONTH_ROW_H;
-        // row card
-        cx.save(); cx.shadowColor='rgba(0,0,0,0.04)'; cx.shadowBlur=8; cx.shadowOffsetY=2;
-        pill(RX+8, mry, RW-16, MONTH_ROW_H-6, 8); cx.fillStyle='#fff'; cx.fill();
-        cx.restore();
-        cx.strokeStyle='#f1f5f9'; cx.lineWidth=1;
-        pill(RX+8,mry,RW-16,MONTH_ROW_H-6,8); cx.stroke();
-
-        // Rank badge
-        var rc2=RANK_COLORS[i]||['#f8fafc','#94a3b8'];
-        pill(RX+15, mry+8, 20, 20, 5); cx.fillStyle=rc2[0]; cx.fill();
-        sf(9.5,'700'); cx.fillStyle=rc2[1]; cx.textAlign='center';
-        rt(String(i+1), RX+25, mry+21); cx.textAlign='left';
-
-        // Name
-        sf(12,'700'); cx.fillStyle='#1e293b';
-        rt(mp.name, RX+42, mry+20, RW-100);
-
-        // Count + delta
-        cx.textAlign='right';
-        sf(16,'800'); cx.fillStyle='#0f172a';
-        rt(String(mp.monthCount), RX+RW-36, mry+21);
-        // delta arrow
-        var dStr2='', dClr2;
-        if(mp.monthDelta>0){ dStr2='+'+mp.monthDelta; dClr2='#ef4444'; }
-        else if(mp.monthDelta<0){ dStr2=String(mp.monthDelta); dClr2='#16a34a'; }
-        else { dStr2='—'; dClr2='#94a3b8'; }
-        sf(9,'700'); cx.fillStyle=dClr2; rt(dStr2, RX+RW-14, mry+21);
-        cx.textAlign='left';
-        sf(8.5,'400'); cx.fillStyle='#94a3b8'; rt('较昨日', RX+42, mry+33);
+    monthTop5.forEach(function(mp, i) {
+        var my = BY + 32 + 22 + i*MROW;
+        c.save(); c.shadowColor='rgba(0,0,0,0.04)'; c.shadowBlur=8; c.shadowOffsetY=2;
+        rnd(RX+8, my, RW-16, MROW-6, 8); c.fillStyle='#fff'; c.fill();
+        c.restore();
+        c.strokeStyle='#f1f5f9'; c.lineWidth=1; rnd(RX+8,my,RW-16,MROW-6,8); c.stroke();
+        // badge
+        var rc2=RANK_C[i]||['#f8fafc','#94a3b8'];
+        rnd(RX+15, my+9, 20, 20, 4); c.fillStyle=rc2[0]; c.fill();
+        f(9.5,'700'); c.fillStyle=rc2[1]; c.textAlign='center';
+        txt(String(i+1), RX+25, my+22); c.textAlign='left';
+        // name
+        f(12,'700'); c.fillStyle='#1e293b'; txt(mp.name, RX+42, my+20, RW-80);
+        // count
+        c.textAlign='right';
+        f(16,'800'); c.fillStyle='#0f172a'; txt(String(mp.monthCount), RX+RW-36, my+21);
+        // delta
+        var dd='', dc;
+        if(mp.monthDelta>0){dd='+'+mp.monthDelta;dc='#ef4444';}
+        else if(mp.monthDelta<0){dd=String(mp.monthDelta);dc='#16a34a';}
+        else{dd='—';dc='#94a3b8';}
+        f(9,'700'); c.fillStyle=dc; txt(dd, RX+RW-12, my+21);
+        c.textAlign='left';
+        f(8.5,'400'); c.fillStyle='#94a3b8'; txt('较昨日', RX+42, my+33);
     });
-
-    // 右侧底部说明
-    var noteY = bodyY + MONTH_SEC_H + 18 + monthTop5.length*MONTH_ROW_H + 6;
-    cx.fillStyle='#f8fafc'; pill(RX+8,noteY,RW-16,MONTH_NOTE_H-10,8); cx.fill();
-    cx.strokeStyle='#e2e8f0'; cx.lineWidth=0.8; pill(RX+8,noteY,RW-16,MONTH_NOTE_H-10,8); cx.stroke();
-    sf(8.5,'400'); cx.fillStyle='#94a3b8';
-    var noteLines=['累计量越高说明质检员差异越多，','请重点关注。'];
-    noteLines.forEach(function(l,i){ rt(l, RX+16, noteY+14+i*14); });
+    // 底部说明
+    var ny = BY + 32 + 22 + monthTop5.length*MROW + 6;
+    rnd(RX+8, ny, RW-16, 40, 8); c.fillStyle='#f8fafc'; c.fill();
+    c.strokeStyle='#e2e8f0'; c.lineWidth=0.8; rnd(RX+8,ny,RW-16,40,8); c.stroke();
+    f(8.5,'400'); c.fillStyle='#94a3b8';
+    txt('累计量越高说明质检员差异越多，', RX+16, ny+14);
+    txt('请重点关注。', RX+16, ny+27);
 
     // ── Footer ──
-    var ftY = bodyY + contentH + 4;
-    cx.fillStyle='#fff'; cx.save();
-    cx.shadowColor='rgba(0,0,0,0.04)'; cx.shadowBlur=8;
-    pill(PAD, ftY, W-PAD*2, FTR_H, 10); cx.fill();
-    cx.restore();
-    sf(9,'500'); cx.fillStyle='#94a3b8';
-    rt('↑红=新增差异  ↓绿=已改善  清零=昨日无差异  新增=昨日首次出现', PAD+14, ftY+FTR_H/2+4);
-    cx.textAlign='right'; cx.fillStyle='#3b82f6';
-    rt('zhuanzhuan.tw.cn', W-PAD-14, ftY+FTR_H/2+4); cx.textAlign='left';
+    var FY = BY + bodyH + 6;
+    rnd(24, FY, W-48, 36, 10); c.fillStyle='#fff'; c.fill();
+    f(9,'500'); c.fillStyle='#94a3b8';
+    txt('↑红=新增差异  ↓绿=已改善  清零=昨日无差异  新增=昨日首次出现', 38, FY+22);
+    c.textAlign='right'; c.fillStyle='#3b82f6';
+    txt('zhuanzhuan.tw.cn', W-38, FY+22); c.textAlign='left';
 
-    return cv.toDataURL('image/jpeg',1.0).replace('data:image/jpeg;base64,','');
+    return cv.toDataURL('image/jpeg', 1.0).replace('data:image/jpeg;base64,', '');
 }
 
 // ── 站点播报 UI ──
