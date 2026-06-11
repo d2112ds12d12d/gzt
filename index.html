@@ -4417,6 +4417,7 @@
                         cat:             r.cat,
                         person:          r.inspector,
                         qaInspector:     r.qaInspector,
+                        inspectorOrg:    r.inspectorOrg||'',
                         category:        r.subjobj,
                         date:            r.date,
                         level1:          r.level1,
@@ -12763,9 +12764,9 @@ function zbSwitchLogTab(tab){
 
 function _zbRenderLog(){
   var el=document.getElementById('zbLogList'); if(!el) return;
-  var ALL_TYPES = ['qa','diff5','sum','diff4'];
-  var TYPE_NAMES = { qa:'QA差异率', diff5:'手机差异明细', sum:'日汇总', diff4:'五品类明细' };
-  var TYPE_COLORS = { qa:'#2563eb', diff5:'#7c3aed', sum:'#059669', diff4:'#d97706' };
+  var ALL_TYPES = ['qa','diff5','sum','diff4','correction'];
+  var TYPE_NAMES = { qa:'QA差异率', diff5:'手机差异明细', sum:'日汇总', diff4:'五品类明细', correction:'矫正表' };
+  var TYPE_COLORS = { qa:'#2563eb', diff5:'#7c3aed', sum:'#059669', diff4:'#d97706', correction:'#7c3aed' };
 
   // 按数据日期汇总（每个日期×表类型 → 最新一条日志）
   var dateTypeMap = {}; // { 'YYYY-MM-DD': { qa:{rows,ok,ts}, diff5:{...}, ... } }
@@ -12823,8 +12824,8 @@ function _zbRenderLog(){
         ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>'
         : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
       var badge = isComplete
-        ? '<span style="font-size:11px;color:#065f46;background:#d1fae5;padding:1px 7px;border-radius:6px;">4 / 4 完整</span>'
-        : '<span style="font-size:11px;color:#92400e;background:#fef3c7;padding:1px 7px;border-radius:6px;">'+uploadedCount+' / 4 缺失</span>';
+        ? '<span style="font-size:11px;color:#065f46;background:#d1fae5;padding:1px 7px;border-radius:6px;">5 / 5 完整</span>'
+        : '<span style="font-size:11px;color:#92400e;background:#fef3c7;padding:1px 7px;border-radius:6px;">'+uploadedCount+' / 5 缺失</span>';
       // 最新上传时间
       var latestTs = '';
       ALL_TYPES.forEach(function(t){ if(typesData[t] && typesData[t].ts > latestTs) latestTs = typesData[t].ts; });
@@ -12841,10 +12842,11 @@ function _zbRenderLog(){
         +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;padding-left:22px;">';
       ALL_TYPES.forEach(function(t){
         var info = typesData[t];
-        var col = info ? TYPE_COLORS[t] : '#ef4444';
+        var isOptional = (t === 'correction');
+        var col = info ? TYPE_COLORS[t] : (isOptional ? '#94a3b8' : '#ef4444');
         var dot = '<span style="width:5px;height:5px;border-radius:50%;background:'+col+';flex-shrink:0;display:inline-block;"></span>';
-        var txt = info ? TYPE_NAMES[t]+' · '+info.rows+'条' : TYPE_NAMES[t]+' · 未上传';
-        var txtCol = info ? 'var(--text-secondary)' : 'var(--color-text-danger,#dc2626)';
+        var txt = info ? TYPE_NAMES[t]+' · '+info.rows+'条' : (isOptional ? TYPE_NAMES[t]+' · 未上传' : TYPE_NAMES[t]+' · 未上传');
+        var txtCol = info ? 'var(--text-secondary)' : (isOptional ? '#94a3b8' : 'var(--color-text-danger,#dc2626)');
         html += '<div style="font-size:11px;color:'+txtCol+';display:flex;align-items:center;gap:4px;">'+dot+txt+'</div>';
       });
       html += '</div></div>';
@@ -13157,6 +13159,14 @@ function zbRenderCloudManager() {
   }
   toolbarHtml += '</div>';
 
+  // 已矫正日期集合（从上传日志中读取 correction 类型记录）
+  var correctedDates = new Set();
+  (_zbLog||[]).forEach(function(log){
+    if (log.type === 'correction' && Array.isArray(log.dates)) {
+      log.dates.forEach(function(d){ if(d) correctedDates.add(d); });
+    }
+  });
+
   // 手机列表
   var phoneHtml = '<div id="zbCloudPhoneList" style="'+((_zbCloudTab!=='phone')?'display:none;':'')+'border:0.5px solid var(--border-color);border-radius:8px;overflow:hidden;">';
   if (!phoneDateList.length) {
@@ -13179,6 +13189,7 @@ function zbRenderCloudManager() {
         + (canEdit?'<input type="checkbox" id="zb-phone-cb-'+i+'" data-key="'+date+'" style="margin-right:10px;width:14px;height:14px;cursor:pointer;accent-color:#dc2626;" onclick="event.stopPropagation()" onchange="zbToggleSelect(\'phone\',\''+date+'\','+i+',true)">':'')
         + '<span class="zb-date-label" style="font-size:12px;color:var(--text-primary);flex:1;">'+date+'</span>'
         + healthTag
+        + (correctedDates.has(date) ? '<span style="font-size:10px;color:#7c3aed;background:#f3e8ff;padding:2px 7px;border-radius:5px;margin-right:6px;border:0.5px solid #e9d5ff;">已矫正</span>' : '')
         + '<span style="font-size:11px;color:#2563eb;background:#2563eb18;padding:2px 8px;border-radius:6px;">手机</span>'
         + '</div>';
     });
@@ -13764,6 +13775,10 @@ async function zbProcessCorrectionFile(file) {
         var applyResult = zbApplyPersonCorrections(corrections);
         var matchCount = applyResult.matched;
         var changedRefs = applyResult.changedRefs || [];
+
+        // 写入上传日志（供上传日志 Tab 展示 5/5）
+        var _corrDates = [...new Set(changedRefs.map(function(r){ return r.date||''; }).filter(Boolean))];
+        zbAddLog({ type: 'correction', rows: matchCount, dates: _corrDates, fileName: file.name });
 
         // 记录日志
         var logEntry = {
