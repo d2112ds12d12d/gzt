@@ -1387,8 +1387,9 @@
                     质检维度分析
                   </div>
                   <div style="display:flex;align-items:center;gap:8px;">
+                    <button id="zbCopyDimTableBtn" onclick="zbCopyDimTable()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 11px;border-radius:7px;font-size:11px;font-weight:500;border:0.5px solid #93c5fd;background:#eff6ff;color:#2563eb;cursor:pointer;white-space:nowrap;" onmouseenter="this.style.background='#dbeafe'" onmouseleave="this.style.background='#eff6ff'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制表格</button>
                     <button id="zbTrainingBtn" onclick="zbTrainingClick()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 11px;border-radius:7px;font-size:11px;font-weight:500;border:0.5px solid #fca5a5;background:#fff0ef;color:#e8433a;cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseenter="this.style.background='#fee2e2'" onmouseleave="this.style.background='#fff0ef'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>一键培训</button>
-                    <button id="zbWeeklyReportBtn" onclick="zbGenerateTrainerReport()" style="display:none;align-items:center;gap:5px;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;background:#fff;color:#2563eb;border:1.5px solid #2563eb;cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseenter="this.style.background='#eff6ff'" onmouseleave="this.style.background='#fff'">📋 培训师周报</button>
+                    <button id="zbWeeklyReportBtn" onclick="zbGenerateTrainerReport()" style="display:none;align-items:center;gap:5px;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;background:#fff;color:#2563eb;border:1.5px solid #2563eb;cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseenter="this.style.background='#eff6ff'" onmouseleave="this.style.background='#fff'">📋 一键周报</button>
                   </div>
                 </div>
                 <!-- v1.61F: Tab 切换栏（6 个 tab） -->
@@ -12337,56 +12338,114 @@ function _zbTRSiteType(site) {
     return null;
 }
 
-function _zbTRCalcIssueBreakdown(siteType, from, to) {
-    var D = window._DATA; if (!D) return {total:0,exec:0,craft:0,sop:0,hidden:0,other:0};
-    var sf = function(s){ return siteType==='dw'?s&&s.includes('智能验机'):siteType==='hy'?s&&s.includes('后验'):true; };
-    var KNOWN = ['执行问题','工艺问题','SOP问题','隐性问题'];
-    var allCodes = new Set(), byType = {};
-    (D.diff5||[]).forEach(function(d){
-        if (d.cat!=='手机'||!sf(d.site)) return;
-        if (!d.date||d.date<from||d.date>to) return;
-        if (!d.subjobj||!d.subjobj.includes('客观')) return;
-        if (!d.code) return;
-        allCodes.add(d.code);
-        var jt = d.judgedType||'';
-        if (KNOWN.includes(jt)){ if(!byType[jt])byType[jt]=new Set(); byType[jt].add(d.code); }
-    });
-    var exec = (byType['执行问题']||new Set()).size;
-    var craft= (byType['工艺问题']||new Set()).size;
-    var sop  = (byType['SOP问题'] ||new Set()).size;
-    var hidden=(byType['隐性问题']||new Set()).size;
-    var total = allCodes.size;
-    var other = Math.max(0, total - exec - craft - sop - hidden);
-    return {total:total, exec:exec, craft:craft, sop:sop, hidden:hidden, other:other};
+// ── 一键周报计算辅助（与趋势图取数口径完全对齐，用 _allDiffData + warehouse 字段）──
+
+var _TR_DW_PAIR_MAP = [
+    { line: '转转-深圳智能验机中心', post: '深圳后验中心仓' },
+    { line: '转转-青岛智能验机中心', post: '青岛后验中心仓' },
+    { line: '转转-成都智能验机中心', post: '成都后验中心仓' }
+];
+
+function _zbTRGetSitePair(currentSite) {
+    if (!currentSite) return {dwSite:null, hySite:null};
+    var pair = null;
+    _TR_DW_PAIR_MAP.forEach(function(p){ if (currentSite===p.line||currentSite===p.post) pair=p; });
+    if (pair) return { dwSite: pair.line, hySite: pair.post };
+    return { dwSite: null, hySite: null };
 }
 
-function _zbTRCalcRate(siteType, from, to) {
-    var D = window._DATA; if (!D) return {checks:0, codes:0, rate:null};
-    var sf = function(s){ return siteType==='dw'?s&&s.includes('智能验机'):siteType==='hy'?s&&s.includes('后验'):true; };
-    var checks = (D.qa||[]).filter(function(x){ return x.cat==='手机'&&sf(x.site)&&x.date>=from&&x.date<=to; })
-                            .reduce(function(s,x){ return s+(x.checks||0); }, 0);
-    var codes = new Set((D.diff5||[]).filter(function(x){
-        return x.cat==='手机'&&sf(x.site)&&x.subjobj&&x.subjobj.includes('客观')&&x.judgedType==='执行问题'&&x.date>=from&&x.date<=to&&x.code;
-    }).map(function(x){ return x.code; }));
+function _zbTRCalcIssueBreakdown(siteType, from, to, specificSite) {
+    if (!specificSite) return {total:0,exec:0,craft:0,sop:0,hidden:0,other:0};
+    var allDiff = window._allDiffData || [];
+    var isObj  = window.isObjective      || function(c){ return c&&String(c).includes('客观')&&!String(c).includes('主观'); };
+    var isExec = window.isExecutionIssue || function(t){ return t==='执行问题'; };
+    function normJt(s){ return String(s||'').replace(/^[Ss][Oo][Pp](?=问题)/, 'SOP'); }
+    // 同质检码 exec优先，否则取第一条——每码只计一次
+    var byCode = {};
+    allDiff.forEach(function(d){
+        if (d.cat!=='手机') return;
+        if (d.warehouse!==specificSite) return;
+        if (!d.date||d.date<from||d.date>to) return;
+        if (!isObj(d.category)) return;
+        if (!d.code) return;
+        var jt = normJt(d.judgedIssueType||'');
+        var prev = byCode[d.code];
+        if (!prev) { byCode[d.code] = jt; }
+        else if (isExec(jt) && !isExec(prev)) { byCode[d.code] = jt; }
+    });
+    var total=0, exec=0, craft=0, sop=0, hidden=0;
+    Object.keys(byCode).forEach(function(code){
+        total++;
+        var jt = byCode[code];
+        if (jt==='执行问题') exec++;
+        else if (jt==='工艺问题') craft++;
+        else if (jt==='SOP问题') sop++;
+        else if (jt==='隐性问题') hidden++;
+    });
+    return {total:total, exec:exec, craft:craft, sop:sop, hidden:hidden, other:Math.max(0,total-exec-craft-sop-hidden)};
+}
+
+function _zbTRCalcRate(siteType, from, to, specificSite) {
+    if (!specificSite) return {checks:0, codes:0, rate:null};
+    var allDiff = window._allDiffData || [];
+    var qaAll   = (window._DATA && window._DATA.qa) || [];
+    var isObj = window.isObjective || function(c){ return c&&String(c).includes('客观')&&!String(c).includes('主观'); };
+    var isExec= window.isExecutionIssue || function(t){ return t==='执行问题'; };
+    var checks = qaAll.filter(function(x){
+        return x.cat==='手机' && x.date>=from && x.date<=to && x.site===specificSite;
+    }).reduce(function(s,x){ return s+(x.checks||0); }, 0);
+    var codes = new Set(allDiff.filter(function(d){
+        return d.cat==='手机' && d.date>=from && d.date<=to
+            && d.warehouse===specificSite
+            && isObj(d.category) && isExec(d.judgedIssueType) && d.code;
+    }).map(function(d){ return d.code; }));
     return {checks:checks, codes:codes.size, rate:checks>0?codes.size/checks*100:null};
 }
 
-function _zbTRBuildTable(siteType, r, groupField) {
-    var D = window._DATA; if (!D) return {cur:{},last:{}};
-    var sf = function(s){ return siteType==='dw'?s&&s.includes('智能验机'):siteType==='hy'?s&&s.includes('后验'):true; };
-    var curS={}, lastS={};
-    (D.diff5||[]).forEach(function(d){
-        if (d.cat!=='手机'||!sf(d.site)) return;
-        if (!d.subjobj||!d.subjobj.includes('客观')) return;
+function _zbTRBuildTable(siteType, r, groupField, specificSite) {
+    if (!specificSite) return {cur:{}, last:{}};
+    var allDiff = window._allDiffData || [];
+    var isObj  = window.isObjective      || function(c){ return c&&String(c).includes('客观')&&!String(c).includes('主观'); };
+    var isExec = window.isExecutionIssue || function(t){ return t==='执行问题'; };
+    function normJt(s){ return String(s||'').replace(/^[Ss][Oo][Pp](?=问题)/, 'SOP'); }
+    var fieldMap = { 'level3_new': 'level3', 'inspector': 'person' };
+    var f = fieldMap[groupField] || groupField;
+    // 口径：客观执行；同质检码多条取第一条
+    var firstCur = {}, firstLast = {};
+    allDiff.forEach(function(d){
+        if (d.cat!=='手机' || d.warehouse!==specificSite) return;
+        if (!isObj(d.category)) return;
+        if (!isExec(normJt(d.judgedIssueType||''))) return;
         if (!d.code) return;
-        var k = d[groupField]||'未知';
-        if (d.date>=r.curStart&&d.date<=r.curEnd){ if(!curS[k])curS[k]=new Set(); curS[k].add(d.code); }
-        if (d.date>=r.lastStart&&d.date<=r.lastEnd){ if(!lastS[k])lastS[k]=new Set(); lastS[k].add(d.code); }
+        var fv = d[f]||'未知';
+        var dt = (d.date||'').split(' ')[0];
+        if (dt>=r.curStart  && dt<=r.curEnd   && !firstCur[d.code])  firstCur[d.code]  = fv;
+        if (dt>=r.lastStart && dt<=r.lastEnd  && !firstLast[d.code]) firstLast[d.code] = fv;
     });
     var cur={}, last={};
-    Object.keys(curS).forEach(function(k){ cur[k]=curS[k].size; });
-    Object.keys(lastS).forEach(function(k){ last[k]=lastS[k].size; });
+    Object.keys(firstCur).forEach(function(c){ var k=firstCur[c]; cur[k]=(cur[k]||0)+1; });
+    Object.keys(firstLast).forEach(function(c){ var k=firstLast[c]; last[k]=(last[k]||0)+1; });
     return {cur:cur, last:last};
+}
+
+function _zbTRCalcRateBySite(siteType, from, to) {
+    var D = window._DATA; if (!D) return [];
+    var sf = function(s){ return siteType==='dw'?s&&s.includes('智能验机'):s&&s.includes('后验'); };
+    var siteChecks = {}, siteCodes = {};
+    (D.qa||[]).forEach(function(x){
+        if (x.cat!=='手机'||!sf(x.site)||x.date<from||x.date>to) return;
+        siteChecks[x.site] = (siteChecks[x.site]||0) + (x.checks||0);
+    });
+    (D.diff5||[]).forEach(function(x){
+        if (x.cat!=='手机'||!sf(x.site)||!x.subjobj||!x.subjobj.includes('客观')||x.judgedType!=='执行问题'||x.date<from||x.date>to||!x.code) return;
+        if (!siteCodes[x.site]) siteCodes[x.site] = new Set();
+        siteCodes[x.site].add(x.code);
+    });
+    var sites = Array.from(new Set(Object.keys(siteChecks).concat(Object.keys(siteCodes))));
+    return sites.map(function(s){
+        var c = siteChecks[s]||0, d = (siteCodes[s]||new Set()).size;
+        return {site:s, checks:c, codes:d, rate:c>0?d/c*100:null};
+    }).sort(function(a,b){ return a.site.localeCompare(b.site,'zh'); });
 }
 
 function _zbTRRenderTable(maps, nameLabel, curLabel, lastLabel) {
@@ -12447,35 +12506,171 @@ async function zbGenerateTrainerReport() {
 
     var r = _zbWeekRanges();
 
-    // 计算数据
-    var dwCur  = _zbTRCalcIssueBreakdown('dw', r.curStart,  r.curEnd);
-    var hyCur  = _zbTRCalcIssueBreakdown('hy', r.curStart,  r.curEnd);
-    var allCurRate  = _zbTRCalcRate('all', r.curStart,  r.curEnd);
-    var allLastRate = _zbTRCalcRate('all', r.lastStart, r.lastEnd);
+    // 当前站点城市配对（从深圳智能验机中心 → dwSite=转转-深圳智能验机中心, hySite=深圳后验中心仓）
+    var pair = _zbTRGetSitePair(window._zbCurrentSiteName);
+    var dwSite = pair.dwSite;
+    var hySite = pair.hySite;
 
-    var dwL3   = _zbTRBuildTable('dw', r, 'level3');
-    var dwPer  = _zbTRBuildTable('dw', r, 'person');
-    var hyL3   = _zbTRBuildTable('hy', r, 'level3');
-    var hyPer  = _zbTRBuildTable('hy', r, 'person');
+    // 计算数据（按具体站点过滤）
+    var dwCur  = _zbTRCalcIssueBreakdown('dw', r.curStart,  r.curEnd,  dwSite);
+    var hyCur  = _zbTRCalcIssueBreakdown('hy', r.curStart,  r.curEnd,  hySite);
+
+    var dwL3   = _zbTRBuildTable('dw', r, 'level3_new', dwSite);
+    var dwPer  = _zbTRBuildTable('dw', r, 'inspector',  dwSite);
+    var hyL3   = _zbTRBuildTable('hy', r, 'level3_new', hySite);
+    var hyPer  = _zbTRBuildTable('hy', r, 'inspector',  hySite);
+
+    // QA差异率：dw+hy 按具体站点
+    var dwCurRate  = _zbTRCalcRate('dw', r.curStart,  r.curEnd,  dwSite);
+    var dwLastRate = _zbTRCalcRate('dw', r.lastStart, r.lastEnd, dwSite);
+    var hyCurRate  = _zbTRCalcRate('hy', r.curStart,  r.curEnd,  hySite);
+    var hyLastRate = _zbTRCalcRate('hy', r.lastStart, r.lastEnd, hySite);
+    var allCurRate  = { checks: dwCurRate.checks+hyCurRate.checks,   codes: dwCurRate.codes+hyCurRate.codes };
+    var allLastRate = { checks: dwLastRate.checks+hyLastRate.checks, codes: dwLastRate.codes+hyLastRate.codes };
+    allCurRate.rate  = allCurRate.checks>0  ? allCurRate.codes/allCurRate.checks*100   : null;
+    allLastRate.rate = allLastRate.checks>0 ? allLastRate.codes/allLastRate.checks*100 : null;
+
+    // 趋势图：强制切近4周后截图（与复制图片逻辑完全一致）
+    var chartImgHtml = '';
+    try {
+        var trendBtn4w = document.querySelector('#siteTrendRangeBtns button[onclick*="4w"]');
+        if (trendBtn4w && window._siteTrendRange !== '4w') {
+            trendBtn4w.click();
+            await new Promise(function(res){ setTimeout(res, 1200); }); // 等动画跑完再截
+        }
+        if (window._siteChart_trend) window._siteChart_trend.setOption({ animation: false, animationDuration: 0 }, false);
+        await new Promise(function(res){ setTimeout(res, 150); });
+        if (window._siteChart_trend) {
+            // 复刻 zbCopyTrendImg 的 canvas 拼合逻辑
+            var _siteName = (document.getElementById('siteDetailTitle')||{}).textContent||'';
+            _siteName = _siteName.replace(' · 站点详情','').trim();
+            var _scopeLabel = window.zbGetScopeLabel ? window.zbGetScopeLabel(window._siteDataScope) : '客观执行';
+            var _chartImgSrc = window._siteChart_trend.getDataURL({ type:'png', pixelRatio:2, backgroundColor:'#ffffff' });
+            var _tblEl = document.getElementById('site4wTable');
+            var _tableRows = [];
+            if (_tblEl) {
+                var _tbl = _tblEl.querySelector('table');
+                if (_tbl) {
+                    for (var _ri=0; _ri<_tbl.rows.length; _ri++) {
+                        var _row = _tbl.rows[_ri]; var _cells = [];
+                        for (var _ci=0; _ci<_row.cells.length; _ci++) {
+                            var _cell = _row.cells[_ci];
+                            var _inp = _cell.querySelector('input');
+                            var _txt;
+                            if (_inp) { var _v=_inp.value; _txt=(_v!==''&&_v!==null&&_v!==undefined)?parseFloat(_v).toFixed(2)+'%':'—'; }
+                            else if (_cell.classList.contains('mb-save-col')||_cell.querySelector('button')) { _txt=''; }
+                            else { _txt=(_cell.innerText||_cell.textContent||'').replace(/\s+/g,' ').trim(); }
+                            var _dotSpan = _cell.querySelector('span[style*="border-radius:50%"]');
+                            _cells.push({ text:_txt, isHeader:_ri===0, catColor:_dotSpan?_dotSpan.style.background:null });
+                        }
+                        _tableRows.push(_cells);
+                    }
+                }
+            }
+            var _SCALE=2, _W=800, _PAD=24, _TOPBAR_H=44, _CHART_H=240, _ROW_H=28;
+            var _TABLE_H = _tableRows.length>0 ? (_ROW_H*_tableRows.length+12) : 0;
+            var _TOTAL_H = _TOPBAR_H + _CHART_H + (_TABLE_H>0?_TABLE_H+16:0) + 24;
+            var _cvs = document.createElement('canvas');
+            _cvs.width=_W*_SCALE; _cvs.height=_TOTAL_H*_SCALE;
+            var _ctx = _cvs.getContext('2d');
+            _ctx.scale(_SCALE,_SCALE);
+            _ctx.fillStyle='#ffffff'; _ctx.fillRect(0,0,_W,_TOTAL_H);
+            var _R=14;
+            _ctx.beginPath(); _ctx.moveTo(_R,0); _ctx.lineTo(_W-_R,0); _ctx.quadraticCurveTo(_W,0,_W,_R);
+            _ctx.lineTo(_W,_TOTAL_H-_R); _ctx.quadraticCurveTo(_W,_TOTAL_H,_W-_R,_TOTAL_H);
+            _ctx.lineTo(_R,_TOTAL_H); _ctx.quadraticCurveTo(0,_TOTAL_H,0,_TOTAL_H-_R);
+            _ctx.lineTo(0,_R); _ctx.quadraticCurveTo(0,0,_R,0); _ctx.closePath(); _ctx.clip();
+            var _grad=_ctx.createLinearGradient(0,0,_W,0); _grad.addColorStop(0,'#1e40af'); _grad.addColorStop(1,'#2563eb');
+            _ctx.fillStyle=_grad; _ctx.fillRect(0,0,_W,_TOPBAR_H);
+            _ctx.fillStyle='#ffffff'; _ctx.font='500 13px -apple-system, PingFang SC, Microsoft YaHei, sans-serif'; _ctx.textBaseline='middle';
+            _ctx.fillText(_siteName+' · '+_scopeLabel+'差异率趋势', _PAD, _TOPBAR_H/2);
+            _ctx.fillStyle='rgba(255,255,255,0.75)'; _ctx.font='11px -apple-system, PingFang SC, Microsoft YaHei, sans-serif';
+            var _pw=_ctx.measureText('近4周').width; _ctx.fillText('近4周', _W-_PAD-_pw, _TOPBAR_H/2);
+            var _cImg=new Image();
+            chartImgHtml = await new Promise(function(resolve){
+                _cImg.onload=function(){
+                    _ctx.drawImage(_cImg,0,_TOPBAR_H,_W,_CHART_H);
+                    if (_tableRows.length>0) {
+                        var _tblTop=_TOPBAR_H+_CHART_H+16;
+                        var _CAT_MAP={'手机':'#2563eb','笔记本':'#f59e0b','平板':'#10b981','手表':'#8b5cf6','耳机':'#ef4444'};
+                        var _colW=(_W-_PAD*2)/(_tableRows[0]?_tableRows[0].length:5);
+                        _tableRows.forEach(function(_r,_ri){
+                            var _y=_tblTop+_ri*_ROW_H;
+                            _ctx.fillStyle=_ri===0?'#f1f5f9':_ri%2===1?'#f5f9ff':'#ffffff';
+                            _ctx.fillRect(_PAD,_y,_W-_PAD*2,_ROW_H);
+                            _ctx.strokeStyle='#e2e8f0'; _ctx.lineWidth=0.5;
+                            _ctx.beginPath(); _ctx.moveTo(_PAD,_y+_ROW_H); _ctx.lineTo(_W-_PAD,_y+_ROW_H); _ctx.stroke();
+                            _r.forEach(function(_c,_ci){
+                                var _x=_PAD+_ci*_colW, _mY=_y+_ROW_H/2, _t=_c.text;
+                                if (_ci===0&&!_c.isHeader&&_c.catColor){
+                                    _ctx.fillStyle=_c.catColor||_CAT_MAP[_t]||'#94a3b8';
+                                    _ctx.beginPath(); _ctx.arc(_x+10,_mY,4,0,Math.PI*2); _ctx.fill();
+                                    _ctx.fillStyle='#1e293b'; _ctx.font='12px -apple-system, PingFang SC, Microsoft YaHei, sans-serif';
+                                    _ctx.textBaseline='middle'; _ctx.fillText(_t,_x+20,_mY); return;
+                                }
+                                var _tc='#1e293b';
+                                if (_c.isHeader) _tc='#64748b';
+                                else if (_t.startsWith('↑')) _tc='#dc2626';
+                                else if (_t.startsWith('↓')) _tc='#16a34a';
+                                else if (_ci===_r.length-2&&!_c.isHeader) _tc='#2563eb';
+                                _ctx.fillStyle=_tc; _ctx.font=(_c.isHeader?'500 ':'')+'12px -apple-system, PingFang SC, Microsoft YaHei, sans-serif';
+                                _ctx.textBaseline='middle';
+                                var _tx=_ci===0?_x+8:_x+_colW/2-_ctx.measureText(_t).width/2;
+                                _ctx.fillText(_t,_tx,_mY);
+                            });
+                        });
+                    }
+                    resolve('<img src="'+_cvs.toDataURL('image/png')+'" style="width:100%;border-radius:8px;margin-bottom:10px;" />');
+                };
+                _cImg.onerror=function(){ resolve(''); };
+                _cImg.src=_chartImgSrc;
+            });
+        }
+    } catch(e){ chartImgHtml = ''; }
+    // 恢复 ECharts 动画
+    if (window._siteChart_trend) window._siteChart_trend.setOption({ animation: true, animationDuration: 1000 }, false);
 
     function fRate(v){ return v!==null ? v.toFixed(2)+'%' : '—'; }
-    function fChange(cur, last){
-        if(cur===null||last===null) return '—';
-        var d=cur-last;
-        if(Math.abs(d)<0.001) return '持平';
-        return (d>0?'↑':'↓')+Math.abs(d).toFixed(2)+'%';
+    function fRelChange(cur, last){
+        // 与趋势图环比列一致：相对变化 (cur-last)/last*100
+        if(cur===null||last===null||last===0) return last===null||last===0?'—':'—';
+        var d=(cur-last)/last*100;
+        if(Math.abs(d)<0.05) return '持平';
+        return (d>0?'↑+':'')+d.toFixed(1)+'%';
+    }
+    function fRelCol(cur, last){
+        if(cur===null||last===null||last===0) return '#374151';
+        var d=cur-last; return Math.abs(d)<0.0001?'#374151':d>0?'#dc2626':'#16a34a';
     }
     function fIssue(bd){
-        return '客观问题共 <b>'+bd.total+'</b> 例，执行问题 <b>'+bd.exec+'</b> 例，工艺问题 <b>'+bd.craft+'</b> 例，SOP问题 <b>'+bd.sop+'</b> 例，隐性问题 <b>'+bd.hidden+'</b> 例，其他问题 <b>'+bd.other+'</b> 例';
+        // 执行问题始终排第一，其余按数量多→少依次排序
+        var rest = [
+            {name:'工艺问题', cnt:bd.craft},
+            {name:'SOP问题',  cnt:bd.sop},
+            {name:'隐性问题', cnt:bd.hidden},
+            {name:'其他问题', cnt:bd.other}
+        ].sort(function(a,b){ return b.cnt - a.cnt; });
+        var parts = ['客观问题共 <b>'+bd.total+'</b> 例，执行问题 <b>'+bd.exec+'</b> 例'];
+        rest.forEach(function(t){ parts.push(t.name+' <b>'+t.cnt+'</b> 例'); });
+        return parts.join('，');
+    }
+
+    // 结果环比（两行：线体 + 后验）
+    function fRateLine(label, cur, last) {
+        var txt = fRelChange(cur, last);
+        var col = fRelCol(cur, last);
+        return '<div style="margin:2px 0;">'
+            + '<span style="font-size:11px;color:#64748b;min-width:100px;display:inline-block;">'+label+'</span>'
+            + ' 本周 <b>'+fRate(cur)+'</b>，上周 <b>'+fRate(last)+'</b>，环比 <b><span style="color:'+col+';">'+txt+'</span></b>'
+            + '</div>';
     }
 
     var F  = 'font-family:\'PingFang SC\',\'Microsoft YaHei\',sans-serif;';
-    var RED= 'color:#c0392b;font-weight:700;';
     var H1 = 'style="'+F+'font-size:16px;font-weight:700;color:#1e293b;margin:0 0 12px;"';
-    var H2 = 'style="'+F+'font-size:14px;'+RED+'margin:18px 0 6px;border-left:4px solid #c0392b;padding-left:8px;"';
-    var H3 = 'style="'+F+'font-size:13px;'+RED+'margin:12px 0 4px;"';
+    var H2 = 'style="'+F+'font-size:14px;font-weight:700;color:#1e293b;margin:18px 0 6px;border-left:4px solid #374151;padding-left:8px;"';
+    var H3 = 'style="'+F+'font-size:13px;font-weight:600;color:#374151;margin:12px 0 4px;"';
     var P  = 'style="'+F+'font-size:12px;color:#374151;margin:4px 0 8px;line-height:1.8;"';
-    var LABEL = 'style="'+F+'font-size:12px;'+RED+'display:inline;"';
+    var LABEL = 'style="'+F+'font-size:12px;font-weight:600;color:#374151;display:inline;"';
 
     var editStyle = 'display:inline-block;min-width:200px;min-height:1.2em;color:#374151;outline:none;border-bottom:1px dashed #aaa;padding:0 3px;';
     var blockStyle = 'display:block;min-height:1.5em;color:#9ca3af;outline:none;border-bottom:1px dashed #d1d5db;padding:2px 4px;margin:2px 0;font-size:12px;';
@@ -12483,20 +12678,25 @@ async function zbGenerateTrainerReport() {
     function editable(ph){ return '<span contenteditable="true" style="'+editStyle+'">'+ph+'</span>'; }
     function block(ph){ return '<div contenteditable="true" style="'+blockStyle+'">'+ph+'</div>'; }
 
+    var dwLabel = dwSite || '大仓手机';
+    var hyLabel = hySite || '后验手机';
+
     var html = '<div id="zbTRReport" style="'+F+'font-size:12px;color:#1e293b;max-width:860px;line-height:1.7;padding:4px;">'
         + '<div '+H1+'>大仓手机品类培训师周报</div>'
 
         // ── 一、目标达成 ──
         + '<div '+H2+'>本周目标达成情况与分析</div>'
         + '<div '+H3+'>QA差异率（大仓手机+后验手机）</div>'
+        + chartImgHtml
         + '<div '+P+'>'
-        + '<span '+LABEL+'>结果环比：</span>'
-        + ' 本周 <b>'+fRate(allCurRate.rate)+'</b>，上周 <b>'+fRate(allLastRate.rate)+'</b>，环比 <b>'+fChange(allCurRate.rate,allLastRate.rate)+'</b>'
+        + '<span '+LABEL+'>结果环比：</span><br>'
+        + fRateLine('线体（'+(dwSite||'大仓手机')+'）', dwCurRate.rate, dwLastRate.rate)
+        + fRateLine('后验（'+(hySite||'后验手机')+'）', hyCurRate.rate, hyLastRate.rate)
         + '</div>'
         + '<div '+P+'><span '+LABEL+'>具体原因：</span>'+editable('请填写原因')+'</div>'
 
         // 大仓手机分析
-        + '<div '+H3+'>大仓手机分析</div>'
+        + '<div '+H3+'>'+dwLabel+'分析</div>'
         + '<div '+P+'>'+fIssue(dwCur)+'；</div>'
         + '<div style="margin:6px 0 4px;"><b style="font-size:11px;color:#64748b;">三级项维度（本周 '+r.curLabel+' vs 上周 '+r.lastLabel+'）</b></div>'
         + _zbTRRenderTable(dwL3, '三级项名称', r.curLabel, r.lastLabel)
@@ -12504,7 +12704,7 @@ async function zbGenerateTrainerReport() {
         + _zbTRRenderTable(dwPer, '操作人', r.curLabel, r.lastLabel)
 
         // 后验手机分析
-        + '<div '+H3+'>后验手机分析</div>'
+        + '<div '+H3+'>'+hyLabel+'分析</div>'
         + '<div '+P+'>'+fIssue(hyCur)+'；</div>'
         + '<div style="margin:6px 0 4px;"><b style="font-size:11px;color:#64748b;">三级项维度</b></div>'
         + _zbTRRenderTable(hyL3, '三级项名称', r.curLabel, r.lastLabel)
@@ -12585,15 +12785,20 @@ async function zbTRCopy() {
 
 // ── 质检维度分析：复制当前tab表格到剪贴板（HTML table，可粘贴到Word）──
 function zbCopyDimTable() {
-    var tab = window._zbDimTab || 'person';
     var titleEl = document.getElementById('siteDetailTitle');
     var siteName = titleEl ? titleEl.textContent.replace(' · 站点详情','').trim() : '站点';
+    var activeCat = window._activeCat || '手机';
 
-    var scopeLabel = window.zbGetScopeLabel ? window.zbGetScopeLabel(window._siteDataScope) : '客观执行';
-    var lastStart  = (document.getElementById('siteWeekLastStart')||{}).value||'';
-    var lastEnd   = (document.getElementById('siteWeekLastEnd')||{}).value||'';
-    var curStart  = (document.getElementById('siteWeekCurStart')||{}).value||'';
-    var curEnd    = (document.getElementById('siteWeekCurEnd')||{}).value||'';
+    var _isObj  = window.isObjective      || function(c){ return c&&String(c).includes('客观')&&!String(c).includes('主观'); };
+    var _isExec = window.isExecutionIssue || function(t){ return t==='执行问题'; };
+    function normJt(s){ return String(s||'').replace(/^[Ss][Oo][Pp](?=问题)/, 'SOP'); }
+
+    var _wr = (window._zbWeekRanges && window._zbWeekRanges()) || {};
+    var lastStart = (document.getElementById('siteWeekLastStart')||{}).value || _wr.lastStart || '';
+    var lastEnd   = (document.getElementById('siteWeekLastEnd')||{}).value   || _wr.lastEnd   || '';
+    var curStart  = (document.getElementById('siteWeekCurStart')||{}).value  || _wr.curStart  || '';
+    var curEnd    = (document.getElementById('siteWeekCurEnd')||{}).value    || _wr.curEnd    || '';
+
     function fmtWk(s,e){
         if(!s||!e) return '—';
         function f(d){ var p=d.split('-'); return (p[1]|0)+'/'+(p[2]|0); }
@@ -12602,243 +12807,103 @@ function zbCopyDimTable() {
     var curLabel  = fmtWk(curStart, curEnd);
     var lastLabel = fmtWk(lastStart, lastEnd);
 
-    // 通用样式常量
+    // 从 _allDiffData 直接取，口径：当前站点+品类+客观执行，同质检码多条取第一条
+    var allDiff = window._allDiffData || [];
+    var winCur  = {}; // code → {person, level3}
+    var winLast = {};
+    allDiff.forEach(function(d){
+        if (d.cat !== activeCat) return;
+        if (d.warehouse !== siteName) return;
+        if (!_isObj(d.category)) return;
+        if (!_isExec(normJt(d.judgedIssueType||''))) return;
+        if (!d.code) return;
+        var dt = (d.date||'').split(' ')[0];
+        if (curStart && curEnd && dt>=curStart && dt<=curEnd && !winCur[d.code]) {
+            winCur[d.code] = {person:d.person||'未知', level3:d.level3||'未知'};
+        }
+        if (lastStart && lastEnd && dt>=lastStart && dt<=lastEnd && !winLast[d.code]) {
+            winLast[d.code] = {person:d.person||'未知', level3:d.level3||'未知'};
+        }
+    });
+
+    if (!Object.keys(winCur).length && !Object.keys(winLast).length) {
+        showToast('暂无客观差异数据'); return;
+    }
+
     var S = {
         table:  'width:100%;border-collapse:collapse;font-family:PingFang SC,Microsoft YaHei,sans-serif;font-size:13px;',
         th:     'padding:7px 12px;background:#f8fafc;color:#64748b;font-weight:500;text-align:center;border:1px solid #e2e8f0;',
         thL:    'padding:7px 12px;background:#f8fafc;color:#64748b;font-weight:500;text-align:left;border:1px solid #e2e8f0;',
+        thTitle:'padding:7px 12px;background:#e0e7ff;color:#312e81;font-weight:600;text-align:left;border:1px solid #c7d2fe;',
         secCur: 'padding:5px 12px;background:#dbeafe;color:#1e40af;font-weight:500;font-size:12px;border:1px solid #bfdbfe;text-align:left;',
         secPrv: 'padding:5px 12px;background:#dcfce7;color:#166534;font-weight:500;font-size:12px;border:1px solid #bbf7d0;text-align:left;',
-        tdCur:  'padding:6px 12px;text-align:center;border:1px solid #e9eff6;background:#f5f9ff;color:#1e293b;',
-        tdPrv:  'padding:6px 12px;text-align:center;border:1px solid #e9eff6;background:#f5fdf6;color:#1e293b;',
-        tdCurL: 'padding:6px 12px;text-align:left;border:1px solid #e9eff6;background:#f5f9ff;color:#1e293b;',
-        tdPrvL: 'padding:6px 12px;text-align:left;border:1px solid #e9eff6;background:#f5fdf6;color:#1e293b;',
-        up:     'color:#dc2626;font-weight:500;',
-        down:   'color:#16a34a;font-weight:500;',
-        flat:   'color:#94a3b8;',
+        tdN:    'padding:6px 12px;text-align:center;border:1px solid #e9eff6;color:#1e293b;',
+        tdL:    'padding:6px 12px;text-align:left;border:1px solid #e9eff6;color:#1e293b;',
     };
-
-    function deltaHtml(n, tdStyle) {
+    function deltaHtml(n) {
         var txt = n > 0 ? '↑ +'+n : n < 0 ? '↓ '+n : '—';
-        var col = n > 0 ? S.up : n < 0 ? S.down : S.flat;
-        return '<td style="'+tdStyle+'"><span style="'+col+'">'+txt+'</span></td>';
+        var col = n > 0 ? 'color:#dc2626;font-weight:500;' : n < 0 ? 'color:#16a34a;font-weight:500;' : 'color:#94a3b8;';
+        return '<td style="'+S.tdN+'"><span style="'+col+'">'+txt+'</span></td>';
     }
 
-    var html = '';
+    function buildTable(title, dimKey, dimLabel) {
+        var curMap = {}, lastMap = {};
+        Object.keys(winCur).forEach(function(c){ var k=winCur[c][dimKey]||'未知'; curMap[k]=(curMap[k]||0)+1; });
+        Object.keys(winLast).forEach(function(c){ var k=winLast[c][dimKey]||'未知'; lastMap[k]=(lastMap[k]||0)+1; });
 
-    if (tab === 'person') {
-        // ── 人维度 ──
-        var personData = window._sitePersonData || [];
-        var isCompare  = !!window._zbCompareOpen;
+        var curList = Object.keys(curMap).map(function(n){ return {name:n, cur:curMap[n], last:lastMap[n]||0}; });
+        curList.sort(function(a,b){ return b.cur-a.cur||b.last-a.last; });
+        var prvList = Object.keys(lastMap).filter(function(n){ return !curMap[n]; })
+                           .map(function(n){ return {name:n, cur:0, last:lastMap[n]}; });
+        prvList.sort(function(a,b){ return b.last-a.last; });
 
-        function inPeriod(date, s, e){ if(!s||!e) return false; return date>=s&&date<=e; }
+        if (!curList.length && !prvList.length) return '';
 
-        if (!isCompare) {
-            // ── 累计模式：按筛选期差异台数排名 ──
-            var topStart2 = (document.getElementById('startDateFilter')||{}).value || '';
-            var topEnd2   = (document.getElementById('endDateFilter')||{}).value || '';
-            var dateLabel2 = (topStart2&&topEnd2) ? (function(){ function fs(s){var p=s.split('-');return (p[1]|0)+'/'+(p[2]|0);}  return fs(topStart2)+'—'+fs(topEnd2)+'·累计'; })() : '累计';
-            var personCodeMap2 = {};
-            personData.forEach(function(d){
-                var dt = d.date ? d.date.split(' ')[0] : '';
-                if ((!topStart2||dt>=topStart2) && (!topEnd2||dt<=topEnd2)) {
-                    var code = d.code || ('__nocode__'+Math.random());
-                    var p = d.person||'未知';
-                    if (!personCodeMap2[p]) personCodeMap2[p] = new Set();
-                    personCodeMap2[p].add(code);
-                }
-            });
-            var topArr2 = Object.keys(personCodeMap2).map(function(n){ return {name:n, cnt:personCodeMap2[n].size}; });
-            topArr2.sort(function(a,b){ return b.cnt-a.cnt; });
-            if (!topArr2.length) { showToast('暂无数据'); return; }
-            var tdN2 = 'padding:6px 12px;text-align:center;border:1px solid #e9eff6;color:#1e293b;';
-            var tdL2 = 'padding:6px 12px;text-align:left;border:1px solid #e9eff6;color:#1e293b;';
-            var totalCnt = topArr2.reduce(function(s,r){return s+r.cnt;},0);
-            html = '<table style="'+S.table+'">'
-                + '<tr>'
-                + '<th style="'+S.thL.replace('text-align:center','text-align:left')+'">排名</th>'
-                + '<th style="'+S.thL+'">质检人员（'+scopeLabel+'）</th>'
-                + '<th style="'+S.th+'">差异台数（'+dateLabel2+'）</th>'
-                + '<th style="'+S.th+'">占比</th>'
-                + '</tr>';
-            topArr2.forEach(function(p, i){
-                var pct = totalCnt ? Math.round(p.cnt/totalCnt*100)+'%' : '—';
+        var html = '<table style="'+S.table+'">'
+            +'<tr><th style="'+S.thTitle+'" colspan="4">'+title+'</th></tr>'
+            +'<tr>'
+            +'<th style="'+S.thL+'">'+dimLabel+'</th>'
+            +'<th style="'+S.th+'">上周差异数（'+lastLabel+'）</th>'
+            +'<th style="'+S.th+'">本周差异数（'+curLabel+'）</th>'
+            +'<th style="'+S.th+'">变化</th>'
+            +'</tr>';
+        if (curList.length) {
+            html += '<tr><td colspan="4" style="'+S.secCur+'">本周失误'+title+'明细 · '+curLabel+'</td></tr>';
+            curList.forEach(function(p){
                 html += '<tr>'
-                    + '<td style="'+tdN2+'">'+(i+1)+'</td>'
-                    + '<td style="'+tdL2+'">'+p.name+'</td>'
-                    + '<td style="'+tdN2+'">'+p.cnt+'</td>'
-                    + '<td style="'+tdN2+'">'+pct+'</td>'
-                    + '</tr>';
+                    +'<td style="'+S.tdL+'">'+p.name+'</td>'
+                    +'<td style="'+S.tdN+'">'+(p.last||'—')+'</td>'
+                    +'<td style="'+S.tdN+'">'+p.cur+'</td>'
+                    +deltaHtml(p.cur-p.last)
+                    +'</tr>';
             });
-            html += '</table>';
-
-        } else {
-            // ── 对比模式：上周 vs 本周 ──
-            // 本周列表：按本周差异量降序
-            var curMap = {}, prvMap = {};
-            personData.forEach(function(d){
-                var dt = d.date ? d.date.split(' ')[0] : '';
-                var p  = d.person || '未知';
-                if (inPeriod(dt, curStart, curEnd))  curMap[p] = (curMap[p]||0) + 1;
-                if (inPeriod(dt, lastStart, lastEnd)) prvMap[p] = (prvMap[p]||0) + 1;
-            });
-
-            var curList = Object.keys(curMap).map(function(n){ return {name:n, cur:curMap[n], prv:prvMap[n]||0}; });
-            curList.sort(function(a,b){ return b.cur - a.cur || b.prv - a.prv; });
-
-            var prvList = Object.keys(prvMap).map(function(n){ return {name:n, prv:prvMap[n], cur:curMap[n]||0}; });
-            prvList.sort(function(a,b){ return b.prv - a.prv || b.cur - a.cur; });
-
-            if (!curList.length && !prvList.length) { showToast('暂无数据，请先开启「对比数据」并设置周区间'); return; }
-
-            html = '<table style="'+S.table+'">'
-                + '<tr>'
-                + '<th style="'+S.thL+'">质检人员（'+scopeLabel+'）</th>'
-                + '<th style="'+S.th+'">上周差异数量（'+lastLabel+'）</th>'
-                + '<th style="'+S.th+'">本周差异数量（'+curLabel+'）</th>'
-                + '<th style="'+S.th+'">变化</th>'
-                + '</tr>';
-
-            var tdN = 'padding:6px 12px;text-align:center;border:1px solid #e9eff6;color:#1e293b;';
-            var tdL = 'padding:6px 12px;text-align:left;border:1px solid #e9eff6;color:#1e293b;';
-
-            if (curList.length) {
-                html += '<tr><td colspan="4" style="'+S.secCur+'">本周失误人明细 · '+curLabel+'</td></tr>';
-                curList.forEach(function(p){
-                    var delta = p.cur - p.prv;
-                    html += '<tr>'
-                        + '<td style="'+tdL+'">'+p.name+'</td>'
-                        + '<td style="'+tdN+'">'+(p.prv||'—')+'</td>'
-                        + '<td style="'+tdN+'">'+p.cur+'</td>';
-                    html += deltaHtml(delta, tdN);
-                    html += '</tr>';
-                });
-            }
-            if (prvList.length) {
-                html += '<tr><td colspan="4" style="'+S.secPrv+'">上周失误人明细 · '+lastLabel+'</td></tr>';
-                prvList.forEach(function(p){
-                    var delta = p.cur - p.prv;
-                    html += '<tr>'
-                        + '<td style="'+tdL+'">'+p.name+'</td>'
-                        + '<td style="'+tdN+'">'+p.prv+'</td>'
-                        + '<td style="'+tdN+'">'+(p.cur||'—')+'</td>';
-                    html += deltaHtml(delta, tdN);
-                    html += '</tr>';
-                });
-            }
-            html += '</table>';
         }
-
-    } else {
-        // ── 项维度 ──
-        var execDiff2 = window._siteExecDiff || [];
-        if (!execDiff2.length) { showToast('项维度暂无数据'); return; }
-        var isCompare2 = !!window._zbCompareOpen;
-
-        function inPrd(date, s, e){ if(!s||!e) return false; return date>=s&&date<=e; }
-
-        if (!isCompare2) {
-            // ── 累计模式：按筛选期出现次数排名 ──
-            var topStart3 = (document.getElementById('startDateFilter')||{}).value || '';
-            var topEnd3   = (document.getElementById('endDateFilter')||{}).value || '';
-            var dateLabel3 = (topStart3&&topEnd3) ? (function(){ function fs(s){var p=s.split('-');return (p[1]|0)+'/'+(p[2]|0);} return fs(topStart3)+'—'+fs(topEnd3)+'·累计'; })() : '累计';
-            var itemMap3 = {};
-            execDiff2.forEach(function(d){
-                var dt = d.date ? d.date.split(' ')[0] : '';
-                if ((!topStart3||dt>=topStart3) && (!topEnd3||dt<=topEnd3)) {
-                    var k = d.level3 || '未知';
-                    itemMap3[k] = (itemMap3[k]||0) + 1;
-                }
-            });
-            var itemArr3 = Object.keys(itemMap3).map(function(k){ return {level3:k, cnt:itemMap3[k]}; });
-            itemArr3.sort(function(a,b){ return b.cnt-a.cnt; });
-            if (!itemArr3.length) { showToast('项维度暂无数据'); return; }
-            var totalCnt3 = itemArr3.reduce(function(s,r){return s+r.cnt;},0);
-            var tdN3 = 'padding:6px 12px;text-align:center;border:1px solid #e9eff6;color:#1e293b;';
-            var tdL3 = 'padding:6px 12px;text-align:left;border:1px solid #e9eff6;color:#1e293b;';
-            html = '<table style="'+S.table+'">'
-                + '<tr>'
-                + '<th style="'+S.thL.replace('text-align:center','text-align:left')+'">排名</th>'
-                + '<th style="'+S.thL+'">质检项（'+scopeLabel+'）</th>'
-                + '<th style="'+S.th+'">出现次数（'+dateLabel3+'）</th>'
-                + '<th style="'+S.th+'">占比</th>'
-                + '</tr>';
-            itemArr3.forEach(function(r, i){
-                var pct = totalCnt3 ? Math.round(r.cnt/totalCnt3*100)+'%' : '—';
+        if (prvList.length) {
+            html += '<tr><td colspan="4" style="'+S.secPrv+'">上周失误·本周已清零 · '+lastLabel+'</td></tr>';
+            prvList.forEach(function(p){
                 html += '<tr>'
-                    + '<td style="'+tdN3+'">'+(i+1)+'</td>'
-                    + '<td style="'+tdL3+'">'+r.level3+'</td>'
-                    + '<td style="'+tdN3+'">'+r.cnt+'</td>'
-                    + '<td style="'+tdN3+'">'+pct+'</td>'
-                    + '</tr>';
+                    +'<td style="'+S.tdL+'">'+p.name+'</td>'
+                    +'<td style="'+S.tdN+'">'+p.last+'</td>'
+                    +'<td style="'+S.tdN+'">—</td>'
+                    +deltaHtml(-p.last)
+                    +'</tr>';
             });
-            html += '</table>';
-
-        } else {
-            // ── 对比模式：上周 vs 本周 ──
-            var curItemMap = {}, prvItemMap = {};
-            execDiff2.forEach(function(d){
-                var dt = d.date ? d.date.split(' ')[0] : '';
-                var k  = d.level3 || '未知';
-                if (inPrd(dt, curStart,  curEnd))  curItemMap[k] = (curItemMap[k]||0) + 1;
-                if (inPrd(dt, lastStart, lastEnd))  prvItemMap[k] = (prvItemMap[k]||0) + 1;
-            });
-
-            var allItemKeys = new Set(Object.keys(curItemMap).concat(Object.keys(prvItemMap)));
-            var curRows = [], prvRows = [];
-            allItemKeys.forEach(function(k){
-                var c = curItemMap[k]||0, p = prvItemMap[k]||0;
-                if (c > 0) curRows.push({level3:k, cur:c, last:p, delta:c-p});
-                else        prvRows.push({level3:k, cur:c, last:p, delta:c-p});
-            });
-            curRows.sort(function(a,b){ return b.cur-a.cur||b.last-a.last; });
-            prvRows.sort(function(a,b){ return b.last-a.last||b.cur-a.cur; });
-
-            if (!curRows.length && !prvRows.length) { showToast('项维度暂无数据，请先开启「对比数据」'); return; }
-
-            var tdN = 'padding:6px 12px;text-align:center;border:1px solid #e9eff6;color:#1e293b;';
-            var tdL = 'padding:6px 12px;text-align:left;border:1px solid #e9eff6;color:#1e293b;';
-
-            html = '<table style="'+S.table+'">'
-                + '<tr>'
-                + '<th style="'+S.thL+'">质检项（'+scopeLabel+'）</th>'
-                + '<th style="'+S.th+'">上周差异数量（'+lastLabel+'）</th>'
-                + '<th style="'+S.th+'">本周差异数量（'+curLabel+'）</th>'
-                + '<th style="'+S.th+'">变化</th>'
-                + '</tr>';
-
-            if (curRows.length) {
-                html += '<tr><td colspan="4" style="'+S.secCur+'">本周失误项明细 · '+curLabel+'</td></tr>';
-                curRows.forEach(function(r){
-                    html += '<tr>'
-                        + '<td style="'+tdL+'">'+r.level3+'</td>'
-                        + '<td style="'+tdN+'">'+(r.last||'—')+'</td>'
-                        + '<td style="'+tdN+'">'+r.cur+'</td>';
-                    html += deltaHtml(r.delta, tdN);
-                    html += '</tr>';
-                });
-            }
-            if (prvRows.length) {
-                html += '<tr><td colspan="4" style="'+S.secPrv+'">上周失误项明细 · '+lastLabel+'</td></tr>';
-                prvRows.forEach(function(r){
-                    html += '<tr>'
-                        + '<td style="'+tdL+'">'+r.level3+'</td>'
-                        + '<td style="'+tdN+'">'+r.last+'</td>'
-                        + '<td style="'+tdN+'">'+(r.cur||'—')+'</td>';
-                    html += deltaHtml(r.delta, tdN);
-                    html += '</tr>';
-                });
-            }
-            html += '</table>';
         }
+        html += '</table>';
+        return html;
     }
+
+    var personHtml = buildTable('人维度', 'person', '质检人员（客观）');
+    var level3Html = buildTable('项维度', 'level3', '质检项（客观）');
+    var html = [personHtml, level3Html].filter(Boolean).join('<br>');
+
+    if (!html) { showToast('暂无数据'); return; }
 
     try {
         var blob = new Blob([html], { type: 'text/html' });
         navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]).then(function() {
-            showToast('✓ 已复制富文本表格，可直接粘贴到企微/Word');
+            showToast('✓ 已复制（操作人 + 三级项 两个维度）');
         }).catch(function() {
-            // 降级纯文本
             var tmp = document.createElement('div');
             tmp.innerHTML = html;
             navigator.clipboard.writeText(tmp.innerText||'').then(function(){
@@ -15657,12 +15722,14 @@ function zbSiteBcUpdateBtn() {
     var bcBtn = document.getElementById('zbSiteBcBtn');
     if (bcBtn) bcBtn.style.display = (site && zbSiteBcCanBroadcast(site, cat)) ? 'inline-flex' : 'none';
 
-    // 大仓手机品类培训师才显示周报，其余品类/站点显示复制图片
+    // 大仓手机品类培训师才显示周报，其余品类/站点显示复制图片和复制表格
     var isDwPhone = cat === '手机' && !!_zbTRSiteType(site);
     var weeklyBtn = document.getElementById('zbWeeklyReportBtn');
     if (weeklyBtn) weeklyBtn.style.display = isDwPhone ? 'inline-flex' : 'none';
     var copyImgBtn = document.querySelector('button[onclick="zbCopyTrendImg()"]');
     if (copyImgBtn) copyImgBtn.style.display = isDwPhone ? 'none' : 'inline-flex';
+    var copyTblBtn = document.getElementById('zbCopyDimTableBtn');
+    if (copyTblBtn) copyTblBtn.style.display = isDwPhone ? 'none' : 'inline-flex';
 }
 
 function zbSiteBcCalcData(site, cat, date, prevDate) {
