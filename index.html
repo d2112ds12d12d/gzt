@@ -1373,7 +1373,7 @@
                     <div style="width:0.5px;height:14px;background:var(--border-color);flex-shrink:0;"></div>
                     <div class="card-title" style="margin:0;"><div style="width:3px;height:14px;background:#10b981;border-radius:2px;flex-shrink:0;margin-right:4px;"></div><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-right:2px;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>站点差异率趋势图<span style="font-size:11px;color:var(--text-secondary);font-weight:400;margin-left:4px;">点击节点查看当日明细</span></div>
                   </div>
-                  <button onclick="zbCopyTrendImg()" style="display:none;align-items:center;gap:4px;padding:4px 11px;border-radius:7px;font-size:11px;font-weight:500;border:0.5px solid #93c5fd;background:#eff6ff;color:#2563eb;cursor:pointer;white-space:nowrap;flex-shrink:0;" onmouseenter="this.style.background='#dbeafe'" onmouseleave="this.style.background='#eff6ff'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制图片</button>
+                  <button onclick="zbCopyTrendImg()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 11px;border-radius:7px;font-size:11px;font-weight:500;border:0.5px solid #93c5fd;background:#eff6ff;color:#2563eb;cursor:pointer;white-space:nowrap;flex-shrink:0;" onmouseenter="this.style.background='#dbeafe'" onmouseleave="this.style.background='#eff6ff'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制图片</button>
                 </div>
                 <div id="siteTrendChart" style="width:100%;height:320px;"></div>
               </div>
@@ -1388,7 +1388,7 @@
                   </div>
                   <div style="display:flex;align-items:center;gap:8px;">
                     <button id="zbTrainingBtn" onclick="zbTrainingClick()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 11px;border-radius:7px;font-size:11px;font-weight:500;border:0.5px solid #fca5a5;background:#fff0ef;color:#e8433a;cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseenter="this.style.background='#fee2e2'" onmouseleave="this.style.background='#fff0ef'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>一键培训</button>
-                    <button id="zbWeeklyReportBtn" onclick="zbGenerateTrainerReport()" style="display:inline-flex;align-items:center;gap:5px;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;background:#fff;color:#2563eb;border:1.5px solid #2563eb;cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseenter="this.style.background='#eff6ff'" onmouseleave="this.style.background='#fff'">📋 培训师周报</button>
+                    <button id="zbWeeklyReportBtn" onclick="zbGenerateTrainerReport()" style="display:none;align-items:center;gap:5px;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;background:#fff;color:#2563eb;border:1.5px solid #2563eb;cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseenter="this.style.background='#eff6ff'" onmouseleave="this.style.background='#fff'">📋 培训师周报</button>
                   </div>
                 </div>
                 <!-- v1.61F: Tab 切换栏（6 个 tab） -->
@@ -15326,19 +15326,33 @@ async function _zbBcUploadImgToCos(b64) {
     });
 }
 
-async function _zbBcSendFeishu(feishuUrl, cosImageUrl, text, title) {
-    var imgLine = cosImageUrl ? '![播报图](' + cosImageUrl + ')\n' : '';
-    var card = {
-        elements: [{ tag: 'markdown', content: imgLine + text }],
-        header: { template: 'red', title: { tag: 'plain_text', content: title } }
-    };
-    var r = await fetch(ZB_BC_PROXY, {
+async function _zbBcSendFeishu(chatId, b64, text, title) {
+    // 1. 上传图片拿 image_key
+    var upRes = await fetch(ZB_BC_PROXY, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ _feishuurl: feishuUrl, msg_type: 'interactive', card: JSON.stringify(card) })
+        body: JSON.stringify({ _action: 'feishu_upload_image', base64: b64 })
     });
-    var d = await r.json();
-    if (d.code !== 0) throw new Error(d.msg || '飞书响应 code=' + d.code);
+    var upJson = await upRes.json();
+    if (upJson.code !== 0) throw new Error('图片上传失败：' + upJson.msg);
+
+    // 2. 发图片
+    var r1 = await fetch(ZB_BC_PROXY, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ _action: 'feishu_send', chat_id: chatId, msg_type: 'image', content: JSON.stringify({ image_key: upJson.image_key }) })
+    });
+    var d1 = await r1.json();
+    if (d1.code !== 0) throw new Error('图片发送失败：' + d1.msg);
+
+    // 3. 发文字
+    var r2 = await fetch(ZB_BC_PROXY, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ _action: 'feishu_send', chat_id: chatId, msg_type: 'text', content: JSON.stringify({ text: text }) })
+    });
+    var d2 = await r2.json();
+    if (d2.code !== 0) throw new Error('文字发送失败：' + d2.msg);
 }
 
 // ── 日期工具 ──
@@ -15636,11 +15650,19 @@ function zbSiteBcCanBroadcast(site, cat) {
 }
 
 function zbSiteBcUpdateBtn() {
-    var btn = document.getElementById('zbSiteBcBtn'); if (!btn) return;
     var site = window._zbCurrentSiteName;
     var cat  = window._activeCat || '手机';
-    var show = site && zbSiteBcCanBroadcast(site, cat);
-    btn.style.display = show ? 'inline-flex' : 'none';
+
+    // 播报按钮
+    var bcBtn = document.getElementById('zbSiteBcBtn');
+    if (bcBtn) bcBtn.style.display = (site && zbSiteBcCanBroadcast(site, cat)) ? 'inline-flex' : 'none';
+
+    // 大仓手机品类培训师才显示周报，其余品类/站点显示复制图片
+    var isDwPhone = cat === '手机' && !!_zbTRSiteType(site);
+    var weeklyBtn = document.getElementById('zbWeeklyReportBtn');
+    if (weeklyBtn) weeklyBtn.style.display = isDwPhone ? 'inline-flex' : 'none';
+    var copyImgBtn = document.querySelector('button[onclick="zbCopyTrendImg()"]');
+    if (copyImgBtn) copyImgBtn.style.display = isDwPhone ? 'none' : 'inline-flex';
 }
 
 function zbSiteBcCalcData(site, cat, date, prevDate) {
@@ -16005,7 +16027,7 @@ function zbSiteBcOpen() {
     if (d1) d1.textContent = _zbBcYesterday();
 
     // Load key: localStorage first, then cloud
-    var lsKey = 'zbSiteFeishuUrl_' + keyName;
+    var lsKey = 'zbSiteFeishuChatId_' + keyName;
     var inp = document.getElementById('zbSiteBcKeyInput');
     if (inp) {
         var saved = ''; try{ saved=localStorage.getItem(lsKey)||''; }catch(e){}
@@ -16053,7 +16075,7 @@ async function zbSiteBcSaveKey() {
     if (!keyName || !val) return;
 
     // 先存本地
-    try{ localStorage.setItem('zbSiteFeishuUrl_'+keyName, val); }catch(e){}
+    try{ localStorage.setItem('zbSiteFeishuChatId_'+keyName, val); }catch(e){}
 
     var hint = document.getElementById('zbSiteBcKeySavedHint');
     var btn  = document.getElementById('zbSiteBcSaveKeyBtn');
@@ -16111,18 +16133,16 @@ async function zbSiteBcConfirmSend() {
         var b64 = zbSiteBcDrawCanvas(data);
         var modal = document.getElementById('zbSiteBcModal');
         var keyName = modal ? modal.dataset.keyName : '';
-        var feishuUrl = ''; try{ feishuUrl=localStorage.getItem('zbSiteFeishuUrl_'+keyName)||''; }catch(e){}
-        if (!feishuUrl) { feishuUrl = (window._zbSiteBcKeys||{})[keyName]||''; }
-        if (!feishuUrl) {
+        var chatId = ''; try{ chatId=localStorage.getItem('zbSiteFeishuChatId_'+keyName)||''; }catch(e){}
+        if (!chatId) { chatId = (window._zbSiteBcKeys||{})[keyName]||''; }
+        if (!chatId) {
             zbSiteBcToggleKey();
-            if(typeof showToast==='function') showToast('❌ 请先配置飞书 Webhook URL');
+            if(typeof showToast==='function') showToast('❌ 请先配置飞书群 chat_id');
             return;
         }
         if(typeof showToast==='function') showToast('上传播报图...');
-        var cosUrl = await _zbBcUploadImgToCos(b64);
-        if(typeof showToast==='function') showToast('发送中...');
         var siteName = site + ' · ' + (cat==='手机'?'手机品类':'四品类');
-        await _zbBcSendFeishu(feishuUrl, cosUrl, ZB_BC_TEXT_SITE, '站点播报 · ' + siteName);
+        await _zbBcSendFeishu(chatId, b64, ZB_BC_TEXT_SITE, '站点播报 · ' + siteName);
         zbSiteBcClose();
         if(typeof showToast==='function') showToast('✅ 站点播报已发送到飞书');
     } catch(e) {
@@ -16141,12 +16161,12 @@ function zbBcToggleKeyConfig(){
     if(arr)arr.style.transform=open?'rotate(180deg)':'';
     if(open){
         var inp=document.getElementById('zbBcKeyInput');
-        try{ if(inp)inp.value=localStorage.getItem('zbFeishuUrl')||''; }catch(e){}
+        try{ if(inp)inp.value=localStorage.getItem('zbFeishuChatId')||''; }catch(e){}
         if(inp&&!inp.value){
             fetch(ghRaw(GH_FILES.bcConfig)).then(function(r){return r.ok?r.json():null;}).then(function(cfg){
-                if(cfg&&cfg.feishuurl){
-                    inp.value=cfg.feishuurl;
-                    try{localStorage.setItem('zbFeishuUrl',cfg.feishuurl);}catch(e){}
+                if(cfg&&cfg.feishuchatid){
+                    inp.value=cfg.feishuchatid;
+                    try{localStorage.setItem('zbFeishuChatId',cfg.feishuchatid);}catch(e){}
                 }
             }).catch(function(){});
         }
@@ -16155,7 +16175,7 @@ function zbBcToggleKeyConfig(){
 function zbBcSaveKey(){
     var val=(document.getElementById('zbBcKeyInput')||{}).value||'';
     val=val.trim();
-    try{ localStorage.setItem('zbFeishuUrl',val); }catch(e){}
+    try{ localStorage.setItem('zbFeishuChatId',val); }catch(e){}
     var hint=document.getElementById('zbBcKeySavedHint');
     if(hint){hint.style.display='block';setTimeout(function(){hint.style.display='none';},2000);}
 }
@@ -16182,19 +16202,17 @@ async function zbBcConfirmSend(){
         var periodLabel=(from===to?from:from+' ~ '+to)+'  '+modeLabel;
         if(typeof showToast==='function')showToast('生成播报图...');
         var b64=zbBcDrawCanvas(data,periodLabel,changeLabel);
-        var feishuUrl='';
-        try{ feishuUrl=localStorage.getItem('zbFeishuUrl')||''; }catch(e){}
-        if(!feishuUrl){
+        var chatId='';
+        try{ chatId=localStorage.getItem('zbFeishuChatId')||''; }catch(e){}
+        if(!chatId){
             var cfg=document.getElementById('zbBcKeyConfig'),arr2=document.getElementById('zbBcKeyArrow');
             if(cfg)cfg.style.display='block';
             if(arr2)arr2.style.transform='rotate(180deg)';
-            if(typeof showToast==='function')showToast('❌ 请先配置飞书 Webhook URL');
+            if(typeof showToast==='function')showToast('❌ 请先配置飞书群 chat_id');
             return;
         }
         if(typeof showToast==='function')showToast('上传播报图...');
-        var cosUrl=await _zbBcUploadImgToCos(b64);
-        if(typeof showToast==='function')showToast('发送中...');
-        await _zbBcSendFeishu(feishuUrl, cosUrl, ZB_BC_TEXT, '质执播报 · '+modeLabel);
+        await _zbBcSendFeishu(chatId, b64, ZB_BC_TEXT, '质执播报 · '+modeLabel);
         zbBcCloseModal();
         if(typeof showToast==='function')showToast('✅ 播报已发送到飞书群');
     }catch(e){
@@ -16345,13 +16363,13 @@ function _zbBcUpdateVisibility(){
     <!-- Webhook Key 配置（可折叠） -->
     <div style="padding:0 18px 10px;border-top:1px solid #f3f4f6;">
       <div onclick="zbBcToggleKeyConfig()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:7px 10px;border-radius:6px;background:#f8fafc;border:1px solid #e5e7eb;margin-top:10px;">
-        <span style="font-size:11px;color:#6b7280;">⚙️ Webhook 配置</span>
+        <span style="font-size:11px;color:#6b7280;">⚙️ chat_id 配置</span>
         <span id="zbBcKeyArrow" style="font-size:10px;color:#9ca3af;transition:transform .15s;">▼</span>
       </div>
       <div id="zbBcKeyConfig" style="display:none;padding:8px 0 0;">
-        <div style="font-size:11px;color:#6b7280;margin-bottom:5px;">飞书群机器人 Webhook URL</div>
+        <div style="font-size:11px;color:#6b7280;margin-bottom:5px;">飞书群 chat_id</div>
         <div style="display:flex;gap:6px;">
-          <input type="text" id="zbBcKeyInput" placeholder="https://open.feishu.cn/open-apis/bot/v2/hook/..."
+          <input type="text" id="zbBcKeyInput" placeholder="oc_xxxxxxxxxxxxxxxxxxxxxxxx"
                  style="flex:1;border:1px solid #d1d5db;border-radius:5px;padding:5px 8px;font-size:11px;color:#374151;outline:none;min-width:0;">
           <button onclick="zbBcSaveKey()" style="padding:5px 12px;border:none;border-radius:5px;background:#2563eb;color:#fff;font-size:11px;cursor:pointer;white-space:nowrap;">保存</button>
         </div>
@@ -16392,19 +16410,19 @@ function _zbBcUpdateVisibility(){
     </div>
     <div style="padding:0 18px 10px;border-top:1px solid #f3f4f6;">
       <div onclick="zbSiteBcToggleKey()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer;padding:7px 10px;border-radius:6px;background:#f8fafc;border:1px solid #e5e7eb;margin-top:10px;">
-        <span style="font-size:11px;color:#6b7280;">⚙️ Webhook 配置（本站专属）</span>
+        <span style="font-size:11px;color:#6b7280;">⚙️ chat_id 配置（本站专属）</span>
         <span id="zbSiteBcKeyArrow" style="font-size:10px;color:#9ca3af;transition:transform .15s;">▼</span>
       </div>
       <div id="zbSiteBcKeyConfig" style="display:none;padding:8px 0 0;">
-        <div style="font-size:11px;color:#6b7280;margin-bottom:5px;">飞书群机器人 Webhook URL（本站专属）</div>
+        <div style="font-size:11px;color:#6b7280;margin-bottom:5px;">飞书群 chat_id（本站专属）</div>
         <div style="display:flex;gap:6px;">
-          <input type="text" id="zbSiteBcKeyInput" placeholder="https://open.feishu.cn/open-apis/bot/v2/hook/..."
+          <input type="text" id="zbSiteBcKeyInput" placeholder="oc_xxxxxxxxxxxxxxxxxxxxxxxx"
                  style="flex:1;border:1px solid #d1d5db;border-radius:5px;padding:5px 8px;font-size:11px;color:#374151;outline:none;min-width:0;">
           <button id="zbSiteBcSaveKeyBtn" onclick="zbSiteBcSaveKey()" style="padding:5px 12px;border:none;border-radius:5px;background:#2563eb;color:#fff;font-size:11px;cursor:pointer;white-space:nowrap;">保存</button>
         </div>
         <div id="zbSiteBcKeySavedHint" style="font-size:10px;color:#16a34a;margin-top:4px;display:none;"></div>
         <div style="font-size:10px;color:#94a3b8;margin-top:6px;line-height:1.6;">
-          每个站点群配置独立的 Webhook URL
+          每个站点群配置独立的飞书群 chat_id
         </div>
       </div>
     </div>
