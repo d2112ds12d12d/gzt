@@ -1373,7 +1373,7 @@
                     <div style="width:0.5px;height:14px;background:var(--border-color);flex-shrink:0;"></div>
                     <div class="card-title" style="margin:0;"><div style="width:3px;height:14px;background:#10b981;border-radius:2px;flex-shrink:0;margin-right:4px;"></div><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-right:2px;"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>站点差异率趋势图<span style="font-size:11px;color:var(--text-secondary);font-weight:400;margin-left:4px;">点击节点查看当日明细</span></div>
                   </div>
-                  <button onclick="zbCopyTrendImg()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 11px;border-radius:7px;font-size:11px;font-weight:500;border:0.5px solid #93c5fd;background:#eff6ff;color:#2563eb;cursor:pointer;white-space:nowrap;flex-shrink:0;" onmouseenter="this.style.background='#dbeafe'" onmouseleave="this.style.background='#eff6ff'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制图片</button>
+                  <button onclick="zbCopyTrendImg()" style="display:none;align-items:center;gap:4px;padding:4px 11px;border-radius:7px;font-size:11px;font-weight:500;border:0.5px solid #93c5fd;background:#eff6ff;color:#2563eb;cursor:pointer;white-space:nowrap;flex-shrink:0;" onmouseenter="this.style.background='#dbeafe'" onmouseleave="this.style.background='#eff6ff'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制图片</button>
                 </div>
                 <div id="siteTrendChart" style="width:100%;height:320px;"></div>
               </div>
@@ -1387,8 +1387,8 @@
                     质检维度分析
                   </div>
                   <div style="display:flex;align-items:center;gap:8px;">
-                    <button onclick="zbCopyDimTable()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 11px;border-radius:7px;font-size:11px;font-weight:500;border:0.5px solid #93c5fd;background:#eff6ff;color:#2563eb;cursor:pointer;white-space:nowrap;" onmouseenter="this.style.background='#dbeafe'" onmouseleave="this.style.background='#eff6ff'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>复制表格</button>
-                    <button id="zbWeeklyReportBtn" onclick="zbGenerateWeeklyReport()" style="display:inline-flex;align-items:center;gap:5px;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;background:#fff;color:#2563eb;border:1.5px solid #2563eb;cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseenter="this.style.background='#eff6ff'" onmouseleave="this.style.background='#fff'">📋 一键周报</button>
+                    <button id="zbTrainingBtn" onclick="zbTrainingClick()" style="display:inline-flex;align-items:center;gap:4px;padding:4px 11px;border-radius:7px;font-size:11px;font-weight:500;border:0.5px solid #fca5a5;background:#fff0ef;color:#e8433a;cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseenter="this.style.background='#fee2e2'" onmouseleave="this.style.background='#fff0ef'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>一键培训</button>
+                    <button id="zbWeeklyReportBtn" onclick="zbGenerateTrainerReport()" style="display:inline-flex;align-items:center;gap:5px;padding:5px 13px;border-radius:20px;font-size:12px;font-weight:500;background:#fff;color:#2563eb;border:1.5px solid #2563eb;cursor:pointer;white-space:nowrap;transition:all .15s;" onmouseenter="this.style.background='#eff6ff'" onmouseleave="this.style.background='#fff'">📋 培训师周报</button>
                   </div>
                 </div>
                 <!-- v1.61F: Tab 切换栏（6 个 tab） -->
@@ -1399,6 +1399,7 @@
                   <button id="zbTabIssueType" onclick="zbSwitchDimTab('issueType')" style="padding:9px 16px;font-size:12px;font-weight:500;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-secondary);transition:all .15s;white-space:nowrap;">问题类型维度</button>
                   <button id="zbTabBrand"    onclick="zbSwitchDimTab('brand')"    style="padding:9px 16px;font-size:12px;font-weight:500;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-secondary);transition:all .15s;white-space:nowrap;">品牌维度</button>
                   <button id="zbTabModel"    onclick="zbSwitchDimTab('model')"    style="padding:9px 16px;font-size:12px;font-weight:500;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-secondary);transition:all .15s;white-space:nowrap;">型号维度</button>
+                  <button id="zbTabOrg"      onclick="zbSwitchDimTab('org')"      style="padding:9px 16px;font-size:12px;font-weight:500;border:none;background:transparent;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-secondary);transition:all .15s;white-space:nowrap;display:none;">组织维度</button>
                 </div>
                 <!-- 人维度内容区 -->
                 <div id="zbDimPanelPerson" style="padding:14px 16px;">
@@ -1493,6 +1494,18 @@
                     <div id="zbDimModelChartRight" style="height:320px;overflow-y:auto;padding:8px 0 8px 16px;border-left:0.5px solid var(--border-color);display:flex;flex-direction:column;justify-content:flex-start;box-sizing:border-box;"></div>
                   </div>
                   <div id="zbDimModelRoot"><div style="text-align:center;padding:24px;color:var(--text-secondary);font-size:13px;">点击排行榜站点后自动显示</div></div>
+                </div>
+                <div id="zbDimPanelOrg" style="display:none;padding:14px 16px;">
+                  <div id="zbDimOrgKpi"></div>
+                  <div style="font-size:11px;font-weight:500;color:var(--text-secondary);display:flex;align-items:center;gap:5px;margin-bottom:8px;">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                    组织分析
+                  </div>
+                  <div id="zbDimOrgChartWrap" style="display:grid;grid-template-columns:1fr 1fr;gap:16px;height:320px;margin-bottom:12px;align-items:stretch;overflow:hidden;">
+                    <div id="zbDimOrgChartLeft" style="width:100%;height:320px;padding:20px 40px;box-sizing:border-box;"></div>
+                    <div id="zbDimOrgChartRight" style="height:320px;overflow-y:auto;padding:8px 0 8px 16px;border-left:0.5px solid var(--border-color);display:flex;flex-direction:column;justify-content:flex-start;box-sizing:border-box;"></div>
+                  </div>
+                  <div id="zbDimOrgRoot"><div style="text-align:center;padding:24px;color:var(--text-secondary);font-size:13px;">点击排行榜站点后自动显示</div></div>
                 </div>
                 <div style="padding:0 16px 10px;font-size:11px;color:var(--text-secondary);display:none;"></div>
               </div>
@@ -8489,6 +8502,7 @@ function zbNavToSite(siteName) {
 }
 
 function zbRenderSiteDetail(siteName) {
+    window._zbCurrentSiteName = siteName; // for 一键培训
     // ── 口径辅助函数 ──
     window.zbGetScopeLabel = function(scope) {
         scope = scope || window._siteDataScope || 'exec';
@@ -8897,7 +8911,7 @@ function zbRenderSiteDetail(siteName) {
         });
         var _isDW4 = !!_dwPair4;
         var FIXED_CATS = _isDW4
-            ? ['手机-线体','手机-后验','手机-主板','笔记本','平板','手表','耳机']
+            ? ['手机-线体','手机-后验','笔记本','平板','手表','耳机']
             : ['手机','笔记本','平板','手表','耳机'];
         var CAT_COLORS_EXT = Object.assign({}, CAT_COLORS, {'手机-线体':'#2563eb','手机-后验':'#f59e0b','手机-主板':'#94a3b8'});
         var VIS_KEY4 = 'site4w_cat_vis__' + siteName;
@@ -9365,6 +9379,20 @@ function zbRenderSiteDetail(siteName) {
             zbRenderSiteIssueAnalysis(execDiff, siteIssueRoot);
         }
     }
+    // 组织维度 tab：仅大仓手机时显示
+    (function(){
+        var orgTabEl = document.getElementById('zbTabOrg');
+        if (!orgTabEl) return;
+        var _orgSiteType = (typeof zbGetSiteType==='function') ? zbGetSiteType(siteName) : '';
+        var isDWPhone = (_orgSiteType==='大仓' || _orgSiteType==='后验中心仓')
+                        && (!activeCat || activeCat.indexOf('手机')!==-1);
+        orgTabEl.style.display = isDWPhone ? '' : 'none';
+        // 如果当前正在看 org tab 但切换到了不支持的站点/品类，自动退回 person
+        if (!isDWPhone && window._zbDimTab === 'org') {
+            window._zbDimTab = 'person';
+            if (typeof zbSwitchDimTab === 'function') zbSwitchDimTab('person');
+        }
+    })();
     // v1.61F: 4 个新 tab 也按当前激活 tab 触发一次渲染（其它 tab 数据延迟到 zbSwitchDimTab 切换时才算）
     var activeTab = window._zbDimTab || 'person';
     var dimConf = window._ZB_DIM_TABS && window._ZB_DIM_TABS[activeTab];
@@ -10817,7 +10845,8 @@ window.zbRenderDimGeneric = function(dimField) {
         level1:    { panel:'zbDimPanelLevel1',    kpi:'zbDimLevel1Kpi',    root:'zbDimLevel1Root',    left:'zbDimLevel1ChartLeft',    right:'zbDimLevel1ChartRight',    label:'一级项',   getKey: function(d){ return (d.level1||'未知'); } },
         issueType: { panel:'zbDimPanelIssueType', kpi:'zbDimIssueTypeKpi', root:'zbDimIssueTypeRoot', left:'zbDimIssueTypeChartLeft', right:'zbDimIssueTypeChartRight', label:'问题类型', getKey: function(d){ return (d.issueType||d.judgedIssueType||'未知'); } },
         brand:     { panel:'zbDimPanelBrand',     kpi:'zbDimBrandKpi',     root:'zbDimBrandRoot',     left:'zbDimBrandChartLeft',     right:'zbDimBrandChartRight',     label:'品牌',     getKey: function(d){ return (d.brand||'未知'); } },
-        model:     { panel:'zbDimPanelModel',     kpi:'zbDimModelKpi',     root:'zbDimModelRoot',     left:'zbDimModelChartLeft',     right:'zbDimModelChartRight',     label:'型号',     getKey: function(d){ return (d.model||'未知'); } }
+        model:     { panel:'zbDimPanelModel',     kpi:'zbDimModelKpi',     root:'zbDimModelRoot',     left:'zbDimModelChartLeft',     right:'zbDimModelChartRight',     label:'型号',     getKey: function(d){ return (d.model||'未知'); } },
+        org:       { panel:'zbDimPanelOrg',       kpi:'zbDimOrgKpi',       root:'zbDimOrgRoot',       left:'zbDimOrgChartLeft',       right:'zbDimOrgChartRight',       label:'组织',     getKey: function(d){ return (d.inspectorOrg||'未知'); } }
     };
     var c = conf[dimField];
     if (!c) return;
@@ -10853,7 +10882,7 @@ window.zbRenderDimGeneric = function(dimField) {
     }
     // 渲染对比模式隐藏饼图区域（与三级项 tab 对比行为一致）
     var chartWrapEl = leftEl ? leftEl.parentNode : null;
-    if (chartWrapEl) chartWrapEl.style.display = isCompare ? 'none' : '';
+    if (chartWrapEl) chartWrapEl.style.display = isCompare ? 'none' : 'grid';
 
     // 3. 聚合
     function groupBy(rows) {
@@ -10901,12 +10930,15 @@ window.zbRenderDimGeneric = function(dimField) {
             var oldInst = echarts.getInstanceByDom(leftEl);
             if (oldInst) oldInst.dispose();
             var chart = echarts.init(leftEl);
-            var pieData = rows.map(function(r,i){ return { name:r.name, value:r.cnt, itemStyle:{color:COLORS[i%COLORS.length]} }; });
+            // Top 8 截断，其余合并为"其他"
+            var top8 = rows.slice(0, 8);
+            var otherCnt = rows.slice(8).reduce(function(s,r){ return s+r.cnt; }, 0);
+            var pieData = top8.map(function(r,i){ return { name:r.name, value:r.cnt, itemStyle:{color:COLORS[i%COLORS.length]} }; });
+            if (otherCnt > 0) pieData.push({ name:'其他', value:otherCnt, itemStyle:{color:'#cbd5e1'} });
             chart.setOption({
                 tooltip:{ trigger:'item', formatter:function(p){ return p.name+'<br/>'+p.value+'条 · '+p.percent+'%'; } },
-                series:[{ type:'pie', radius:['35%','62%'], center:['50%','50%'],
-                    // v1.61J: 加回 label/labelLine；用 alignTo:'edge' 强制贴 ChartLeft 容器边缘对齐 + labelLayout hideOverlap 自动避让重叠，配合 ChartWrap overflow:hidden 物理约束，标签不会溢出干扰下方表格
-                    label:{ show:true, fontSize:10, color:'#374151', overflow:'break', alignTo:'edge', edgeDistance:4, formatter:function(p){ return p.percent>=5?p.name+'\n'+p.percent+'%':''; } },
+                series:[{ type:'pie', radius:['0%','60%'], center:['50%','50%'],
+                    label:{ show:true, fontSize:10, color:'#374151', overflow:'break', formatter:function(p){ return p.percent>=5?p.name+'\n'+p.percent+'%':''; } },
                     labelLine:{ show:true, length:6, length2:4, smooth:true },
                     labelLayout:{ hideOverlap:true },
                     emphasis:{ scale:true, scaleSize:6 },
@@ -11071,7 +11103,8 @@ window._ZB_DIM_TABS = {
     level3:    { panel:'zbDimPanelLevel3',    btn:'zbTabLevel3',    chart:'zbIssueChartLeft',         render: null /* level3 沿用 zbRenderSiteIssueAnalysis */ },
     issueType: { panel:'zbDimPanelIssueType', btn:'zbTabIssueType', chart:'zbDimIssueTypeChartLeft',  render: 'issueType' },
     brand:     { panel:'zbDimPanelBrand',     btn:'zbTabBrand',     chart:'zbDimBrandChartLeft',      render: 'brand' },
-    model:     { panel:'zbDimPanelModel',     btn:'zbTabModel',     chart:'zbDimModelChartLeft',      render: 'model' }
+    model:     { panel:'zbDimPanelModel',     btn:'zbTabModel',     chart:'zbDimModelChartLeft',      render: 'model' },
+    org:       { panel:'zbDimPanelOrg',       btn:'zbTabOrg',       chart:'zbDimOrgChartLeft',         render: 'org' }
 };
 function zbSwitchDimTab(tab) {
     window._zbDimTab = tab;
@@ -12133,15 +12166,21 @@ function _zbWeekRanges() {
     function fmt(d){ var p=function(n){return (n<10?'0':'')+n;}; return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate()); }
     function lbl(d){ return (d.getMonth()+1)+'/'+d.getDate(); }
     var today = new Date();
-    var curEnd = new Date(today); curEnd.setDate(curEnd.getDate()-1);       // T-1
-    var curStart = new Date(curEnd); curStart.setDate(curStart.getDate()-6); // 本周：近7天（T-7 ~ T-1）
-    var lastEnd = new Date(curStart); lastEnd.setDate(lastEnd.getDate()-1);
-    var lastStart = new Date(lastEnd); lastStart.setDate(lastStart.getDate()-6); // 上周：再前7天
+    // 找到本周一（自然周 Mon-Sun）
+    var dow = today.getDay();
+    var daysToMon = dow === 0 ? 6 : dow - 1;
+    var thisMon = new Date(today); thisMon.setDate(today.getDate() - daysToMon);
+    // 本周 = 上一个完整自然周（上周一~上周日）
+    var curMon = new Date(thisMon); curMon.setDate(thisMon.getDate() - 7);
+    var curSun = new Date(curMon); curSun.setDate(curMon.getDate() + 6);
+    // 上周 = 再前一个完整自然周
+    var lastMon = new Date(thisMon); lastMon.setDate(thisMon.getDate() - 14);
+    var lastSun = new Date(lastMon); lastSun.setDate(lastMon.getDate() + 6);
     return {
-        curStart: fmt(curStart), curEnd: fmt(curEnd),
-        lastStart: fmt(lastStart), lastEnd: fmt(lastEnd),
-        curLabel: lbl(curStart)+'–'+lbl(curEnd),
-        lastLabel: lbl(lastStart)+'–'+lbl(lastEnd)
+        curStart: fmt(curMon), curEnd: fmt(curSun),
+        lastStart: fmt(lastMon), lastEnd: fmt(lastSun),
+        curLabel: lbl(curMon)+'–'+lbl(curSun),
+        lastLabel: lbl(lastMon)+'–'+lbl(lastSun)
     };
 }
 
@@ -12170,7 +12209,7 @@ function _zbWeeklyDedupMaps(data, groupField, r) {
 // 生成单张周报对比表（5列：名称/上周差异数量/本周差异数量/变化/原因分析）
 function _zbBuildWeeklyReportTable(opts) {
     var widths = [150, 205, 197, 62, 317];
-    var FONT = "font-family:'KaiTi','楷体',serif;font-size:11pt;";
+    var FONT = "font-family:'PingFang SC','Microsoft YaHei',system-ui,sans-serif;font-size:11pt;";
     var tableStyle = 'border-collapse:collapse;'+FONT;
     var th  = 'padding:6px 10px;background:#f8fafc;color:#374151;font-weight:600;text-align:center;border:1px solid #d1d5db;';
     var thL = th.replace('text-align:center','text-align:left');
@@ -12286,6 +12325,261 @@ async function zbGenerateWeeklyReport() {
         showToast('✓ 已复制周报表格，可粘贴到 Word/企微');
     } catch(e) {
         showToast('❌ 复制失败：'+e.message);
+    }
+}
+
+// ── 大仓手机培训师周报 ─────────────────────────────────────────────────
+
+function _zbTRSiteType(site) {
+    if (!site) return null;
+    if (site.includes('智能验机')) return 'dw';
+    if (site.includes('后验'))   return 'hy';
+    return null;
+}
+
+function _zbTRCalcIssueBreakdown(siteType, from, to) {
+    var D = window._DATA; if (!D) return {total:0,exec:0,craft:0,sop:0,hidden:0,other:0};
+    var sf = function(s){ return siteType==='dw'?s&&s.includes('智能验机'):siteType==='hy'?s&&s.includes('后验'):true; };
+    var KNOWN = ['执行问题','工艺问题','SOP问题','隐性问题'];
+    var allCodes = new Set(), byType = {};
+    (D.diff5||[]).forEach(function(d){
+        if (d.cat!=='手机'||!sf(d.site)) return;
+        if (!d.date||d.date<from||d.date>to) return;
+        if (!d.subjobj||!d.subjobj.includes('客观')) return;
+        if (!d.code) return;
+        allCodes.add(d.code);
+        var jt = d.judgedType||'';
+        if (KNOWN.includes(jt)){ if(!byType[jt])byType[jt]=new Set(); byType[jt].add(d.code); }
+    });
+    var exec = (byType['执行问题']||new Set()).size;
+    var craft= (byType['工艺问题']||new Set()).size;
+    var sop  = (byType['SOP问题'] ||new Set()).size;
+    var hidden=(byType['隐性问题']||new Set()).size;
+    var total = allCodes.size;
+    var other = Math.max(0, total - exec - craft - sop - hidden);
+    return {total:total, exec:exec, craft:craft, sop:sop, hidden:hidden, other:other};
+}
+
+function _zbTRCalcRate(siteType, from, to) {
+    var D = window._DATA; if (!D) return {checks:0, codes:0, rate:null};
+    var sf = function(s){ return siteType==='dw'?s&&s.includes('智能验机'):siteType==='hy'?s&&s.includes('后验'):true; };
+    var checks = (D.qa||[]).filter(function(x){ return x.cat==='手机'&&sf(x.site)&&x.date>=from&&x.date<=to; })
+                            .reduce(function(s,x){ return s+(x.checks||0); }, 0);
+    var codes = new Set((D.diff5||[]).filter(function(x){
+        return x.cat==='手机'&&sf(x.site)&&x.subjobj&&x.subjobj.includes('客观')&&x.judgedType==='执行问题'&&x.date>=from&&x.date<=to&&x.code;
+    }).map(function(x){ return x.code; }));
+    return {checks:checks, codes:codes.size, rate:checks>0?codes.size/checks*100:null};
+}
+
+function _zbTRBuildTable(siteType, r, groupField) {
+    var D = window._DATA; if (!D) return {cur:{},last:{}};
+    var sf = function(s){ return siteType==='dw'?s&&s.includes('智能验机'):siteType==='hy'?s&&s.includes('后验'):true; };
+    var curS={}, lastS={};
+    (D.diff5||[]).forEach(function(d){
+        if (d.cat!=='手机'||!sf(d.site)) return;
+        if (!d.subjobj||!d.subjobj.includes('客观')) return;
+        if (!d.code) return;
+        var k = d[groupField]||'未知';
+        if (d.date>=r.curStart&&d.date<=r.curEnd){ if(!curS[k])curS[k]=new Set(); curS[k].add(d.code); }
+        if (d.date>=r.lastStart&&d.date<=r.lastEnd){ if(!lastS[k])lastS[k]=new Set(); lastS[k].add(d.code); }
+    });
+    var cur={}, last={};
+    Object.keys(curS).forEach(function(k){ cur[k]=curS[k].size; });
+    Object.keys(lastS).forEach(function(k){ last[k]=lastS[k].size; });
+    return {cur:cur, last:last};
+}
+
+function _zbTRRenderTable(maps, nameLabel, curLabel, lastLabel) {
+    var S = {
+        t:  'border-collapse:collapse;width:100%;font-family:\'PingFang SC\',\'Microsoft YaHei\',sans-serif;font-size:12px;',
+        th: 'padding:6px 10px;background:#f1f5f9;color:#374151;font-weight:600;text-align:center;border:1px solid #cbd5e1;',
+        thL:'padding:6px 10px;background:#f1f5f9;color:#374151;font-weight:600;text-align:left;border:1px solid #cbd5e1;',
+        td: 'padding:5px 10px;text-align:center;border:1px solid #e2e8f0;',
+        tdL:'padding:5px 10px;text-align:left;border:1px solid #e2e8f0;',
+        scC:'padding:5px 10px;background:#dbeafe;color:#1e40af;font-weight:600;border:1px solid #bfdbfe;text-align:left;',
+        scL:'padding:5px 10px;background:#dcfce7;color:#166534;font-weight:600;border:1px solid #bbf7d0;text-align:left;',
+    };
+    function delta(n){
+        var txt=n>0?'↑ +'+n:n<0?'↓ '+n:'—';
+        var col=n>0?'color:#dc2626;font-weight:600;':n<0?'color:#16a34a;font-weight:600;':'color:#9ca3af;';
+        return '<td style="'+S.td+'"><span style="'+col+'">'+txt+'</span></td>';
+    }
+    var curList = Object.keys(maps.cur).map(function(n){ return {name:n,cur:maps.cur[n],last:maps.last[n]||0}; });
+    curList.sort(function(a,b){ return b.cur-a.cur||b.last-a.last; });
+    var lastOnly = Object.keys(maps.last).filter(function(n){ return !maps.cur[n]; })
+                         .map(function(n){ return {name:n,cur:0,last:maps.last[n]}; });
+    lastOnly.sort(function(a,b){ return b.last-a.last; });
+
+    var html = '<table style="'+S.t+'"><tr><th style="'+S.thL+'">'+nameLabel+'</th>'
+        +'<th style="'+S.th+'">上周（'+lastLabel+'）</th>'
+        +'<th style="'+S.th+'">本周（'+curLabel+'）</th>'
+        +'<th style="'+S.th+'">变化</th></tr>';
+    if (curList.length) {
+        html += '<tr><td colspan="4" style="'+S.scC+'">本周失误明细 · '+curLabel+'</td></tr>';
+        curList.forEach(function(r){
+            html += '<tr><td style="'+S.tdL+'">'+r.name+'</td><td style="'+S.td+'">'+(r.last||'—')+'</td><td style="'+S.td+'">'+r.cur+'</td>'+delta(r.cur-r.last)+'</tr>';
+        });
+    }
+    if (lastOnly.length) {
+        html += '<tr><td colspan="4" style="'+S.scL+'">上周失误·本周已清零 · '+lastLabel+'</td></tr>';
+        lastOnly.forEach(function(r){
+            html += '<tr><td style="'+S.tdL+'">'+r.name+'</td><td style="'+S.td+'">'+r.last+'</td><td style="'+S.td+'">—</td>'+delta(-r.last)+'</tr>';
+        });
+    }
+    if (!curList.length&&!lastOnly.length) {
+        html += '<tr><td colspan="4" style="'+S.tdL+'text-align:center;color:#9ca3af;">暂无数据</td></tr>';
+    }
+    html += '</table>';
+    return html;
+}
+
+function _zbTREditable(placeholder) {
+    return '<span contenteditable="true" style="display:inline-block;min-width:120px;min-height:1em;border-bottom:1px dashed #94a3b8;color:#374151;outline:none;padding:0 2px;" data-placeholder="'+placeholder+'">'+placeholder+'</span>';
+}
+
+function _zbTREditableBlock(placeholder) {
+    return '<div contenteditable="true" style="min-height:1.5em;border-bottom:1px dashed #94a3b8;color:#94a3b8;outline:none;padding:2px 4px;margin:2px 0;" data-ph="'+placeholder+'">'+placeholder+'</div>';
+}
+
+async function zbGenerateTrainerReport() {
+    var D = window._DATA;
+    if (!D) { showToast('❌ 数据未加载，请先导入 Excel'); return; }
+
+    var r = _zbWeekRanges();
+
+    // 计算数据
+    var dwCur  = _zbTRCalcIssueBreakdown('dw', r.curStart,  r.curEnd);
+    var hyCur  = _zbTRCalcIssueBreakdown('hy', r.curStart,  r.curEnd);
+    var allCurRate  = _zbTRCalcRate('all', r.curStart,  r.curEnd);
+    var allLastRate = _zbTRCalcRate('all', r.lastStart, r.lastEnd);
+
+    var dwL3   = _zbTRBuildTable('dw', r, 'level3');
+    var dwPer  = _zbTRBuildTable('dw', r, 'person');
+    var hyL3   = _zbTRBuildTable('hy', r, 'level3');
+    var hyPer  = _zbTRBuildTable('hy', r, 'person');
+
+    function fRate(v){ return v!==null ? v.toFixed(2)+'%' : '—'; }
+    function fChange(cur, last){
+        if(cur===null||last===null) return '—';
+        var d=cur-last;
+        if(Math.abs(d)<0.001) return '持平';
+        return (d>0?'↑':'↓')+Math.abs(d).toFixed(2)+'%';
+    }
+    function fIssue(bd){
+        return '客观问题共 <b>'+bd.total+'</b> 例，执行问题 <b>'+bd.exec+'</b> 例，工艺问题 <b>'+bd.craft+'</b> 例，SOP问题 <b>'+bd.sop+'</b> 例，隐性问题 <b>'+bd.hidden+'</b> 例，其他问题 <b>'+bd.other+'</b> 例';
+    }
+
+    var F  = 'font-family:\'PingFang SC\',\'Microsoft YaHei\',sans-serif;';
+    var RED= 'color:#c0392b;font-weight:700;';
+    var H1 = 'style="'+F+'font-size:16px;font-weight:700;color:#1e293b;margin:0 0 12px;"';
+    var H2 = 'style="'+F+'font-size:14px;'+RED+'margin:18px 0 6px;border-left:4px solid #c0392b;padding-left:8px;"';
+    var H3 = 'style="'+F+'font-size:13px;'+RED+'margin:12px 0 4px;"';
+    var P  = 'style="'+F+'font-size:12px;color:#374151;margin:4px 0 8px;line-height:1.8;"';
+    var LABEL = 'style="'+F+'font-size:12px;'+RED+'display:inline;"';
+
+    var editStyle = 'display:inline-block;min-width:200px;min-height:1.2em;color:#374151;outline:none;border-bottom:1px dashed #aaa;padding:0 3px;';
+    var blockStyle = 'display:block;min-height:1.5em;color:#9ca3af;outline:none;border-bottom:1px dashed #d1d5db;padding:2px 4px;margin:2px 0;font-size:12px;';
+
+    function editable(ph){ return '<span contenteditable="true" style="'+editStyle+'">'+ph+'</span>'; }
+    function block(ph){ return '<div contenteditable="true" style="'+blockStyle+'">'+ph+'</div>'; }
+
+    var html = '<div id="zbTRReport" style="'+F+'font-size:12px;color:#1e293b;max-width:860px;line-height:1.7;padding:4px;">'
+        + '<div '+H1+'>大仓手机品类培训师周报</div>'
+
+        // ── 一、目标达成 ──
+        + '<div '+H2+'>本周目标达成情况与分析</div>'
+        + '<div '+H3+'>QA差异率（大仓手机+后验手机）</div>'
+        + '<div '+P+'>'
+        + '<span '+LABEL+'>结果环比：</span>'
+        + ' 本周 <b>'+fRate(allCurRate.rate)+'</b>，上周 <b>'+fRate(allLastRate.rate)+'</b>，环比 <b>'+fChange(allCurRate.rate,allLastRate.rate)+'</b>'
+        + '</div>'
+        + '<div '+P+'><span '+LABEL+'>具体原因：</span>'+editable('请填写原因')+'</div>'
+
+        // 大仓手机分析
+        + '<div '+H3+'>大仓手机分析</div>'
+        + '<div '+P+'>'+fIssue(dwCur)+'；</div>'
+        + '<div style="margin:6px 0 4px;"><b style="font-size:11px;color:#64748b;">三级项维度（本周 '+r.curLabel+' vs 上周 '+r.lastLabel+'）</b></div>'
+        + _zbTRRenderTable(dwL3, '三级项名称', r.curLabel, r.lastLabel)
+        + '<div style="margin:10px 0 4px;"><b style="font-size:11px;color:#64748b;">操作人维度</b></div>'
+        + _zbTRRenderTable(dwPer, '操作人', r.curLabel, r.lastLabel)
+
+        // 后验手机分析
+        + '<div '+H3+'>后验手机分析</div>'
+        + '<div '+P+'>'+fIssue(hyCur)+'；</div>'
+        + '<div style="margin:6px 0 4px;"><b style="font-size:11px;color:#64748b;">三级项维度</b></div>'
+        + _zbTRRenderTable(hyL3, '三级项名称', r.curLabel, r.lastLabel)
+        + '<div style="margin:10px 0 4px;"><b style="font-size:11px;color:#64748b;">操作人维度</b></div>'
+        + _zbTRRenderTable(hyPer, '操作人', r.curLabel, r.lastLabel)
+
+        // 下周解决动作
+        + '<div '+H3+'>下周解决动作：</div>'
+        + '<div '+P+'><span '+LABEL+'>动作一：</span>'+editable('请填写')+'</div>'
+        + '<div '+P+'><span '+LABEL+'>动作二：</span>'+editable('请填写')+'</div>'
+        + '<div '+P+'><span '+LABEL+'>动作三：</span>'+editable('请填写')+'</div>'
+
+        // 客观因素
+        + '<div '+H3+'>差异导致客观因素（工艺/业务/质检）：</div>'
+        + '<div '+P+'><span '+LABEL+'>因素一：</span>'+editable('请填写')+'</div>'
+        + '<div '+P+'><span '+LABEL+'>因素二：</span>'+editable('请填写')+'</div>'
+
+        // 拆机错误率
+        + '<div '+H3+'>拆机错误率分析：</div>'
+        + '<div '+P+'>'+editable('请填写分析内容')+'</div>'
+        + '<div '+H3+'>解决动作</div>'
+        + '<div '+P+'><span '+LABEL+'>动作一：</span>'+editable('请填写')+'</div>'
+        + '<div '+P+'><span '+LABEL+'>动作二：</span>'+editable('请填写')+'</div>'
+
+        // ── 二、常规工作 ──
+        + '<div '+H2+'>常规工作开展情况</div>'
+        + '<div '+P+'><span '+LABEL+'>每日一题：</span>'+editable('请填写')+'</div>'
+        + '<div '+P+'><span '+LABEL+'>培训开展：</span>'+editable('请填写')+'</div>'
+
+        // ── 三、下周重点 ──
+        + '<div '+H2+'>下周重点工作</div>'
+        + '<div '+P+'><span '+LABEL+'>授课排班：</span>'+editable('请填写')+'</div>'
+        + '<div '+P+'><span '+LABEL+'>其他工作：</span>'+editable('请填写')+'</div>'
+        + '<div '+P+'><span '+LABEL+'>信息同步/问题反馈：</span>'+editable('请填写')+'</div>'
+
+        + '</div>';
+
+    // ── 弹窗 ──
+    var modal = document.getElementById('zbTRModal');
+    if (!modal) {
+        modal = document.createElement('div');
+        modal.id = 'zbTRModal';
+        modal.style.cssText = 'display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:1300;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 12px;';
+        modal.innerHTML = '<div style="background:#fff;border-radius:12px;width:900px;max-width:98vw;box-shadow:0 20px 60px rgba(0,0,0,.2);overflow:hidden;">'
+            + '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid #f3f4f6;position:sticky;top:0;background:#fff;z-index:1;">'
+            + '<div style="font-size:14px;font-weight:600;color:#111827;">大仓手机品类培训师周报</div>'
+            + '<div style="display:flex;gap:8px;">'
+            + '<button onclick="zbTRCopy()" style="padding:6px 16px;border:none;border-radius:6px;background:#2563eb;color:#fff;font-size:12px;font-weight:500;cursor:pointer;">复制到飞书</button>'
+            + '<span onclick="document.getElementById(\'zbTRModal\').style.display=\'none\'" style="color:#9ca3af;cursor:pointer;font-size:22px;line-height:1;">&times;</span>'
+            + '</div></div>'
+            + '<div id="zbTRContent" style="padding:20px 24px;overflow-y:auto;"></div>'
+            + '</div>';
+        modal.onclick = function(e){ if(e.target===modal) modal.style.display='none'; };
+        document.body.appendChild(modal);
+    }
+
+    document.getElementById('zbTRContent').innerHTML = html;
+    modal.style.display = 'flex';
+}
+
+async function zbTRCopy() {
+    var report = document.getElementById('zbTRReport');
+    if (!report) return;
+    try {
+        var blob = new Blob([report.outerHTML], { type: 'text/html' });
+        await navigator.clipboard.write([new ClipboardItem({ 'text/html': blob })]);
+        showToast('✅ 已复制，粘贴到飞书即可');
+    } catch(e) {
+        // fallback: select all
+        var range = document.createRange();
+        range.selectNode(report);
+        window.getSelection().removeAllRanges();
+        window.getSelection().addRange(range);
+        try { document.execCommand('copy'); showToast('✅ 已复制'); } catch(e2){ showToast('❌ 复制失败，请手动 Ctrl+A 复制'); }
+        window.getSelection().removeAllRanges();
     }
 }
 
@@ -15005,11 +15299,47 @@ window.zbDoExport = function() {
 
 <script>
 // ─────────────────────────────────────────────────────────────
-// 企业微信播报功能  v1.61M
+// 飞书播报功能  v1.62B
 // ─────────────────────────────────────────────────────────────
-const ZB_BC_WEBHOOK = 'https://1423465873-fdowo5a5wb.ap-guangzhou.tencentscf.com';
-const ZB_BC_TEXT      = '数据异常请及时反馈王晨辉修改，看板BUG请反馈王礼宇\n查看完整看板 → https://zhuanzhuan.tw.cn';  // 管理员播报
-const ZB_BC_TEXT_SITE = '数据异常请及时反馈区域培训师\n查看完整看板 → https://zhuanzhuan.tw.cn';               // 站点播报
+const ZB_BC_PROXY = 'https://1423465873-fdowo5a5wb.ap-guangzhou.tencentscf.com';
+const ZB_BC_TEXT      = '数据异常请及时反馈王晨辉修改，看板BUG请反馈王礼宇\n查看完整看板 → https://zhuanzhuan.tw.cn';
+const ZB_BC_TEXT_SITE = '数据异常请及时反馈区域培训师\n查看完整看板 → https://zhuanzhuan.tw.cn';
+
+async function _zbBcUploadImgToCos(b64) {
+    await window.zbEnsureCosSdk();
+    var sts = await zbGetSts();
+    var byteStr = atob(b64), bytes = new Uint8Array(byteStr.length);
+    for (var i = 0; i < byteStr.length; i++) bytes[i] = byteStr.charCodeAt(i);
+    var blob = new Blob([bytes], {type: 'image/png'});
+    var cosKey = 'bc-images/' + Date.now() + '.png';
+    return new Promise(function(resolve, reject) {
+        if (!window.COS) { reject(new Error('COS SDK未加载')); return; }
+        var cos = new window.COS({ getAuthorization: function(opt, cb) {
+            cb({ TmpSecretId: sts.tmpSecretId, TmpSecretKey: sts.tmpSecretKey,
+                 SecurityToken: sts.sessionToken, ExpiredTime: sts.expiredTime, StartTime: sts.startTime });
+        }});
+        cos.uploadFile({ Bucket: ZB_IMG.bucket, Region: ZB_IMG.region, Key: cosKey, Body: blob, onProgress: function(){} },
+            function(err) {
+                if (err) { reject(new Error('图片上传失败: ' + (err.message || JSON.stringify(err)))); return; }
+                resolve(ZB_IMG.cosBase + '/' + cosKey);
+            });
+    });
+}
+
+async function _zbBcSendFeishu(feishuUrl, cosImageUrl, text, title) {
+    var imgLine = cosImageUrl ? '![播报图](' + cosImageUrl + ')\n' : '';
+    var card = {
+        elements: [{ tag: 'markdown', content: imgLine + text }],
+        header: { template: 'red', title: { tag: 'plain_text', content: title } }
+    };
+    var r = await fetch(ZB_BC_PROXY, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ _feishuurl: feishuUrl, msg_type: 'interactive', card: JSON.stringify(card) })
+    });
+    var d = await r.json();
+    if (d.code !== 0) throw new Error(d.msg || '飞书响应 code=' + d.code);
+}
 
 // ── 日期工具 ──
 function _zbBcFmt(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
@@ -15675,7 +16005,7 @@ function zbSiteBcOpen() {
     if (d1) d1.textContent = _zbBcYesterday();
 
     // Load key: localStorage first, then cloud
-    var lsKey = 'zbSiteWxKey_' + keyName;
+    var lsKey = 'zbSiteFeishuUrl_' + keyName;
     var inp = document.getElementById('zbSiteBcKeyInput');
     if (inp) {
         var saved = ''; try{ saved=localStorage.getItem(lsKey)||''; }catch(e){}
@@ -15723,7 +16053,7 @@ async function zbSiteBcSaveKey() {
     if (!keyName || !val) return;
 
     // 先存本地
-    try{ localStorage.setItem('zbSiteWxKey_'+keyName, val); }catch(e){}
+    try{ localStorage.setItem('zbSiteFeishuUrl_'+keyName, val); }catch(e){}
 
     var hint = document.getElementById('zbSiteBcKeySavedHint');
     var btn  = document.getElementById('zbSiteBcSaveKeyBtn');
@@ -15779,27 +16109,22 @@ async function zbSiteBcConfirmSend() {
         if (data.total === 0) { if(typeof showToast==='function') showToast('⚠️ 未找到昨日操作人数据'); return; }
         if(typeof showToast==='function') showToast('生成播报图...');
         var b64 = zbSiteBcDrawCanvas(data);
-        var binStr=atob(b64), bytes=new Uint8Array(binStr.length);
-        for(var i=0;i<binStr.length;i++) bytes[i]=binStr.charCodeAt(i);
-        var md5 = _zbMd5(bytes);
         var modal = document.getElementById('zbSiteBcModal');
         var keyName = modal ? modal.dataset.keyName : '';
-        var wxKey = ''; try{ wxKey=localStorage.getItem('zbSiteWxKey_'+keyName)||''; }catch(e){}
-        if (!wxKey) { wxKey = (window._zbSiteBcKeys||{})[keyName]||''; }
-        if (!wxKey) {
+        var feishuUrl = ''; try{ feishuUrl=localStorage.getItem('zbSiteFeishuUrl_'+keyName)||''; }catch(e){}
+        if (!feishuUrl) { feishuUrl = (window._zbSiteBcKeys||{})[keyName]||''; }
+        if (!feishuUrl) {
             zbSiteBcToggleKey();
-            if(typeof showToast==='function') showToast('❌ 请先配置 Webhook Key');
+            if(typeof showToast==='function') showToast('❌ 请先配置飞书 Webhook URL');
             return;
         }
+        if(typeof showToast==='function') showToast('上传播报图...');
+        var cosUrl = await _zbBcUploadImgToCos(b64);
         if(typeof showToast==='function') showToast('发送中...');
-        var r1 = await fetch(ZB_BC_WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({_wxkey:wxKey,msgtype:'image',image:{base64:b64,md5:md5}})});
-        var d1 = await r1.json();
-        if(d1.errcode!==0) throw new Error('图片发送失败：'+d1.errmsg);
-        var r2 = await fetch(ZB_BC_WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({_wxkey:wxKey,msgtype:'markdown',markdown:{content:ZB_BC_TEXT_SITE}})});
-        var d2 = await r2.json();
-        if(d2.errcode!==0) throw new Error('文字发送失败：'+d2.errmsg);
+        var siteName = site + ' · ' + (cat==='手机'?'手机品类':'四品类');
+        await _zbBcSendFeishu(feishuUrl, cosUrl, ZB_BC_TEXT_SITE, '站点播报 · ' + siteName);
         zbSiteBcClose();
-        if(typeof showToast==='function') showToast('✅ 站点播报已发送');
+        if(typeof showToast==='function') showToast('✅ 站点播报已发送到飞书');
     } catch(e) {
         if(typeof showToast==='function') showToast('❌ 发送失败：'+e.message);
     } finally {
@@ -15816,13 +16141,12 @@ function zbBcToggleKeyConfig(){
     if(arr)arr.style.transform=open?'rotate(180deg)':'';
     if(open){
         var inp=document.getElementById('zbBcKeyInput');
-        try{ if(inp)inp.value=localStorage.getItem('zbWxWebhookKey')||''; }catch(e){}
-        // 尝试从云端加载 broadcast_config.json，若有 wxkey 则自动填入
+        try{ if(inp)inp.value=localStorage.getItem('zbFeishuUrl')||''; }catch(e){}
         if(inp&&!inp.value){
             fetch(ghRaw(GH_FILES.bcConfig)).then(function(r){return r.ok?r.json():null;}).then(function(cfg){
-                if(cfg&&cfg.wxkey){
-                    inp.value=cfg.wxkey;
-                    try{localStorage.setItem('zbWxWebhookKey',cfg.wxkey);}catch(e){}
+                if(cfg&&cfg.feishuurl){
+                    inp.value=cfg.feishuurl;
+                    try{localStorage.setItem('zbFeishuUrl',cfg.feishuurl);}catch(e){}
                 }
             }).catch(function(){});
         }
@@ -15831,7 +16155,7 @@ function zbBcToggleKeyConfig(){
 function zbBcSaveKey(){
     var val=(document.getElementById('zbBcKeyInput')||{}).value||'';
     val=val.trim();
-    try{ localStorage.setItem('zbWxWebhookKey',val); }catch(e){}
+    try{ localStorage.setItem('zbFeishuUrl',val); }catch(e){}
     var hint=document.getElementById('zbBcKeySavedHint');
     if(hint){hint.style.display='block';setTimeout(function(){hint.style.display='none';},2000);}
 }
@@ -15858,27 +16182,21 @@ async function zbBcConfirmSend(){
         var periodLabel=(from===to?from:from+' ~ '+to)+'  '+modeLabel;
         if(typeof showToast==='function')showToast('生成播报图...');
         var b64=zbBcDrawCanvas(data,periodLabel,changeLabel);
-        var binStr=atob(b64),bytes2=new Uint8Array(binStr.length);
-        for(var i=0;i<binStr.length;i++)bytes2[i]=binStr.charCodeAt(i);
-        var md5=_zbMd5(bytes2);
-        var wxKey='';
-        try{ wxKey=localStorage.getItem('zbWxWebhookKey')||''; }catch(e){}
-        if(!wxKey){
+        var feishuUrl='';
+        try{ feishuUrl=localStorage.getItem('zbFeishuUrl')||''; }catch(e){}
+        if(!feishuUrl){
             var cfg=document.getElementById('zbBcKeyConfig'),arr2=document.getElementById('zbBcKeyArrow');
             if(cfg)cfg.style.display='block';
             if(arr2)arr2.style.transform='rotate(180deg)';
-            if(typeof showToast==='function')showToast('❌ 请先配置 Webhook Key');
+            if(typeof showToast==='function')showToast('❌ 请先配置飞书 Webhook URL');
             return;
         }
+        if(typeof showToast==='function')showToast('上传播报图...');
+        var cosUrl=await _zbBcUploadImgToCos(b64);
         if(typeof showToast==='function')showToast('发送中...');
-        var r1=await fetch(ZB_BC_WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({_wxkey:wxKey,msgtype:'image',image:{base64:b64,md5:md5}})});
-        var d1=await r1.json();
-        if(d1.errcode!==0)throw new Error('图片发送失败：'+d1.errmsg);
-        var r2=await fetch(ZB_BC_WEBHOOK,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({_wxkey:wxKey,msgtype:'markdown',markdown:{content:ZB_BC_TEXT}})});
-        var d2=await r2.json();
-        if(d2.errcode!==0)throw new Error('文字发送失败：'+d2.errmsg);
+        await _zbBcSendFeishu(feishuUrl, cosUrl, ZB_BC_TEXT, '质执播报 · '+modeLabel);
         zbBcCloseModal();
-        if(typeof showToast==='function')showToast('✅ 播报已发送到企业微信群');
+        if(typeof showToast==='function')showToast('✅ 播报已发送到飞书群');
     }catch(e){
         if(typeof showToast==='function')showToast('❌ 发送失败：'+e.message);
     }finally{
@@ -16031,9 +16349,9 @@ function _zbBcUpdateVisibility(){
         <span id="zbBcKeyArrow" style="font-size:10px;color:#9ca3af;transition:transform .15s;">▼</span>
       </div>
       <div id="zbBcKeyConfig" style="display:none;padding:8px 0 0;">
-        <div style="font-size:11px;color:#6b7280;margin-bottom:5px;">企业微信 Webhook Key（URL 中 key= 后面那串）</div>
+        <div style="font-size:11px;color:#6b7280;margin-bottom:5px;">飞书群机器人 Webhook URL</div>
         <div style="display:flex;gap:6px;">
-          <input type="text" id="zbBcKeyInput" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+          <input type="text" id="zbBcKeyInput" placeholder="https://open.feishu.cn/open-apis/bot/v2/hook/..."
                  style="flex:1;border:1px solid #d1d5db;border-radius:5px;padding:5px 8px;font-size:11px;color:#374151;outline:none;min-width:0;">
           <button onclick="zbBcSaveKey()" style="padding:5px 12px;border:none;border-radius:5px;background:#2563eb;color:#fff;font-size:11px;cursor:pointer;white-space:nowrap;">保存</button>
         </div>
@@ -16078,16 +16396,15 @@ function _zbBcUpdateVisibility(){
         <span id="zbSiteBcKeyArrow" style="font-size:10px;color:#9ca3af;transition:transform .15s;">▼</span>
       </div>
       <div id="zbSiteBcKeyConfig" style="display:none;padding:8px 0 0;">
-        <div style="font-size:11px;color:#6b7280;margin-bottom:5px;">企业微信 Webhook Key（URL 中 key= 后面那串）</div>
+        <div style="font-size:11px;color:#6b7280;margin-bottom:5px;">飞书群机器人 Webhook URL（本站专属）</div>
         <div style="display:flex;gap:6px;">
-          <input type="text" id="zbSiteBcKeyInput" placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+          <input type="text" id="zbSiteBcKeyInput" placeholder="https://open.feishu.cn/open-apis/bot/v2/hook/..."
                  style="flex:1;border:1px solid #d1d5db;border-radius:5px;padding:5px 8px;font-size:11px;color:#374151;outline:none;min-width:0;">
           <button id="zbSiteBcSaveKeyBtn" onclick="zbSiteBcSaveKey()" style="padding:5px 12px;border:none;border-radius:5px;background:#2563eb;color:#fff;font-size:11px;cursor:pointer;white-space:nowrap;">保存</button>
         </div>
         <div id="zbSiteBcKeySavedHint" style="font-size:10px;color:#16a34a;margin-top:4px;display:none;"></div>
         <div style="font-size:10px;color:#94a3b8;margin-top:6px;line-height:1.6;">
-          中心仓：每个站点独立 key<br>
-          大仓：手机品类和四品类各一个 key
+          每个站点群配置独立的 Webhook URL
         </div>
       </div>
     </div>
@@ -16634,6 +16951,696 @@ window.wcApply = function() {
 };
 
 })();
+
+// ════════════════════════════════════════════════════════════
+// 一键培训 PPT 生成系统 v1.62A
+// ════════════════════════════════════════════════════════════
+
+window._ZB_DW_PAIRS = [
+    { line: '转转-成都智能验机中心', post: '成都后验中心仓', city: '成都' },
+    { line: '转转-深圳智能验机中心', post: '深圳后验中心仓', city: '深圳' },
+    { line: '转转-青岛智能验机中心', post: '青岛后验中心仓', city: '青岛' }
+];
+
+// 懒加载 PptxGenJS
+window.zbLoadPptxGenJS = function() {
+    return window.zbLoadScript('https://cdn.jsdelivr.net/npm/pptxgenjs@3.12.0/dist/pptxgen.bundle.js');
+};
+
+// 差异率 → 颜色信息
+function _zbRateInfo(rate) {
+    if (!rate || rate <= 0)  return { hex: '94A3B8', label: '零差异',  bg: 'F8FAFC' };
+    if (rate >= 0.01)        return { hex: 'E8433A', label: '重点关注', bg: 'FFF0EF' };
+    if (rate >= 0.005)       return { hex: 'D97706', label: '留意',    bg: 'FFFBEB' };
+    return                          { hex: '059669', label: '良好',    bg: 'ECFDF5' };
+}
+
+// 日期偏移
+function _zbDate(offset) {
+    var d = new Date(); d.setDate(d.getDate() + offset);
+    return d.toISOString().split('T')[0];
+}
+
+// 执行口径过滤
+function _zbExecFilter(d) {
+    if (typeof window.isObjective === 'function' && typeof window.isExecutionIssue === 'function')
+        return window.isObjective(d.category) && window.isExecutionIssue(d.judgedIssueType);
+    return true;
+}
+
+// 获取大仓配对
+function _zbDWPair(siteName) {
+    return (window._ZB_DW_PAIRS || []).find(function(p){ return p.line===siteName||p.post===siteName; })||null;
+}
+
+// 城市名（前2字）
+function _zbCity(siteName) {
+    var s = siteName.replace('转转-','');
+    return s.slice(0,2);
+}
+
+// 某站点某品类某日指标
+function _zbCatMetrics(site, cat, date) {
+    var allDiff = window._allDiffData || [];
+    var DATA = window._DATA || {};
+    var siteType = typeof zbGetSiteType==='function' ? zbGetSiteType(site) : '中心仓';
+    var isDW = siteType==='大仓'||siteType==='后验中心仓';
+    var diff = allDiff.filter(function(d){ return d.warehouse===site && d.cat===cat && d.date===date && _zbExecFilter(d); });
+    var checks = 0;
+    if (cat==='手机') {
+        checks = (DATA.qa||[]).filter(function(r){ return r.site===site&&r.cat===cat&&r.date===date; })
+            .reduce(function(s,r){ return s+(r.checks||0); },0);
+    } else if (isDW) {
+        checks = (DATA.dw4sum||[]).filter(function(r){ return r.site===site&&r.cat===cat&&r.date===date; })
+            .reduce(function(s,r){ return s+(r.checks||0); },0);
+    } else {
+        checks = (DATA.sum||[]).filter(function(r){ return r.site===site&&r.cat===cat&&r.date===date; })
+            .reduce(function(s,r){ return s+(r.checks||0); },0);
+    }
+    return { diff:diff, checks:checks, diffCount:diff.length, rate: checks>0 ? diff.length/checks : 0 };
+}
+
+// 计算同类型站点排名
+function _zbRank(siteName, cat, date) {
+    var siteType = typeof zbGetSiteType==='function' ? zbGetSiteType(siteName) : '中心仓';
+    var DATA = window._DATA || {};
+    var src = cat==='手机' ? (DATA.qa||[]) : (siteType!=='中心仓' ? (DATA.dw4sum||[]) : (DATA.sum||[]));
+    var siteSet = new Set();
+    src.filter(function(r){ return r.cat===cat&&r.date===date&&(r.checks||0)>0; }).forEach(function(r){ siteSet.add(r.site); });
+    var sites = Array.from(siteSet).filter(function(s){
+        var st = typeof zbGetSiteType==='function' ? zbGetSiteType(s) : '中心仓';
+        return st===siteType;
+    });
+    var rates = sites.map(function(s){ var m=_zbCatMetrics(s,cat,date); return {site:s,rate:m.checks>0?m.rate:null}; })
+        .filter(function(x){ return x.rate!==null; })
+        .sort(function(a,b){ return a.rate-b.rate; });
+    var myIdx = rates.findIndex(function(x){ return x.site===siteName; });
+    var rank = myIdx+1;
+    var gap = myIdx>0 ? Math.abs((rates[myIdx].rate-rates[myIdx-1].rate)*100).toFixed(2)+'%' : null;
+    return { rank:rank||null, total:rates.length, gap:gap, siteType:siteType };
+}
+
+// 人员数据 + 新增/连续判断
+function _zbPersonData(diff, t2) {
+    var allDiff = window._allDiffData || [];
+    var map = {};
+    diff.forEach(function(d){
+        var p = d.person||'未知';
+        if (!map[p]) map[p] = { name:p, org:d.inspectorOrg||'', diffs:[] };
+        map[p].diffs.push(d);
+    });
+    return Object.keys(map).map(function(p){
+        var info = map[p];
+        var hadT2 = allDiff.some(function(d){ return d.person===p&&d.date===t2&&_zbExecFilter(d); });
+        return { name:info.name, org:info.org, diffCount:info.diffs.length, isNew:!hadT2, firstChar:(info.name||'?')[0] };
+    }).sort(function(a,b){ return b.diffCount-a.diffCount; });
+}
+
+// 问题项聚合 → 按页分组（每页5个）
+function _zbProbPages(diff, cat) {
+    var map = {};
+    diff.forEach(function(d){
+        var key = d.level3||d.level2||d.level1||'未知';
+        if (!map[key]) map[key] = { name:key, path:[d.level1,d.level2].filter(Boolean).join('  ·  '), diffs:[] };
+        map[key].diffs.push(d);
+    });
+    var probs = Object.keys(map).map(function(k){ return {name:k,path:map[k].path,count:map[k].diffs.length,diffs:map[k].diffs}; })
+        .sort(function(a,b){ return b.count-a.count; });
+    var pages=[]; for(var i=0;i<probs.length;i+=5) pages.push(probs.slice(i,i+5));
+    return { probs:probs, pages:pages };
+}
+
+// ── 入口 ──
+window.zbTrainingClick = function() {
+    var site = window._zbCurrentSiteName||'';
+    if (!site) { if(typeof showToast==='function') showToast('请先选择一个站点'); return; }
+    var st = typeof zbGetSiteType==='function' ? zbGetSiteType(site) : '中心仓';
+    if (st==='大仓'||st==='后验中心仓') { zbTrainingShowDWSelect(site); }
+    else { zbTrainingGenerate(site,'all5'); }
+};
+
+window.zbTrainingShowDWSelect = function(site) {
+    var el = document.getElementById('zbTrainingSelectModal');
+    if (el) { el.setAttribute('data-site',site); el.style.display='flex'; }
+};
+window.zbTrainingCloseDWSelect = function() {
+    var el = document.getElementById('zbTrainingSelectModal');
+    if (el) el.style.display='none';
+};
+window.zbTrainingDWChoice = function(mode) {
+    var el = document.getElementById('zbTrainingSelectModal');
+    var site = el ? el.getAttribute('data-site') : '';
+    zbTrainingCloseDWSelect();
+    if (site) zbTrainingGenerate(site,mode);
+};
+
+window.zbTrainingGenerate = async function(site, mode) {
+    var overlay = document.getElementById('zbTrainingLoadingOverlay');
+    if (overlay) overlay.style.display='flex';
+    try {
+        await zbLoadPptxGenJS();
+        var attachments = {};
+        try {
+            var tok = typeof zbGetToken==='function' ? zbGetToken() : '';
+            if (tok) {
+                var att = await ghApiFetch(GH_FILES.qcAttachments, tok).catch(function(){ return null; });
+                if (att && typeof att==='object') attachments = att;
+            }
+        } catch(e) {}
+        var t1 = _zbDate(-1), t2 = _zbDate(-2);
+        var slides = zbTrainingBuildSlides(site, mode, attachments, t1, t2);
+        window._zbTrainingSlides = slides;
+        window._zbTrainingSite = site;
+        window._zbTrainingMode = mode;
+        if (overlay) overlay.style.display='none';
+        zbTrainingOpenPreview(slides);
+    } catch(e) {
+        if (overlay) overlay.style.display='none';
+        if(typeof showToast==='function') showToast('生成失败：'+e.message);
+        console.error('[zbTraining]',e);
+    }
+};
+
+// ── 构建幻灯片数据 ──
+window.zbTrainingBuildSlides = function(site, mode, attachments, t1, t2) {
+    var pair = _zbDWPair(site);
+    var city = _zbCity(pair ? pair.line : site);
+    var siteType = typeof zbGetSiteType==='function' ? zbGetSiteType(site) : '中心仓';
+    var isDW = siteType==='大仓'||siteType==='后验中心仓';
+    var siteLabel = isDW ? (city+'大仓') : (city+'中心仓');
+    var lineSite = pair ? pair.line : site;
+    var postSite = pair ? pair.post : null;
+    var cats = mode==='phone' ? ['手机'] : mode==='four' ? ['笔记本','平板','手表','耳机'] : ['手机','笔记本','平板','手表','耳机'];
+    var slides = [];
+
+    // 封面
+    slides.push({ type:'cover', title:siteLabel+'早会培训', date:t1 });
+
+    // 各品类指标（用于KPI总览）
+    var catMetrics = {};
+    cats.forEach(function(cat){
+        var es = (isDW && cat!=='手机') ? lineSite : site;
+        if (mode==='phone' && cat==='手机' && pair) {
+            var lm = _zbCatMetrics(lineSite,'手机',t1);
+            var pm = postSite ? _zbCatMetrics(postSite,'手机',t1) : {diff:[],checks:0,diffCount:0,rate:0};
+            var tot = lm.checks+pm.checks;
+            catMetrics[cat] = { diff:lm.diff.concat(pm.diff), checks:tot, diffCount:lm.diffCount+pm.diffCount,
+                rate:tot>0?(lm.diffCount+pm.diffCount)/tot:0, lineMet:lm, postMet:pm };
+        } else {
+            catMetrics[cat] = _zbCatMetrics(es, cat, t1);
+        }
+    });
+
+    // KPI总览页（多品类时才有）
+    if (mode!=='phone') {
+        slides.push({ type:'kpi_overview', siteLabel:siteLabel, date:t1, mode:mode,
+            cards: cats.map(function(cat){
+                var m=catMetrics[cat]; return { cat:cat, rate:m.rate, checks:m.checks, diffCount:m.diffCount };
+            })
+        });
+    }
+
+    // 各品类内容
+    cats.forEach(function(cat){
+        var m = catMetrics[cat];
+        if (m.diffCount===0) return; // 零差异跳过
+
+        var persons = Array.from(new Set(m.diff.map(function(d){ return d.person||''; }).filter(Boolean)));
+        slides.push({ type:'cat_divider', cat:cat, diffCount:m.diffCount, personCount:persons.length });
+
+        if (mode==='phone' && cat==='手机' && pair) {
+            // 大仓手机：线体/后验分开出指标页
+            var lm=m.lineMet, pm=m.postMet;
+            if (lm.checks>0) {
+                var lRank = _zbRank(lineSite,'手机',t1);
+                var lPrev = _zbCatMetrics(lineSite,'手机',t2);
+                slides.push({ type:'daily_kpi', cat:'手机（线体）', siteLabel:siteLabel, date:t1,
+                    checks:lm.checks, diffCount:lm.diffCount, rate:lm.rate,
+                    prevDiffCount:lPrev.diffCount, prevRate:lPrev.rate, rank:lRank });
+            }
+            if (postSite && pm.checks>0) {
+                var pRank = _zbRank(postSite,'手机',t1);
+                var pPrev = _zbCatMetrics(postSite,'手机',t2);
+                slides.push({ type:'daily_kpi', cat:'手机（后验）', siteLabel:siteLabel, date:t1,
+                    checks:pm.checks, diffCount:pm.diffCount, rate:pm.rate,
+                    prevDiffCount:pPrev.diffCount, prevRate:pPrev.rate, rank:pRank });
+            }
+            // 人员页（合并，分区）
+            slides.push({ type:'personnel', cat:'手机', dwPhone:true,
+                linePersons: _zbPersonData(lm.diff, t2),
+                postPersons: pm.diff.length>0 ? _zbPersonData(pm.diff, t2) : [] });
+            // 问题项页
+            var pp = _zbProbPages(m.diff, cat);
+            pp.pages.forEach(function(pg,pi){ slides.push({ type:'problems', cat:cat, problems:pg, pageNum:pi+1, totalProbs:pp.probs.length }); });
+            // 案例页
+            var caseIdx=0;
+            lm.diff.forEach(function(d){ slides.push({ type:'case', d:d, caseNum:++caseIdx, totalCases:m.diff.length, subLabel:'线体', attachments:attachments }); });
+            pm.diff.forEach(function(d){ slides.push({ type:'case', d:d, caseNum:++caseIdx, totalCases:m.diff.length, subLabel:'后验', attachments:attachments }); });
+        } else {
+            var es = (isDW && cat!=='手机') ? lineSite : site;
+            var rank = _zbRank(es, cat, t1);
+            var prev = _zbCatMetrics(es, cat, t2);
+            slides.push({ type:'daily_kpi', cat:cat, siteLabel:siteLabel, date:t1,
+                checks:m.checks, diffCount:m.diffCount, rate:m.rate,
+                prevDiffCount:prev.diffCount, prevRate:prev.rate, rank:rank });
+            slides.push({ type:'personnel', cat:cat, dwPhone:false, persons:_zbPersonData(m.diff,t2) });
+            var pp2 = _zbProbPages(m.diff, cat);
+            pp2.pages.forEach(function(pg,pi){ slides.push({ type:'problems', cat:cat, problems:pg, pageNum:pi+1, totalProbs:pp2.probs.length }); });
+            m.diff.forEach(function(d,i){ slides.push({ type:'case', d:d, caseNum:i+1, totalCases:m.diff.length, subLabel:'', attachments:attachments }); });
+        }
+    });
+
+    // 结语
+    slides.push({ type:'conclusion', siteLabel:siteLabel });
+    return slides;
+};
+
+// ── 预览 ──
+window.zbTrainingOpenPreview = function(slides) {
+    var modal = document.getElementById('zbTrainingPreviewModal');
+    if (!modal) return;
+    window._zbTrainingIdx = 0;
+    zbTrainingRenderSlide(0);
+    _zbUpdateDots(slides.length, 0);
+    modal.style.display = 'flex';
+};
+window.zbTrainingClosePreview = function() {
+    var el = document.getElementById('zbTrainingPreviewModal'); if(el) el.style.display='none';
+};
+window.zbTrainingPrev = function() {
+    var idx=(window._zbTrainingIdx||0)-1; if(idx>=0) zbTrainingRenderSlide(idx);
+};
+window.zbTrainingNext = function() {
+    var slides=window._zbTrainingSlides||[]; var idx=(window._zbTrainingIdx||0)+1;
+    if(idx<slides.length) zbTrainingRenderSlide(idx);
+};
+window.zbTrainingRenderSlide = function(idx) {
+    var slides=window._zbTrainingSlides||[];
+    if(idx<0||idx>=slides.length) return;
+    window._zbTrainingIdx = idx;
+    var el=document.getElementById('zbTrainingSlideContainer'); if(!el) return;
+    var counter=document.getElementById('zbTrainingCounter'); if(counter) counter.textContent=(idx+1)+' / '+slides.length;
+    el.innerHTML = zbTrainingSlideHTML(slides[idx]);
+    _zbUpdateDots(slides.length, idx);
+};
+function _zbUpdateDots(total, cur) {
+    var bar=document.getElementById('zbTrainingDotBar'); if(!bar) return;
+    var html=''; for(var i=0;i<Math.min(total,30);i++) {
+        html+='<div onclick="zbTrainingRenderSlide('+i+')" style="width:7px;height:7px;border-radius:50%;background:'+(i===cur?'#fff':'rgba(255,255,255,.35)')+';cursor:pointer;transition:all .15s;flex-shrink:0;"></div>';
+    }
+    if(total>30) html+='<span style="color:rgba(255,255,255,.5);font-size:10px;">…+'+( total-30)+'</span>';
+    bar.innerHTML = html;
+}
+
+// ── 单张幻灯片 HTML 渲染（预览用）──
+function zbTrainingSlideHTML(s) {
+    var brand = '<div style="position:absolute;right:14px;top:10px;font-size:9px;color:#FFAAAA;">转转 · 找靓机</div>';
+
+    if (s.type==='cover') {
+        return '<div style="width:800px;height:450px;background:#E8433A;position:relative;border-radius:8px;overflow:hidden;">'
+            +brand
+            +'<div style="position:absolute;left:48px;top:150px;right:48px;">'
+            +'<div style="font-size:38px;font-weight:700;color:#fff;line-height:1.2;">'+s.title+'</div>'
+            +'<div style="font-size:11px;color:#FFCCCC;margin-top:14px;">大质检SC · 培训部</div>'
+            +'<div style="font-size:11px;color:#FFAAAA;margin-top:5px;">'+s.date+'  ·  T-1 昨日数据</div>'
+            +'</div></div>';
+    }
+    if (s.type==='conclusion') {
+        return '<div style="width:800px;height:450px;background:#E8433A;position:relative;border-radius:8px;overflow:hidden;">'
+            +brand
+            +'<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;">'
+            +'<div style="font-size:42px;font-weight:700;color:#fff;">今日继续加油！</div>'
+            +'<div style="font-size:13px;color:#FFAAAA;">大质检SC &nbsp; 培训部</div>'
+            +'</div></div>';
+    }
+    if (s.type==='cat_divider') {
+        return '<div style="width:800px;height:450px;background:#E8433A;position:relative;border-radius:8px;overflow:hidden;">'
+            +brand
+            +'<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;">'
+            +'<div style="font-size:42px;font-weight:700;color:#fff;">'+s.cat+'品类</div>'
+            +'<div style="font-size:13px;color:#FFAAAA;">共 '+s.diffCount+' 条差异 · '+s.personCount+' 名质检人员</div>'
+            +'</div>'
+            +'<div style="position:absolute;bottom:18px;right:20px;font-size:10px;color:#FFAAAA;">下一页查看详情 →</div>'
+            +'</div>';
+    }
+
+    var hdr = function(title,sub) {
+        return '<div style="position:absolute;left:0;top:0;right:0;height:56px;background:#E8433A;">'
+            +'<div style="position:absolute;left:14px;bottom:9px;font-size:14px;font-weight:700;color:#fff;">'+title+'</div>'
+            +(sub?'<div style="position:absolute;left:14px;bottom:-18px;font-size:10px;color:#6B7280;">'+sub+'</div>':'')
+            +brand
+            +'</div>';
+    };
+
+    if (s.type==='kpi_overview') {
+        var cards = s.cards.map(function(c){
+            var ri=_zbRateInfo(c.rate);
+            return '<div style="flex:1;background:#'+ri.bg+';border-radius:8px;padding:10px 12px;min-width:0;">'
+                +'<div style="font-size:10px;color:#374151;margin-bottom:3px;">'+c.cat+'</div>'
+                +'<div style="font-size:20px;font-weight:700;color:#'+ri.hex+';">'+(c.rate*100).toFixed(2)+'%</div>'
+                +'<div style="font-size:9px;color:#6B7280;margin-top:2px;">抽 '+c.checks+' 差 '+c.diffCount+'</div>'
+                +'<div style="font-size:9px;font-weight:600;color:#'+ri.hex+';margin-top:2px;">'+ri.label+'</div>'
+                +'</div>';
+        }).join('');
+        // auto-summary
+        var topCat=s.cards.slice().sort(function(a,b){return b.rate-a.rate;})[0];
+        var sumLine = topCat ? (topCat.cat+'差异率最高（'+(topCat.rate*100).toFixed(2)+'%）') : '';
+        return '<div style="width:800px;height:450px;background:#fff;position:relative;border-radius:8px;overflow:hidden;">'
+            +'<div style="position:absolute;left:0;top:0;right:0;height:76px;background:#E8433A;padding:10px 14px;">'
+            +brand
+            +'<div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:3px;">昨日各品类指标总览</div>'
+            +'<div style="font-size:10px;color:#FFCCCC;">'+s.siteLabel+' · '+s.date+'</div>'
+            +'</div>'
+            +'<div style="position:absolute;left:12px;right:12px;top:84px;display:flex;gap:8px;">'+cards+'</div>'
+            +(sumLine?'<div style="position:absolute;bottom:14px;left:12px;right:12px;background:#FFF0EF;border-radius:6px;padding:7px 12px;font-size:10px;color:#DC2626;">⚠ '+sumLine+'</div>':'')
+            +'</div>';
+    }
+
+    if (s.type==='daily_kpi') {
+        var ri=_zbRateInfo(s.rate);
+        var pct=(s.rate*100).toFixed(2)+'%';
+        var diff = s.diffCount - (s.prevDiffCount||0);
+        var trendTxt = diff>0?'较前日 上升 ↑':diff<0?'较前日 下降 ↓':'较前日 持平';
+        var trendCol = diff>0?'#DC2626':diff<0?'#059669':'#059669';
+        var rkStr = s.rank&&s.rank.rank ? '第'+s.rank.rank+'名 / 共'+s.rank.total+'个站点'+(s.rank.gap?' · 距上一名差 '+s.rank.gap:'') : '';
+        function kCard(val,label,col,sub,sc) {
+            return '<div style="flex:1;background:#FFF0EF;border-radius:10px;padding:12px 14px;">'
+                +'<div style="font-size:10px;color:#6B7280;margin-bottom:3px;">'+label+'</div>'
+                +'<div style="font-size:26px;font-weight:700;color:'+col+';">'+val+'</div>'
+                +'<div style="font-size:10px;color:'+sc+';margin-top:3px;">'+sub+'</div>'
+                +'</div>';
+        }
+        var alertTxt = '⚠  昨日差异率'+pct+(rkStr?'，'+rkStr:'')+'，今日重点跟进';
+        return '<div style="width:800px;height:450px;background:#fff;position:relative;border-radius:8px;overflow:hidden;">'
+            +'<div style="position:absolute;left:0;top:0;right:0;height:76px;background:#E8433A;padding:10px 14px;">'
+            +brand
+            +'<div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:2px;">昨日指标达成回顾</div>'
+            +'<div style="font-size:10px;color:#FFCCCC;">'+rkStr+'</div>'
+            +'</div>'
+            +'<div style="position:absolute;left:12px;right:12px;top:84px;display:flex;gap:12px;">'
+            +kCard(s.checks,'总抽检量','#2563EB',s.cat+'品类','#6B7280')
+            +kCard(s.diffCount,'差异量','#E8433A',trendTxt,trendCol)
+            +kCard(pct,'差异率','#'+ri.hex, s.rank&&s.rank.gap?'距上一名差 '+s.rank.gap:'','#6B7280')
+            +'</div>'
+            +'<div style="position:absolute;bottom:14px;left:12px;right:12px;background:#FFF0EF;border-radius:6px;padding:7px 12px;font-size:10px;color:#DC2626;">'+alertTxt+'</div>'
+            +'</div>';
+    }
+
+    if (s.type==='personnel') {
+        var allP = s.dwPhone ? (s.linePersons||[]).concat(s.postPersons||[]) : (s.persons||[]);
+        var total = allP.length;
+        var nameSz = total<=3?22:total<=5?18:total<=7?16:15;
+        function pCard(p) {
+            var tc=p.isNew?'#DC2626':'#92400E'; var tb=p.isNew?'#FEE2E2':'#FEF3C7'; var tl=p.isNew?'新增':'连续';
+            return '<div style="display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:.5px solid #f1f5f9;">'
+                +'<div style="width:34px;height:34px;border-radius:50%;background:'+tc+'22;color:'+tc+';font-weight:700;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;">'+p.firstChar+'</div>'
+                +'<div style="flex:1;min-width:0;">'
+                +'<div style="font-size:'+nameSz+'px;font-weight:600;color:#1F2937;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+p.name+'</div>'
+                +'<div style="font-size:9px;color:#6B7280;">'+p.org+'</div>'
+                +'</div>'
+                +'<div style="font-size:9px;font-weight:600;padding:2px 6px;border-radius:4px;background:'+tb+';color:'+tc+';flex-shrink:0;">'+tl+'</div>'
+                +'<div style="text-align:right;flex-shrink:0;">'
+                +'<div style="font-size:16px;font-weight:700;color:'+tc+';">'+p.diffCount+'</div>'
+                +'<div style="font-size:9px;color:#6B7280;">台差异</div>'
+                +'</div></div>';
+        }
+        var bodyHtml='';
+        if (s.dwPhone) {
+            if(s.linePersons&&s.linePersons.length) {
+                bodyHtml+='<div style="font-size:9px;color:#94A3B8;text-align:center;margin:6px 0 4px;">— 线体 —</div>';
+                bodyHtml+=s.linePersons.map(pCard).join('');
+            }
+            if(s.postPersons&&s.postPersons.length) {
+                bodyHtml+='<div style="font-size:9px;color:#94A3B8;text-align:center;margin:8px 0 4px;">— 后验 —</div>';
+                bodyHtml+=s.postPersons.map(pCard).join('');
+            }
+        } else { bodyHtml=allP.map(pCard).join(''); }
+        return '<div style="width:800px;height:450px;background:#fff;position:relative;border-radius:8px;overflow:hidden;">'
+            +'<div style="position:absolute;left:0;top:0;right:0;height:56px;background:#E8433A;padding:10px 14px;">'
+            +brand+'<div style="font-size:14px;font-weight:700;color:#fff;">昨日差异人员</div>'
+            +'<div style="font-size:10px;color:#FFCCCC;">共 '+total+' 名  ·  红=新增  黄=连续</div></div>'
+            +'<div style="position:absolute;left:12px;right:12px;top:58px;bottom:10px;overflow-y:auto;">'+bodyHtml+'</div>'
+            +'</div>';
+    }
+
+    if (s.type==='problems') {
+        var numP=s.problems.length; var nSz=numP<=2?14:numP<=4?13:12;
+        var probHtml=s.problems.map(function(p,i){
+            var fd=p.diffs&&p.diffs[0];
+            return '<div style="margin-bottom:8px;">'
+                +'<div style="display:flex;align-items:center;gap:7px;">'
+                +'<div style="width:19px;height:19px;border-radius:50%;background:#FEE2E2;color:#E8433A;font-size:10px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">'+(i+1)+'</div>'
+                +'<span style="font-size:'+nSz+'px;font-weight:600;color:#1F2937;">'+p.name+'</span>'
+                +'<span style="font-size:9px;color:#6B7280;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+p.path+'</span>'
+                +'<span style="font-size:14px;font-weight:700;color:#E8433A;flex-shrink:0;">'+p.count+'</span>'
+                +'<span style="font-size:9px;color:#6B7280;flex-shrink:0;">条</span>'
+                +'</div>'
+                +(fd?'<div style="margin-left:26px;font-size:9px;color:#6B7280;margin-top:2px;">'+(fd.person||'')+(fd.brand?' · '+fd.brand:'')+(fd.model?' · '+fd.model:'')+(fd.code?' · '+fd.code:'')+'</div>':'')
+                +'</div>';
+        }).join('');
+        return '<div style="width:800px;height:450px;background:#fff;position:relative;border-radius:8px;overflow:hidden;">'
+            +'<div style="position:absolute;left:0;top:0;right:0;height:56px;background:#E8433A;padding:10px 14px;">'
+            +brand+'<div style="font-size:14px;font-weight:700;color:#fff;">昨日问题项及明细</div>'
+            +'<div style="font-size:10px;color:#FFCCCC;">共 '+s.totalProbs+' 个问题项'+(s.pageNum>1?' · 第'+s.pageNum+'页':'')+'</div></div>'
+            +'<div style="position:absolute;left:12px;right:12px;top:58px;bottom:10px;overflow-y:auto;">'+probHtml+'</div>'
+            +'</div>';
+    }
+
+    if (s.type==='case') {
+        var d=s.d; var code=d.code||'';
+        var att=(s.attachments&&code&&s.attachments[code])||{};
+        var imgs=att.images||[]; var note=att.note||'';
+        var titleStr='失误案例 · '+(s.subLabel?s.subLabel+'·':'')+'案例'+s.caseNum;
+        var subStr=(d.person||'')+' · '+(d.model||'')+' · '+(d.level3||d.level2||'');
+        var imgHtml=imgs.length>0
+            ?'<img src="https://zb-images-1423465873.cos.ap-guangzhou.myqcloud.com/qc-images/'+imgs[0]+'" style="width:100%;height:100%;object-fit:contain;" onerror="this.parentNode.innerHTML=\'<div style=&quot;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#d1d5db;font-size:11px;&quot;><div>📷</div><div>暂无案例图</div></div>\'">'
+            :'<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#d1d5db;font-size:11px;"><div>📷</div><div>暂无案例图</div></div>';
+        return '<div style="width:800px;height:450px;background:#fff;position:relative;border-radius:8px;overflow:hidden;">'
+            +'<div style="position:absolute;left:0;top:0;right:0;height:56px;background:#E8433A;padding:10px 14px;">'
+            +brand+'<div style="font-size:14px;font-weight:700;color:#fff;">'+titleStr+'</div>'
+            +'<div style="font-size:10px;color:#FFCCCC;">'+subStr+'</div></div>'
+            +'<div style="position:absolute;left:0;top:56px;bottom:0;width:380px;background:#F8FAFC;display:flex;align-items:center;justify-content:center;">'+imgHtml+'</div>'
+            +'<div style="position:absolute;right:0;top:56px;bottom:0;left:380px;padding:12px 14px;overflow-y:auto;">'
+            +'<div style="font-size:9px;color:#DC2626;margin-bottom:5px;">'+(d.category||'')+' · '+(d.judgedIssueType||'')+'</div>'
+            +'<div style="font-size:16px;font-weight:700;color:#1F2937;margin-bottom:10px;line-height:1.4;">'+(d.model||'')+'<br>'+(d.level3||d.level2||'')+'</div>'
+            +'<div style="display:grid;grid-template-columns:52px 1fr;gap:4px 8px;font-size:10px;margin-bottom:10px;">'
+            +'<span style="color:#6B7280;">质检人</span><span style="color:#1F2937;">'+(d.person||'')+'</span>'
+            +'<span style="color:#6B7280;">质检码</span><span style="color:#E8433A;">'+(d.code||'')+'</span>'
+            +'<span style="color:#6B7280;">问题项</span><span style="color:#1F2937;">'+(d.level3||d.level2||d.level1||'')+'</span>'
+            +'</div>'
+            +'<div style="background:#FFF0EF;border-radius:6px;padding:7px 10px;">'
+            +'<div style="font-size:9px;color:#FCA5A5;margin-bottom:3px;">重点提示</div>'
+            +'<div style="font-size:11px;color:#DC2626;">'+(note||'请填写点评内容')+'</div>'
+            +'</div></div></div>';
+    }
+    return '<div style="width:800px;height:450px;background:#f1f5f9;border-radius:8px;display:flex;align-items:center;justify-content:center;color:#94a3b8;">未知类型:'+s.type+'</div>';
+}
+
+// ── PptxGenJS 导出 ──
+window.zbTrainingExportPptx = async function() {
+    var slides = window._zbTrainingSlides||[];
+    var site = window._zbTrainingSite||'站点';
+    var t1 = _zbDate(-1);
+    var overlay=document.getElementById('zbTrainingLoadingOverlay'); if(overlay) overlay.style.display='flex';
+    try {
+        if (typeof PptxGenJS==='undefined') await zbLoadPptxGenJS();
+        var pptx = new PptxGenJS();
+        pptx.layout = 'LAYOUT_16x9';
+        slides.forEach(function(s){ _zbAddPptxSlide(pptx,s); });
+        await pptx.writeFile({ fileName: site+'_培训PPT_'+t1+'.pptx' });
+    } catch(e) {
+        if(typeof showToast==='function') showToast('导出失败：'+e.message);
+        console.error('[zbTraining export]',e);
+    }
+    if(overlay) overlay.style.display='none';
+};
+
+function _zbPptHdr(slide, title, sub) {
+    slide.addShape('rect', { x:0, y:0, w:'100%', h:0.6, fill:{color:'E8433A'} });
+    slide.addText(title, { x:0.4,y:0.08,w:7.5,h:0.42,fontSize:16,bold:true,color:'FFFFFF',valign:'middle' });
+    if(sub) slide.addText(sub, { x:0.4,y:0.52,w:8,h:0.25,fontSize:10,color:'FFCCCC' });
+    slide.addText('转转 · 找靓机', { x:8.2,y:0.15,w:1.6,h:0.25,fontSize:9,color:'FFAAAA',align:'right' });
+}
+
+function _zbAddPptxSlide(pptx, s) {
+    var sl = pptx.addSlide();
+    if (s.type==='cover') {
+        sl.background={color:'E8433A'};
+        sl.addText(s.title,  {x:0.6,y:1.7,w:8,h:1.8,fontSize:48,bold:true,color:'FFFFFF',valign:'top'});
+        sl.addText('大质检SC · 培训部', {x:0.6,y:3.85,w:7,h:0.4,fontSize:11,color:'FFCCCC'});
+        sl.addText(s.date+'  ·  T-1 昨日数据', {x:0.6,y:4.3,w:7,h:0.4,fontSize:14,color:'FFAAAA'});
+        sl.addText('转转 · 找靓机', {x:8.2,y:0.18,w:1.6,h:0.28,fontSize:9,color:'FFAAAA',align:'right'});
+        return;
+    }
+    if (s.type==='conclusion') {
+        sl.background={color:'E8433A'};
+        sl.addText('今日继续加油！', {x:1,y:1.8,w:8,h:1.2,fontSize:44,bold:true,color:'FFFFFF',align:'center'});
+        sl.addText('大质检SC  培训部', {x:1,y:3.3,w:8,h:0.4,fontSize:14,color:'FFAAAA',align:'center'});
+        sl.addText('转转 · 找靓机', {x:8.2,y:0.15,w:1.6,h:0.28,fontSize:9,color:'FFAAAA',align:'right'});
+        return;
+    }
+    if (s.type==='cat_divider') {
+        sl.background={color:'E8433A'};
+        sl.addText(s.cat+'品类', {x:1,y:1.7,w:8,h:1.1,fontSize:48,bold:true,color:'FFFFFF',align:'center'});
+        sl.addText('共 '+s.diffCount+' 条差异 · '+s.personCount+' 名质检人员', {x:1,y:3.0,w:8,h:0.4,fontSize:14,color:'FFAAAA',align:'center'});
+        sl.addText('下一页查看详情 →', {x:7,y:5.1,w:2.8,h:0.28,fontSize:10,color:'FFAAAA',align:'right'});
+        sl.addText('转转 · 找靓机', {x:8.2,y:0.15,w:1.6,h:0.28,fontSize:9,color:'FFAAAA',align:'right'});
+        return;
+    }
+    if (s.type==='kpi_overview') {
+        _zbPptHdr(sl,'昨日各品类指标总览', s.siteLabel+' · '+s.date);
+        var nc=s.cards.length, cw=(9.0-0.6-(nc-1)*0.14)/nc, cx=0.4;
+        s.cards.forEach(function(c){
+            var ri=_zbRateInfo(c.rate), pct=(c.rate*100).toFixed(2)+'%';
+            sl.addShape('roundRect',{x:cx,y:1.0,w:cw,h:4.3,rectRadius:0.08,fill:{color:ri.bg.replace('#','')},line:{color:ri.hex,width:0.5,transparency:60}});
+            sl.addText(c.cat,         {x:cx+0.1,y:1.15,w:cw-0.2,h:0.3,fontSize:11,color:'374151'});
+            sl.addText(pct,           {x:cx+0.1,y:1.5, w:cw-0.2,h:0.75,fontSize:28,bold:true,color:ri.hex,valign:'top'});
+            sl.addText('抽 '+c.checks+'  差异 '+c.diffCount, {x:cx+0.1,y:2.35,w:cw-0.2,h:0.28,fontSize:10,color:'6B7280'});
+            sl.addText(ri.label,      {x:cx+0.1,y:2.68,w:cw-0.2,h:0.28,fontSize:10,bold:true,color:ri.hex});
+            cx+=cw+0.14;
+        });
+        return;
+    }
+    if (s.type==='daily_kpi') {
+        var ri=_zbRateInfo(s.rate), pct=(s.rate*100).toFixed(2)+'%';
+        var dDiff=s.diffCount-(s.prevDiffCount||0);
+        var trendTxt=dDiff>0?'较前日 上升 ↑':dDiff<0?'较前日 下降 ↓':'较前日 持平';
+        var trendCol=dDiff>0?'DC2626':dDiff<0?'059669':'059669';
+        var rkStr=s.rank&&s.rank.rank?s.rank.siteType+'排名  第'+s.rank.rank+'名 / 共'+s.rank.total+'个站点'+(s.rank.gap?' · 距上一名差 '+s.rank.gap:''):'';
+        _zbPptHdr(sl,'昨日指标达成回顾',rkStr);
+        var kDefs=[
+            {v:String(s.checks),label:'总抽检量',col:'2563EB',sub:s.cat+'品类',sc:'6B7280'},
+            {v:String(s.diffCount),label:'差异量',col:'E8433A',sub:trendTxt,sc:trendCol},
+            {v:pct,label:'差异率',col:ri.hex,sub:s.rank&&s.rank.gap?'距上一名差 '+s.rank.gap:'',sc:'6B7280'}
+        ];
+        var kX=0.6;
+        kDefs.forEach(function(k){
+            sl.addShape('roundRect',{x:kX,y:1.0,w:2.8,h:2.35,rectRadius:0.1,fill:{color:'FFF0EF'}});
+            sl.addText(k.v,     {x:kX+0.15,y:1.1,w:2.5,h:1.0,fontSize:40,bold:true,color:k.col,valign:'top'});
+            sl.addText(k.label, {x:kX+0.15,y:2.1,w:2.5,h:0.32,fontSize:12,color:'6B7280'});
+            sl.addText(k.sub,   {x:kX+0.15,y:2.42,w:2.5,h:0.28,fontSize:11,color:k.sc});
+            kX+=3.0;
+        });
+        var alertTxt='⚠  昨日差异率'+pct+(rkStr?'，'+rkStr.replace(/^[^排]+排名\s+/,''):'')+'，今日重点跟进';
+        sl.addShape('roundRect',{x:0.6,y:4.18,w:8.8,h:0.5,rectRadius:0.07,fill:{color:'FFF0EF'},line:{color:'FECACA',width:0.5}});
+        sl.addText(alertTxt,{x:0.75,y:4.22,w:8.5,h:0.4,fontSize:11,color:'DC2626'});
+        return;
+    }
+    if (s.type==='personnel') {
+        var allP=s.dwPhone?(s.linePersons||[]).concat(s.postPersons||[]):(s.persons||[]);
+        var tot=allP.length;
+        var nSz=tot<=3?22:tot<=5?18:tot<=7?16:15;
+        var cH=tot<=3?1.1:tot<=5?0.9:tot<=7?0.78:0.65;
+        _zbPptHdr(sl,'昨日差异人员','共 '+tot+' 名质检人员  ·  红色=新增  ·  黄色=连续');
+        var cY=1.0;
+        function addPerson(p, cx, colW) {
+            var tc=p.isNew?'DC2626':'92400E'; var tb=p.isNew?'FEE2E2':'FEF3C7'; var tl=p.isNew?'新增':'连续';
+            sl.addShape('ellipse',{x:cx+0.05,y:cY+cH*0.1,w:cH*0.68,h:cH*0.68,fill:{color:tc+'22'}});
+            sl.addText(p.firstChar,{x:cx+0.05,y:cY+cH*0.1,w:cH*0.68,h:cH*0.68,fontSize:Math.round(nSz*0.42),bold:true,color:tc,align:'center',valign:'middle'});
+            var nX=cx+cH*0.8;
+            sl.addText(p.name, {x:nX,y:cY+0.04,w:colW-cH*0.8-1.4,h:cH*0.5,fontSize:nSz,bold:true,color:'1F2937',valign:'top'});
+            sl.addText(p.org||'', {x:nX,y:cY+cH*0.52,w:colW-cH*0.8-1.4,h:cH*0.35,fontSize:9,color:'6B7280'});
+            sl.addShape('roundRect',{x:cx+colW-1.1,y:cY+cH*0.22,w:0.62,h:0.26,rectRadius:0.04,fill:{color:tb}});
+            sl.addText(tl,{x:cx+colW-1.1,y:cY+cH*0.22,w:0.62,h:0.26,fontSize:9,bold:true,color:tc,align:'center',valign:'middle'});
+            sl.addText(String(p.diffCount),{x:cx+colW-0.55,y:cY+0.04,w:0.5,h:cH*0.5,fontSize:Math.round(nSz*0.9),bold:true,color:tc,align:'right',valign:'top'});
+            sl.addText('台差异',{x:cx+colW-0.55,y:cY+cH*0.52,w:0.5,h:0.28,fontSize:9,color:'6B7280',align:'right'});
+            cY+=cH+0.06;
+        }
+        function addSectionLabel(lbl) {
+            sl.addText('— '+lbl+' —',{x:0.4,y:cY,w:9.2,h:0.26,fontSize:9,color:'94A3B8',align:'center'});
+            cY+=0.3;
+        }
+        if (s.dwPhone) {
+            if(s.linePersons&&s.linePersons.length){ addSectionLabel('线体'); s.linePersons.forEach(function(p){ addPerson(p,0.4,9.2); }); }
+            if(s.postPersons&&s.postPersons.length){ addSectionLabel('后验'); s.postPersons.forEach(function(p){ addPerson(p,0.4,9.2); }); }
+        } else { (s.persons||[]).forEach(function(p){ addPerson(p,0.4,9.2); }); }
+        return;
+    }
+    if (s.type==='problems') {
+        var nP=s.problems.length; var nSzP=nP<=2?16:nP<=4?14:13; var rH=nP<=2?1.0:nP<=4?0.85:0.75;
+        _zbPptHdr(sl,'昨日问题项及明细','共 '+s.totalProbs+' 个问题项'+(s.pageNum>1?' · 第'+s.pageNum+'页':''));
+        var pY=0.85;
+        s.problems.forEach(function(p,i){
+            var fd=p.diffs&&p.diffs[0];
+            sl.addShape('ellipse',{x:0.45,y:pY+0.04,w:0.38,h:0.38,fill:{color:'FEE2E2'}});
+            sl.addText(String(i+1),{x:0.45,y:pY+0.04,w:0.38,h:0.38,fontSize:11,bold:true,color:'E8433A',align:'center',valign:'middle'});
+            sl.addText(p.name,{x:0.95,y:pY+0.03,w:6.8,h:0.38,fontSize:nSzP,bold:true,color:'1F2937',valign:'top'});
+            sl.addText(p.path,{x:0.95,y:pY+0.38,w:6.5,h:0.24,fontSize:9,color:'6B7280'});
+            sl.addText(String(p.count),{x:8.0,y:pY+0.03,w:0.5,h:0.4,fontSize:20,bold:true,color:'E8433A',align:'right',valign:'top'});
+            sl.addText('条',{x:8.5,y:pY+0.16,w:0.28,h:0.24,fontSize:9,color:'6B7280'});
+            if(fd) sl.addText((fd.person||'')+' · '+(fd.brand||'')+' · '+(fd.model||'')+' · '+(fd.code||''),{x:0.95,y:pY+0.58,w:8.0,h:0.22,fontSize:9,color:'6B7280'});
+            pY+=rH+0.1;
+        });
+        return;
+    }
+    if (s.type==='case') {
+        var d=s.d; var ck=d.code||'';
+        var att=(s.attachments&&ck&&s.attachments[ck])||{};
+        var imgs=att.images||[]; var note=att.note||'';
+        var ttl='失误案例  ·  '+(s.subLabel?s.subLabel+'·':'')+'案例'+s.caseNum;
+        _zbPptHdr(sl,ttl,(d.person||'')+' · '+(d.model||'')+' · '+(d.level3||d.level2||''));
+        // 图片区（左）
+        if(imgs.length>0){
+            try { sl.addImage({path:'https://zb-images-1423465873.cos.ap-guangzhou.myqcloud.com/qc-images/'+imgs[0],x:0.4,y:0.72,w:4.5,h:4.65}); }
+            catch(e){ sl.addShape('rect',{x:0.4,y:0.72,w:4.5,h:4.65,fill:{color:'F8FAFC'},line:{color:'E2E8F0'}}); sl.addText('暂无案例图',{x:0.4,y:2.8,w:4.5,h:0.4,fontSize:12,color:'D1D5DB',align:'center'}); }
+        } else {
+            sl.addShape('rect',{x:0.4,y:0.72,w:4.5,h:4.65,fill:{color:'F8FAFC'},line:{color:'E2E8F0'}});
+            sl.addText('暂无案例图',{x:0.4,y:2.8,w:4.5,h:0.4,fontSize:12,color:'D1D5DB',align:'center'});
+        }
+        // 右侧信息
+        var rX=5.2;
+        sl.addText((d.category||'')+' · '+(d.judgedIssueType||''),{x:rX,y:0.78,w:4.6,h:0.3,fontSize:10,color:'DC2626'});
+        sl.addText((d.model||'')+'\n'+(d.level3||d.level2||''),{x:rX,y:1.12,w:4.6,h:1.05,fontSize:22,bold:true,color:'1F2937'});
+        var dY=2.35;
+        [{lbl:'质检人',val:d.person||'',vc:'1F2937'},{lbl:'质检码',val:d.code||'',vc:'E8433A'},{lbl:'问题项',val:[d.level1,d.level2,d.level3].filter(Boolean).join(' · '),vc:'1F2937'}]
+        .forEach(function(r){ sl.addText(r.lbl,{x:rX,y:dY,w:0.85,h:0.3,fontSize:11,color:'6B7280'}); sl.addText(r.val,{x:rX+0.9,y:dY,w:3.7,h:0.3,fontSize:11,color:r.vc}); dY+=0.36; });
+        sl.addShape('roundRect',{x:rX,y:3.78,w:4.65,h:0.95,rectRadius:0.08,fill:{color:'FFF0EF'}});
+        sl.addText('重点提示',{x:rX+0.15,y:3.83,w:4.3,h:0.24,fontSize:10,color:'FCA5A5'});
+        sl.addText(note||'请填写点评内容',{x:rX+0.15,y:4.08,w:4.3,h:0.55,fontSize:13,color:'DC2626'});
+        return;
+    }
+}
+// ════════════ END 一键培训 ════════════
+
 </script>
+
+<!-- ══ 一键培训：Loading / 大仓选择 / 预览 3个浮层 ══ -->
+<div id="zbTrainingLoadingOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;align-items:center;justify-content:center;flex-direction:column;gap:14px;">
+  <div style="width:48px;height:48px;border:4px solid #fff3;border-top-color:#fff;border-radius:50%;animation:zbSpin .8s linear infinite;"></div>
+  <div style="color:#fff;font-size:14px;font-weight:500;">正在生成培训PPT…</div>
+</div>
+
+<div id="zbTrainingSelectModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9998;align-items:center;justify-content:center;">
+  <div style="background:#fff;border-radius:16px;padding:32px 36px;min-width:340px;box-shadow:0 20px 60px rgba(0,0,0,.2);text-align:center;">
+    <div style="font-size:17px;font-weight:700;color:#1f2937;margin-bottom:6px;">选择培训品类</div>
+    <div style="font-size:12px;color:#6b7280;margin-bottom:24px;">大仓站点请选择本次培训覆盖的品类</div>
+    <div style="display:flex;gap:12px;justify-content:center;">
+      <button onclick="zbTrainingDWChoice('phone')" style="flex:1;padding:14px 0;border-radius:10px;border:1.5px solid #e8433a;background:#fff0ef;color:#e8433a;font-size:14px;font-weight:600;cursor:pointer;">📱 手机</button>
+      <button onclick="zbTrainingDWChoice('four')" style="flex:1;padding:14px 0;border-radius:10px;border:1.5px solid #2563eb;background:#eff6ff;color:#2563eb;font-size:14px;font-weight:600;cursor:pointer;">💼 四品类</button>
+    </div>
+    <button onclick="zbTrainingCloseDWSelect()" style="margin-top:16px;background:none;border:none;color:#94a3b8;font-size:12px;cursor:pointer;">取消</button>
+  </div>
+</div>
+
+<div id="zbTrainingPreviewModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:9997;align-items:center;justify-content:center;flex-direction:column;gap:14px;">
+  <div style="display:flex;align-items:center;justify-content:space-between;width:840px;">
+    <div style="color:#fff;font-size:13px;font-weight:500;">预览 — 确认后下载 .pptx</div>
+    <div style="display:flex;align-items:center;gap:10px;">
+      <span id="zbTrainingCounter" style="color:#fff;font-size:12px;opacity:.7;"></span>
+      <button onclick="zbTrainingExportPptx()" style="padding:7px 18px;border-radius:8px;border:none;background:#e8433a;color:#fff;font-size:13px;font-weight:600;cursor:pointer;">⬇ 下载PPT</button>
+      <button onclick="zbTrainingClosePreview()" style="padding:7px 14px;border-radius:8px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;font-size:13px;cursor:pointer;">关闭</button>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:12px;">
+    <button onclick="zbTrainingPrev()" style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">‹</button>
+    <div id="zbTrainingSlideContainer" style="width:800px;height:450px;border-radius:8px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,.4);"></div>
+    <button onclick="zbTrainingNext()" style="width:36px;height:36px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;">›</button>
+  </div>
+  <div id="zbTrainingDotBar" style="display:flex;gap:5px;flex-wrap:wrap;justify-content:center;max-width:600px;"></div>
+</div>
+
+<style>
+@keyframes zbSpin { to { transform:rotate(360deg); } }
+</style>
 
 </html>
