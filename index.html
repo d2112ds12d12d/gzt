@@ -1267,54 +1267,51 @@
 
             <!-- 近期客观执行差异快报 -->
             <div class="card" id="issueHotspotCard" style="margin-top:0;">
-              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <!-- 标题行 -->
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0;padding-bottom:0;">
                 <div class="card-title" style="margin:0;display:flex;align-items:center;gap:7px;">
                     <span style="display:inline-block;width:3px;height:15px;background:#3b82f6;border-radius:0;flex-shrink:0;"></span>
                     <span style="font-size:15px;">📋</span>
                     近期客观执行差异快报
-                    <span id="hotspotCatLabel" style="font-size:11px;color:var(--text-secondary);font-weight:400;margin-left:2px;"></span>
                   </div>
-                <div style="display:flex;align-items:center;gap:6px;">
-                  <span id="hotspotPeriodLabel" style="font-size:10px;color:var(--text-secondary);"></span>
-                  <div id="hotspotTimeTabs" style="display:flex;gap:3px;">
-                    <button data-ht="week"  style="padding:3px 10px;font-size:11px;border-radius:6px;border:0.5px solid #3b82f6;background:#3b82f6;color:#fff;cursor:pointer;font-weight:500;">周度</button>
-                    <button data-ht="month" style="padding:3px 10px;font-size:11px;border-radius:6px;border:0.5px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);cursor:pointer;">月度</button>
-                    <button data-ht="day"   style="padding:3px 10px;font-size:11px;border-radius:6px;border:0.5px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);cursor:pointer;">日度</button>
-                    <button data-ht="custom" style="padding:3px 10px;font-size:11px;border-radius:6px;border:0.5px solid var(--border-color);background:var(--kpi-bg);color:var(--text-secondary);cursor:pointer;">自定义</button>
-                  </div>
-                </div>
+                <span id="hotspotPeriodLabel" style="font-size:10px;color:var(--text-secondary);"></span>
               </div>
 
-              <!-- 独立筛选控制栏 -->
-              <div style="display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--kpi-bg);border-radius:8px;margin-bottom:12px;flex-wrap:wrap;border:0.5px solid var(--border-color);">
+              <!-- 单行筛选栏 -->
+              <div style="display:flex;align-items:center;gap:6px;padding:8px 0 10px;flex-wrap:wrap;">
                 <span style="font-size:11px;color:var(--text-secondary);white-space:nowrap;">品类</span>
-                <div id="hotspotCatChips" style="display:flex;gap:4px;flex-wrap:wrap;">
+                <div id="hotspotCatChips" style="display:flex;gap:3px;flex-wrap:wrap;">
                   <span class="hst-cat-chip" data-cat="" onclick="zbHotspotCatTog(this)" style="padding:2px 9px;border-radius:10px;font-size:11px;border:1px solid #2563eb;background:#2563eb;color:#fff;cursor:pointer;user-select:none;">全部</span>
-                  <span class="hst-cat-chip" data-cat="手机" onclick="zbHotspotCatTog(this)" style="padding:2px 9px;border-radius:10px;font-size:11px;border:1px solid #e2e8f0;background:#f8fafc;color:#475569;cursor:pointer;user-select:none;">手机</span>
-                  <span class="hst-cat-chip" data-cat="笔记本" onclick="zbHotspotCatTog(this)" style="padding:2px 9px;border-radius:10px;font-size:11px;border:1px solid #e2e8f0;background:#f8fafc;color:#475569;cursor:pointer;user-select:none;">笔记本</span>
-                  <span class="hst-cat-chip" data-cat="平板" onclick="zbHotspotCatTog(this)" style="padding:2px 9px;border-radius:10px;font-size:11px;border:1px solid #e2e8f0;background:#f8fafc;color:#475569;cursor:pointer;user-select:none;">平板</span>
-                  <span class="hst-cat-chip" data-cat="手表" onclick="zbHotspotCatTog(this)" style="padding:2px 9px;border-radius:10px;font-size:11px;border:1px solid #e2e8f0;background:#f8fafc;color:#475569;cursor:pointer;user-select:none;">手表</span>
-                  <span class="hst-cat-chip" data-cat="耳机" onclick="zbHotspotCatTog(this)" style="padding:2px 9px;border-radius:10px;font-size:11px;border:1px solid #e2e8f0;background:#f8fafc;color:#475569;cursor:pointer;user-select:none;">耳机</span>
+                  <span class="hst-cat-chip" data-cat="手机" onclick="zbHotspotCatTog(this)" style="padding:2px 9px;border-radius:10px;font-size:11px;border:1px solid #e2e8f0;background:var(--kpi-bg);color:#475569;cursor:pointer;user-select:none;">手机</span>
+                  <span class="hst-cat-chip" data-cat="笔记本" onclick="zbHotspotCatTog(this)" style="padding:2px 9px;border-radius:10px;font-size:11px;border:1px solid #e2e8f0;background:var(--kpi-bg);color:#475569;cursor:pointer;user-select:none;">笔记本</span>
+                  <span class="hst-cat-chip" data-cat="平板" onclick="zbHotspotCatTog(this)" style="padding:2px 9px;border-radius:10px;font-size:11px;border:1px solid #e2e8f0;background:var(--kpi-bg);color:#475569;cursor:pointer;user-select:none;">平板</span>
+                  <span class="hst-cat-chip" data-cat="手表" onclick="zbHotspotCatTog(this)" style="padding:2px 9px;border-radius:10px;font-size:11px;border:1px solid #e2e8f0;background:var(--kpi-bg);color:#475569;cursor:pointer;user-select:none;">手表</span>
+                  <span class="hst-cat-chip" data-cat="耳机" onclick="zbHotspotCatTog(this)" style="padding:2px 9px;border-radius:10px;font-size:11px;border:1px solid #e2e8f0;background:var(--kpi-bg);color:#475569;cursor:pointer;user-select:none;">耳机</span>
                 </div>
-                <div style="width:1px;height:16px;background:var(--border-color);flex-shrink:0;"></div>
-                <!-- 快捷选 -->
+                <!-- 竖线分隔 -->
+                <div style="width:1px;height:16px;background:var(--border-color);flex-shrink:0;margin:0 2px;"></div>
+                <!-- 日期快捷 -->
                 <div id="hotspotQuickBtns" style="display:flex;gap:3px;">
-                  <span class="hst-quick" data-q="w" onclick="zbHotspotQuick(this)" style="padding:2px 8px;border-radius:6px;font-size:11px;border:1px solid #2563eb;background:#eff6ff;color:#2563eb;cursor:pointer;user-select:none;font-weight:500;">上周vs本周</span>
-                  <span class="hst-quick" data-q="lw" onclick="zbHotspotQuick(this)" style="padding:2px 8px;border-radius:6px;font-size:11px;border:1px solid #e2e8f0;background:#f8fafc;color:#475569;cursor:pointer;user-select:none;">前两周</span>
-                  <span class="hst-quick" data-q="m" onclick="zbHotspotQuick(this)" style="padding:2px 8px;border-radius:6px;font-size:11px;border:1px solid #e2e8f0;background:#f8fafc;color:#475569;cursor:pointer;user-select:none;">上月vs本月</span>
+                  <span class="hst-quick" data-q="w"  onclick="zbHotspotQuick(this)" style="padding:2px 9px;border-radius:6px;font-size:11px;border:1px solid #e2e8f0;background:var(--kpi-bg);color:#475569;cursor:pointer;user-select:none;">上周vs本周</span>
+                  <span class="hst-quick" data-q="lw" onclick="zbHotspotQuick(this)" style="padding:2px 9px;border-radius:6px;font-size:11px;border:1px solid #e2e8f0;background:var(--kpi-bg);color:#475569;cursor:pointer;user-select:none;">前两周</span>
+                  <span class="hst-quick" data-q="m"  onclick="zbHotspotQuick(this)" style="padding:2px 9px;border-radius:6px;font-size:11px;border:1px solid #e2e8f0;background:var(--kpi-bg);color:#475569;cursor:pointer;user-select:none;">上月vs本月</span>
                 </div>
-                <!-- A/B日期（自定义时显示） -->
-                <div id="hotspotDateInputs" style="display:none;align-items:center;gap:4px;flex-wrap:wrap;">
-                  <span style="font-size:10px;background:#dbeafe;color:#1d4ed8;border-radius:3px;padding:1px 5px;">A期</span>
-                  <input type="date" id="hstDateA1" style="border:1px solid #bfdbfe;border-radius:5px;padding:2px 6px;font-size:11px;font-family:inherit;color:#1d4ed8;outline:none;width:110px;" onchange="renderHotspot()">
-                  <span style="font-size:10px;color:#94a3b8;">—</span>
-                  <input type="date" id="hstDateA2" style="border:1px solid #bfdbfe;border-radius:5px;padding:2px 6px;font-size:11px;font-family:inherit;color:#1d4ed8;outline:none;width:110px;" onchange="renderHotspot()">
-                  <span style="font-size:10px;color:#94a3b8;margin:0 2px;">vs</span>
-                  <span style="font-size:10px;background:#dcfce7;color:#15803d;border-radius:3px;padding:1px 5px;">B期</span>
-                  <input type="date" id="hstDateB1" style="border:1px solid #bbf7d0;border-radius:5px;padding:2px 6px;font-size:11px;font-family:inherit;color:#15803d;outline:none;width:110px;" onchange="renderHotspot()">
-                  <span style="font-size:10px;color:#94a3b8;">—</span>
-                  <input type="date" id="hstDateB2" style="border:1px solid #bbf7d0;border-radius:5px;padding:2px 6px;font-size:11px;font-family:inherit;color:#15803d;outline:none;width:110px;" onchange="renderHotspot()">
-                </div>
+                <!-- 自定义（虚线区分） -->
+                <span id="hstCustomBtn" onclick="zbHotspotToggleCustom()" style="padding:2px 9px;border-radius:6px;font-size:11px;border:1px dashed #cbd5e1;background:var(--kpi-bg);color:#64748b;cursor:pointer;user-select:none;">自定义…</span>
+              </div>
+
+              <!-- A/B日期展开行（自定义时显示） -->
+              <div id="hotspotDateInputs" style="display:none;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 12px;background:var(--kpi-bg);border-radius:8px;margin-bottom:10px;border:0.5px solid var(--border-color);">
+                <span style="font-size:10px;background:#dbeafe;color:#1d4ed8;border-radius:3px;padding:1px 5px;font-weight:600;">A期</span>
+                <input type="date" id="hstDateA1" style="border:1px solid #bfdbfe;border-radius:5px;padding:2px 6px;font-size:11px;font-family:inherit;color:#1d4ed8;outline:none;width:116px;" onchange="zbHotspotCustomDateChange()">
+                <span style="font-size:10px;color:#94a3b8;">—</span>
+                <input type="date" id="hstDateA2" style="border:1px solid #bfdbfe;border-radius:5px;padding:2px 6px;font-size:11px;font-family:inherit;color:#1d4ed8;outline:none;width:116px;" onchange="zbHotspotCustomDateChange()">
+                <span style="font-size:11px;color:#94a3b8;margin:0 4px;">vs</span>
+                <span style="font-size:10px;background:#dcfce7;color:#15803d;border-radius:3px;padding:1px 5px;font-weight:600;">B期</span>
+                <input type="date" id="hstDateB1" style="border:1px solid #bbf7d0;border-radius:5px;padding:2px 6px;font-size:11px;font-family:inherit;color:#15803d;outline:none;width:116px;" onchange="zbHotspotCustomDateChange()">
+                <span style="font-size:10px;color:#94a3b8;">—</span>
+                <input type="date" id="hstDateB2" style="border:1px solid #bbf7d0;border-radius:5px;padding:2px 6px;font-size:11px;font-family:inherit;color:#15803d;outline:none;width:116px;" onchange="zbHotspotCustomDateChange()">
+                <span onclick="zbHotspotToggleCustom()" style="margin-left:auto;font-size:11px;color:#94a3b8;cursor:pointer;padding:2px 6px;border-radius:4px;border:0.5px solid var(--border-color);background:#fff;">收起</span>
               </div>
 
               <!-- KPI 汇总行 -->
@@ -4060,12 +4057,13 @@
             }
 
             // ══ 近期客观执行差异快报 ══
-            var _hotspotTimeMode = 'week'; // week | month | day | custom
+            var _hotspotTimeMode = 'w'; // w | lw | m | custom
+            var _hotspotCustomOpen = false;
 
             // 品类切换
             window.zbHotspotCatTog = function(el) {
                 document.querySelectorAll('.hst-cat-chip').forEach(function(c){
-                    c.style.background = '#f8fafc'; c.style.borderColor = '#e2e8f0'; c.style.color = '#475569';
+                    c.style.background = 'var(--kpi-bg)'; c.style.borderColor = '#e2e8f0'; c.style.color = '#475569';
                 });
                 el.style.background = '#2563eb'; el.style.borderColor = '#2563eb'; el.style.color = '#fff';
                 renderHotspot();
@@ -4073,19 +4071,15 @@
 
             // 快捷日期
             window.zbHotspotQuick = function(el) {
+                // 如果自定义展开着，先收起
+                if (_hotspotCustomOpen) zbHotspotToggleCustom(true);
                 document.querySelectorAll('.hst-quick').forEach(function(c){
-                    c.style.background='#f8fafc'; c.style.borderColor='#e2e8f0'; c.style.color='#475569'; c.style.fontWeight='400';
+                    c.style.background='var(--kpi-bg)'; c.style.borderColor='#e2e8f0'; c.style.color='#475569'; c.style.fontWeight='400';
                 });
                 el.style.background='#eff6ff'; el.style.borderColor='#2563eb'; el.style.color='#2563eb'; el.style.fontWeight='500';
-                document.getElementById('hotspotDateInputs').style.display = 'none';
-                var q = el.dataset.q;
-                var wr = (window._zbWeekRanges && window._zbWeekRanges()) || {};
-                if (q === 'w') { _hotspotTimeMode = 'week'; }
-                else if (q === 'lw') {
-                    // 前两周：把 curStart/curEnd 手动设为"上上周"vs"上周"
-                    _hotspotTimeMode = 'custom';
+                _hotspotTimeMode = el.dataset.q;
+                if (_hotspotTimeMode === 'lw') {
                     var wr2 = window._zbWeekRanges ? window._zbWeekRanges() : {};
-                    // lastStart~lastEnd = 上周，再往前7天 = 上上周
                     var ls = wr2.lastStart || '', le = wr2.lastEnd || '';
                     var lls = ls ? (function(){ var d=new Date(ls); d.setDate(d.getDate()-7); return d.toISOString().slice(0,10); })() : '';
                     var lle = le ? (function(){ var d=new Date(le); d.setDate(d.getDate()-7); return d.toISOString().slice(0,10); })() : '';
@@ -4093,34 +4087,43 @@
                     document.getElementById('hstDateA2').value = lle;
                     document.getElementById('hstDateB1').value = ls;
                     document.getElementById('hstDateB2').value = le;
-                } else if (q === 'm') { _hotspotTimeMode = 'month'; }
+                }
                 renderHotspot();
             };
 
-            (function(){
-                var btns = document.querySelectorAll('#hotspotTimeTabs button');
-                btns.forEach(function(btn){
-                    btn.addEventListener('click', function(){
-                        _hotspotTimeMode = this.dataset.ht;
-                        btns.forEach(function(b){
-                            var active = b.dataset.ht === _hotspotTimeMode;
-                            b.style.background = active ? '#3b82f6' : 'var(--kpi-bg)';
-                            b.style.color      = active ? '#fff'    : 'var(--text-secondary)';
-                            b.style.border     = active ? '0.5px solid #3b82f6' : '0.5px solid var(--border-color)';
-                            b.style.fontWeight = active ? '500' : '400';
-                        });
-                        // 自定义模式显示日期输入
-                        document.getElementById('hotspotDateInputs').style.display = _hotspotTimeMode === 'custom' ? 'flex' : 'none';
-                        if (_hotspotTimeMode !== 'custom') {
-                            // 取消快捷选高亮
-                            document.querySelectorAll('.hst-quick').forEach(function(c){
-                                c.style.background='#f8fafc'; c.style.borderColor='#e2e8f0'; c.style.color='#475569'; c.style.fontWeight='400';
-                            });
-                        }
-                        renderHotspot();
+            // 自定义展开/收起
+            window.zbHotspotToggleCustom = function(forceClose) {
+                _hotspotCustomOpen = forceClose ? false : !_hotspotCustomOpen;
+                var row = document.getElementById('hotspotDateInputs');
+                var btn = document.getElementById('hstCustomBtn');
+                if (row) row.style.display = _hotspotCustomOpen ? 'flex' : 'none';
+                if (btn) {
+                    btn.style.borderStyle  = _hotspotCustomOpen ? 'solid' : 'dashed';
+                    btn.style.borderColor  = _hotspotCustomOpen ? '#7c3aed' : '#cbd5e1';
+                    btn.style.background   = _hotspotCustomOpen ? '#f5f3ff' : 'var(--kpi-bg)';
+                    btn.style.color        = _hotspotCustomOpen ? '#6d28d9' : '#64748b';
+                }
+                if (_hotspotCustomOpen) {
+                    // 取消快捷按钮高亮
+                    document.querySelectorAll('.hst-quick').forEach(function(c){
+                        c.style.background='var(--kpi-bg)'; c.style.borderColor='#e2e8f0'; c.style.color='#475569'; c.style.fontWeight='400';
                     });
-                });
-            })();
+                    _hotspotTimeMode = 'custom';
+                    renderHotspot();
+                }
+            };
+
+            // 自定义日期输入变化：实时更新右上角 + 重新渲染
+            window.zbHotspotCustomDateChange = function() {
+                function sd(s) { if (!s) return '—'; var p = s.split('-'); return (p[1]|0) + '/' + (p[2]|0); }
+                var a1 = document.getElementById('hstDateA1').value;
+                var a2 = document.getElementById('hstDateA2').value;
+                var b1 = document.getElementById('hstDateB1').value;
+                var b2 = document.getElementById('hstDateB2').value;
+                var lbl = document.getElementById('hotspotPeriodLabel');
+                if (lbl) lbl.textContent = 'A期 ' + sd(a1) + '—' + sd(a2) + ' vs B期 ' + sd(b1) + '—' + sd(b2);
+                renderHotspot();
+            };
 
             function renderHotspot() {
                 var card = document.getElementById('issueHotspotCard');
@@ -4154,7 +4157,7 @@
 
                 var curStart, curEnd, prevStart, prevEnd, periodLabel;
 
-                if (_hotspotTimeMode === 'week') {
+                if (_hotspotTimeMode === 'w') {
                     var dow = ld.getDay() || 7;
                     var mon = new Date(ld); mon.setDate(ld.getDate() - (dow - 1));
                     var sun = new Date(mon); sun.setDate(mon.getDate() + 6);
@@ -4163,28 +4166,34 @@
                     var pSun = new Date(sun); pSun.setDate(sun.getDate() - 7);
                     prevStart = _fmtDate(pMon); prevEnd = _fmtDate(pSun);
                     periodLabel = '上周 ' + _shortDate(pMon) + '–' + _shortDate(pSun) + ' vs 本周 ' + _shortDate(mon) + '–' + _shortDate(sun);
-                } else if (_hotspotTimeMode === 'month') {
-                    // 本月：1号 ~ 数据最新日期（不用月末）
+                } else if (_hotspotTimeMode === 'm') {
                     curStart = _fmtDate(new Date(ld.getFullYear(), ld.getMonth(), 1));
                     curEnd   = latestDate;
                     prevStart = _fmtDate(new Date(ld.getFullYear(), ld.getMonth() - 1, 1));
                     prevEnd   = _fmtDate(new Date(ld.getFullYear(), ld.getMonth(), 0));
                     periodLabel = '上月 ' + _shortDate(new Date(prevStart)) + '—' + _shortDate(new Date(prevEnd)) + ' vs 本月 ' + _shortDate(new Date(curStart)) + '—' + _shortDate(new Date(curEnd));
-                } else if (_hotspotTimeMode === 'custom') {
-                    // 自定义：读 A/B 输入框
+                } else if (_hotspotTimeMode === 'custom' || _hotspotTimeMode === 'lw') {
                     prevStart = (document.getElementById('hstDateA1')||{}).value || '';
                     prevEnd   = (document.getElementById('hstDateA2')||{}).value || '';
                     curStart  = (document.getElementById('hstDateB1')||{}).value || '';
                     curEnd    = (document.getElementById('hstDateB2')||{}).value || '';
                     if (!prevStart || !curStart) { _hotspotRenderEmpty('请设置 A/B 对比日期'); return; }
                     function _sd(s){ var p=s.split('-'); return (p[1]|0)+'/'+(p[2]|0); }
-                    periodLabel = 'A期 ' + _sd(prevStart) + '–' + _sd(prevEnd) + ' vs B期 ' + _sd(curStart) + '–' + _sd(curEnd);
+                    if (_hotspotTimeMode === 'lw') {
+                        periodLabel = '前两周 ' + _sd(prevStart) + '–' + _sd(prevEnd) + ' vs 上周 ' + _sd(curStart) + '–' + _sd(curEnd);
+                    } else {
+                        periodLabel = 'A期 ' + _sd(prevStart) + '–' + _sd(prevEnd) + ' vs B期 ' + _sd(curStart) + '–' + _sd(curEnd);
+                    }
                 } else {
-                    // 日度：数据最新日期当天 vs 前一天
-                    curStart = curEnd = latestDate;
-                    var yd = new Date(ld); yd.setDate(ld.getDate() - 1);
-                    prevStart = prevEnd = _fmtDate(yd);
-                    periodLabel = _shortDate(yd) + '（昨）vs ' + _shortDate(ld) + '（今）';
+                    // 兜底：上周 vs 本周
+                    var dow2 = ld.getDay() || 7;
+                    var mon2 = new Date(ld); mon2.setDate(ld.getDate() - (dow2 - 1));
+                    var sun2 = new Date(mon2); sun2.setDate(mon2.getDate() + 6);
+                    curStart = _fmtDate(mon2); curEnd = _fmtDate(sun2);
+                    var pMon2 = new Date(mon2); pMon2.setDate(mon2.getDate() - 7);
+                    var pSun2 = new Date(sun2); pSun2.setDate(sun2.getDate() - 7);
+                    prevStart = _fmtDate(pMon2); prevEnd = _fmtDate(pSun2);
+                    periodLabel = '上周 ' + _shortDate(pMon2) + '–' + _shortDate(pSun2) + ' vs 本周 ' + _shortDate(mon2) + '–' + _shortDate(sun2);
                 }
                 // 存到window，供导出直接复用
                 window._hotspotCurStart  = curStart;
@@ -4194,10 +4203,6 @@
                 window._hotspotBaseDiff  = base;
 
                 document.getElementById('hotspotPeriodLabel').textContent = periodLabel;
-
-                // 品类标签（读独立筛选，不跟顶部）
-                var catLabel = hstCat ? '· ' + hstCat : '';
-                document.getElementById('hotspotCatLabel').textContent = catLabel;
 
                 // 3. 按三级项 + 质检码去重聚合
                 function aggregateByLevel3(rows, s, e) {
