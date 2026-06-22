@@ -495,9 +495,15 @@
         /* 单元格编辑 */
         .dt-cell-editable { cursor:pointer; border-radius:4px; padding:1px 3px; transition:background .15s; display:inline-block; min-width:20px; }
         .dt-cell-editable:hover { background:rgba(59,130,246,0.08); }
-        .dt-cell-modified { color:#2563eb; font-weight:600; }
-        .dt-cell-modified::after { content:'*'; font-size:9px; vertical-align:super; color:#2563eb; margin-left:1px; }
+        .dt-cell-modified { color:#92400e; font-weight:600; background:#fffbeb; border:1px solid #fde68a; }
+        .dt-cell-modified::after { content:' 本地'; font-size:8px; vertical-align:middle; color:#b45309; margin-left:3px; font-weight:500; }
         .dt-cell-input { font-size:12px; padding:2px 5px; border:1.5px solid var(--btn-bg); border-radius:4px; outline:none; background:var(--bg-card); color:var(--text-primary); width:120px; }
+        .zb-draft-sync-wrap { display:none;align-items:center;gap:7px; }
+        .zb-draft-counts { font-size:10px;color:#92400e;white-space:nowrap; }
+        .zb-draft-sync-btn { display:inline-flex;align-items:center;gap:5px;padding:5px 12px;border-radius:7px;font-size:11px;font-weight:600;border:1px solid #f59e0b;background:#fffbeb;color:#92400e;cursor:pointer;white-space:nowrap; }
+        .zb-draft-sync-btn:hover { background:#fef3c7; }
+        .zb-draft-sync-btn:disabled { opacity:.55;cursor:not-allowed; }
+        .zb-local-badge { display:inline-flex;align-items:center;margin-left:4px;padding:1px 4px;border-radius:4px;background:#fef3c7;color:#92400e;font-size:8px;font-style:normal;vertical-align:middle; }
         /* 差异明细分页 */
         .dt-pagination { display:flex; align-items:center; justify-content:space-between; margin-top:12px; flex-wrap:wrap; gap:8px; }
         .dt-page-info { font-size:12px; color:var(--text-secondary); }
@@ -1723,6 +1729,10 @@
                         </div>
                     </div>
                     <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;">
+                        <div id="zbDraftSyncWrap" class="zb-draft-sync-wrap">
+                            <span id="zbDraftCounts" class="zb-draft-counts"></span>
+                            <button id="zbDraftSyncBtn" class="zb-draft-sync-btn" onclick="zbSyncDrafts()">☁ 上传云端（0）</button>
+                        </div>
                         <button id="modalJumpBtn" onclick="zbJumpTableLink()" style="display:none;align-items:center;gap:5px;padding:5px 14px;border-radius:7px;font-size:12px;font-weight:500;border:0.5px solid #93c5fd;background:#eff6ff;color:#2563eb;cursor:pointer;white-space:nowrap;" onmouseenter="this.style.background='#dbeafe'" onmouseleave="this.style.background='#eff6ff'"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;vertical-align:middle;margin-right:2px;"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>跳转抽检登记表</button>
                         <span class="close-modal" style="flex-shrink:0;width:26px;height:26px;border-radius:50%;background:rgba(255,255,255,.6);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:14px;color:#64748b;">&times;</span>
                     </div>
@@ -2619,7 +2629,11 @@
             let dtEdits = {};
             try { dtEdits = JSON.parse(localStorage.getItem(DT_STORE_KEY)||'{}'); } catch(e) {}
             window._dtEdits = dtEdits; // 暴露给zbPushEdits访问
-            function dtSaveEdits() { localStorage.setItem(DT_STORE_KEY, JSON.stringify(dtEdits)); window._dtEdits = dtEdits; }
+            function dtSaveEdits() {
+                localStorage.setItem(DT_STORE_KEY, JSON.stringify(dtEdits));
+                window._dtEdits = dtEdits;
+                if (typeof zbUpdateDraftUI === 'function') zbUpdateDraftUI();
+            }
 
             // 可编辑列
             const DT_EDITABLE_COLS = ['person'];
@@ -3048,19 +3062,17 @@
                         } else {
                             delete dtEdits[editKey]; // 改回原值=清除覆盖
                         }
+                        if (window._zbPersonSubmitted && window._zbPersonSubmitted[editKey]) {
+                            delete window._zbPersonSubmitted[editKey];
+                            _zbPersonSubmitted = window._zbPersonSubmitted;
+                            _zbPersistDraftState();
+                        }
                         dtSaveEdits();
                         // 同步回写到所有数据对象（_allDiffData 投影 + 三个原始源），
                         // 让排行榜、统计、导出等读 d.person 的地方立刻拿到新值，
                         // 否则同一个人会被识别成新旧两个人（已确认 bug）。
                         dtApplyEditToData(code, col, newVal);
-                        // v1.61C: debounce 500ms → 150ms（实际单格场景没有"连续改多格"，150ms 仍能聚合快速回车→失焦的同帧触发）
-                        if (typeof zbPushEdits === 'function') {
-                            if (window._zbPushEditsDebounce) clearTimeout(window._zbPushEditsDebounce);
-                            window._zbPushEditsDebounce = setTimeout(function(){
-                                window._zbPushEditsDebounce = null;
-                                zbPushEdits();
-                            }, 150);
-                        }
+                        // 原操作人先保存在本地草稿，由明细页右上角统一上传云端。
                         // 写入修改日志
                         zbAddLog({ type:'edit', code:code, col:DT_COL_LABELS[col]||col, from:oldVal, to:newVal });
                         // 数据变了，触发看板刷新（排行榜、人员维度等）
@@ -3538,6 +3550,7 @@
 
                 // K: 推断跳转链接
                 var jumpBtn = document.getElementById('modalJumpBtn');
+                if (typeof zbUpdateDraftUI === 'function') zbUpdateDraftUI();
                 if (jumpBtn) {
                     var sampleRec = currentModalRecords[0] || {};
                     var jDate = sampleRec.date || '';
@@ -6284,6 +6297,39 @@ async function zbUploadToCos(file, imgKey) {
 var _zbAttach = null;
 var _zbAttachLoaded = false;
 var _ZB_ATTACH_CACHE_KEY = 'zb_attach_cache';
+var _ZB_ATTACH_DIRTY_KEY = 'zb_attach_dirty_v1';
+var _ZB_PERSON_SUBMITTED_KEY = 'zb_person_submitted_v1';
+var _zbAttachDirty = {};
+var _zbPersonSubmitted = {};
+try { _zbAttachDirty = JSON.parse(localStorage.getItem(_ZB_ATTACH_DIRTY_KEY) || '{}'); } catch(e) {}
+try { _zbPersonSubmitted = JSON.parse(localStorage.getItem(_ZB_PERSON_SUBMITTED_KEY) || '{}'); } catch(e) {}
+window._zbPersonSubmitted = _zbPersonSubmitted;
+
+function _zbPersistDraftState() {
+    try { localStorage.setItem(_ZB_ATTACH_CACHE_KEY, JSON.stringify(_zbAttach || {})); } catch(e) {}
+    try { localStorage.setItem(_ZB_ATTACH_DIRTY_KEY, JSON.stringify(_zbAttachDirty || {})); } catch(e) {}
+    try { localStorage.setItem(_ZB_PERSON_SUBMITTED_KEY, JSON.stringify(_zbPersonSubmitted || {})); } catch(e) {}
+    if (typeof zbUpdateDraftUI === 'function') zbUpdateDraftUI();
+}
+
+function _zbMarkAttachDirty(key, field) {
+    if (!_zbAttachDirty[key]) _zbAttachDirty[key] = {};
+    _zbAttachDirty[key][field] = true;
+    _zbPersistDraftState();
+}
+
+function _zbMergeAttachDrafts(fresh, localDraft) {
+    fresh = fresh || {};
+    localDraft = localDraft || {};
+    Object.keys(_zbAttachDirty || {}).forEach(function(key) {
+        var dirty = _zbAttachDirty[key] || {};
+        if (!fresh[key]) fresh[key] = { images: [], note: '' };
+        if (!localDraft[key]) return;
+        if (dirty.images) fresh[key].images = (localDraft[key].images || []).slice();
+        if (dirty.note) fresh[key].note = localDraft[key].note || '';
+    });
+    return fresh;
+}
 
 function _zbMigrateAttach(data) {
     var migrated = {};
@@ -6314,7 +6360,7 @@ async function zbLoadAttach() {
                 var token = zbGetToken();
                 var data = await ghApiFetch(GH_FILES.qcAttachments, token);
                 if (data && typeof data === 'object') {
-                    var fresh = _zbMigrateAttach(data);
+                    var fresh = _zbMergeAttachDrafts(_zbMigrateAttach(data), _zbAttach);
                     _zbAttach = fresh;
                     try { localStorage.setItem(_ZB_ATTACH_CACHE_KEY, JSON.stringify(fresh)); } catch(e) {}
                 }
@@ -6345,12 +6391,131 @@ async function zbLoadAttach() {
     return _zbAttach;
 }
 
-async function zbSaveAttach() {
-    var token = zbGetToken();
-    await _zbPushFile(GH_FILES.qcAttachments, _zbAttach || {}, token);
-    // 保存成功后同步更新本地缓存
-    try { localStorage.setItem(_ZB_ATTACH_CACHE_KEY, JSON.stringify(_zbAttach || {})); } catch(e) {}
+async function zbSaveAttach(key, field) {
+    _zbMarkAttachDirty(key, field);
 }
+
+function zbGetDraftSummary() {
+    var edits = window._dtEdits || {};
+    var person = {};
+    Object.keys(edits).forEach(function(key) {
+        if (!_zbPersonSubmitted[key]) person[key] = edits[key];
+    });
+    var images = 0, notes = 0;
+    Object.keys(_zbAttachDirty || {}).forEach(function(key) {
+        if (_zbAttachDirty[key].images) images++;
+        if (_zbAttachDirty[key].note) notes++;
+    });
+    return { person: person, personCount: Object.keys(person).length, images: images, notes: notes };
+}
+
+function zbUpdateDraftUI() {
+    var summary = zbGetDraftSummary();
+    var total = summary.personCount + summary.images + summary.notes;
+    var wrap = document.getElementById('zbDraftSyncWrap');
+    var counts = document.getElementById('zbDraftCounts');
+    var btn = document.getElementById('zbDraftSyncBtn');
+    if (!wrap || !counts || !btn) return;
+    wrap.style.display = total ? 'flex' : 'none';
+    counts.textContent = '图片 ' + summary.images + ' · 原操作人 ' + summary.personCount + ' · 备注 ' + summary.notes;
+    btn.textContent = '☁ 上传云端（' + total + '）';
+    btn.disabled = !!window._zbDraftSyncing;
+}
+
+async function zbPushAttachDrafts(token) {
+    var dirtySnapshot = JSON.parse(JSON.stringify(_zbAttachDirty || {}));
+    if (!Object.keys(dirtySnapshot).length) return { allOk: true };
+    var latest = {};
+    try {
+        var cloud = await ghApiFetch(GH_FILES.qcAttachments, token);
+        if (!cloud || typeof cloud !== 'object') {
+            return { allOk: false, errMsg: '附件云端文件不存在或格式异常' };
+        }
+        latest = _zbMigrateAttach(cloud);
+    } catch(e) {
+        console.warn('[附件草稿] 拉取云端文件失败，停止提交以避免覆盖:', e);
+        return { allOk: false, errMsg: '附件云端文件读取失败' };
+    }
+    Object.keys(dirtySnapshot).forEach(function(key) {
+        var fields = dirtySnapshot[key] || {};
+        var local = (_zbAttach && _zbAttach[key]) || { images: [], note: '' };
+        if (!latest[key]) latest[key] = { images: [], note: '' };
+        if (fields.images) latest[key].images = (local.images || []).slice();
+        if (fields.note) latest[key].note = local.note || '';
+    });
+    await _zbPushFile(GH_FILES.qcAttachments, latest, token);
+    Object.keys(dirtySnapshot).forEach(function(key) {
+        var fields = dirtySnapshot[key] || {};
+        if (!_zbAttachDirty[key]) return;
+        if (fields.images) delete _zbAttachDirty[key].images;
+        if (fields.note) delete _zbAttachDirty[key].note;
+        if (!Object.keys(_zbAttachDirty[key]).length) delete _zbAttachDirty[key];
+    });
+    _zbAttach = _zbMergeAttachDrafts(latest, _zbAttach);
+    _zbPersistDraftState();
+    return { allOk: true };
+}
+
+async function zbSyncDrafts() {
+    if (zbRole !== 'admin' && zbRole !== 'super' && zbRole !== 'trainer') return;
+    if (window._zbDraftSyncing) return;
+    var token = zbGetToken();
+    if (!token) { showToast('❌ 缺少云端凭证，无法上传'); return; }
+    var summary = zbGetDraftSummary();
+    if (!summary.personCount && !summary.images && !summary.notes) return;
+    window._zbDraftSyncing = true;
+    zbUpdateDraftUI();
+    zbShowPushOverlay('pushing');
+    var errors = [];
+    try {
+        if (summary.personCount) {
+            var personResult = await _doPushEdits(token, summary.person);
+            if (personResult && personResult.allOk) {
+                Object.keys(summary.person).forEach(function(key) { _zbPersonSubmitted[key] = true; });
+                window._zbPersonSubmitted = _zbPersonSubmitted;
+                _zbPersistDraftState();
+            } else {
+                errors.push((personResult && personResult.errMsg) || '原操作人上传失败');
+            }
+        }
+        if (summary.images || summary.notes) {
+            try {
+                var attachResult = await zbPushAttachDrafts(token);
+                if (!attachResult.allOk) errors.push(attachResult.errMsg || '图片/备注上传失败');
+            } catch(e) {
+                errors.push((e && e.message) || '图片/备注上传失败');
+            }
+        }
+        if (errors.length) {
+            zbShowPushOverlay('failure', {
+                msg: errors.join('；'),
+                onRetry: function(){ window._zbDraftSyncing = false; zbUpdateDraftUI(); zbSyncDrafts(); },
+                onAbandon: function(){ window._zbDraftSyncing = false; zbUpdateDraftUI(); }
+            });
+        } else {
+            zbShowPushOverlay('success');
+            showToast('✅ 本地修改已上传云端');
+        }
+    } catch(e) {
+        zbShowPushOverlay('failure', {
+            msg: (e && e.message) || '上传异常',
+            onRetry: function(){ window._zbDraftSyncing = false; zbUpdateDraftUI(); zbSyncDrafts(); },
+            onAbandon: function(){ window._zbDraftSyncing = false; zbUpdateDraftUI(); }
+        });
+    } finally {
+        window._zbDraftSyncing = false;
+        zbUpdateDraftUI();
+    }
+}
+
+window.addEventListener('beforeunload', function(e) {
+    var s = zbGetDraftSummary();
+    if (s.personCount + s.images + s.notes > 0) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+});
+setTimeout(zbUpdateDraftUI, 0);
 
 // 生成绑定key：质检码|站点|二级项|原三级项|新三级项
 function zbImgKey(row) {
@@ -6383,7 +6548,7 @@ async function zbAddRowImage(row, url) {
     if (!attach[key]) attach[key] = { images: [], note: '' };
     attach[key].images.push(url);
     _zbAttach = attach;
-    await zbSaveAttach();
+    await zbSaveAttach(key, 'images');
 }
 
 // 保存备注
@@ -6393,7 +6558,7 @@ async function zbSaveRowNote(row, note) {
     if (!attach[key]) attach[key] = { images: [], note: '' };
     attach[key].note = note;
     _zbAttach = attach;
-    await zbSaveAttach();
+    await zbSaveAttach(key, 'note');
 }
 
 async function zbRemoveRowImage(row, url) {
@@ -6402,11 +6567,7 @@ async function zbRemoveRowImage(row, url) {
     if (!attach[key] || !attach[key].images) return;
     attach[key].images = attach[key].images.filter(function(u){ return u !== url; });
     _zbAttach = attach;
-    await zbSaveAttach();
-    // 强制刷新缓存，确保下次读取拿到最新数据
-    _zbAttachLoaded = false;
-    _zbAttach = null;
-    await zbLoadAttach();
+    await zbSaveAttach(key, 'images');
     zbAuditWrite('image_delete',{action:'delete_image',site:row.warehouse||row['站点名称']||'',category:row.cat||'',summary:'删除质检码 '+(row.code||row['质检码']||'')+' 的图片',target:{code:row.code||row['质检码']||'',image:url}});
 }
 
@@ -6586,6 +6747,10 @@ async function zbInjectCamIcon(td, row, linkIcon) {
         badge.textContent = urls.length;
         cam.appendChild(badge);
     }
+    if (_zbAttachDirty[zbImgKey(row)] && _zbAttachDirty[zbImgKey(row)].images) {
+        cam.style.boxShadow = '0 0 0 2px #fbbf24';
+        cam.title = '图片关联已保存到本地，待上传云端';
+    }
     cam.title = !canEdit ? ('查看图片（' + urls.length + '张，无编辑权限）') : (hasImg ? '查看图片（' + urls.length + '张）' : '上传图片');
     cam.onclick = async function(e) {
         e.stopPropagation();
@@ -6623,7 +6788,7 @@ async function zbDoUploadFiles(files, cam, row, panel) {
         }
         // 记录图片操作日志
         zbAddImageLog(row, files.length, totalSizeKB);
-        showToast('✅ 上传成功，共' + files.length + '张');
+        showToast('✅ 图片已上传，共' + files.length + '张；关联信息待上传云端');
         zbRefreshCamIcon(cam, row);
     } catch(err) {
         console.error('图片上传失败', err);
@@ -6802,6 +6967,13 @@ function zbRenderNoteCell(td, row) {
             noteSpan.textContent = canEdit ? '暂无备注' : '—';
         }
         td.appendChild(noteSpan);
+        var key = zbImgKey(row);
+        if (_zbAttachDirty[key] && _zbAttachDirty[key].note) {
+            var localBadge = document.createElement('span');
+            localBadge.className = 'zb-local-badge';
+            localBadge.textContent = '本地';
+            td.appendChild(localBadge);
+        }
         if (!canEdit) return; // 无权限：只读，不渲染编辑图标
         var editIcon = document.createElement('span');
         editIcon.style.cssText = 'display:inline-flex;width:14px;height:14px;align-items:center;justify-content:center;color:#94a3b8;cursor:pointer;opacity:0;vertical-align:middle;margin-left:3px;transition:opacity .15s;flex-shrink:0;';
@@ -6876,7 +7048,7 @@ function zbShowNotePanel(anchor, row, currentNote, onSaved) {
             await zbSaveRowNote(row, newNote);
             panel.remove();
             if (onSaved) onSaved(newNote);
-            showToast('✅ 备注已保存');
+            showToast('✅ 备注已保存到本地，待上传云端');
         } catch(err) {
             saveBtn.textContent = '保存';
             saveBtn.style.opacity = '1';
@@ -6911,6 +7083,10 @@ async function zbRefreshCamIcon(cam, row) {
     cam.style.border = hasImg ? '1px solid #1d4ed8' : '1px solid #bfdbfe';
     cam.style.color = hasImg ? '#fff' : '#2563eb';
     cam.title = hasImg ? '查看图片（' + urls.length + '张）' : '上传图片';
+    if (_zbAttachDirty[zbImgKey(row)] && _zbAttachDirty[zbImgKey(row)].images) {
+        cam.style.boxShadow = '0 0 0 2px #fbbf24';
+        cam.title = '图片关联已保存到本地，待上传云端';
+    }
     var oldBadge = cam.querySelector('span');
     if (oldBadge) oldBadge.remove();
     if (hasImg) {
@@ -7786,14 +7962,14 @@ async function zbPushEdits() {
 
 // 真正干活的内层：扫 _dtEdits → 推三源 → 删 corrections → 清 _dtEdits
 // 返回 { allOk: bool, errMsg?: string }
-async function _doPushEdits(token) {
+async function _doPushEdits(token, editsOverride) {
     // v1.61C 性能埋点
     window._zbEditPerf = [];
     var _ePerf = window._zbEditPerf;
     var _tStart = performance.now();
     function _stamp(name, t0) { _ePerf.push({ stage: name, ms: Math.round(performance.now() - t0) }); }
 
-    const edits = window._dtEdits || {};
+    const edits = editsOverride || window._dtEdits || {};
 
     // 两个源：手机 diff5(phone_diff_YM)/ 四品类 diff4(five_cat_YM，含大仓数据)
     // dtApplyEditToData 已经按 DT_MAPPED_TO_ORIG 反向映射把 orig 字段写回内存，
@@ -7941,22 +8117,31 @@ function zbCleanStaleEdits() {
         }
     });
     if (changed) {
-        try { localStorage.setItem('zb_dt_edits', JSON.stringify(edits)); } catch(e) {}
+        try { localStorage.setItem('zb_detail_edits', JSON.stringify(edits)); } catch(e) {}
+        Object.keys(_zbPersonSubmitted || {}).forEach(function(key) {
+            if (edits[key] === undefined) delete _zbPersonSubmitted[key];
+        });
+        window._zbPersonSubmitted = _zbPersonSubmitted;
+        _zbPersistDraftState();
     }
     return changed;
 }
 
 // ── 推送日志 ──
 async function zbPushLog() {
-    if (zbRole !== 'admin' && zbRole !== 'super') return;
+    if (zbRole !== 'admin' && zbRole !== 'super') return false;
     const token = zbGetToken();
+    if (!token) return false;
     const fname = GH_FILES.log;
     const content = { logs: _zbLog, updated: new Date().toISOString() };
     const b64 = btoa(unescape(encodeURIComponent(JSON.stringify(content, null, 0))));
     let sha = '';
     try { const r = await fetch(ghUrl(fname), { headers: { Authorization: 'token ' + token } }); if (r.ok) { const j = await r.json(); sha = j.sha||''; } } catch(e) {}
     const body = { message: 'Update upload_log.json', content: b64 }; if (sha) body.sha = sha;
-    try { await fetch(ghUrl(fname), { method: 'PUT', headers: { Authorization: 'token ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); } catch(e) {}
+    try {
+        const r = await fetch(ghUrl(fname), { method: 'PUT', headers: { Authorization: 'token ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+        return r.ok;
+    } catch(e) { return false; }
 }
 
 
@@ -13584,7 +13769,9 @@ function zbAddLog(entry) {
     _zbLog.unshift(record);
     if (_zbLog.length > 200) _zbLog = _zbLog.slice(0, 200);
     try { localStorage.setItem('zb_upload_log', JSON.stringify(_zbLog)); } catch(e) {}
-    zbAuditWrite('data_upload',{action:'upload',site:entry.site||'',category:entry.cat||entry.category||'',summary:'上传 '+(entry.type||'数据')+'，'+(entry.rows||entry.count||0)+' 条',target:{type:entry.type||'',dates:entry.dates||[]},meta:{rows:entry.rows||entry.count||0}});
+    if (entry.type !== 'correction') {
+        zbAuditWrite('data_upload',{action:'upload',site:entry.site||'',category:entry.cat||entry.category||'',summary:'上传 '+(entry.type||'数据')+'，'+(entry.rows||entry.count||0)+' 条',target:{type:entry.type||'',dates:entry.dates||[]},meta:{rows:entry.rows||entry.count||0}});
+    }
     return record; // 返回引用，方便后续回写
 }
 
@@ -13594,6 +13781,45 @@ function zbUpdateLogSync(record, ok) {
     record.ok = ok;
     record.syncTs = new Date().toISOString();
     try { localStorage.setItem('zb_upload_log', JSON.stringify(_zbLog)); } catch(e) {}
+}
+
+function zbGetCorrectionStatus(log) {
+    if (!log) return '';
+    if (log.correctionStatus) return log.correctionStatus;
+    if (log.ok === true) return 'synced';
+    if (log.ok === false) return 'sync_failed';
+    return 'uploaded';
+}
+
+function zbCorrectionStatusLabel(status) {
+    return ({
+        uploaded: '已上传',
+        match_zero: '匹配为 0',
+        synced: '已矫正并同步成功',
+        sync_failed: '同步失败'
+    })[status] || '已上传';
+}
+
+function zbUpdateCorrectionLog(record, status, ok, extra) {
+    if (!record) return;
+    record.correctionStatus = status;
+    record.correctionStatusLabel = zbCorrectionStatusLabel(status);
+    record.ok = ok;
+    record.syncTs = new Date().toISOString();
+    if (extra) Object.assign(record, extra);
+    try { localStorage.setItem('zb_upload_log', JSON.stringify(_zbLog)); } catch(e) {}
+}
+
+function zbGetCorrectionStatusMap() {
+    var map = {};
+    (_zbLog||[]).forEach(function(log) {
+        if (log.type !== 'correction' || !Array.isArray(log.dates)) return;
+        var status = zbGetCorrectionStatus(log);
+        log.dates.forEach(function(d) {
+            if (d && !map[d]) map[d] = { status: status, log: log };
+        });
+    });
+    return map;
 }
 
 // ── 数据完整性检测 ──
@@ -13630,36 +13856,41 @@ function zbCheckDataHealth() {
         });
         if (!allFourComplete) missingFive.push(ds);
     }
-    if (!missingPhone.length && !missingFive.length) { bar.style.display = 'none'; return; }
-    var totalDays = new Set([...missingPhone, ...missingFive]).size;
-
-    // 手机原操作人矫正表缺失检测：近15天中，手机数据有上传但矫正表没上传的天
-    var inspectorUploadLog;
-    try { inspectorUploadLog = new Set(JSON.parse(localStorage.getItem('zb_inspector_upload_log')||'[]')); } catch(e) { inspectorUploadLog = new Set(); }
-    var missingInspector = [];
-    for (var j = 1; j <= 15; j++) {
-        var dj = new Date(today); dj.setDate(today.getDate() - j);
-        var dateStrJ = dj.getFullYear()+'-'+String(dj.getMonth()+1).padStart(2,'0')+'-'+String(dj.getDate()).padStart(2,'0');
+    // 矫正表不是每日必传项，仅提示已有上传记录中的真实同步异常。
+    var pendingInspector = [], failedInspector = [];
+    var correctionStatusMap = zbGetCorrectionStatusMap();
+    Object.keys(correctionStatusMap).forEach(function(dateStrJ) {
+        var correctionInfo = correctionStatusMap[dateStrJ];
         var dsJ = dateStrJ.slice(5);
-        // 只有手机数据已上传、但矫正表未上传，才算缺失
-        if (datesQa.has(dateStrJ) && datesDiff5.has(dateStrJ) && !inspectorUploadLog.has(dateStrJ)) {
-            missingInspector.push(dsJ);
-        }
-    }
+        if (correctionInfo.status === 'uploaded') pendingInspector.push(dsJ);
+        else if (correctionInfo.status === 'sync_failed') failedInspector.push(dsJ);
+    });
+
+    var zeroMatchFiles = [];
+    var zeroMatchCutoff = Date.now() - 15 * 86400000;
+    (_zbLog||[]).forEach(function(log) {
+        if (log.type !== 'correction' || zbGetCorrectionStatus(log) !== 'match_zero') return;
+        var logTime = new Date(log.ts||log.time||0).getTime();
+        var fileName = log.fileName || log.name || '未命名文件';
+        if (logTime >= zeroMatchCutoff && zeroMatchFiles.indexOf(fileName) === -1) zeroMatchFiles.push(fileName);
+    });
 
     var lines = '';
     if (missingPhone.length) lines += '<div style="font-size:11px;color:#92400e;">手机品类：' + missingPhone.join(' · ') + '</div>';
     if (missingFive.length)  lines += '<div style="font-size:11px;color:#92400e;margin-top:2px;">四品类：' + missingFive.join(' · ') + '</div>';
-    if (missingInspector.length) lines += '<div style="font-size:11px;color:#92400e;margin-top:2px;">原操作人矫正表：' + missingInspector.join(' · ') + '</div>';
-    var noteStr = '※ 完整 = 手机需 qa+差异明细、四品类需 汇总+差异明细 都齐；矫正表需与手机数据同步上传';
-    if (!missingPhone.length && !missingFive.length && !missingInspector.length) { bar.style.display = 'none'; return; }
-    totalDays = new Set([...missingPhone, ...missingFive, ...missingInspector]).size;
+    if (pendingInspector.length) lines += '<div style="font-size:11px;color:#92400e;margin-top:2px;">原操作人矫正表待同步：' + pendingInspector.join(' · ') + '</div>';
+    if (failedInspector.length) lines += '<div style="font-size:11px;color:#b91c1c;margin-top:2px;">原操作人矫正表同步失败：' + failedInspector.join(' · ') + '</div>';
+    if (zeroMatchFiles.length) lines += '<div style="font-size:11px;color:#92400e;margin-top:2px;">矫正表匹配为 0：' + zeroMatchFiles.join(' · ') + '</div>';
+    var noteStr = '※ 完整 = 手机需 qa+差异明细、四品类需 汇总+差异明细 都齐；矫正表不作为每日必传项';
+    if (!missingPhone.length && !missingFive.length && !pendingInspector.length && !failedInspector.length && !zeroMatchFiles.length) { bar.style.display = 'none'; return; }
+    var issueDates = new Set([...missingPhone, ...missingFive, ...pendingInspector, ...failedInspector]);
+    var titleStr = issueDates.size ? ('近15天 '+issueDates.size+' 天数据未上传、缺失或未同步') : '近15天存在矫正表异常状态';
     bar.style.display = 'block';
     bar.innerHTML = '<div style="background:rgba(254,243,199,0.7);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:0.5px solid rgba(252,211,77,0.5);border-radius:10px;padding:8px 14px;">'
         + '<div style="display:flex;align-items:flex-start;gap:10px;">'
         + '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#b45309" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;margin-top:2px;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
         + '<div style="flex:1;min-width:0;">'
-        + '<div style="font-size:12px;font-weight:500;color:#92400e;margin-bottom:4px;">近15天 '+totalDays+' 天数据未上传或缺失</div>'
+        + '<div style="font-size:12px;font-weight:500;color:#92400e;margin-bottom:4px;">'+titleStr+'</div>'
         + lines
         + '<div style="font-size:10px;color:#a16207;margin-top:4px;">' + noteStr + '</div>'
         + '</div>'
@@ -13830,24 +14061,34 @@ function zbSwitchLogTab(tab){
 
 function _zbRenderLog(){
   var el=document.getElementById('zbLogList'); if(!el) return;
-  var ALL_TYPES = ['qa','diff5','sum','diff4','correction'];
+  var ALL_TYPES = ['qa','diff5','sum','diff4'];
+  var DISPLAY_TYPES = ALL_TYPES.concat('correction');
   var TYPE_NAMES = { qa:'QA差异率', diff5:'手机差异明细', sum:'日汇总', diff4:'五品类明细', correction:'矫正表' };
   var TYPE_COLORS = { qa:'#2563eb', diff5:'#7c3aed', sum:'#059669', diff4:'#d97706', correction:'#7c3aed' };
 
   // 按数据日期汇总（每个日期×表类型 → 最新一条日志）
   var dateTypeMap = {}; // { 'YYYY-MM-DD': { qa:{rows,ok,ts}, diff5:{...}, ... } }
   _zbLog.forEach(function(log){
-    if (!log.dates || !log.type || ALL_TYPES.indexOf(log.type) === -1) return;
+    if (!log.dates || !log.type || DISPLAY_TYPES.indexOf(log.type) === -1) return;
     log.dates.forEach(function(d){
       if (!d || d==='—') return;
       if (!dateTypeMap[d]) dateTypeMap[d] = {};
       if (!dateTypeMap[d][log.type]) {
-        dateTypeMap[d][log.type] = { rows: log.rows||0, ok: log.ok, ts: log.ts||log.time||'' };
+        dateTypeMap[d][log.type] = {
+          rows: log.rows||0,
+          ok: log.ok,
+          ts: log.ts||log.time||'',
+          status: log.type === 'correction' ? zbGetCorrectionStatus(log) : ''
+        };
       }
     });
   });
 
-  var allDates = Object.keys(dateTypeMap).sort().reverse();
+  var allDates = Object.keys(dateTypeMap).filter(function(date) {
+    return ALL_TYPES.some(function(type){ return !!dateTypeMap[date][type]; });
+  }).sort().reverse();
+
+  function isTypeComplete(type, info) { return !!info; }
 
   if (!allDates.length) {
     el.innerHTML='<div style="text-align:center;padding:32px;color:var(--text-secondary);font-size:13px;">暂无上传记录</div>';
@@ -13857,8 +14098,8 @@ function _zbRenderLog(){
   // 统计
   var thisMonth = new Date().toISOString().slice(0,7);
   var monthDates = allDates.filter(function(d){ return d.startsWith(thisMonth); });
-  var completeDates = monthDates.filter(function(d){ return ALL_TYPES.every(function(t){ return !!dateTypeMap[d][t]; }); });
-  var missingDates = monthDates.filter(function(d){ return !ALL_TYPES.every(function(t){ return !!dateTypeMap[d][t]; }); });
+  var completeDates = monthDates.filter(function(d){ return ALL_TYPES.every(function(t){ return isTypeComplete(t, dateTypeMap[d][t]); }); });
+  var missingDates = monthDates.filter(function(d){ return !ALL_TYPES.every(function(t){ return isTypeComplete(t, dateTypeMap[d][t]); }); });
 
   var statsEl = document.getElementById('zbLogStats');
   if(statsEl) statsEl.innerHTML = '<span style="color:#2563eb;font-size:22px;font-weight:500;">'+monthDates.length+'</span><div style="font-size:12px;color:var(--text-secondary);">本月天数</div>';
@@ -13884,17 +14125,17 @@ function _zbRenderLog(){
     html += '<div style="padding:7px 18px;font-size:11px;color:var(--text-secondary);background:var(--kpi-bg);border-bottom:0.5px solid var(--border-color);">'+gk+'</div>';
     groups[gk].forEach(function(dateStr){
       var typesData = dateTypeMap[dateStr];
-      var uploadedCount = ALL_TYPES.filter(function(t){ return !!typesData[t]; }).length;
+      var uploadedCount = ALL_TYPES.filter(function(t){ return isTypeComplete(t, typesData[t]); }).length;
       var isComplete = uploadedCount === ALL_TYPES.length;
       var icon = isComplete
         ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><polyline points="20 6 9 17 4 12"/></svg>'
         : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>';
       var badge = isComplete
-        ? '<span style="font-size:11px;color:#065f46;background:#d1fae5;padding:1px 7px;border-radius:6px;">5 / 5 完整</span>'
-        : '<span style="font-size:11px;color:#92400e;background:#fef3c7;padding:1px 7px;border-radius:6px;">'+uploadedCount+' / 5 缺失</span>';
+        ? '<span style="font-size:11px;color:#065f46;background:#d1fae5;padding:1px 7px;border-radius:6px;">4 / 4 完整</span>'
+        : '<span style="font-size:11px;color:#92400e;background:#fef3c7;padding:1px 7px;border-radius:6px;">'+uploadedCount+' / 4 缺失</span>';
       // 最新上传时间
       var latestTs = '';
-      ALL_TYPES.forEach(function(t){ if(typesData[t] && typesData[t].ts > latestTs) latestTs = typesData[t].ts; });
+      DISPLAY_TYPES.forEach(function(t){ if(typesData[t] && typesData[t].ts > latestTs) latestTs = typesData[t].ts; });
       var timeStr = '';
       if(latestTs){ var tt=new Date(latestTs); if(!isNaN(tt.getTime())) timeStr=('0'+tt.getHours()).slice(-2)+':'+('0'+tt.getMinutes()).slice(-2); }
 
@@ -13906,13 +14147,21 @@ function _zbRenderLog(){
         +'<span style="font-size:11px;color:var(--text-secondary);margin-left:auto;">'+timeStr+'</span>'
         +'</div>'
         +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 16px;padding-left:22px;">';
-      ALL_TYPES.forEach(function(t){
+      DISPLAY_TYPES.forEach(function(t){
         var info = typesData[t];
         var isOptional = (t === 'correction');
+        if (isOptional && !info) return;
+        var correctionStatus = info && isOptional ? (info.status||'uploaded') : '';
         var col = info ? TYPE_COLORS[t] : (isOptional ? '#94a3b8' : '#ef4444');
+        if (isOptional && info) col = correctionStatus === 'synced' ? '#059669' : (correctionStatus === 'sync_failed' ? '#dc2626' : '#d97706');
         var dot = '<span style="width:5px;height:5px;border-radius:50%;background:'+col+';flex-shrink:0;display:inline-block;"></span>';
-        var txt = info ? TYPE_NAMES[t]+' · '+info.rows+'条' : (isOptional ? TYPE_NAMES[t]+' · 未上传' : TYPE_NAMES[t]+' · 未上传');
+        var txt = info ? TYPE_NAMES[t]+' · '+info.rows+'条' : TYPE_NAMES[t]+' · 未上传';
+        if (isOptional && info) {
+          var correctionLabels = { synced:'已同步', uploaded:'待同步', match_zero:'匹配为 0', sync_failed:'同步失败' };
+          txt += ' · ' + (correctionLabels[correctionStatus]||'待同步');
+        }
         var txtCol = info ? 'var(--text-secondary)' : (isOptional ? '#94a3b8' : 'var(--color-text-danger,#dc2626)');
+        if (isOptional && info) txtCol = col;
         html += '<div style="font-size:11px;color:'+txtCol+';display:flex;align-items:center;gap:4px;">'+dot+txt+'</div>';
       });
       html += '</div></div>';
@@ -14205,6 +14454,36 @@ function zbRenderCloudManager() {
 
   var migrateHtml = '';
 
+  // 原操作人矫正表独立汇总，不参与每日数据完整度判断。
+  var correctionLogs = (_zbLog||[]).filter(function(log){ return log.type === 'correction'; });
+  var correctionDates = [];
+  correctionLogs.forEach(function(log) {
+    (log.dates||[]).forEach(function(date) {
+      if (/^\d{4}-\d{2}-\d{2}$/.test(date)) correctionDates.push(date);
+    });
+  });
+  correctionDates = Array.from(new Set(correctionDates)).sort();
+  var latestCorrectionLog = correctionLogs.slice().sort(function(a, b) {
+    return new Date(b.ts||b.time||0).getTime() - new Date(a.ts||a.time||0).getTime();
+  })[0];
+  var correctionStatus = latestCorrectionLog ? zbGetCorrectionStatus(latestCorrectionLog) : '';
+  var correctionStatusText = latestCorrectionLog ? zbCorrectionStatusLabel(correctionStatus) : '暂无记录';
+  var correctionStatusColor = correctionStatus === 'synced' ? '#059669' : (correctionStatus === 'sync_failed' ? '#dc2626' : (correctionStatus ? '#d97706' : '#64748b'));
+  var correctionUploadTime = '—';
+  if (latestCorrectionLog) {
+    var correctionTime = new Date(latestCorrectionLog.ts||latestCorrectionLog.time||0);
+    if (!isNaN(correctionTime.getTime())) correctionUploadTime = correctionTime.toLocaleString('zh-CN', { hour12:false });
+  }
+  var correctionSummaryHtml = '<div style="border:0.5px solid var(--border-color);border-radius:8px;background:var(--kpi-bg);padding:10px 12px;margin-bottom:12px;">'
+    + '<div style="font-size:12px;font-weight:600;color:var(--text-primary);margin-bottom:8px;">原操作人矫正表</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(5,minmax(110px,1fr));gap:8px;overflow-x:auto;">'
+    + '<div><div style="font-size:10px;color:var(--text-secondary);">最早匹配日期</div><div style="font-size:12px;color:var(--text-primary);margin-top:2px;">'+(correctionDates[0]||'—')+'</div></div>'
+    + '<div><div style="font-size:10px;color:var(--text-secondary);">最新匹配日期</div><div style="font-size:12px;color:var(--text-primary);margin-top:2px;">'+(correctionDates[correctionDates.length-1]||'—')+'</div></div>'
+    + '<div><div style="font-size:10px;color:var(--text-secondary);">最后上传时间</div><div style="font-size:12px;color:var(--text-primary);margin-top:2px;white-space:nowrap;">'+correctionUploadTime+'</div></div>'
+    + '<div><div style="font-size:10px;color:var(--text-secondary);">最近匹配条数</div><div style="font-size:12px;color:var(--text-primary);margin-top:2px;">'+(latestCorrectionLog ? (latestCorrectionLog.rows||0)+' 条' : '—')+'</div></div>'
+    + '<div><div style="font-size:10px;color:var(--text-secondary);">云端同步状态</div><div style="font-size:12px;color:'+correctionStatusColor+';font-weight:600;margin-top:2px;">'+correctionStatusText+'</div></div>'
+    + '</div></div>';
+
   var alertHtml = !canEdit
     ? '<div style="background:#fef9c3;border:0.5px solid #fde047;border-radius:8px;padding:8px 12px;font-size:12px;color:#854d0e;margin-bottom:12px;">⚠️ 仅管理员及以上可删除数据</div>'
     : '<div style="background:#fef2f2;border:0.5px solid #fca5a5;border-radius:8px;padding:8px 12px;font-size:12px;color:#dc2626;margin-bottom:12px;">⚠️ 删除操作不可撤销，将同步更新云端文件</div>';
@@ -14228,7 +14507,7 @@ function zbRenderCloudManager() {
   // 已矫正日期集合（从上传日志中读取 correction 类型记录）
   var correctedDates = new Set();
   (_zbLog||[]).forEach(function(log){
-    if (log.type === 'correction' && Array.isArray(log.dates)) {
+    if (log.type === 'correction' && zbGetCorrectionStatus(log) === 'synced' && Array.isArray(log.dates)) {
       log.dates.forEach(function(d){ if(d) correctedDates.add(d); });
     }
   });
@@ -14317,7 +14596,7 @@ function zbRenderCloudManager() {
   var totalCount = _zbCloudTab === 'phone' ? phoneDateList.length : Object.keys(fiveDateMap||{}).length;
   var footerHtml = '<div style="margin-top:8px;font-size:11px;color:var(--text-secondary);">共 '+totalCount+' 条 · 已选 <span id="zbCloudSelCount">0</span> 条</div>';
 
-  el.innerHTML = migrateHtml + alertHtml + toolbarHtml + phoneHtml + fiveHtml + footerHtml;
+  el.innerHTML = migrateHtml + correctionSummaryHtml + alertHtml + toolbarHtml + phoneHtml + fiveHtml + footerHtml;
 }
 
 async function zbMigrateDw4Legacy() {
@@ -14827,24 +15106,22 @@ async function zbProcessCorrectionFile(file) {
         var total = Object.keys(corrections).length;
         if (!total) { showToast('❌ 未找到有效数据（需要质检码 + 原质检操作人名称）'); return; }
 
-        // 记录上传时间，供缺失播报检测
-        try {
-            var uploadLog = JSON.parse(localStorage.getItem('zb_inspector_upload_log')||'[]');
-            var today = new Date().toISOString().slice(0,10);
-            uploadLog = uploadLog.filter(function(d){ return d !== today; });
-            uploadLog.push(today);
-            if (uploadLog.length > 60) uploadLog = uploadLog.slice(-60);
-            localStorage.setItem('zb_inspector_upload_log', JSON.stringify(uploadLog));
-        } catch(e) {}
-
         // 立即应用到内存数据
         var applyResult = zbApplyPersonCorrections(corrections);
         var matchCount = applyResult.matched;
         var changedRefs = applyResult.changedRefs || [];
 
-        // 写入上传日志（供上传日志 Tab 展示 5/5）
+        // 先记为已上传；只有实际匹配日期完成云端同步后才算完整。
         var _corrDates = [...new Set(changedRefs.map(function(r){ return r.date||''; }).filter(Boolean))];
-        zbAddLog({ type: 'correction', rows: matchCount, dates: _corrDates, fileName: file.name });
+        var initialStatus = matchCount > 0 ? 'uploaded' : 'match_zero';
+        var correctionRecord = zbAddLog({
+            type: 'correction',
+            rows: matchCount,
+            dates: _corrDates,
+            fileName: file.name,
+            correctionStatus: initialStatus,
+            correctionStatusLabel: zbCorrectionStatusLabel(initialStatus)
+        });
 
         // 记录日志
         var logEntry = {
@@ -14854,17 +15131,20 @@ async function zbProcessCorrectionFile(file) {
             matched: matchCount,
             unmatched: total - matchCount,
             okRows:   applyResult.okRows,
-            failRows: applyResult.failRows
+            failRows: applyResult.failRows,
+            dates: _corrDates,
+            status: initialStatus,
+            statusLabel: zbCorrectionStatusLabel(initialStatus)
         };
         var logs = [];
         try { logs = JSON.parse(localStorage.getItem('zb_correction_log_v1')||'[]'); } catch(e) {}
         logs.unshift(logEntry);
         if (logs.length > 50) logs = logs.slice(0, 50);
-        try { localStorage.setItem('zb_correction_log_v1', JSON.stringify(logs)); } catch(e) {}
-        zbAuditWrite('correction_upload',{action:'upload_correction',summary:'上传纠正表 '+file.name+'，匹配 '+matchCount+'/'+total+' 条',target:{fileName:file.name},meta:{total:total,matched:matchCount,unmatched:total-matchCount}});
-
         // 云端持久化：把修正后的原始行写回 phone_diff_YM.json 分片
         var token = zbGetToken();
+        var finalStatus = initialStatus;
+        var finalOk = null;
+        var syncMeta = {};
         if (token && changedRefs.length > 0) {
             showToast('⏳ 正在同步到云端…');
             var monthBuckets = {};
@@ -14884,14 +15164,37 @@ async function zbProcessCorrectionFile(file) {
                 var ok = await _zbPushMonthlyMerge(fname, monthBuckets[ym], diffRowKey, token, '[矫正云端同步]');
                 if (ok) pushOk++; else pushFail++;
             }
+            syncMeta = { pushOk: pushOk, pushFail: pushFail };
             if (pushFail === 0) {
+                finalStatus = 'synced';
+                finalOk = true;
                 showToast('✅ 矫正表已同步 · 匹配' + matchCount + '条 · 已更新' + pushOk + '个月份云端数据');
             } else {
+                finalStatus = 'sync_failed';
+                finalOk = false;
                 showToast('⚠️ 矫正表已上传 · 匹配' + matchCount + '条 · 云端部分失败(' + pushFail + '/' + months.length + ')');
             }
         } else {
             showToast('✅ 矫正表已上传 · 共' + total + '条规则 · 匹配' + matchCount + '条' + (!token ? '（未配置Token，跳过云端）' : ''));
         }
+        zbUpdateCorrectionLog(correctionRecord, finalStatus, finalOk, syncMeta);
+        Object.assign(logEntry, {
+            status: finalStatus,
+            statusLabel: zbCorrectionStatusLabel(finalStatus),
+            ok: finalOk,
+            syncTs: new Date().toISOString()
+        }, syncMeta);
+        var logCloudOk = await zbPushLog();
+        logEntry.logCloudOk = logCloudOk;
+        try { localStorage.setItem('zb_correction_log_v1', JSON.stringify(logs)); } catch(e) {}
+        zbAuditWrite('correction_upload', {
+            action: 'upload_correction',
+            status: finalStatus === 'sync_failed' ? 'failed' : 'success',
+            summary: '上传纠正表 '+file.name+'，匹配 '+matchCount+'/'+total+' 条，'+zbCorrectionStatusLabel(finalStatus),
+            target: { fileName:file.name, dates:_corrDates },
+            meta: Object.assign({ total:total, matched:matchCount, unmatched:total-matchCount, correctionStatus:finalStatus, logCloudOk:logCloudOk }, syncMeta)
+        });
+        zbCheckDataHealth();
         // 刷新排名和图表
         if (typeof buildPersonRankBoard === 'function') buildPersonRankBoard();
         if (typeof fullRefresh === 'function') fullRefresh();
@@ -15063,7 +15366,30 @@ async function zbRemoveCorrection(code, prefetchedCloud) {
 })();
 
 // ── 纠正表日志渲染 ──
-// zbRenderCorrectionLog is defined above
+function zbRenderCorrectionLog() {
+    var el = document.getElementById('zbCorrectionLogPanel');
+    if (!el) return;
+    var logs = [];
+    try { logs = JSON.parse(localStorage.getItem('zb_correction_log_v1')||'[]'); } catch(e) {}
+    if (!logs.length) {
+        el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary);font-size:12px;">暂无纠正表上传记录</div>';
+        return;
+    }
+    var colors = { uploaded:'#d97706', match_zero:'#d97706', synced:'#059669', sync_failed:'#dc2626' };
+    el.innerHTML = logs.slice(0, 50).map(function(log) {
+        var status = log.status || (log.ok === true ? 'synced' : (log.ok === false ? 'sync_failed' : (log.matched === 0 ? 'match_zero' : 'uploaded')));
+        var statusLabel = log.statusLabel || zbCorrectionStatusLabel(status);
+        var t = new Date(log.ts);
+        var timeStr = isNaN(t.getTime()) ? '—' : t.toLocaleString('zh-CN', { hour12:false });
+        var dates = Array.isArray(log.dates) && log.dates.length ? log.dates.join('、') : '无匹配日期';
+        return '<div style="padding:11px 14px;border-bottom:0.5px solid var(--border-color);display:grid;grid-template-columns:150px minmax(160px,1fr) 110px 110px;gap:10px;align-items:center;font-size:11px;">'
+            + '<span style="color:var(--text-secondary);">'+timeStr+'</span>'
+            + '<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+escHtml(log.fileName||'')+'">'+escHtml(log.fileName||'未命名文件')+'<br><span style="color:var(--text-secondary);">日期：'+escHtml(dates)+'</span></span>'
+            + '<span>匹配 '+(log.matched||0)+' / '+(log.total||0)+' 条</span>'
+            + '<span style="color:'+(colors[status]||'#d97706')+';font-weight:500;">'+statusLabel+'</span>'
+            + '</div>';
+    }).join('');
+}
 
 // == 反馈工单系统 ==
 var _ZB_FEEDBACK_KEY = 'zb_feedback_v1';
