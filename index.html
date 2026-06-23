@@ -3431,6 +3431,11 @@
                 if (!showCat) {
                     var ci=columnKeys.indexOf('cat'); if(ci>-1){columnKeys.splice(ci,1);columnNames.splice(ci,1);}
                 }
+                var showInspectorOrg = filtered.length > 0 && filtered.every(function(r){ return (r.cat || '') === '手机'; });
+                if (!showInspectorOrg) {
+                    var oi = columnKeys.indexOf('inspectorOrg');
+                    if (oi > -1) { columnKeys.splice(oi, 1); columnNames.splice(oi, 1); }
+                }
                 // 管理员和培训师均显示备注列
                 var isAdminView = (zbRole === 'admin' || zbRole === 'super' || zbRole === 'trainer');
                 if (isAdminView) {
@@ -3696,13 +3701,12 @@
                 // 三者口径统一：差异率、小字大盘台数、小字执行台数均用大盘口径
                 let checks = 0, execDiff = 0;
                 if (cat === '手机') {
-                    const qaRows = DATA.qa.filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true));
+                    const qaRows = zbGetCheckRows(cat, site, dateFilter);
                     checks = qaRows.reduce((s,r) => s + (r.checks||0), 0);
                     const diffRows = DATA.diff5.filter(r => r.site === site && r.cat === cat && r.strategy === '大盘评估/站点' && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true));
                     execDiff = new Set(diffRows.map(r => r.code).filter(Boolean)).size;
                 } else {
-                    const smRows = [...DATA.sum.filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true)),
-                                    ...(DATA.dw4sum||[]).filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true))];
+                    const smRows = zbGetCheckRows(cat, site, dateFilter);
                     checks = smRows.reduce((s,r) => s + (r.checks||0), 0);
                     const diffRows = [...DATA.diff4.filter(r => r.site === site && r.cat === cat && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true)),
                                       ...(DATA.dw4cat||[]).filter(r => r.site === site && r.cat === cat && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true))];
@@ -3736,13 +3740,12 @@
                     // 返回 { checks（大盘量）, execDiff（客观执行量）}
                     let checks = 0, execDiff = 0;
                     if (cat === '手机') {
-                        const qaRows = DATA.qa.filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true));
+                        const qaRows = zbGetCheckRows(cat, site, dateFilter);
                         checks = qaRows.reduce((s,r) => s + (r.checks||0), 0);
                         const diffRows = DATA.diff5.filter(r => r.site === site && r.cat === cat && r.strategy === '大盘评估/站点' && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true));
                         execDiff = new Set(diffRows.map(r => r.code).filter(Boolean)).size;
                     } else {
-                        const smRows = [...DATA.sum.filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true)),
-                                        ...(DATA.dw4sum||[]).filter(r => r.site === site && r.cat === cat && (dateFilter ? dateFilter(r.date) : true))];
+                        const smRows = zbGetCheckRows(cat, site, dateFilter);
                         checks = smRows.reduce((s,r) => s + (r.checks||0), 0);
                         const diffRows = [...DATA.diff4.filter(r => r.site === site && r.cat === cat && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true)),
                                           ...(DATA.dw4cat||[]).filter(r => r.site === site && r.cat === cat && r.subjobj && r.subjobj.includes('客观') && r.judgedType === '执行问题' && (dateFilter ? dateFilter(r.date) : true))];
@@ -4508,6 +4511,34 @@
                 const inDates = new Set(incoming.map(r=>r.date).filter(Boolean));
                 return [...existing.filter(r=>!inDates.has(r.date)), ...incoming];
             }
+            function zbGetCheckRows(cat, site, dateFilter) {
+                var D = window._DATA || DATA || {};
+                var rows = [];
+                function pass(r) {
+                    if (!r) return false;
+                    if (cat && r.cat !== cat) return false;
+                    if (site && r.site !== site) return false;
+                    if (dateFilter && !dateFilter(r.date)) return false;
+                    return true;
+                }
+                if (cat === '手机') return (D.qa || []).filter(pass);
+                var seen = {};
+                (D.sum || []).forEach(function(r) {
+                    if (!pass(r)) return;
+                    var k = [r.date || '', r.site || '', r.cat || ''].join('|');
+                    seen[k] = 1;
+                    rows.push(r);
+                });
+                (D.dw4sum || []).forEach(function(r) {
+                    if (!pass(r)) return;
+                    var k = [r.date || '', r.site || '', r.cat || ''].join('|');
+                    if (seen[k]) return;
+                    seen[k] = 1;
+                    rows.push(r);
+                });
+                return rows;
+            }
+            window.zbGetCheckRows = zbGetCheckRows;
 
             // ── 桥接：把你的数据倒进小田的两个桶 ──────────────
             // ── 当前选中品类（全局） ──
@@ -4559,17 +4590,11 @@
                     };
                 }
                 if (currentCat === '手机') {
-                    summaryData = DATA.qa.map(r => ({ siteName: r.site, totalChecks: r.checks, date: r.date }));
+                    summaryData = zbGetCheckRows(currentCat).map(r => ({ siteName: r.site, totalChecks: r.checks, date: r.date }));
                     diffData = DATA.diff5.filter(r => r.strategy === '大盘评估/站点').map(mapDiff5);
                 } else {
-                    // 四品类汇总（大仓+中心仓已统一存入sum）
-                    summaryData = DATA.sum.filter(r => r.cat === currentCat).map(r => ({ siteName: r.site, totalChecks: r.checks, date: r.date }));
-                    // 兼容旧dw4sum数据（历史遗留，新数据已合并进sum）
-                    var legacyDw4Sum = (DATA.dw4sum||[]).filter(r => r.cat === currentCat).map(r => ({ siteName: r.site, totalChecks: r.checks, date: r.date }));
-                    if (legacyDw4Sum.length) {
-                        var sumKeys = new Set(summaryData.map(r => r.date+'|'+r.siteName));
-                        legacyDw4Sum.forEach(function(r){ if (!sumKeys.has(r.date+'|'+r.siteName)) summaryData.push(r); });
-                    }
+                    // 四品类汇总（sum + 历史 dw4sum 去重后统一口径）
+                    summaryData = zbGetCheckRows(currentCat).map(r => ({ siteName: r.site, totalChecks: r.checks, date: r.date }));
                     // 四品类差异明细（大仓+中心仓已统一存入diff4）
                     diffData = DATA.diff4.filter(r => r.cat === currentCat).map(mapDiff4);
                 }
@@ -8858,17 +8883,7 @@ function zbRenderSiteDetail(siteName) {
                 var DATA = window._DATA;
                 var cat = activeCat || '手机';
                 var inRng = function(d){ if(!d)return false; if(startD&&d<startD)return false; if(endD&&d>endD)return false; return true; };
-                var isDW = (typeof zbGetSiteType==='function') ? zbGetSiteType(siteName)==='大仓' : false;
-                if (cat === '手机') {
-                    siteChecks = (DATA.qa||[]).filter(function(r){ return r.site===siteName && r.cat===cat && inRng(r.date); })
-                        .reduce(function(s,r){ return s+(r.checks||0); }, 0);
-                } else if (isDW) {
-                    siteChecks = (DATA.dw4sum||[]).filter(function(r){ return r.site===siteName && r.cat===cat && inRng(r.date); })
-                        .reduce(function(s,r){ return s+(r.checks||0); }, 0);
-                } else {
-                    siteChecks = (DATA.sum||[]).filter(function(r){ return r.site===siteName && r.cat===cat && inRng(r.date); })
-                        .reduce(function(s,r){ return s+(r.checks||0); }, 0);
-                }
+                siteChecks = (typeof zbGetCheckRows === 'function' ? zbGetCheckRows(cat, siteName, inRng) : []).reduce(function(s,r){ return s+(r.checks||0); }, 0);
             })();
 
             // 按口径计算差异量
@@ -8926,16 +8941,16 @@ function zbRenderSiteDetail(siteName) {
                 // 和排行榜calcSiteRate完全一致的计算逻辑
                 function calcRate(site) {
                     var checks = 0, execDiff = 0;
-                    if (cat === '手机') {
-                        var qaRows = (DATA.qa||[]).filter(function(r){ return r.site===site && r.cat===cat && inRange(r.date); });
-                        checks = qaRows.reduce(function(s,r){ return s+(r.checks||0); }, 0);
-                        var diffRows = (DATA.diff5||[]).filter(function(r){ return r.site===site && r.cat===cat && r.strategy==='大盘评估/站点' && r.subjobj && r.subjobj.includes('客观') && r.judgedType==='执行问题' && inRange(r.date); });
-                        execDiff = new Set(diffRows.map(function(r){ return r.code; }).filter(Boolean)).size;
-                    } else {
-                        var smRows = (DATA.sum||[]).filter(function(r){ return r.site===site && r.cat===cat && inRange(r.date); });
-                        checks = smRows.reduce(function(s,r){ return s+(r.checks||0); }, 0);
-                        var diffRows2 = (DATA.diff4||[]).filter(function(r){ return r.site===site && r.cat===cat && r.subjobj && r.subjobj.includes('客观') && r.judgedType==='执行问题' && inRange(r.date); });
-                        execDiff = new Set(diffRows2.map(function(r){ return r.code; }).filter(Boolean)).size;
+                        if (cat === '手机') {
+                            var qaRows = (typeof zbGetCheckRows === 'function' ? zbGetCheckRows(cat, site, inRange) : []);
+                            checks = qaRows.reduce(function(s,r){ return s+(r.checks||0); }, 0);
+                            var diffRows = (DATA.diff5||[]).filter(function(r){ return r.site===site && r.cat===cat && r.strategy==='大盘评估/站点' && r.subjobj && r.subjobj.includes('客观') && r.judgedType==='执行问题' && inRange(r.date); });
+                            execDiff = new Set(diffRows.map(function(r){ return r.code; }).filter(Boolean)).size;
+                        } else {
+                            var smRows = (typeof zbGetCheckRows === 'function' ? zbGetCheckRows(cat, site, inRange) : []);
+                            checks = smRows.reduce(function(s,r){ return s+(r.checks||0); }, 0);
+                            var diffRows2 = (DATA.diff4||[]).filter(function(r){ return r.site===site && r.cat===cat && r.subjobj && r.subjobj.includes('客观') && r.judgedType==='执行问题' && inRange(r.date); });
+                            execDiff = new Set(diffRows2.map(function(r){ return r.code; }).filter(Boolean)).size;
                     }
                     return checks > 0 ? (execDiff / checks * 100) : null;
                 }
@@ -9045,13 +9060,8 @@ function zbRenderSiteDetail(siteName) {
                         var DATA = window._DATA;
                         var cat = activeCat || '手机';
                         var inRng = function(d){ if(!d)return false; if(startD&&d<startD)return false; if(endD&&d>endD)return false; return true; };
-                        if (cat === '手机') {
-                            sc = (DATA.qa||[]).filter(function(r){ return r.site===sn && r.cat===cat && inRng(r.date); })
-                                .reduce(function(s,r){ return s+(r.checks||0); }, 0);
-                        } else {
-                            sc = (DATA.sum||[]).filter(function(r){ return r.site===sn && r.cat===cat && inRng(r.date); })
-                                .reduce(function(s,r){ return s+(r.checks||0); }, 0);
-                        }
+                        sc = (typeof zbGetCheckRows === 'function' ? zbGetCheckRows(cat, sn, inRng) : [])
+                            .reduce(function(s,r){ return s+(r.checks||0); }, 0);
                     })();
                     var _diff = allDiff.filter(function(d) {
                         if (d.warehouse !== sn) return false;
@@ -9374,7 +9384,6 @@ function zbRenderSiteDetail(siteName) {
                 }
                 var series4 = visCats4.map(function(c, ci) {
                     var col4 = CAT_COLORS_EXT[c] || DEFAULT_COLORS[ci%DEFAULT_COLORS.length];
-                    var sumData5 = (window._DATA && window._DATA.sum) ? window._DATA.sum : [];
                     var catDiff4 = _filterExecDiffByCat4(execDiff4, c);
                     var catQA4   = _filterQAByCat4(siteQA4, c);
 
@@ -9406,8 +9415,8 @@ function zbRenderSiteDetail(siteName) {
                         if (!chks4) {
                             var realCat4 = _realCat4(c);
                             var realSite4 = _realSite4(c);
-                            sumData5.forEach(function(r){
-                                if(!r.date||r.cat!==realCat4||r.site!==realSite4) return;
+                            (typeof zbGetCheckRows === 'function' ? zbGetCheckRows(realCat4, realSite4) : []).forEach(function(r){
+                                if(!r.date) return;
                                 var dt=r.date.split(' ')[0];
                                 if(dt<wk.start||dt>wk.end) return;
                                 chks4+=(r.checks||0);
@@ -9499,7 +9508,6 @@ function zbRenderSiteDetail(siteName) {
 
                 var seriesY = visCats4.map(function(c, ci) {
                     var col4 = CAT_COLORS_EXT[c] || DEFAULT_COLORS[ci%DEFAULT_COLORS.length];
-                    var sumData5 = (window._DATA && window._DATA.sum) ? window._DATA.sum : [];
                     var catDiffY = _filterExecDiffByCat4(execDiff4, c);
                     var catQAY   = _filterQAByCat4(siteQA4, c);
                     var _diffCntY=[], _chksY=[];
@@ -9519,8 +9527,8 @@ function zbRenderSiteDetail(siteName) {
                         if (!chks) {
                             var realCatY = _realCat4(c);
                             var realSiteY = _realSite4(c);
-                            sumData5.forEach(function(r){
-                                if(!r.date||r.cat!==realCatY||r.site!==realSiteY) return;
+                            (typeof zbGetCheckRows === 'function' ? zbGetCheckRows(realCatY, realSiteY) : []).forEach(function(r){
+                                if(!r.date) return;
                                 if(r.date.slice(0,7)!==ym) return;
                                 chks+=(r.checks||0);
                             });
@@ -9566,7 +9574,6 @@ function zbRenderSiteDetail(siteName) {
 
                 var seriesD = visCats4.map(function(c, ci) {
                     var col4 = CAT_COLORS_EXT[c] || DEFAULT_COLORS[ci%DEFAULT_COLORS.length];
-                    var sumData5 = (window._DATA && window._DATA.sum) ? window._DATA.sum : [];
                     var catDiffD = _filterExecDiffByCat4(execDiff4, c);
                     var catQAD   = _filterQAByCat4(siteQA4, c);
                     var _diffCntD=[], _chksD=[];
@@ -9586,8 +9593,8 @@ function zbRenderSiteDetail(siteName) {
                         if (!chks) {
                             var realCatD = _realCat4(c);
                             var realSiteD = _realSite4(c);
-                            sumData5.forEach(function(r){
-                                if(!r.date||r.cat!==realCatD||r.site!==realSiteD) return;
+                            (typeof zbGetCheckRows === 'function' ? zbGetCheckRows(realCatD, realSiteD) : []).forEach(function(r){
+                                if(!r.date) return;
                                 if(r.date.split(' ')[0]!==dt) return;
                                 chks+=(r.checks||0);
                             });
@@ -12884,7 +12891,7 @@ async function zbGenerateTrainerReport() {
         return Object.keys(by).map(function(k){return by[k];});
     }
     function checks(s,c,a,b){
-        var src=c==='手机'?(D.qa||[]):(D.sum||[]).concat(D.dw4sum||[]);
+        var src=typeof zbGetCheckRows==='function'?zbGetCheckRows(c,s):[];
         var seen={};
         return src.reduce(function(sum,x){
             if(x.site!==s||x.cat!==c||!inWin(x,a,b))return sum;
@@ -15885,7 +15892,7 @@ document.addEventListener('DOMContentLoaded', function(){
     <div class="exp-type-tab" data-tab="rankimg" onclick="zbExpSwitchTab(this)" style="flex:1;padding:10px 6px;border:2px solid #e2e8f0;border-radius:8px;background:#f8fafc;cursor:pointer;text-align:center;transition:all .15s;">
       <div style="font-size:18px;margin-bottom:2px;">🏆</div>
       <div style="font-size:12px;font-weight:600;color:#475569;">差异排行榜</div>
-      <div style="font-size:10px;color:#94a3b8;margin-top:1px;">图片</div>
+      <div style="font-size:10px;color:#94a3b8;margin-top:1px;">Excel</div>
     </div>
   </div>
   <!-- 内容 -->
@@ -15991,12 +15998,13 @@ document.addEventListener('DOMContentLoaded', function(){
     <div id="expFrSummary" style="font-size:11px;color:#64748b;background:#f8fafc;border-radius:8px;padding:8px 12px;line-height:1.8;"></div>
   </div><!-- end expPanel-flashrpt -->
 
-  <!-- ── Panel: 差异排行榜图片 ── -->
+  <!-- ── Panel: 差异排行榜 Excel ── -->
   <div id="expPanel-rankimg" style="display:none;flex-direction:column;gap:14px;">
     <div>
       <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:7px;">📦 品类</div>
       <div id="expRiCatChips" style="display:flex;gap:6px;flex-wrap:wrap;">
-        <div class="exp-ri-cat" data-cat="手机" onclick="zbExpRiCatTog(this)" style="padding:5px 13px;border-radius:20px;font-size:12px;border:1px solid #2563eb;background:#2563eb;color:#fff;cursor:pointer;user-select:none;">手机</div>
+        <div class="exp-ri-cat" data-cat="" onclick="zbExpRiCatTog(this)" style="padding:5px 13px;border-radius:20px;font-size:12px;border:1px solid #2563eb;background:#2563eb;color:#fff;cursor:pointer;user-select:none;">全部</div>
+        <div class="exp-ri-cat" onclick="zbExpRiCatTog(this)" style="padding:5px 13px;border-radius:20px;font-size:12px;border:1px solid #e2e8f0;background:#f8fafc;color:#334155;cursor:pointer;user-select:none;" data-cat="手机">手机</div>
         <div class="exp-ri-cat" onclick="zbExpRiCatTog(this)" style="padding:5px 13px;border-radius:20px;font-size:12px;border:1px solid #e2e8f0;background:#f8fafc;color:#334155;cursor:pointer;user-select:none;" data-cat="笔记本">笔记本</div>
         <div class="exp-ri-cat" onclick="zbExpRiCatTog(this)" style="padding:5px 13px;border-radius:20px;font-size:12px;border:1px solid #e2e8f0;background:#f8fafc;color:#334155;cursor:pointer;user-select:none;" data-cat="平板">平板</div>
         <div class="exp-ri-cat" onclick="zbExpRiCatTog(this)" style="padding:5px 13px;border-radius:20px;font-size:12px;border:1px solid #e2e8f0;background:#f8fafc;color:#334155;cursor:pointer;user-select:none;" data-cat="手表">手表</div>
@@ -16010,15 +16018,19 @@ document.addEventListener('DOMContentLoaded', function(){
         <span style="color:#94a3b8;">—</span>
         <input type="date" id="expRiDateEnd" style="flex:1;padding:6px 10px;border:1px solid #e2e8f0;border-radius:8px;font-size:12px;background:#f8fafc;outline:none;" onchange="zbExpRiUpdSummary()">
       </div>
-      <div style="display:flex;gap:5px;">
-        <div onclick="zbExpRiSetDate('week',this)" style="padding:3px 9px;border-radius:10px;font-size:11px;border:1px solid #2563eb;background:#2563eb;color:#fff;cursor:pointer;font-weight:500;">本周</div>
-        <div onclick="zbExpRiSetDate('lastweek',this)" style="padding:3px 9px;border-radius:10px;font-size:11px;border:1px solid #bfdbfe;background:#eff6ff;color:#2563eb;cursor:pointer;">上周</div>
-        <div onclick="zbExpRiSetDate('month',this)" style="padding:3px 9px;border-radius:10px;font-size:11px;border:1px solid #bfdbfe;background:#eff6ff;color:#2563eb;cursor:pointer;">本月</div>
-        <div onclick="zbExpRiSetDate('custom',this)" style="padding:3px 9px;border-radius:10px;font-size:11px;border:1px solid #bfdbfe;background:#eff6ff;color:#2563eb;cursor:pointer;">自定义</div>
+    </div>
+    <div>
+      <div style="font-size:11px;font-weight:600;color:#64748b;margin-bottom:7px;">🔍 数据口径</div>
+      <div id="expRiScopeChips" style="display:flex;gap:6px;flex-wrap:wrap;">
+        <div class="exp-ri-scope" data-scope="all" onclick="zbExpRiScopeTog(this)" style="padding:5px 13px;border-radius:20px;font-size:12px;border:1px solid #2563eb;background:#2563eb;color:#fff;cursor:pointer;user-select:none;">全部</div>
+        <div class="exp-ri-scope" data-scope="exec" onclick="zbExpRiScopeTog(this)" style="padding:5px 13px;border-radius:20px;font-size:12px;border:1px solid #e2e8f0;background:#f8fafc;color:#334155;cursor:pointer;user-select:none;">客观执行</div>
+        <div class="exp-ri-scope" data-scope="obj" onclick="zbExpRiScopeTog(this)" style="padding:5px 13px;border-radius:20px;font-size:12px;border:1px solid #e2e8f0;background:#f8fafc;color:#334155;cursor:pointer;user-select:none;">客观</div>
+        <div class="exp-ri-scope" data-scope="subj" onclick="zbExpRiScopeTog(this)" style="padding:5px 13px;border-radius:20px;font-size:12px;border:1px solid #e2e8f0;background:#f8fafc;color:#334155;cursor:pointer;user-select:none;">主观</div>
+        <div class="exp-ri-scope" data-scope="overall" onclick="zbExpRiScopeTog(this)" style="padding:5px 13px;border-radius:20px;font-size:12px;border:1px solid #e2e8f0;background:#f8fafc;color:#334155;cursor:pointer;user-select:none;">整体</div>
       </div>
     </div>
     <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:10px 12px;font-size:11px;color:#92400e;line-height:1.6;">
-      🖼️ 将按所选日期重新计算并导出<b>高清图片</b>，包含全国各站点差异率排行榜图表。
+      📊 将按所选日期重新计算并导出<b>Excel</b>，字段与差异排行榜模板保持一致。
     </div>
     <div id="expRiSummary" style="font-size:11px;color:#64748b;background:#f8fafc;border-radius:8px;padding:8px 12px;line-height:1.8;"></div>
   </div><!-- end expPanel-rankimg -->
@@ -16191,8 +16203,8 @@ window.zbExpSwitchTab = function(el) {
     var btn = document.getElementById('zbExpActionBtn');
     if (btn) {
         if (_expCurrentTab === 'rankimg') {
-            btn.innerHTML = '🖼️ 导出图片';
-            btn.style.background = 'linear-gradient(135deg,#d97706,#f59e0b)';
+            btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> 导出 Excel';
+            btn.style.background = 'linear-gradient(135deg,#2563eb,#4f46e5)';
         } else {
             btn.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> 导出 Excel';
             btn.style.background = 'linear-gradient(135deg,#2563eb,#4f46e5)';
@@ -16247,9 +16259,14 @@ window.zbExpFrUpdSummary = function() {
     if(el) el.innerHTML = cat + ' · <b>A期</b> '+sd(a1)+'–'+sd(a2)+' vs <b>B期</b> '+sd(b1)+'–'+sd(b2)+' · <b style="color:#7c3aed;">客观执行口径</b>';
 };
 
-// ── 差异排行榜图片 Panel 交互 ──
+// ── 差异排行榜 Excel Panel 交互 ──
 window.zbExpRiCatTog = function(el) {
     document.querySelectorAll('.exp-ri-cat').forEach(function(c){ c.style.background='#f8fafc'; c.style.borderColor='#e2e8f0'; c.style.color='#334155'; });
+    el.style.background='#2563eb'; el.style.borderColor='#2563eb'; el.style.color='#fff';
+    zbExpRiUpdSummary();
+};
+window.zbExpRiScopeTog = function(el) {
+    document.querySelectorAll('.exp-ri-scope').forEach(function(c){ c.style.background='#f8fafc'; c.style.borderColor='#e2e8f0'; c.style.color='#334155'; });
     el.style.background='#2563eb'; el.style.borderColor='#2563eb'; el.style.color='#fff';
     zbExpRiUpdSummary();
 };
@@ -16272,10 +16289,130 @@ window.zbExpRiSetDate = function(mode, btn) {
 };
 window.zbExpRiUpdSummary = function() {
     var catEl = document.querySelector('.exp-ri-cat[style*="rgb(37, 99, 235)"], .exp-ri-cat[style*="#2563eb"]');
-    var cat = (catEl && catEl.dataset.cat) || '手机';
+    var cat = (catEl && catEl.dataset.cat) || '';
+    var scopeEl = document.querySelector('.exp-ri-scope[style*="rgb(37, 99, 235)"], .exp-ri-scope[style*="#2563eb"]');
+    var scope = scopeEl ? scopeEl.textContent : '全部';
     var s=document.getElementById('expRiDateStart').value, e=document.getElementById('expRiDateEnd').value;
     var el=document.getElementById('expRiSummary');
-    if(el) el.innerHTML = cat + ' · ' + (s||'—') + ' ~ ' + (e||'—') + ' · 导出为高清图片';
+    if(el) el.innerHTML = (cat || '全部品类') + ' · ' + (s||'—') + ' ~ ' + (e||'—') + ' · ' + scope + '口径 · 导出Excel';
+};
+
+window.zbExportRankExcel = function(opts) {
+    opts = opts || {};
+    var D = window._DATA || {};
+    if (typeof XLSX === 'undefined') { showToast && showToast('❌ Excel组件未加载'); return; }
+    if (!D.qa && !D.sum) { showToast && showToast('❌ 数据未加载，请先导入 Excel'); return; }
+    var dateStart = opts.dateStart || '';
+    var dateEnd = opts.dateEnd || '';
+    var catOpt = opts.cat || '';
+    var scopeOpt = opts.scope || 'all';
+    var cats = catOpt ? [catOpt] : ['手机','笔记本','平板','手表','耳机'];
+    var scopes = scopeOpt === 'all'
+        ? [
+            { key:'exec', name:'客观执行' },
+            { key:'obj', name:'客观' },
+            { key:'subj', name:'主观' },
+            { key:'overall', name:'整体' }
+          ]
+        : [{ key:scopeOpt, name:({exec:'客观执行', obj:'客观', subj:'主观', overall:'整体'}[scopeOpt] || '客观执行') }];
+    function inRange(date) {
+        var d = (date || '').split(' ')[0];
+        if (!d) return false;
+        if (dateStart && d < dateStart) return false;
+        if (dateEnd && d > dateEnd) return false;
+        return true;
+    }
+    function normIssue(v) { return String(v || '').replace(/^[Ss][Oo][Pp](?=问题)/, 'SOP'); }
+    function matchScope(r, scope) {
+        var catg = r.subjobj || r.category || '';
+        var jt = normIssue(r.judgedType || r.judgedIssueType || '');
+        if (scope === 'overall') return true;
+        if (scope === 'exec') return catg.indexOf('客观') >= 0 && jt.indexOf('执行') >= 0;
+        if (scope === 'obj') return catg.indexOf('客观') >= 0;
+        if (scope === 'subj') return catg.indexOf('主观') >= 0;
+        return true;
+    }
+    function siteType(site) {
+        if (DW_SITES_EXP.indexOf(site) >= 0) return '大仓';
+        if (HY_SITES_EXP.indexOf(site) >= 0 || site.indexOf('后验') >= 0) return '后验中心仓';
+        return '中心仓';
+    }
+    function siteSortWeight(type) {
+        return type === '大仓' ? 1 : type === '后验中心仓' ? 2 : 3;
+    }
+    function getDiffRows(site, cat, scope) {
+        var src = cat === '手机' ? (D.diff5 || []) : (D.diff4 || []);
+        return src.filter(function(r) {
+            if ((r.site || r.warehouse || '') !== site) return false;
+            if ((r.cat || '') !== cat) return false;
+            if (!inRange(r.date)) return false;
+            if (cat === '手机' && r.strategy && r.strategy !== '大盘评估/站点' && r.strategy !== '大盘评估-站点') return false;
+            return matchScope(r, scope);
+        });
+    }
+    function getChecks(site, cat) {
+        if (typeof zbGetCheckRows === 'function') {
+            return zbGetCheckRows(cat, site, inRange).reduce(function(s, r){ return s + (Number(r.checks) || 0); }, 0);
+        }
+        var src = cat === '手机' ? (D.qa || []) : (D.sum || []);
+        return src.filter(function(r){ return r.site === site && r.cat === cat && inRange(r.date); })
+            .reduce(function(s, r){ return s + (Number(r.checks) || 0); }, 0);
+    }
+    function buildSheetRows(scope) {
+        var sites = Array.from(new Set([].concat(D.qa || [], D.sum || [], D.dw4sum || [])
+            .map(function(r){ return r.site; }).filter(Boolean)));
+        var rows = [];
+        sites.forEach(function(site) {
+            cats.forEach(function(cat) {
+                var checks = getChecks(site, cat);
+                var diffs = getDiffRows(site, cat, scope.key);
+                var diffCount = new Set(diffs.map(function(r){ return r.code; }).filter(Boolean)).size;
+                if (!checks && !diffCount) return;
+                var rate = checks > 0 ? diffCount / checks : null;
+                rows.push({
+                    start: dateStart || '',
+                    end: dateEnd || '',
+                    type: siteType(site),
+                    site: site,
+                    cat: cat,
+                    checks: checks,
+                    diffCount: diffCount,
+                    rate: rate
+                });
+            });
+        });
+        rows.sort(function(a,b) {
+            var aw = siteSortWeight(a.type), bw = siteSortWeight(b.type);
+            if (aw !== bw) return aw - bw;
+            if (a.cat !== b.cat) return a.cat > b.cat ? 1 : -1;
+            if (a.rate === null && b.rate !== null) return 1;
+            if (a.rate !== null && b.rate === null) return -1;
+            if (a.rate !== b.rate) return (a.rate || 0) - (b.rate || 0);
+            return a.site > b.site ? 1 : -1;
+        });
+        return rows;
+    }
+    var wb = XLSX.utils.book_new();
+    var headers = ['抽检开始日期','抽检结束日期','站点类型','站点名称','品类名称','大盘抽检设备数量','差异量','差异率'];
+    var totalRows = 0;
+    scopes.forEach(function(scope) {
+        var rows = buildSheetRows(scope);
+        var data = [headers].concat(rows.map(function(r) {
+            return [r.start, r.end, r.type, r.site, r.cat, r.checks, r.diffCount, r.rate === null ? '—' : r.rate];
+        }));
+        var ws = XLSX.utils.aoa_to_sheet(data);
+        ws['!cols'] = [{wch:16},{wch:16},{wch:14},{wch:24},{wch:12},{wch:18},{wch:10},{wch:12}];
+        for (var i = 2; i <= data.length; i++) {
+            var h = ws['H' + i];
+            if (h && typeof h.v === 'number') { h.t = 'n'; h.z = '0.00%'; }
+        }
+        XLSX.utils.book_append_sheet(wb, ws, scope.name);
+        totalRows += rows.length;
+    });
+    if (!wb.SheetNames.length || !totalRows) { showToast && showToast('暂无符合条件的排行榜数据'); return; }
+    var fname = '差异排行榜_' + (catOpt || '全部品类') + '_' + (dateStart || '') + (dateEnd ? '~' + dateEnd : '') + '.xlsx';
+    XLSX.writeFile(wb, fname);
+    showToast && showToast('✅ 差异排行榜Excel导出成功（' + totalRows + ' 行）');
 };
 
 // ── 覆盖 zbDoExport 支持三种 Tab ──
@@ -16294,15 +16431,17 @@ window.zbDoExport = function() {
             showToast && showToast('差异快报导出功能开发中');
         }
     } else if (_expCurrentTab === 'rankimg') {
-        // 排行榜图片导出
+        // 排行榜 Excel 导出
         var catEl2 = document.querySelector('.exp-ri-cat[style*="rgb(37, 99, 235)"], .exp-ri-cat[style*="#2563eb"]');
-        var cat2 = (catEl2 && catEl2.dataset.cat) || '手机';
+        var cat2 = (catEl2 && catEl2.dataset.cat) || '';
+        var scopeEl2 = document.querySelector('.exp-ri-scope[style*="rgb(37, 99, 235)"], .exp-ri-scope[style*="#2563eb"]');
+        var scope2 = (scopeEl2 && scopeEl2.dataset.scope) || 'all';
         var s2=document.getElementById('expRiDateStart').value, e2=document.getElementById('expRiDateEnd').value;
         zbCloseExportPanel();
-        if (typeof zbExportRankImage === 'function') {
-            zbExportRankImage({ cat:cat2, dateStart:s2, dateEnd:e2 });
+        if (typeof zbExportRankExcel === 'function') {
+            zbExportRankExcel({ cat:cat2, dateStart:s2, dateEnd:e2, scope:scope2 });
         } else {
-            showToast && showToast('排行榜图片导出功能开发中');
+            showToast && showToast('排行榜Excel导出功能开发中');
         }
     } else {
         // 原整体数据导出逻辑
