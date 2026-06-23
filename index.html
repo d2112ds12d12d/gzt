@@ -6126,7 +6126,8 @@ const GH_FILES = {
     feedback: 'feedback.json',
     mainboard: 'mainboard_data.json',
     accessLog: 'access_log.json',
-    bcConfig:  'broadcast_config.json'
+    bcConfig:  'broadcast_config.json',
+    healthIgnores: 'health_warning_ignores.json'
 };
 // 超管Token拆分混淆（运行时拼接，防扫描）
 const _t = ['github_pat_','11BMTOZFI0','c1Zh3zsjA4','ep_3DbEX3c','8xDGxNPAwa','IOB4RsDKRd','tI0VtxSQwM','b6yrkRBGWH','2AOJbL2jHnWF'];
@@ -7483,13 +7484,17 @@ async function zbLoadCloudData(useApi) {
     const _tAux = performance.now();
     const _aux = await Promise.all([
         fetchFile(GH_FILES.mainboard).catch(function(){ return null; }),
-        fetchFile(GH_FILES.log).catch(function(){ return null; })
+        fetchFile(GH_FILES.log).catch(function(){ return null; }),
+        fetchFile(GH_FILES.healthIgnores).catch(function(){ return null; })
     ]);
-    if (window._zbPerf) window._zbPerf.push({ stage: '并发拉取(mainboard+log)', ms: Math.round(performance.now()-_tAux), rows: '-' });
+    if (window._zbPerf) window._zbPerf.push({ stage: '并发拉取(mainboard+log+health)', ms: Math.round(performance.now()-_tAux), rows: '-' });
     const mbJson = _aux[0];
     window._mainboardData = (mbJson && typeof mbJson === 'object') ? mbJson : {};
     const logJson = _aux[1];
     if (logJson && logJson.logs) { _zbLog = logJson.logs; localStorage.setItem('zb_upload_log', JSON.stringify(_zbLog)); }
+    const healthJson = _aux[2];
+    window._zbHealthIgnores = (healthJson && Array.isArray(healthJson.ignores)) ? healthJson.ignores : [];
+    try { localStorage.setItem('zb_health_ignores', JSON.stringify(window._zbHealthIgnores)); } catch(e) {}
 
     // H: 格式清洗——把 qa/sum 里历史遗留斜杠日期统一转成横线格式
     function fixSlashDate(s) {
@@ -13765,7 +13770,7 @@ async function zbRenderAuditCloud(){
         var res=await fetch(url,{headers:{'Authorization':'Bearer '+token}});if(!res.ok)throw new Error('HTTP '+res.status);
         var data=await res.json(),events=data.events||[];
         if(!events.length){el.innerHTML='<div style="text-align:center;padding:36px;color:var(--text-secondary);font-size:12px;">暂无云端审计记录</div>';return;}
-        var labels={data_upload:'数据上传',data_edit:'记录编辑',data_delete:'记录删除',correction_upload:'纠正上传',correction_remove:'纠正删除',image_upload:'图片上传',image_delete:'图片删除'};
+        var labels={data_upload:'数据上传',data_edit:'记录编辑',data_delete:'记录删除',correction_upload:'纠正上传',correction_remove:'纠正删除',image_upload:'图片上传',image_delete:'图片删除',health_ignore:'健康预警忽略'};
         el.innerHTML='<div style="border:1px solid var(--border-color);border-radius:8px;overflow:hidden;"><table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr style="background:var(--bg-secondary,#f8fafc);"><th style="padding:8px;text-align:left;">时间</th><th style="padding:8px;text-align:left;">操作</th><th style="padding:8px;text-align:left;">操作人</th><th style="padding:8px;text-align:left;">站点/品类</th><th style="padding:8px;text-align:left;">摘要</th><th style="padding:8px;text-align:center;">状态</th></tr></thead><tbody>'+events.map(function(e){var t=new Date(e.ts).toLocaleString('zh-CN',{hour12:false});return '<tr style="border-top:1px solid var(--border-color);"><td style="padding:8px;white-space:nowrap;color:var(--text-secondary);">'+t+'</td><td style="padding:8px;white-space:nowrap;">'+(labels[e.eventType]||e.eventType||'—')+'</td><td style="padding:8px;">'+escHtml((e.actor&&e.actor.name)||'—')+'</td><td style="padding:8px;">'+escHtml([e.site,e.category].filter(Boolean).join(' / ')||'—')+'</td><td style="padding:8px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+escHtml(e.summary||'')+'">'+escHtml(e.summary||'—')+'</td><td style="padding:8px;text-align:center;color:'+(e.status==='success'?'#16a34a':'#dc2626')+';">'+(e.status==='success'?'成功':e.status||'—')+'</td></tr>';}).join('')+'</tbody></table></div>';
     }catch(e){el.innerHTML='<div style="text-align:center;padding:36px;color:#dc2626;font-size:12px;">云端日志读取失败：'+escHtml(e.message)+'</div>';}
 }
@@ -13831,6 +13836,163 @@ function zbGetCorrectionStatusMap() {
 
 // ── 数据完整性检测 ──
 var _zbHealthDismissed = false;
+var _zbHealthIgnoreInFlight = false;
+window._zbHealthIgnores = (function(){
+    try { return JSON.parse(localStorage.getItem('zb_health_ignores')||'[]'); } catch(e){ return []; }
+})();
+function zbHealthIgnoreKey(item) {
+    return [item.date||'', item.type||'', item.cat||'', item.field||''].join('|');
+}
+function zbGetHealthIgnoreMap() {
+    var map = {};
+    (window._zbHealthIgnores||[]).forEach(function(item) {
+        if (!item || item.status === 'revoked') return;
+        map[zbHealthIgnoreKey(item)] = item;
+    });
+    return map;
+}
+function zbHealthGroupDates(items) {
+    var ds = [];
+    items.forEach(function(item){
+        var v = (item.date || '').slice(5);
+        if (v && ds.indexOf(v) === -1) ds.push(v);
+    });
+    return ds.sort();
+}
+function zbHealthItemLabel(item) {
+    var typeLabel = item.type === 'phone' ? '手机品类' : '四品类';
+    var fieldLabel = item.field === 'qa' ? 'QA差异率'
+        : item.field === 'diff5' ? '手机差异明细'
+        : item.field === 'sum' ? '日汇总'
+        : item.field === 'diff4' ? '四品类差异明细'
+        : item.field || '未知项';
+    return (item.date||'—') + ' · ' + typeLabel + (item.cat ? ' · ' + item.cat : '') + ' · 缺 ' + fieldLabel;
+}
+function zbHealthEsc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, function(ch){
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[ch];
+    });
+}
+async function zbPushHealthIgnores(items, reason) {
+    if (zbRole !== 'admin' && zbRole !== 'super') return false;
+    var token = zbGetToken();
+    if (!token) return false;
+    var nowIso = new Date().toISOString();
+    var actor = (zbTrainerInfo && zbTrainerInfo.name) || (zbRole === 'super' ? 'super' : 'admin');
+    var cloud = await ghApiFetch(GH_FILES.healthIgnores, token).catch(function(){ return null; });
+    var oldItems = (cloud && Array.isArray(cloud.ignores)) ? cloud.ignores : (window._zbHealthIgnores || []);
+    var byKey = {};
+    oldItems.forEach(function(item){ if (item) byKey[zbHealthIgnoreKey(item)] = item; });
+    items.forEach(function(item) {
+        var rec = Object.assign({}, item, {
+            status: 'active',
+            reason: reason || '管理员确认忽略',
+            actor: actor,
+            ignoredAt: nowIso,
+            updatedAt: nowIso
+        });
+        byKey[zbHealthIgnoreKey(rec)] = rec;
+    });
+    var merged = Object.keys(byKey).map(function(k){ return byKey[k]; })
+        .sort(function(a,b){ return String(b.updatedAt||b.ignoredAt||'').localeCompare(String(a.updatedAt||a.ignoredAt||'')); });
+    var ok = await _zbPushFile(GH_FILES.healthIgnores, { ignores: merged, updated: nowIso }, token);
+    if (!ok) return false;
+    window._zbHealthIgnores = merged;
+    try { localStorage.setItem('zb_health_ignores', JSON.stringify(merged)); } catch(e) {}
+    var logRecord = {
+        ts: nowIso,
+        type: 'health_ignore',
+        desc: '忽略数据健康预警 ' + items.length + ' 项',
+        rows: items.length,
+        ok: true,
+        syncTs: nowIso,
+        items: items.map(function(item){ return zbHealthItemLabel(item); }),
+        reason: reason || '管理员确认忽略'
+    };
+    _zbLog.unshift(logRecord);
+    if (_zbLog.length > 200) _zbLog = _zbLog.slice(0, 200);
+    try { localStorage.setItem('zb_upload_log', JSON.stringify(_zbLog)); } catch(e) {}
+    try { await zbPushLog(); } catch(e) { console.warn('[health_ignore] upload_log push failed:', e); }
+    try {
+        zbAuditWrite('health_ignore', {
+            action: 'ignore_health_warning',
+            summary: '忽略数据健康预警 ' + items.length + ' 项',
+            target: { count: items.length, items: logRecord.items },
+            meta: { reason: logRecord.reason }
+        });
+    } catch(e) {}
+    return true;
+}
+function zbOpenHealthIgnoreConfirm() {
+    var items = (window._zbCurrentHealthItems || []).slice();
+    if (!items.length) {
+        _zbHealthDismissed = true;
+        var bar = document.getElementById('zbDataHealthBar');
+        if (bar) bar.style.display = 'none';
+        return;
+    }
+    var old = document.getElementById('zbHealthIgnoreModal');
+    if (old) old.remove();
+    var overlay = document.createElement('div');
+    overlay.id = 'zbHealthIgnoreModal';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.35);z-index:100000;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);';
+    overlay.innerHTML = '<div style="width:min(560px,92vw);background:#fff;border-radius:14px;border:1px solid #e2e8f0;box-shadow:0 18px 50px rgba(15,23,42,.22);overflow:hidden;">'
+        + '<div style="padding:16px 18px;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;justify-content:space-between;">'
+        + '<div style="font-size:15px;font-weight:800;color:#0f172a;">忽略数据健康预警</div>'
+        + '<button id="zbHealthIgnoreClose" style="border:none;background:#f8fafc;color:#64748b;width:28px;height:28px;border-radius:8px;cursor:pointer;font-size:18px;">×</button>'
+        + '</div>'
+        + '<div style="padding:16px 18px;">'
+        + '<div style="font-size:12px;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:8px;padding:9px 12px;line-height:1.7;margin-bottom:12px;">该操作会同步到云端，其他管理员刷新后也不再看到这些预警。操作会写入日志，便于追溯。</div>'
+        + '<div style="max-height:220px;overflow:auto;border:1px solid #e2e8f0;border-radius:8px;background:#f8fafc;">'
+        + items.map(function(item){ return '<div style="font-size:12px;color:#334155;padding:8px 10px;border-bottom:1px solid #e2e8f0;">'+zbHealthEsc(zbHealthItemLabel(item))+'</div>'; }).join('')
+        + '</div>'
+        + '<textarea id="zbHealthIgnoreReason" placeholder="可选：填写忽略原因，如该日该品类确无差异明细" style="margin-top:12px;width:100%;height:68px;resize:none;border:1px solid #e2e8f0;border-radius:8px;padding:9px 10px;font-size:12px;outline:none;box-sizing:border-box;"></textarea>'
+        + '</div>'
+        + '<div style="padding:12px 18px;background:#f8fafc;border-top:1px solid #f1f5f9;display:flex;gap:10px;justify-content:flex-end;">'
+        + '<button id="zbHealthIgnoreCancel" style="padding:8px 16px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;color:#475569;font-size:12px;font-weight:600;cursor:pointer;">取消</button>'
+        + '<button id="zbHealthIgnoreOk" disabled style="padding:8px 16px;border-radius:8px;border:none;background:#cbd5e1;color:#fff;font-size:12px;font-weight:700;cursor:not-allowed;">3 秒后可确认</button>'
+        + '</div></div>';
+    document.body.appendChild(overlay);
+    function close(){ overlay.remove(); }
+    document.getElementById('zbHealthIgnoreClose').onclick = close;
+    document.getElementById('zbHealthIgnoreCancel').onclick = close;
+    var okBtn = document.getElementById('zbHealthIgnoreOk');
+    var left = 3;
+    var timer = setInterval(function(){
+        left -= 1;
+        if (left > 0) okBtn.textContent = left + ' 秒后可确认';
+        else {
+            clearInterval(timer);
+            okBtn.disabled = false;
+            okBtn.textContent = '确认忽略并同步云端';
+            okBtn.style.background = '#dc2626';
+            okBtn.style.cursor = 'pointer';
+        }
+    }, 1000);
+    okBtn.onclick = async function(){
+        if (okBtn.disabled || _zbHealthIgnoreInFlight) return;
+        _zbHealthIgnoreInFlight = true;
+        okBtn.disabled = true;
+        okBtn.textContent = '正在同步云端…';
+        okBtn.style.background = '#94a3b8';
+        var reason = (document.getElementById('zbHealthIgnoreReason')||{}).value || '';
+        try {
+            var ok = await zbPushHealthIgnores(items, reason.trim());
+            if (!ok) throw new Error('cloud push failed');
+            close();
+            _zbHealthDismissed = false;
+            if (typeof showToast === 'function') showToast('✅ 已忽略并同步云端');
+            zbCheckDataHealth();
+        } catch(e) {
+            okBtn.disabled = false;
+            okBtn.textContent = '同步失败，重试';
+            okBtn.style.background = '#dc2626';
+            if (typeof showToast === 'function') showToast('❌ 忽略失败，请稍后重试');
+        } finally {
+            _zbHealthIgnoreInFlight = false;
+        }
+    };
+}
 function zbCheckDataHealth() {
     // 仅管理员可见
     if (zbRole !== 'admin' && zbRole !== 'super') return;
@@ -13849,20 +14011,26 @@ function zbCheckDataHealth() {
     );
     var fiveCats = ['笔记本','平板','手表','耳机'];
     var today = new Date();
-    var missingPhone = [], missingFive = [];
+    var missingPhoneItems = [], missingFiveItems = [];
     for (var i = 1; i <= 15; i++) {
         var d = new Date(today); d.setDate(today.getDate() - i);
         var dateStr = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
-        var ds = dateStr.slice(5);
         // 手机：qa 或 diff5 任一缺，都算缺
-        if (!datesQa.has(dateStr) || !datesDiff5.has(dateStr)) missingPhone.push(ds);
+        if (!datesQa.has(dateStr)) missingPhoneItems.push({ date:dateStr, type:'phone', cat:'手机', field:'qa' });
+        if (!datesDiff5.has(dateStr)) missingPhoneItems.push({ date:dateStr, type:'phone', cat:'手机', field:'diff5' });
         // 四品类：任一品类的 sum 或 diff4 缺，就算这天四品类有缺失
-        var allFourComplete = fiveCats.every(function(cat){
+        fiveCats.forEach(function(cat){
             var k = dateStr + '||' + cat;
-            return fiveSumKeys.has(k) && fiveDiff4Keys.has(k);
+            if (!fiveSumKeys.has(k)) missingFiveItems.push({ date:dateStr, type:'five_cat', cat:cat, field:'sum' });
+            if (!fiveDiff4Keys.has(k)) missingFiveItems.push({ date:dateStr, type:'five_cat', cat:cat, field:'diff4' });
         });
-        if (!allFourComplete) missingFive.push(ds);
     }
+    var ignoreMap = zbGetHealthIgnoreMap();
+    missingPhoneItems = missingPhoneItems.filter(function(item){ return !ignoreMap[zbHealthIgnoreKey(item)]; });
+    missingFiveItems = missingFiveItems.filter(function(item){ return !ignoreMap[zbHealthIgnoreKey(item)]; });
+    var missingPhone = zbHealthGroupDates(missingPhoneItems);
+    var missingFive = zbHealthGroupDates(missingFiveItems);
+    window._zbCurrentHealthItems = missingPhoneItems.concat(missingFiveItems);
     // 矫正表不是每日必传项，仅提示已有上传记录中的真实同步异常。
     var pendingInspector = [], failedInspector = [];
     var correctionStatusMap = zbGetCorrectionStatusMap();
@@ -13873,23 +14041,13 @@ function zbCheckDataHealth() {
         else if (correctionInfo.status === 'sync_failed') failedInspector.push(dsJ);
     });
 
-    var zeroMatchFiles = [];
-    var zeroMatchCutoff = Date.now() - 15 * 86400000;
-    (_zbLog||[]).forEach(function(log) {
-        if (log.type !== 'correction' || zbGetCorrectionStatus(log) !== 'match_zero') return;
-        var logTime = new Date(log.ts||log.time||0).getTime();
-        var fileName = log.fileName || log.name || '未命名文件';
-        if (logTime >= zeroMatchCutoff && zeroMatchFiles.indexOf(fileName) === -1) zeroMatchFiles.push(fileName);
-    });
-
     var lines = '';
     if (missingPhone.length) lines += '<div style="font-size:11px;color:#92400e;">手机品类：' + missingPhone.join(' · ') + '</div>';
     if (missingFive.length)  lines += '<div style="font-size:11px;color:#92400e;margin-top:2px;">四品类：' + missingFive.join(' · ') + '</div>';
     if (pendingInspector.length) lines += '<div style="font-size:11px;color:#92400e;margin-top:2px;">原操作人矫正表待同步：' + pendingInspector.join(' · ') + '</div>';
     if (failedInspector.length) lines += '<div style="font-size:11px;color:#b91c1c;margin-top:2px;">原操作人矫正表同步失败：' + failedInspector.join(' · ') + '</div>';
-    if (zeroMatchFiles.length) lines += '<div style="font-size:11px;color:#92400e;margin-top:2px;">矫正表匹配为 0：' + zeroMatchFiles.join(' · ') + '</div>';
-    var noteStr = '※ 完整 = 手机需 qa+差异明细、四品类需 汇总+差异明细 都齐；矫正表不作为每日必传项';
-    if (!missingPhone.length && !missingFive.length && !pendingInspector.length && !failedInspector.length && !zeroMatchFiles.length) { bar.style.display = 'none'; return; }
+    var noteStr = '※ 完整 = 手机需 qa+差异明细、四品类需 汇总+差异明细 都齐；矫正表状态仅在云端管理查看';
+    if (!missingPhone.length && !missingFive.length && !pendingInspector.length && !failedInspector.length) { bar.style.display = 'none'; return; }
     var issueDates = new Set([...missingPhone, ...missingFive, ...pendingInspector, ...failedInspector]);
     var titleStr = issueDates.size ? ('近15天 '+issueDates.size+' 天数据未上传、缺失或未同步') : '近15天存在矫正表异常状态';
     bar.style.display = 'block';
@@ -13901,7 +14059,7 @@ function zbCheckDataHealth() {
         + lines
         + '<div style="font-size:10px;color:#a16207;margin-top:4px;">' + noteStr + '</div>'
         + '</div>'
-        + '<button onclick="_zbHealthDismissed=true;document.getElementById(&quot;zbDataHealthBar&quot;).style.display=&quot;none&quot;;" style="font-size:16px;line-height:1;color:#b45309;background:none;border:none;cursor:pointer;flex-shrink:0;padding:0;">×</button>'
+        + '<button title="忽略当前数据完整性预警" onclick="zbOpenHealthIgnoreConfirm()" style="font-size:16px;line-height:1;color:#b45309;background:none;border:none;cursor:pointer;flex-shrink:0;padding:0;">×</button>'
         + '</div></div>';
 }
 var _zbImageLog = (function(){
