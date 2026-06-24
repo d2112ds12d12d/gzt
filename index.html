@@ -1136,6 +1136,10 @@
                         <span id="zbKouJingLabel" style="font-size:11px;color:#1d4ed8;font-weight:500;">口径：客观执行</span>
                         <svg id="zbKouJingArrow" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#2563eb" stroke-width="2.5" style="flex-shrink:0;transition:transform .2s;"><polyline points="6 9 12 15 18 9"/></svg>
                     </div>
+                    <div id="zbDataCutoffInfo" title="取手机基础数据与四品类基础数据都完整的最新日期，按较早日期展示。" style="display:inline-flex;align-items:center;gap:5px;height:28px;padding:0 4px 0 10px;border-left:0.5px solid var(--border-color);font-size:11px;white-space:nowrap;flex-shrink:0;color:var(--text-secondary);">
+                        <span style="color:#94a3b8;font-weight:500;">数据截止</span>
+                        <span id="zbDataCutoffDate" style="color:#475569;font-weight:700;">--</span>
+                    </div>
                     <button id="zbQueryBtn" onclick="zbDoQuery();zbRipple(this,event)" style="display:inline-flex;align-items:center;gap:5px;padding:4px 14px;border-radius:20px;font-size:12px;font-weight:500;background:#fff;color:#2563eb;border:1.5px solid #2563eb;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;overflow:hidden;position:relative;" onmouseenter="this.style.background='#eff6ff'" onmouseleave="this.style.background='#fff'">→ 查询</button>
                     <!-- 全局搜索按钮 -->
                     <div onclick="zbOpenSearch()" title="全局搜索 (Ctrl+K)" style="display:inline-flex;align-items:center;gap:5px;padding:4px 12px;border-radius:20px;font-size:11px;color:#64748b;border:1px solid #e2e8f0;background:#f8fafc;cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .15s;user-select:none;" onmouseenter="this.style.background='#f1f5f9'" onmouseleave="this.style.background='#f8fafc'">
@@ -2626,18 +2630,28 @@
             /* ── 差异明细：列筛选 + 单元格编辑 ── */
             // 编辑覆盖存储
             const DT_STORE_KEY = 'zb_detail_edits';
+            const DT_META_KEY = 'zb_detail_edit_meta';
             let dtEdits = {};
             try { dtEdits = JSON.parse(localStorage.getItem(DT_STORE_KEY)||'{}'); } catch(e) {}
             window._dtEdits = dtEdits; // 暴露给zbPushEdits访问
+            let dtEditMeta = {};
+            try { dtEditMeta = JSON.parse(localStorage.getItem(DT_META_KEY)||'{}'); } catch(e) {}
+            window._dtEditMeta = dtEditMeta;
+            function dtGetEditMetaStore() {
+                return window._dtEditMeta || dtEditMeta || {};
+            }
             function dtSaveEdits() {
+                dtEditMeta = window._dtEditMeta || dtEditMeta || {};
                 localStorage.setItem(DT_STORE_KEY, JSON.stringify(dtEdits));
                 window._dtEdits = dtEdits;
+                localStorage.setItem(DT_META_KEY, JSON.stringify(dtEditMeta));
+                window._dtEditMeta = dtEditMeta;
                 if (typeof zbUpdateDraftUI === 'function') zbUpdateDraftUI();
             }
 
             // 可编辑列
-            const DT_EDITABLE_COLS = ['person'];
-            const DT_COL_LABELS = { date:'日期', warehouse:'站点名称', cat:'品类', code:'质检码', level1:'一级项', level2:'二级项', level3_orig:'原三级项', level3:'新三级项', category:'主客观分类', issueType:'问题类型', judgedIssueType:'抽检判定类型', person:'质检人员', qaInspector:'QA抽检人' };
+            const DT_EDITABLE_COLS = ['person','inspectorOrg'];
+            const DT_COL_LABELS = { date:'日期', warehouse:'站点名称', cat:'品类', code:'质检码', level1:'一级项', level2:'二级项', level3_orig:'原三级项', level3:'新三级项', category:'主客观分类', issueType:'问题类型', judgedIssueType:'抽检判定类型', person:'质检人员', inspectorOrg:'原操作人组织架构', qaInspector:'QA抽检人' };
 
             // 列筛选状态（挂window保证跨闭包共享）
             window._dtState = { colFilters:{}, popupCol:null, popupSelected:new Set(), allVals:[] };
@@ -3044,7 +3058,9 @@
                 const code = span.dataset.code;
                 const col  = span.dataset.col;
                 const orig = span.dataset.orig;
-                const cur  = span.textContent.trim();
+                const site = span.dataset.site || '';
+                const cat  = span.dataset.cat || '';
+                const cur  = span.dataset.value || span.textContent.trim();
                 const input = document.createElement('input');
                 input.className = 'dt-cell-input';
                 input.value = cur === '-' ? '' : cur;
@@ -3059,8 +3075,31 @@
                     if (newVal !== oldVal || (dtEdits[editKey] === undefined && newVal !== orig)) {
                         if (newVal !== orig) {
                             dtEdits[editKey] = newVal;
+                            var actorName = (zbRole === 'trainer' && zbTrainerInfo) ? (zbTrainerInfo.name || zbTrainerInfo.id || '培训师') : (zbRole === 'admin' ? '管理员' : '管理员');
+                            var metaStore = dtGetEditMetaStore();
+                            var oldMeta = metaStore[editKey] || {};
+                            metaStore[editKey] = {
+                                code: code,
+                                field: col,
+                                fieldLabel: DT_COL_LABELS[col] || col,
+                                from: oldMeta.from || orig || '—',
+                                to: newVal || '—',
+                                site: site,
+                                cat: cat,
+                                actor: actorName,
+                                actorRole: zbRole || '',
+                                ts: oldMeta.ts || new Date().toISOString(),
+                                updatedTs: new Date().toISOString(),
+                                status: 'pending'
+                            };
+                            window._dtEditMeta = metaStore;
+                            dtEditMeta = metaStore;
                         } else {
                             delete dtEdits[editKey]; // 改回原值=清除覆盖
+                            var metaStore2 = dtGetEditMetaStore();
+                            delete metaStore2[editKey];
+                            window._dtEditMeta = metaStore2;
+                            dtEditMeta = metaStore2;
                         }
                         if (window._zbPersonSubmitted && window._zbPersonSubmitted[editKey]) {
                             delete window._zbPersonSubmitted[editKey];
@@ -3097,6 +3136,50 @@
                 });
                 input.addEventListener('blur', save);
                 input.addEventListener('click', function(e) { e.stopPropagation(); });
+            }
+
+            function dtBuildEditableSpan(row, col) {
+                var editKey = (row.code||'') + '|' + col;
+                var displayVal = (dtEdits[editKey] !== undefined) ? dtEdits[editKey] : (row[col] || '');
+                var isModified = dtEdits[editKey] !== undefined;
+                var submitted = !!(window._zbPersonSubmitted && window._zbPersonSubmitted[editKey]);
+                var meta = dtGetEditMetaStore()[editKey] || {};
+                var hasMeta = !!(meta && meta.actor);
+                if (hasMeta && meta.status === 'submitted') submitted = true;
+                var span = document.createElement('span');
+                span.className = 'dt-cell-editable' + (isModified ? ' dt-cell-modified' : '');
+                span.setAttribute('data-code', row.code||'');
+                span.setAttribute('data-col', col);
+                span.setAttribute('data-orig', row[col]||'-');
+                span.setAttribute('data-site', row.warehouse || row.site || row._warehouse || '');
+                span.setAttribute('data-cat', row.cat || row._cat || '');
+                span.setAttribute('data-value', displayVal || '-');
+                span.style.position = 'relative';
+                span.style.display = 'inline-flex';
+                span.style.alignItems = 'center';
+                span.style.justifyContent = 'center';
+                span.style.minHeight = '22px';
+                span.style.padding = (isModified || hasMeta) ? '1px 15px 1px 6px' : '1px 6px';
+                if ((isModified || hasMeta) && col === 'inspectorOrg') {
+                    span.style.background = submitted ? '#eff6ff' : '#fff7ed';
+                    span.style.border = '0.5px solid ' + (submitted ? '#bfdbfe' : '#fed7aa');
+                    span.style.borderRadius = '6px';
+                    span.style.color = submitted ? '#1d4ed8' : '#9a3412';
+                    span.style.fontWeight = '600';
+                }
+                span.textContent = displayVal || '-';
+                if ((isModified || hasMeta) && meta.actor) {
+                    var actor = meta.actor || '';
+                    var tail = actor ? actor.slice(-1) : '改';
+                    var badge = document.createElement('em');
+                    badge.textContent = tail;
+                    badge.style.cssText = 'position:absolute;right:-7px;top:-8px;width:16px;height:16px;border-radius:50%;background:'+(submitted?'#2563eb':'#f59e0b')+';color:#fff;border:1.5px solid #fff;box-shadow:0 2px 6px rgba(15,23,42,.16);display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:9px;font-weight:700;line-height:1;';
+                    span.appendChild(badge);
+                    var ts = meta.updatedTs || meta.ts || '';
+                    var timeTxt = ts ? new Date(ts).toLocaleString('zh-CN', { hour12:false }) : '';
+                    span.title = actor + (timeTxt ? ' · ' + timeTxt : '') + (submitted ? ' 已上传' : ' 待上传') + '\n' + (meta.from || '—') + ' → ' + (meta.to || displayVal || '—');
+                }
+                return span;
             }
 
             // 虚拟滚动实现
@@ -3240,16 +3323,10 @@
                                 zbRenderNoteCell(td, rawRow);
                             } else if (key === 'person' && !row._isSectionHeader && typeof zbCanEditRow === 'function' && zbCanEditRow(row)) {
                                 // 原操作人列：权限通过则启用单元格编辑（复用 dtEdits 通道）
-                                var editKey = (row.code||'') + '|person';
-                                var displayVal = (dtEdits[editKey] !== undefined) ? dtEdits[editKey] : (row.person || '');
-                                var isModified = dtEdits[editKey] !== undefined;
-                                var span = document.createElement('span');
-                                span.className = 'dt-cell-editable' + (isModified ? ' dt-cell-modified' : '');
-                                span.setAttribute('data-code', row.code||'');
-                                span.setAttribute('data-col', 'person');
-                                span.setAttribute('data-orig', row.person||'-');
-                                span.textContent = displayVal || '-';
-                                td.appendChild(span);
+                                td.appendChild(dtBuildEditableSpan(row, 'person'));
+                            } else if (key === 'inspectorOrg' && !row._isSectionHeader && typeof zbCanEditRow === 'function' && zbCanEditRow(row)) {
+                                // 原操作人组织架构列：培训师仅可编辑自己权限内站点+品类，先入本地草稿，右上角统一上传。
+                                td.appendChild(dtBuildEditableSpan(row, 'inspectorOrg'));
                             } else {
                                 td.textContent = val;
                             }
@@ -4049,6 +4126,7 @@
             }
 
             window.fullRefresh = function fullRefresh() {
+                if (typeof zbUpdateDataCutoffInfo === 'function') zbUpdateDataCutoffInfo();
                 if (!diffData.length && !summaryData.length) { clearAllPanels(); return; }
                 currentFilteredDiff = filterDiffData(diffData).slice().sort((a,b) => (a.date||'').localeCompare(b.date||''));
                 detailCurrentOffset = 0;
@@ -6127,7 +6205,8 @@ const GH_FILES = {
     mainboard: 'mainboard_data.json',
     accessLog: 'access_log.json',
     bcConfig:  'broadcast_config.json',
-    healthIgnores: 'health_warning_ignores.json'
+    healthIgnores: 'health_warning_ignores.json',
+    detailEditMeta: 'detail_edit_meta.json'
 };
 // 超管Token拆分混淆（运行时拼接，防扫描）
 const _t = ['github_pat_','11BMTOZFI0','c1Zh3zsjA4','ep_3DbEX3c','8xDGxNPAwa','IOB4RsDKRd','tI0VtxSQwM','b6yrkRBGWH','2AOJbL2jHnWF'];
@@ -6443,7 +6522,7 @@ function zbUpdateDraftUI() {
     var btn = document.getElementById('zbDraftSyncBtn');
     if (!wrap || !counts || !btn) return;
     wrap.style.display = total ? 'flex' : 'none';
-    counts.textContent = '图片 ' + summary.images + ' · 原操作人 ' + summary.personCount + ' · 备注 ' + summary.notes;
+    counts.textContent = '图片 ' + summary.images + ' · 明细修改 ' + summary.personCount + ' · 备注 ' + summary.notes;
     btn.textContent = '☁ 上传云端（' + total + '）';
     btn.disabled = !!window._zbDraftSyncing;
 }
@@ -6501,7 +6580,7 @@ async function zbSyncDrafts() {
                 window._zbPersonSubmitted = _zbPersonSubmitted;
                 _zbPersistDraftState();
             } else {
-                errors.push((personResult && personResult.errMsg) || '原操作人上传失败');
+                errors.push((personResult && personResult.errMsg) || '明细修改上传失败');
             }
         }
         if (summary.images || summary.notes) {
@@ -7167,6 +7246,7 @@ async function zbAdminLoginSubmit() {
     // 培训师ID匹配
     var trainer = await zbLoadAndMatchTrainer(v);
     if (trainer) {
+        try { await zbAuditLogin(v, 'trainer'); } catch(e) { console.warn('[audit] trainer login skipped', e); }
         zbRole = 'trainer'; zbTrainerInfo = trainer;
         localStorage.setItem('zb_role','trainer');
         localStorage.setItem('zb_trainer', JSON.stringify(trainer));
@@ -7270,6 +7350,7 @@ async function zbSidebarLogin() {
     }
     var trainer = await zbLoadAndMatchTrainer(v);
     if (trainer) {
+        try { await zbAuditLogin(v, 'trainer'); } catch(e) { console.warn('[audit] trainer login skipped', e); }
         zbRole = 'trainer'; zbTrainerInfo = trainer;
         localStorage.setItem('zb_role','trainer');
         localStorage.setItem('zb_trainer', JSON.stringify(trainer));
@@ -7485,9 +7566,10 @@ async function zbLoadCloudData(useApi) {
     const _aux = await Promise.all([
         fetchFile(GH_FILES.mainboard).catch(function(){ return null; }),
         fetchFile(GH_FILES.log).catch(function(){ return null; }),
-        fetchFile(GH_FILES.healthIgnores).catch(function(){ return null; })
+        fetchFile(GH_FILES.healthIgnores).catch(function(){ return null; }),
+        fetchFile(GH_FILES.detailEditMeta).catch(function(){ return null; })
     ]);
-    if (window._zbPerf) window._zbPerf.push({ stage: '并发拉取(mainboard+log+health)', ms: Math.round(performance.now()-_tAux), rows: '-' });
+    if (window._zbPerf) window._zbPerf.push({ stage: '并发拉取(mainboard+log+health+editMeta)', ms: Math.round(performance.now()-_tAux), rows: '-' });
     const mbJson = _aux[0];
     window._mainboardData = (mbJson && typeof mbJson === 'object') ? mbJson : {};
     const logJson = _aux[1];
@@ -7495,6 +7577,11 @@ async function zbLoadCloudData(useApi) {
     const healthJson = _aux[2];
     window._zbHealthIgnores = (healthJson && Array.isArray(healthJson.ignores)) ? healthJson.ignores : [];
     try { localStorage.setItem('zb_health_ignores', JSON.stringify(window._zbHealthIgnores)); } catch(e) {}
+    const editMetaJson = _aux[3];
+    if (editMetaJson && editMetaJson.records && typeof editMetaJson.records === 'object') {
+        window._dtEditMeta = Object.assign({}, editMetaJson.records, window._dtEditMeta || {});
+        try { localStorage.setItem('zb_detail_edit_meta', JSON.stringify(window._dtEditMeta)); } catch(e) {}
+    }
 
     // H: 格式清洗——把 qa/sum 里历史遗留斜杠日期统一转成横线格式
     function fixSlashDate(s) {
@@ -8116,6 +8203,100 @@ async function _doPushEdits(token, editsOverride) {
     } catch(e) {}
 
     if (allOk) {
+        try {
+            var metaStore = window._dtEditMeta || {};
+            var auditDiffs = [];
+            Object.keys(edits).forEach(function(editKey) {
+                var parts = editKey.split('|');
+                var code = parts[0] || '';
+                var field = parts[1] || '';
+                var meta = metaStore[editKey] || {};
+                auditDiffs.push({
+                    code: code,
+                    site: meta.site || '',
+                    cat: meta.cat || '',
+                    field: meta.fieldLabel || (typeof DT_COL_LABELS !== 'undefined' && DT_COL_LABELS[field]) || field,
+                    fieldKey: field,
+                    from: meta.from || '—',
+                    to: meta.to || edits[editKey] || '—',
+                    actor: meta.actor || ((zbTrainerInfo && zbTrainerInfo.name) || (zbRole === 'trainer' ? '培训师' : '管理员')),
+                    ts: meta.updatedTs || meta.ts || new Date().toISOString()
+                });
+                if (metaStore[editKey]) {
+                    metaStore[editKey].status = 'submitted';
+                    metaStore[editKey].submittedTs = new Date().toISOString();
+                }
+            });
+            window._dtEditMeta = metaStore;
+            try { localStorage.setItem('zb_detail_edit_meta', JSON.stringify(metaStore)); } catch(e) {}
+            if (auditDiffs.length) {
+                try {
+                    var editLog = JSON.parse(localStorage.getItem('zb_edit_log')||'[]');
+                    editLog.push({
+                        ts: Date.now(),
+                        edits: auditDiffs.length,
+                        deletes: 0,
+                        code: auditDiffs[0].code || '',
+                        canRevert: false,
+                        actor: auditDiffs[0].actor || '',
+                        fieldDiffs: auditDiffs.map(function(x){
+                            return {
+                                code: x.code || '',
+                                field: x.field || '',
+                                from: x.from || '—',
+                                to: x.to || '—',
+                                site: x.site || '',
+                                cat: x.cat || '',
+                                actor: x.actor || ''
+                            };
+                        })
+                    });
+                    localStorage.setItem('zb_edit_log', JSON.stringify(editLog.slice(-80)));
+                } catch(e) {}
+            }
+            if (auditDiffs.length) {
+                var cloudMeta = await ghApiFetch(GH_FILES.detailEditMeta, token).catch(function(){ return null; });
+                var records = (cloudMeta && cloudMeta.records && typeof cloudMeta.records === 'object') ? cloudMeta.records : {};
+                auditDiffs.forEach(function(x) {
+                    var key = (x.code || '') + '|' + (x.fieldKey || '');
+                    if (!key || key === '|') return;
+                    records[key] = Object.assign({}, records[key] || {}, metaStore[key] || {}, {
+                        code: x.code || '',
+                        field: x.fieldKey || '',
+                        fieldLabel: x.field || '',
+                        from: x.from || '—',
+                        to: x.to || '—',
+                        site: x.site || '',
+                        cat: x.cat || '',
+                        actor: x.actor || '',
+                        actorRole: (metaStore[key] && metaStore[key].actorRole) || zbRole || '',
+                        ts: (metaStore[key] && metaStore[key].ts) || x.ts || new Date().toISOString(),
+                        updatedTs: x.ts || new Date().toISOString(),
+                        submittedTs: new Date().toISOString(),
+                        status: 'submitted'
+                    });
+                });
+                var metaOk = await _zbPushFile(GH_FILES.detailEditMeta, { records: records, updated: new Date().toISOString() }, token);
+                if (!metaOk) {
+                    return { allOk: false, errMsg: '数据已上传，但编辑标记/日志云端保存失败，请重试' };
+                }
+                window._dtEditMeta = Object.assign({}, records, metaStore);
+                try { localStorage.setItem('zb_detail_edit_meta', JSON.stringify(window._dtEditMeta)); } catch(e) {}
+            }
+            if (auditDiffs.length && typeof zbAuditWrite === 'function') {
+                var actorName = (auditDiffs[0] && auditDiffs[0].actor) || ((zbTrainerInfo && zbTrainerInfo.name) || '管理员');
+                await zbAuditWrite('data_edit', {
+                    action: 'detail_inline_edit',
+                    site: (auditDiffs[0] && auditDiffs[0].site) || '',
+                    category: (auditDiffs[0] && auditDiffs[0].cat) || '',
+                    summary: actorName + ' 上传明细修改 ' + auditDiffs.length + ' 项',
+                    target: { codes: auditDiffs.map(function(x){ return x.code; }).filter(Boolean) },
+                    meta: { fieldDiffs: auditDiffs }
+                });
+            }
+        } catch(e) {
+            console.warn('[zbPushEdits] 写云端审计失败，不影响数据推送:', e);
+        }
         // v1.61M: 推送成功后不立即清除 dtEdits。
         // COS 同步需 ~18-60s，若提前清除，刷新时 COS 未就绪会回退读旧文件显示旧数据。
         // 改为在下次 zbLoadCloudData 加载完毕后由 zbCleanStaleEdits 按需清理。
@@ -8699,6 +8880,7 @@ window.zbGateSubmit = async function() {
             var trainer = null;
             try { trainer = await zbLoadAndMatchTrainer(v); } catch(e) { console.warn('[zbGateSubmit] trainer match err:', e); }
             if (trainer) {
+                try { await zbAuditLogin(v, 'trainer'); } catch(e) { console.warn('[audit] trainer login skipped', e); }
                 zbRole = 'trainer';
                 zbTrainerInfo = trainer;
                 try { localStorage.setItem('zb_role', 'trainer'); } catch(e) {}
@@ -8875,7 +9057,16 @@ function zbRenderSiteDetail(siteName) {
     // ── KPI 小卡片 ──
     var kpiEl = document.getElementById('siteKpiRow');
     if (kpiEl) {
-        if (!siteDiff.length) {
+        var hasSiteChecksForCat = false;
+        (function() {
+            if (!window._DATA) return;
+            var cat0 = activeCat || '手机';
+            var inRng0 = function(d){ if(!d)return false; if(startD&&d<startD)return false; if(endD&&d>endD)return false; return true; };
+            hasSiteChecksForCat = (typeof zbGetCheckRows === 'function' ? zbGetCheckRows(cat0, siteName, inRng0) : []).some(function(r){
+                return r.site === siteName && r.cat === cat0;
+            });
+        })();
+        if (!siteDiff.length && !hasSiteChecksForCat) {
             kpiEl.innerHTML = '<div class="stats-item" style="grid-column:1/-1;text-align:center;color:var(--text-secondary);">暂无数据</div>';
         } else {
             // 读当前口径
@@ -9213,11 +9404,21 @@ function zbRenderSiteDetail(siteName) {
             '笔记本-线体':'#f97316','笔记本-后验':'#06a6d8',
             '手机-主板':'#94a3b8'
         });
-        var VIS_KEY4 = 'site4w_cat_vis__' + siteName;
         var savedVis4 = {};
-        try { var sv4=localStorage.getItem(VIS_KEY4); savedVis4=sv4?JSON.parse(sv4):{}; } catch(e4){}
-        // 新品类默认全选
-        FIXED_CATS.forEach(function(c){ if(savedVis4[c]===undefined) savedVis4[c]=true; });
+        function _trendDefaultCatVisible4(c) {
+            var ac = activeCat || '手机';
+            if (!_isDW4) return c === ac;
+            if (ac === '手机') return c === '手机-线体' || c === '手机-后验';
+            if (ac === '笔记本') return c === '笔记本-线体' || c === '笔记本-后验';
+            return c === ac;
+        }
+        FIXED_CATS.forEach(function(c){ savedVis4[c] = _trendDefaultCatVisible4(c); });
+        if (window._siteTrendCatVisOverride && window._siteTrendCatVisOverride.site === siteName && window._siteTrendCatVisOverride.state) {
+            savedVis4 = Object.assign({}, window._siteTrendCatVisOverride.state);
+        }
+        if (!FIXED_CATS.some(function(c){ return savedVis4[c] && _hasCatData4(c); })) {
+            FIXED_CATS.forEach(function(c){ if (_hasCatData4(c)) savedVis4[c] = true; });
+        }
 
         // 判断某个虚拟品类是否有数据（不限当前站点，跨站点取配对数据）
         function _hasCatData4(c) {
@@ -9320,7 +9521,6 @@ function zbRenderSiteDetail(siteName) {
                 if (hasData) {
                     pill4.addEventListener('click', (function(cat4){ return function(){
                         savedVis4[cat4] = !savedVis4[cat4];
-                        try { localStorage.setItem(VIS_KEY4, JSON.stringify(savedVis4)); } catch(e){}
                         renderCatPills4();
                         renderTrendChart();
                         // 同步刷新标题
@@ -9335,7 +9535,8 @@ function zbRenderSiteDetail(siteName) {
                                 var _mc2 = siteName.replace('转转-','').match(/^([\u4e00-\u9fa5]{2})/);
                                 _cityName2 = _mc2 ? _mc2[1] : siteName;
                             }
-                            trendTitleEl.textContent = _cityName2 + _siteType2 + ' ' + (_visCatNames2.length ? _visCatNames2.join('/') : '') + ' 客观执行趋势图';
+                            var _scopeLabel42 = window.zbGetScopeLabel ? window.zbGetScopeLabel(window._siteDataScope) : '客观执行';
+                            trendTitleEl.textContent = _cityName2 + _siteType2 + ' ' + (_visCatNames2.length ? _visCatNames2.join('/') : '') + ' ' + _scopeLabel42 + '趋势图';
                         }
                     }; })(c));
                 }
@@ -10869,17 +11070,30 @@ document.addEventListener('DOMContentLoaded', function() {
         <div style="font-size:15px;font-weight:600;color:var(--text-primary);">操作日志</div>
         <span onclick="zbCloseLog()" style="cursor:pointer;font-size:20px;color:var(--text-secondary);padding:0 4px;line-height:1;">✕</span>
       </div>
-      <div style="display:flex;gap:0;">
-        <button id="zbTabLog" onclick="zbSwitchLogTab('log')" style="padding:7px 16px;font-size:12px;font-weight:600;background:transparent;color:#3b82f6;border:none;border-bottom:2px solid #3b82f6;cursor:pointer;">📋 上传日志</button>
-        <button id="zbTabCloud" onclick="zbSwitchLogTab('cloud')" style="padding:7px 16px;font-size:12px;font-weight:600;background:transparent;color:var(--text-secondary);border:none;border-bottom:2px solid transparent;cursor:pointer;">☁️ 云端管理</button>
-        <button id="zbTabAudit" onclick="zbSwitchLogTab('audit')" style="padding:7px 16px;font-size:12px;font-weight:600;background:transparent;color:var(--text-secondary);border:none;border-bottom:2px solid transparent;cursor:pointer;">🛡️ 云端审计</button>
-        <button id="zbTabEdit" onclick="zbSwitchLogTab('edit')" style="padding:7px 16px;font-size:12px;font-weight:600;background:transparent;color:var(--text-secondary);border:none;border-bottom:2px solid transparent;cursor:pointer;">✏️ 记录编辑</button>
-        <button id="zbTabImage" onclick="zbSwitchLogTab('image')" style="padding:7px 16px;font-size:12px;font-weight:600;background:transparent;color:var(--text-secondary);border:none;border-bottom:2px solid transparent;cursor:pointer;">🖼️ 图片操作</button>
-        <button id="zbTabCorrection" onclick="zbSwitchLogTab('correction')" style="padding:7px 16px;font-size:12px;font-weight:600;background:transparent;color:var(--text-secondary);border:none;border-bottom:2px solid transparent;cursor:pointer;">🔧 纠正日志</button>
-        <button id="zbTabAccess" onclick="zbSwitchLogTab('access')" style="padding:7px 16px;font-size:12px;font-weight:600;background:transparent;color:var(--text-secondary);border:none;border-bottom:2px solid transparent;cursor:pointer;display:none;">📡 访问日志</button>
-
+      <div style="display:flex;gap:20px;">
+        <button id="zbLogGroupData" onclick="zbSwitchLogTab('log')" style="padding:7px 2px;font-size:12px;font-weight:600;background:transparent;color:#3b82f6;border:none;border-bottom:2px solid #3b82f6;cursor:pointer;">📦 数据状态</button>
+        <button id="zbLogGroupOps" onclick="zbSwitchLogTab('edit')" style="padding:7px 2px;font-size:12px;font-weight:600;background:transparent;color:var(--text-secondary);border:none;border-bottom:2px solid transparent;cursor:pointer;">🛡️ 操作审计</button>
+        <button id="zbLogGroupAccess" onclick="zbSwitchLogTab('access')" style="padding:7px 2px;font-size:12px;font-weight:600;background:transparent;color:var(--text-secondary);border:none;border-bottom:2px solid transparent;cursor:pointer;">📡 访问审计</button>
+      </div>
+      <div style="font-size:10px;color:var(--text-secondary);padding:7px 0 9px;border-top:1px solid transparent;">
+        按用途分组展示；底层日志来源保持不变，不合并数据、不改云端协议。
       </div>
     </div>
+    <div id="zbLogBody" style="flex:1;min-height:0;display:grid;grid-template-columns:176px 1fr;">
+      <div id="zbLogSide" style="border-right:1px solid var(--border-color);background:var(--bg-secondary,#f8fafc);padding:12px 10px;overflow-y:auto;">
+        <div id="zbLogSideTitleData" style="font-size:10px;color:var(--text-secondary);font-weight:600;margin:0 8px 6px;">数据状态</div>
+        <div id="zbLogNav-log" onclick="zbSwitchLogTab('log')" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:8px;font-size:12px;color:#2563eb;background:#eff6ff;font-weight:600;cursor:pointer;"><span>上传日志</span><span style="font-size:10px;color:#64748b;">本地</span></div>
+        <div id="zbLogNav-cloud" onclick="zbSwitchLogTab('cloud')" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:8px;font-size:12px;color:var(--text-secondary);cursor:pointer;"><span>云端管理</span><span style="font-size:10px;color:#64748b;">文件</span></div>
+        <div id="zbLogNav-cutoff" onclick="zbSwitchLogTab('cutoff')" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:8px;font-size:12px;color:var(--text-secondary);cursor:pointer;"><span>数据截止</span><span id="zbLogCutoffBadge" style="font-size:10px;color:#64748b;">--</span></div>
+        <div id="zbLogSideTitleOps" style="font-size:10px;color:var(--text-secondary);font-weight:600;margin:14px 8px 6px;">操作审计</div>
+        <div id="zbLogNav-edit" onclick="zbSwitchLogTab('edit')" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:8px;font-size:12px;color:var(--text-secondary);cursor:pointer;"><span>记录编辑</span><span style="font-size:10px;color:#64748b;">本地</span></div>
+        <div id="zbLogNav-image" onclick="zbSwitchLogTab('image')" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:8px;font-size:12px;color:var(--text-secondary);cursor:pointer;"><span>图片操作</span><span style="font-size:10px;color:#64748b;">本地</span></div>
+        <div id="zbLogNav-correction" onclick="zbSwitchLogTab('correction')" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:8px;font-size:12px;color:var(--text-secondary);cursor:pointer;"><span>纠正日志</span><span style="font-size:10px;color:#64748b;">规则</span></div>
+        <div id="zbLogNav-audit" onclick="zbSwitchLogTab('audit')" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:8px;font-size:12px;color:var(--text-secondary);cursor:pointer;"><span>事件审计</span><span style="font-size:10px;color:#64748b;">云端</span></div>
+        <div id="zbLogSideTitleAccess" style="font-size:10px;color:var(--text-secondary);font-weight:600;margin:14px 8px 6px;">访问审计</div>
+        <div id="zbLogNav-access" onclick="zbSwitchLogTab('access')" style="display:flex;align-items:center;justify-content:space-between;gap:8px;padding:8px 10px;border-radius:8px;font-size:12px;color:var(--text-secondary);cursor:pointer;"><span>访问日志</span><span style="font-size:10px;color:#64748b;">云端</span></div>
+      </div>
+      <div id="zbLogContent" style="min-width:0;min-height:0;display:flex;flex-direction:column;">
     <!-- 统计行 -->
     <div id="zbLogStats" style="display:grid;grid-template-columns:repeat(3,1fr);border-bottom:1px solid var(--border-color);flex-shrink:0;">
       <div style="padding:10px 0;text-align:center;border-right:1px solid var(--border-color);">
@@ -10905,13 +11119,16 @@ document.addEventListener('DOMContentLoaded', function() {
         <div style="text-align:center;padding:24px;color:var(--text-secondary);font-size:13px;">加载中…</div>
       </div>
     </div>
+    <div id="zbCutoffPanel" style="display:none;flex:1;overflow-y:auto;padding:14px 20px;">
+      <div id="zbCutoffPanelContent"></div>
+    </div>
     <div id="zbAuditPanel" style="display:none;flex:1;overflow-y:auto;padding:14px 20px;">
       <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
         <select id="zbAuditTypeFilter" onchange="zbRenderAuditCloud()" style="height:32px;border:1px solid var(--border-color);border-radius:7px;padding:0 9px;background:var(--bg-card);color:var(--text-primary);font-size:12px;">
-          <option value="">全部操作</option><option value="data_upload">数据上传</option><option value="data_edit">记录编辑</option><option value="data_delete">记录删除</option><option value="correction_upload">纠正上传</option><option value="correction_remove">纠正删除</option><option value="image_upload">图片上传</option><option value="image_delete">图片删除</option>
+          <option value="">全部操作</option><option value="data_upload">数据上传</option><option value="data_edit">记录编辑</option><option value="data_delete">记录删除</option><option value="correction_upload">纠正上传</option><option value="correction_remove">纠正删除</option><option value="image_upload">图片上传</option><option value="image_delete">图片删除</option><option value="health_ignore">健康预警忽略</option>
         </select>
         <button onclick="zbRenderAuditCloud()" style="height:32px;padding:0 13px;border:0;border-radius:7px;background:#2563eb;color:#fff;font-size:12px;cursor:pointer;">刷新</button>
-        <span style="font-size:11px;color:var(--text-secondary);">仅管理员可查看，数据来自腾讯云 COS</span>
+        <span style="font-size:11px;color:var(--text-secondary);">仅管理员可查看，记录已写入云端审计服务的关键操作</span>
       </div>
       <div id="zbAuditCloudContent"><div style="text-align:center;padding:32px;color:var(--text-secondary);font-size:12px;">等待加载</div></div>
     </div>
@@ -11000,6 +11217,8 @@ document.addEventListener('DOMContentLoaded', function() {
     </div>
     <div id="zbLogFooter" style="padding:10px 20px;border-top:1px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;flex-shrink:0;">
       <div id="zbLogFooterTxt" style="font-size:11px;color:var(--text-secondary);"></div>
+    </div>
+      </div>
     </div>
   </div>
 </div>
@@ -12817,6 +13036,17 @@ function _zbTRCalcRateBySite(siteType, from, to) {
     }).sort(function(a,b){ return a.site.localeCompare(b.site,'zh'); });
 }
 
+function _zbTREscAttr(v) {
+    return String(v||'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+}
+
+function _zbTRImgUrl(url) {
+    url = String(url||'').trim();
+    if (!url) return '';
+    if (/^https?:\/\//i.test(url) || /^data:image\//i.test(url)) return url;
+    return (window.ZB_IMG && ZB_IMG.cosBase ? ZB_IMG.cosBase : 'https://zb-images-1423465873.cos.ap-guangzhou.myqcloud.com') + '/qc-images/' + url.replace(/^qc-images\//,'');
+}
+
 function _zbTRRenderTable(maps, nameLabel, curLabel, lastLabel, includeReasons) {
     var S = {
         t:  'border-collapse:collapse;width:100%;font-family:\'PingFang SC\',\'Microsoft YaHei\',sans-serif;font-size:14px;',
@@ -12838,28 +13068,41 @@ function _zbTRRenderTable(maps, nameLabel, curLabel, lastLabel, includeReasons) 
                          .map(function(n){ return {name:n,cur:0,last:maps.last[n]}; });
     lastOnly.sort(function(a,b){ return b.last-a.last; });
 
+    var imgCols = includeReasons && maps.images ? Math.min(4, Object.keys(maps.images).reduce(function(m,k){ return Math.max(m, (maps.images[k]||[]).length); }, 0)) : 0;
     function reasonCell(name){
         var reasons=(includeReasons&&maps.reasons&&maps.reasons[name])||[];
         return '<td style="'+S.tdL+'width:25%;color:#475569;">'+(reasons.length?reasons.join('；'):'')+'</td>';
     }
+    function imageCells(name){
+        if(!imgCols) return '';
+        var imgs=(maps.images&&maps.images[name])||[];
+        var html='';
+        for(var i=0;i<imgCols;i++){
+            var url=_zbTRImgUrl(imgs[i]);
+            html += '<td style="'+S.td+'width:72px;">'+(url?'<img src="'+_zbTREscAttr(url)+'" style="width:62px;height:62px;object-fit:cover;border:1px solid #dbeafe;border-radius:4px;display:block;margin:0 auto;" />':'')+'</td>';
+        }
+        return html;
+    }
     var html = '<table style="'+S.t+'"><tr><th style="'+S.thL+'">'+nameLabel+'</th>'
         +'<th style="'+S.th+'">上周（'+lastLabel+'）</th>'
         +'<th style="'+S.th+'">本周（'+curLabel+'）</th>'
-        +'<th style="'+S.th+'">变化</th><th style="'+S.th+'width:25%;">原因分析</th></tr>';
+        +'<th style="'+S.th+'">变化</th><th style="'+S.th+'width:25%;">原因分析</th>';
+    for(var hi=0;hi<imgCols;hi++){ html += '<th style="'+S.th+'width:72px;">图例'+(hi+1)+'</th>'; }
+    html += '</tr>';
     if (curList.length) {
-        html += '<tr><td colspan="5" style="'+S.scC+'">本周失误明细 · '+curLabel+'</td></tr>';
+        html += '<tr><td colspan="'+(5+imgCols)+'" style="'+S.scC+'">本周失误明细 · '+curLabel+'</td></tr>';
         curList.forEach(function(r){
-            html += '<tr><td style="'+S.tdL+'">'+r.name+'</td><td style="'+S.td+'">'+(r.last||'—')+'</td><td style="'+S.td+'">'+r.cur+'</td>'+delta(r.cur-r.last)+reasonCell(r.name)+'</tr>';
+            html += '<tr><td style="'+S.tdL+'">'+r.name+'</td><td style="'+S.td+'">'+(r.last||'—')+'</td><td style="'+S.td+'">'+r.cur+'</td>'+delta(r.cur-r.last)+reasonCell(r.name)+imageCells(r.name)+'</tr>';
         });
     }
     if (lastOnly.length) {
-        html += '<tr><td colspan="5" style="'+S.scL+'">上周失误·本周已清零 · '+lastLabel+'</td></tr>';
+        html += '<tr><td colspan="'+(5+imgCols)+'" style="'+S.scL+'">上周失误·本周已清零 · '+lastLabel+'</td></tr>';
         lastOnly.forEach(function(r){
-            html += '<tr><td style="'+S.tdL+'">'+r.name+'</td><td style="'+S.td+'">'+r.last+'</td><td style="'+S.td+'">—</td>'+delta(-r.last)+reasonCell(r.name)+'</tr>';
+            html += '<tr><td style="'+S.tdL+'">'+r.name+'</td><td style="'+S.td+'">'+r.last+'</td><td style="'+S.td+'">—</td>'+delta(-r.last)+reasonCell(r.name)+imageCells(r.name)+'</tr>';
         });
     }
     if (!curList.length&&!lastOnly.length) {
-        html += '<tr><td colspan="5" style="'+S.tdL+'text-align:center;color:#9ca3af;">暂无数据</td></tr>';
+        html += '<tr><td colspan="'+(5+imgCols)+'" style="'+S.tdL+'text-align:center;color:#9ca3af;">暂无数据</td></tr>';
     }
     html += '</table>';
     return html;
@@ -12873,7 +13116,72 @@ function _zbTREditableBlock(placeholder) {
     return '<div contenteditable="true" style="min-height:1.5em;border-bottom:1px dashed #94a3b8;color:#94a3b8;outline:none;padding:2px 4px;margin:2px 0;" data-ph="'+placeholder+'">'+placeholder+'</div>';
 }
 
-async function zbGenerateTrainerReport() {
+var ZB_TR_ORG_SCOPES = {
+    all:    { label:'全部', orgs:null },
+    module: { label:'模块123+全检', orgs:['模块一质检组','模块二质检组','模块三质检组','线下全检组'] },
+    repair: { label:'拆修+复测', orgs:['硬件质检组','复测组'] }
+};
+
+function _zbTRNormOrg(v) {
+    return String(v||'').replace(/\s+/g,'').trim();
+}
+
+function _zbTRGetOrgScope(scope) {
+    return ZB_TR_ORG_SCOPES[scope] || ZB_TR_ORG_SCOPES.all;
+}
+
+function _zbTRInOrgScope(row, scope) {
+    var cfg = _zbTRGetOrgScope(scope);
+    if (!cfg.orgs) return true;
+    var org = _zbTRNormOrg(row && row.inspectorOrg);
+    return cfg.orgs.some(function(x){ return _zbTRNormOrg(x) === org; });
+}
+
+function _zbTRNeedOrgScope(site, mode, activeCat) {
+    if (mode !== 'phone' || activeCat !== '手机') return false;
+    return !!(_zbTRSiteType(site) || (_zbTRGetSitePair(site).dwSite || _zbTRGetSitePair(site).hySite));
+}
+
+function zbTRChooseOrgScope() {
+    return new Promise(function(resolve){
+        var old = document.getElementById('zbTRScopeModal');
+        if (old) old.remove();
+        var modal = document.createElement('div');
+        modal.id = 'zbTRScopeModal';
+        modal.style.cssText = 'position:fixed;inset:0;background:rgba(15,23,42,.46);z-index:1299;display:flex;align-items:center;justify-content:center;padding:18px;';
+        function btn(scope, desc) {
+            var cfg = _zbTRGetOrgScope(scope);
+            return '<button data-scope="'+scope+'" style="display:block;width:100%;text-align:left;padding:13px 14px;margin-top:10px;border:1px solid #dbe5f4;border-radius:8px;background:#fff;cursor:pointer;color:#1e293b;">'
+                + '<div style="font-size:15px;font-weight:700;">'+cfg.label+'</div>'
+                + '<div style="font-size:12px;color:#64748b;margin-top:3px;">'+desc+'</div>'
+                + '</button>';
+        }
+        modal.innerHTML = '<div style="width:420px;max-width:96vw;background:#fff;border-radius:12px;box-shadow:0 18px 50px rgba(15,23,42,.22);overflow:hidden;font-family:\'PingFang SC\',\'Microsoft YaHei\',sans-serif;">'
+            + '<div style="display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid #e5e7eb;">'
+            + '<div style="font-size:17px;font-weight:700;color:#0f172a;">选择周报范围</div>'
+            + '<button data-close="1" style="border:0;background:transparent;font-size:22px;line-height:1;color:#64748b;cursor:pointer;">×</button></div>'
+            + '<div style="padding:14px 18px 18px;">'
+            + '<div style="font-size:13px;color:#64748b;margin-bottom:4px;">仅影响本次周报的明细表格；组织占比保持全量。</div>'
+            + btn('all','保留当前周报全部内容')
+            + btn('module','只看模块一/二/三质检组、线下全检组')
+            + btn('repair','只看硬件质检组、复测组')
+            + '</div></div>';
+        modal.addEventListener('click', function(e){
+            var target = e.target && e.target.closest ? e.target.closest('[data-scope],[data-close]') : null;
+            if (!target) {
+                if (e.target === modal) { modal.remove(); resolve(null); }
+                return;
+            }
+            if (target.dataset.close) { modal.remove(); resolve(null); return; }
+            var scope = target.dataset.scope || 'all';
+            modal.remove();
+            resolve(scope);
+        });
+        document.body.appendChild(modal);
+    });
+}
+
+async function zbGenerateTrainerReport(orgScope) {
     var D=window._DATA;
     if(!D){ showToast('❌ 数据未加载，请先导入 Excel'); return; }
     var site=window._zbCurrentSiteName||'';
@@ -12884,15 +13192,23 @@ async function zbGenerateTrainerReport() {
     var siteType=typeof zbGetSiteType==='function'?zbGetSiteType(site):'中心仓';
     var mode=siteType==='中心仓'?'center':(activeCat==='手机'?'phone':'four');
     var title=mode==='center'?'中心仓培训师周报':mode==='phone'?'大仓手机品类培训师周报':'大仓四品类培训师周报';
+    if(!orgScope && _zbTRNeedOrgScope(site, mode, activeCat)){
+        orgScope = await zbTRChooseOrgScope();
+        if(!orgScope) return;
+    }
+    orgScope = orgScope || 'all';
     var blue='#2563eb';
     var allDiff=window._allDiffData||[];
     var isObj=window.isObjective||function(v){return String(v||'').includes('客观');};
     var isExec=window.isExecutionIssue||function(v){return v==='执行问题';};
     function dt(d){return String(d.date||'').split(' ')[0];}
     function inWin(d,a,b){var x=dt(d);return x>=a&&x<=b;}
-    function uniqueExec(s,c,a,b){
+    function uniqueExec(s,c,a,b,scope){
         var by={};
-        allDiff.forEach(function(d){if(d.warehouse===s&&d.cat===c&&inWin(d,a,b)&&isObj(d.category)&&isExec(d.judgedIssueType)&&d.code&&!by[d.code])by[d.code]=d;});
+        allDiff.forEach(function(d){
+            if(scope && !_zbTRInOrgScope(d,scope))return;
+            if(d.warehouse===s&&d.cat===c&&inWin(d,a,b)&&isObj(d.category)&&isExec(d.judgedIssueType)&&d.code&&!by[d.code])by[d.code]=d;
+        });
         return Object.keys(by).map(function(k){return by[k];});
     }
     function checks(s,c,a,b){
@@ -12906,20 +13222,32 @@ async function zbGenerateTrainerReport() {
         },0);
     }
     function metric(s,c,a,b){var rows=uniqueExec(s,c,a,b),n=checks(s,c,a,b);return {rows:rows,codes:rows.length,checks:n,rate:n?rows.length/n*100:null};}
-    function breakdown(s,c){
+    function breakdown(s,c,scope){
         var by={};
         allDiff.forEach(function(d){
+            if(scope && !_zbTRInOrgScope(d,scope))return;
             if(d.warehouse!==s||d.cat!==c||!inWin(d,r.curStart,r.curEnd)||!isObj(d.category)||!d.code)return;
             var jt=String(d.judgedIssueType||'').replace(/^[Ss][Oo][Pp](?=问题)/,'SOP');
-            if(!by[d.code]||isExec(jt))by[d.code]=jt;
+            if(!by[d.code]||isExec(jt))by[d.code]={jt:jt,org:d.inspectorOrg||''};
         });
-        var out={total:0,exec:0,craft:0,sop:0,hidden:0,other:0};
-        Object.keys(by).forEach(function(k){out.total++;var v=by[k];if(v==='执行问题')out.exec++;else if(v==='工艺问题')out.craft++;else if(v==='SOP问题')out.sop++;else if(v==='隐性问题')out.hidden++;else out.other++;});
+        var out={total:0,exec:0,craft:0,sop:0,hidden:0,other:0,moduleExec:0,repairExec:0};
+        Object.keys(by).forEach(function(k){
+            out.total++;
+            var row=by[k], v=row.jt;
+            if(v==='执行问题'){
+                out.exec++;
+                if(_zbTRInOrgScope({inspectorOrg:row.org},'module'))out.moduleExec++;
+                else if(_zbTRInOrgScope({inspectorOrg:row.org},'repair'))out.repairExec++;
+            }else if(v==='工艺问题')out.craft++;
+            else if(v==='SOP问题')out.sop++;
+            else if(v==='隐性问题')out.hidden++;
+            else out.other++;
+        });
         return out;
     }
-    async function tableMaps(s,c,field,withReasons){
-        var curRows=uniqueExec(s,c,r.curStart,r.curEnd),lastRows=uniqueExec(s,c,r.lastStart,r.lastEnd);
-        var maps={cur:{},last:{},reasons:{}};
+    async function tableMaps(s,c,field,withReasons,scope){
+        var curRows=uniqueExec(s,c,r.curStart,r.curEnd,scope),lastRows=uniqueExec(s,c,r.lastStart,r.lastEnd,scope);
+        var maps={cur:{},last:{},reasons:{},images:{}};
         function key(d){return field==='person'?(d.person||'未知'):(d.level3||d.level3_new||'未知');}
         curRows.forEach(function(d){var k=key(d);maps.cur[k]=(maps.cur[k]||0)+1;});
         lastRows.forEach(function(d){var k=key(d);maps.last[k]=(maps.last[k]||0)+1;});
@@ -12928,6 +13256,15 @@ async function zbGenerateTrainerReport() {
                 var note=String(await zbGetRowNote(d)||'').trim();if(!note)return;
                 var k=key(d);if(!maps.reasons[k])maps.reasons[k]=[];
                 if(maps.reasons[k].indexOf(note)<0)maps.reasons[k].push(note);
+            }));
+        }
+        if(withReasons&&field!=='person'&&typeof zbGetRowImages==='function'){
+            await Promise.all(curRows.map(async function(d){
+                var k=key(d);
+                if(!maps.images[k])maps.images[k]=[];
+                if(maps.images[k].length>=4)return;
+                var imgs=await zbGetRowImages(d);
+                if(imgs&&imgs[0]&&maps.images[k].indexOf(imgs[0])<0)maps.images[k].push(imgs[0]);
             }));
         }
         return maps;
@@ -12952,10 +13289,10 @@ async function zbGenerateTrainerReport() {
 
     async function captureTrend(){
         var wanted=mode==='phone'?['手机-线体','手机-后验']:mode==='center'?['手机','笔记本','平板','手表','耳机']:['笔记本-线体','笔记本-后验','平板','手表','耳机'];
-        var key='site4w_cat_vis__'+site,old=localStorage.getItem(key),oldRange=window._siteTrendRange,state={};
+        var oldOverride=window._siteTrendCatVisOverride,oldRange=window._siteTrendRange,state={};
         ['手机','笔记本','手机-线体','手机-后验','笔记本-线体','笔记本-后验','平板','手表','耳机'].forEach(function(c){state[c]=wanted.indexOf(c)>=0;});
         try{
-            localStorage.setItem(key,JSON.stringify(state));
+            window._siteTrendCatVisOverride={site:site,state:state};
             // 周报必须固定为四个自然周，不能通过可二次取消的筛选按钮切换。
             window._siteTrendRange='4w';
             if(typeof zbRenderSiteDetail==='function')zbRenderSiteDetail(site);
@@ -13009,7 +13346,7 @@ async function zbGenerateTrainerReport() {
             };img.onerror=function(){resolve('');};img.src=src;});
         }finally{
             window._siteTrendRange=oldRange;
-            if(old===null)localStorage.removeItem(key);else localStorage.setItem(key,old);
+            window._siteTrendCatVisOverride=oldOverride;
             if(typeof zbRenderSiteDetail==='function')zbRenderSiteDetail(site);
         }
     }
@@ -13017,19 +13354,24 @@ async function zbGenerateTrainerReport() {
     var sectionData=[];
     for(var i=0;i<sections.length;i++){
         var s=sections[i],cur=metric(s.site,s.cat,r.curStart,r.curEnd),last=metric(s.site,s.cat,r.lastStart,r.lastEnd);
-        sectionData.push({cfg:s,cur:cur,last:last,bd:breakdown(s.site,s.cat),items:await tableMaps(s.site,s.cat,'level3',true),people:await tableMaps(s.site,s.cat,'person',false)});
+        var scopeForSection = mode==='phone' ? orgScope : null;
+        sectionData.push({cfg:s,cur:cur,last:last,bd:breakdown(s.site,s.cat,null),orgBd:breakdown(s.site,s.cat,null),items:await tableMaps(s.site,s.cat,'level3',true,scopeForSection),people:await tableMaps(s.site,s.cat,'person',false,scopeForSection)});
     }
     function rate(v){return v===null?'—':v.toFixed(2)+'%';}
     function mom(cur,last){if(cur===null||last===null)return {t:'—',c:'#64748b'};if(last===0)return cur>0?{t:'↑ 新增',c:'#dc2626'}:{t:'—',c:'#64748b'};var d=(cur-last)/last*100;return Math.abs(d)<.05?{t:'持平',c:'#64748b'}:{t:(d>0?'↑+':'↓')+Math.abs(d).toFixed(1)+'%',c:d>0?'#dc2626':'#16a34a'};}
-    function summary(b){return '客观问题共 <b>'+b.total+'</b> 例，执行问题 <b>'+b.exec+'</b> 例，隐性问题 <b>'+b.hidden+'</b> 例，SOP问题 <b>'+b.sop+'</b> 例，其他问题 <b>'+b.other+'</b> 例，工艺问题 <b>'+b.craft+'</b> 例；';}
+    function summary(b, orgBd){
+        var red = orgBd || b;
+        var orgText = mode==='phone' ? ' <span>（模块123+全检占<b>'+red.moduleExec+'</b>个，拆修复测占<b>'+red.repairExec+'</b>个）</span>' : '';
+        return '客观问题共 <b>'+b.total+'</b> 例，执行问题 <b>'+b.exec+'</b> 例'+orgText+'，隐性问题 <b>'+b.hidden+'</b> 例，SOP问题 <b>'+b.sop+'</b> 例，其他问题 <b>'+b.other+'</b> 例，工艺问题 <b>'+b.craft+'</b> 例；';
+    }
     var F='font-family:Arial,\'PingFang SC\',\'Microsoft YaHei\',sans-serif;';
     var html='<div id="zbTRReport" style="'+F+'font-size:11pt;color:#1e293b;max-width:760px;line-height:1.65;padding:8px;">'
-        +'<div style="font-size:15pt;font-weight:700;margin-bottom:12px;">'+title+'</div><div style="font-size:13pt;font-weight:700;margin:14px 0 8px;">一、本周目标达成情况与分析</div>'
+        +'<div style="font-size:15pt;font-weight:700;margin-bottom:12px;">'+title+(mode==='phone'&&orgScope!=='all'?'（'+_zbTRGetOrgScope(orgScope).label+'）':'')+'</div><div style="font-size:13pt;font-weight:700;margin:14px 0 8px;">一、本周目标达成情况与分析</div>'
         +'<div style="font-weight:700;margin:6px 0;">QA差异率</div>'+chartHtml+'<div style="font-weight:700;margin:7px 0 3px;">结果环比：</div>';
     sectionData.forEach(function(x){var m=mom(x.cur.rate,x.last.rate);html+='<div style="margin:2px 0;">'+x.cfg.name.replace('分析','')+'：本周 <b>'+rate(x.cur.rate)+'</b>，上周 <b>'+rate(x.last.rate)+'</b>，环比 <b style="color:'+m.c+';">'+m.t+'</b></div>';});
     html+='<div style="font-weight:700;margin:9px 0 3px;">具体原因：</div><div contenteditable="true" style="min-height:22px;border-bottom:1px dashed #cbd5e1;"></div>';
     sectionData.forEach(function(x){
-        html+='<div style="font-size:12pt;font-weight:700;color:'+blue+';margin:16px 0 4px;">▶'+x.cfg.name+'</div><div>'+summary(x.bd)+'</div>'
+        html+='<div style="font-size:12pt;font-weight:700;color:'+blue+';margin:16px 0 4px;">▶'+x.cfg.name+'</div><div>'+summary(x.bd,x.orgBd)+'</div>'
             +'<div style="font-weight:700;margin:9px 0 4px;">●质检项维度</div>'+_zbTRRenderTable(x.items,'三级项名称',r.curLabel,r.lastLabel,true)
             +'<div style="font-weight:700;margin:12px 0 4px;">●质检人维度</div>'+_zbTRRenderTable(x.people,'操作人',r.curLabel,r.lastLabel,false);
     });
@@ -13042,7 +13384,7 @@ async function zbGenerateTrainerReport() {
         +'<div style="font-size:13pt;font-weight:700;margin:16px 0 6px;">四、信息同步/问题反馈</div>'+blank('')+'</div>';
     var modal=document.getElementById('zbTRModal');
     if(!modal){modal=document.createElement('div');modal.id='zbTRModal';modal.style.cssText='display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:1300;align-items:flex-start;justify-content:center;overflow-y:auto;padding:24px 12px;';modal.innerHTML='<div style="background:#fff;border-radius:10px;width:820px;max-width:98vw;overflow:hidden;"><div style="display:flex;justify-content:space-between;align-items:center;padding:13px 18px;border-bottom:1px solid #e5e7eb;position:sticky;top:0;background:#fff;z-index:2;"><b id="zbTRModalTitle"></b><div><button onclick="zbTRCopy()" style="padding:6px 14px;border:0;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer;">复制到飞书</button><span onclick="document.getElementById(\'zbTRModal\').style.display=\'none\'" style="margin-left:12px;font-size:22px;color:#94a3b8;cursor:pointer;">×</span></div></div><div id="zbTRContent" style="padding:18px 22px;"></div></div>';document.body.appendChild(modal);}
-    document.getElementById('zbTRModalTitle').textContent=title;document.getElementById('zbTRContent').innerHTML=html;modal.style.display='flex';
+    document.getElementById('zbTRModalTitle').textContent=title+(mode==='phone'&&orgScope!=='all'?'（'+_zbTRGetOrgScope(orgScope).label+'）':'');document.getElementById('zbTRContent').innerHTML=html;modal.style.display='flex';
 }
 
 async function zbGenerateTrainerReportLegacy() {
@@ -13762,14 +14104,14 @@ async function zbAuditWrite(eventType,payload){
 }
 async function zbRenderAuditCloud(){
     var el=document.getElementById('zbAuditCloudContent');if(!el)return;
-    var token=zbAuditToken();if(!token){el.innerHTML='<div style="text-align:center;padding:36px;color:#b45309;font-size:12px;">当前没有云端会话，请重新登录管理员后查看</div>';return;}
-    el.innerHTML='<div style="text-align:center;padding:32px;color:var(--text-secondary);font-size:12px;">正在读取云端审计日志…</div>';
+    var token=zbAuditToken();if(!token){el.innerHTML='<div style="text-align:center;padding:36px;color:#b45309;font-size:12px;">当前没有云端会话，请重新登录管理员后查看事件审计</div>';return;}
+    el.innerHTML='<div style="text-align:center;padding:32px;color:var(--text-secondary);font-size:12px;">正在读取云端事件审计…</div>';
     try{
         var type=(document.getElementById('zbAuditTypeFilter')||{}).value||'';
         var url=ZB_AUDIT_API+'/events?limit=200'+(type?'&eventType='+encodeURIComponent(type):'');
         var res=await fetch(url,{headers:{'Authorization':'Bearer '+token}});if(!res.ok)throw new Error('HTTP '+res.status);
         var data=await res.json(),events=data.events||[];
-        if(!events.length){el.innerHTML='<div style="text-align:center;padding:36px;color:var(--text-secondary);font-size:12px;">暂无云端审计记录</div>';return;}
+        if(!events.length){el.innerHTML='<div style="text-align:center;padding:36px;color:var(--text-secondary);font-size:12px;line-height:1.8;">暂无事件审计记录<br><span style="font-size:11px;color:#94a3b8;">上传日志和云端文件状态请看“上传日志 / 云端管理”，这里只展示已写入审计服务的关键操作。</span></div>';return;}
         var labels={data_upload:'数据上传',data_edit:'记录编辑',data_delete:'记录删除',correction_upload:'纠正上传',correction_remove:'纠正删除',image_upload:'图片上传',image_delete:'图片删除',health_ignore:'健康预警忽略'};
         el.innerHTML='<div style="border:1px solid var(--border-color);border-radius:8px;overflow:hidden;"><table style="width:100%;border-collapse:collapse;font-size:11px;"><thead><tr style="background:var(--bg-secondary,#f8fafc);"><th style="padding:8px;text-align:left;">时间</th><th style="padding:8px;text-align:left;">操作</th><th style="padding:8px;text-align:left;">操作人</th><th style="padding:8px;text-align:left;">站点/品类</th><th style="padding:8px;text-align:left;">摘要</th><th style="padding:8px;text-align:center;">状态</th></tr></thead><tbody>'+events.map(function(e){var t=new Date(e.ts).toLocaleString('zh-CN',{hour12:false});return '<tr style="border-top:1px solid var(--border-color);"><td style="padding:8px;white-space:nowrap;color:var(--text-secondary);">'+t+'</td><td style="padding:8px;white-space:nowrap;">'+(labels[e.eventType]||e.eventType||'—')+'</td><td style="padding:8px;">'+escHtml((e.actor&&e.actor.name)||'—')+'</td><td style="padding:8px;">'+escHtml([e.site,e.category].filter(Boolean).join(' / ')||'—')+'</td><td style="padding:8px;max-width:300px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+escHtml(e.summary||'')+'">'+escHtml(e.summary||'—')+'</td><td style="padding:8px;text-align:center;color:'+(e.status==='success'?'#16a34a':'#dc2626')+';">'+(e.status==='success'?'成功':e.status||'—')+'</td></tr>';}).join('')+'</tbody></table></div>';
     }catch(e){el.innerHTML='<div style="text-align:center;padding:36px;color:#dc2626;font-size:12px;">云端日志读取失败：'+escHtml(e.message)+'</div>';}
@@ -13850,6 +14192,54 @@ function zbGetHealthIgnoreMap() {
         map[zbHealthIgnoreKey(item)] = item;
     });
     return map;
+}
+function zbLatestCompleteDataDate() {
+    var DATA = window._DATA || {};
+    var validDate = function(v){ return /^\d{4}-\d{2}-\d{2}$/.test(String(v||'')); };
+    var latestFromSet = function(set) {
+        var arr = Array.from(set).filter(validDate).sort();
+        return arr.length ? arr[arr.length - 1] : '';
+    };
+    var qaDates = new Set((DATA.qa||[]).map(function(r){ return r.date; }).filter(validDate));
+    var diff5Dates = new Set((DATA.diff5||[]).map(function(r){ return r.date; }).filter(validDate));
+    var phoneComplete = new Set();
+    qaDates.forEach(function(d){ if (diff5Dates.has(d)) phoneComplete.add(d); });
+
+    var fiveCats = ['笔记本','平板','手表','耳机'];
+    var sumKeys = new Set((DATA.sum||[]).filter(function(r){ return validDate(r.date) && r.cat; }).map(function(r){ return r.date+'||'+r.cat; }));
+    var diff4Keys = new Set([...(DATA.diff4||[]), ...(DATA.dw4cat||[])].filter(function(r){ return validDate(r.date) && r.cat; }).map(function(r){ return r.date+'||'+r.cat; }));
+    var fiveDates = new Set();
+    Array.from(sumKeys).concat(Array.from(diff4Keys)).forEach(function(k){
+        var d = k.split('||')[0];
+        if (validDate(d)) fiveDates.add(d);
+    });
+    var fiveComplete = new Set();
+    fiveDates.forEach(function(d) {
+        var ok = fiveCats.every(function(cat){
+            var k = d + '||' + cat;
+            return sumKeys.has(k) && diff4Keys.has(k);
+        });
+        if (ok) fiveComplete.add(d);
+    });
+
+    var phoneLatest = latestFromSet(phoneComplete);
+    var fiveLatest = latestFromSet(fiveComplete);
+    return { phone: phoneLatest, five: fiveLatest, cutoff: (phoneLatest && fiveLatest) ? (phoneLatest < fiveLatest ? phoneLatest : fiveLatest) : '' };
+}
+function zbUpdateDataCutoffInfo() {
+    var el = document.getElementById('zbDataCutoffDate');
+    var wrap = document.getElementById('zbDataCutoffInfo');
+    if (!el) return;
+    var info = zbLatestCompleteDataDate();
+    if (info.cutoff) {
+        el.textContent = info.cutoff.slice(5).replace('-', '/');
+        el.style.color = '#475569';
+        if (wrap) wrap.title = '手机完整截止 ' + info.phone + '，四品类完整截止 ' + info.five + '；当前按较早日期展示。';
+    } else {
+        el.textContent = '--';
+        el.style.color = '#94a3b8';
+        if (wrap) wrap.title = '暂未找到手机与四品类都完整的基础数据日期。';
+    }
 }
 function zbHealthGroupDates(items) {
     var ds = [];
@@ -14168,60 +14558,110 @@ function zbSwitchLogTab(tab){
   _zbCurrentLogTab = tab;
   var logPanel   = document.getElementById('zbLogList');
   var cloudPanel = document.getElementById('zbCloudPanel');
+  var cutoffPanel = document.getElementById('zbCutoffPanel');
   var editPanel  = document.getElementById('zbEditPanel');
   var logStats   = document.getElementById('zbLogStats');
   var logFooter  = document.getElementById('zbLogFooter');
-  var tabLog     = document.getElementById('zbTabLog');
-  var tabCloud   = document.getElementById('zbTabCloud');
-  var tabAudit   = document.getElementById('zbTabAudit');
   var auditPanel = document.getElementById('zbAuditPanel');
-  var tabEdit    = document.getElementById('zbTabEdit');
-  var tabImage   = document.getElementById('zbTabImage');
   var imagePanel = document.getElementById('zbImagePanel');
 
-  var tabCorrection = document.getElementById('zbTabCorrection');
   var correctionPanel = document.getElementById('zbCorrectionPanel');
-  var tabFeedback = document.getElementById('zbTabFeedback');
   var feedbackLogPanel = document.getElementById('zbFeedbackLogPanel');
-  var tabAccess = document.getElementById('zbTabAccess');
   var accessPanel = document.getElementById('zbAccessPanel');
 
-  // 重置所有tab样式
-  [tabLog,tabCloud,tabAudit,tabEdit,tabImage,tabCorrection,tabFeedback,tabAccess].forEach(function(t){ if(t){ t.style.color='var(--text-secondary)'; t.style.borderBottom='2px solid transparent'; t.style.fontWeight='400'; }});
-  [logPanel,cloudPanel,auditPanel,editPanel,imagePanel,correctionPanel,feedbackLogPanel,accessPanel].forEach(function(p){ if(p) p.style.display='none'; });
+  var groupByTab = { log:'data', cloud:'data', cutoff:'data', edit:'ops', image:'ops', correction:'ops', audit:'ops', access:'access' };
+  var activeGroup = groupByTab[tab] || 'data';
+  var groupItems = {
+    data: ['zbLogSideTitleData','zbLogNav-log','zbLogNav-cloud','zbLogNav-cutoff'],
+    ops: ['zbLogSideTitleOps','zbLogNav-edit','zbLogNav-image','zbLogNav-correction','zbLogNav-audit'],
+    access: ['zbLogSideTitleAccess','zbLogNav-access']
+  };
+  Object.keys(groupItems).forEach(function(g){
+    groupItems[g].forEach(function(id){
+      var el = document.getElementById(id);
+      if (el) el.style.display = (g === activeGroup) ? 'flex' : 'none';
+    });
+  });
+  ['zbLogSideTitleData','zbLogSideTitleOps','zbLogSideTitleAccess'].forEach(function(id){
+    var el = document.getElementById(id);
+    if (el && el.id.indexOf('Title') !== -1) el.style.display = el.style.display === 'none' ? 'none' : 'block';
+  });
+  [
+    ['zbLogGroupData','data'],
+    ['zbLogGroupOps','ops'],
+    ['zbLogGroupAccess','access']
+  ].forEach(function(pair){
+    var el = document.getElementById(pair[0]);
+    if (!el) return;
+    var on = pair[1] === activeGroup;
+    el.style.color = on ? '#3b82f6' : 'var(--text-secondary)';
+    el.style.borderBottom = on ? '2px solid #3b82f6' : '2px solid transparent';
+    el.style.fontWeight = on ? '600' : '400';
+  });
+  ['log','cloud','cutoff','edit','image','correction','audit','access'].forEach(function(k){
+    var el = document.getElementById('zbLogNav-' + k);
+    if (!el) return;
+    var on = k === tab;
+    el.style.color = on ? '#2563eb' : 'var(--text-secondary)';
+    el.style.background = on ? '#eff6ff' : 'transparent';
+    el.style.fontWeight = on ? '600' : '400';
+  });
+  [logPanel,cloudPanel,cutoffPanel,auditPanel,editPanel,imagePanel,correctionPanel,feedbackLogPanel,accessPanel].forEach(function(p){ if(p) p.style.display='none'; });
   if(logStats) logStats.style.display='none';
   if(logFooter) logFooter.style.display='none';
+  if (typeof zbUpdateDataCutoffInfo === 'function') zbUpdateDataCutoffInfo();
+  var cutoffInfo = (typeof zbLatestCompleteDataDate === 'function') ? zbLatestCompleteDataDate() : { cutoff:'' };
+  var cutoffBadge = document.getElementById('zbLogCutoffBadge');
+  if (cutoffBadge) cutoffBadge.textContent = cutoffInfo.cutoff ? cutoffInfo.cutoff.slice(5).replace('-', '/') : '--';
 
   if(tab==='log'){
     if(logPanel){ logPanel.style.display=''; }
     if(logStats) logStats.style.display='grid';
     if(logFooter) logFooter.style.display='flex';
-    if(tabLog){ tabLog.style.color='#3b82f6'; tabLog.style.borderBottom='2px solid #3b82f6'; tabLog.style.fontWeight='600'; }
     _zbRenderLog();
   } else if(tab==='cloud'){
     if(cloudPanel) cloudPanel.style.display='';
-    if(tabCloud){ tabCloud.style.color='#3b82f6'; tabCloud.style.borderBottom='2px solid #3b82f6'; tabCloud.style.fontWeight='600'; }
     zbRenderCloudManager();
+  } else if(tab==='cutoff'){
+    if(cutoffPanel) cutoffPanel.style.display='';
+    zbRenderCutoffPanel();
   } else if(tab==='audit'){
     if(auditPanel) auditPanel.style.display='';
-    if(tabAudit){ tabAudit.style.color='#3b82f6'; tabAudit.style.borderBottom='2px solid #3b82f6'; tabAudit.style.fontWeight='600'; }
     zbRenderAuditCloud();
   } else if(tab==='edit'){
     if(editPanel) editPanel.style.display='';
-    if(tabEdit){ tabEdit.style.color='#3b82f6'; tabEdit.style.borderBottom='2px solid #3b82f6'; tabEdit.style.fontWeight='600'; }
   } else if(tab==='image'){
     if(imagePanel) imagePanel.style.display='';
-    if(tabImage){ tabImage.style.color='#3b82f6'; tabImage.style.borderBottom='2px solid #3b82f6'; tabImage.style.fontWeight='600'; }
     zbRenderImageLog();
   } else if(tab==='correction'){
     if(correctionPanel) correctionPanel.style.display='';
-    if(tabCorrection){ tabCorrection.style.color='#3b82f6'; tabCorrection.style.borderBottom='2px solid #3b82f6'; tabCorrection.style.fontWeight='600'; }
     zbRenderCorrectionLog();
   } else if(tab==='access'){
     if(accessPanel) accessPanel.style.display='';
-    if(tabAccess){ tabAccess.style.color='#3b82f6'; tabAccess.style.borderBottom='2px solid #3b82f6'; tabAccess.style.fontWeight='600'; }
     zbRenderAccessLog();
   }
+}
+
+function zbRenderCutoffPanel(){
+  var el = document.getElementById('zbCutoffPanelContent');
+  if (!el) return;
+  var info = (typeof zbLatestCompleteDataDate === 'function') ? zbLatestCompleteDataDate() : { phone:'', five:'', cutoff:'' };
+  var cutoffText = info.cutoff ? info.cutoff.slice(5).replace('-', '/') : '--';
+  el.innerHTML = '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">'
+      + '<div style="font-size:14px;font-weight:600;color:var(--text-primary);">数据状态 · 数据截止</div>'
+      + '<button onclick="zbRenderCutoffPanel()" style="height:30px;padding:0 12px;border-radius:7px;border:1px solid #bfdbfe;background:#f8fbff;color:#2563eb;font-size:12px;font-weight:600;cursor:pointer;">重新计算</button>'
+      + '</div>'
+      + '<div style="border:1px solid var(--border-color);border-radius:10px;background:var(--bg-card,#fff);padding:18px 20px;">'
+      + '<div style="font-size:11px;color:var(--text-secondary);margin-bottom:7px;">当前首页展示</div>'
+      + '<div style="font-size:30px;font-weight:700;color:#334155;margin-bottom:12px;">数据截止 ' + cutoffText + '</div>'
+      + '<div style="font-size:12px;color:#64748b;line-height:2;">'
+      + '<div>手机完整截止：' + (info.phone || '暂无') + '，要求 qa + 手机差异明细都齐。</div>'
+      + '<div>四品类完整截止：' + (info.five || '暂无') + '，要求汇总 + 差异明细，且笔记本 / 平板 / 手表 / 耳机都齐。</div>'
+      + '<div>最终展示两者里更早的日期；这是常态信息，不放黄色异常条。</div>'
+      + '</div></div>'
+      + '<div style="margin-top:12px;border:1px solid #e5eaf3;border-radius:10px;background:#fbfdff;color:#64748b;font-size:11px;line-height:1.8;padding:10px 12px;">'
+      + '这里不修改任何日志数据，只读取当前已加载的基础数据计算截止日期。如果某天确实没有差异明细，健康预警可以人工忽略；数据截止仍按真实完整链路计算。'
+      + '</div>';
 }
 
 function _zbRenderLog(){
@@ -15534,14 +15974,15 @@ async function zbRemoveCorrection(code, prefetchedCloud) {
 function zbRenderCorrectionLog() {
     var el = document.getElementById('zbCorrectionLogPanel');
     if (!el) return;
+    var h = function(v){ return String(v == null ? '' : v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];}); };
     var logs = [];
     try { logs = JSON.parse(localStorage.getItem('zb_correction_log_v1')||'[]'); } catch(e) {}
-    if (!logs.length) {
-        el.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-secondary);font-size:12px;">暂无纠正表上传记录</div>';
-        return;
-    }
+    var metaStore = window._dtEditMeta || {};
+    var orgLogs = Object.keys(metaStore).map(function(k){ return metaStore[k]; }).filter(function(m){
+        return m && m.field === 'inspectorOrg' && m.actor;
+    }).sort(function(a,b){ return String(b.submittedTs||b.updatedTs||b.ts||'').localeCompare(String(a.submittedTs||a.updatedTs||a.ts||'')); });
     var colors = { uploaded:'#d97706', match_zero:'#d97706', synced:'#059669', sync_failed:'#dc2626' };
-    el.innerHTML = logs.slice(0, 50).map(function(log) {
+    var correctionHtml = logs.length ? logs.slice(0, 50).map(function(log) {
         var status = log.status || (log.ok === true ? 'synced' : (log.ok === false ? 'sync_failed' : (log.matched === 0 ? 'match_zero' : 'uploaded')));
         var statusLabel = log.statusLabel || zbCorrectionStatusLabel(status);
         var t = new Date(log.ts);
@@ -15549,11 +15990,27 @@ function zbRenderCorrectionLog() {
         var dates = Array.isArray(log.dates) && log.dates.length ? log.dates.join('、') : '无匹配日期';
         return '<div style="padding:11px 14px;border-bottom:0.5px solid var(--border-color);display:grid;grid-template-columns:150px minmax(160px,1fr) 110px 110px;gap:10px;align-items:center;font-size:11px;">'
             + '<span style="color:var(--text-secondary);">'+timeStr+'</span>'
-            + '<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+escHtml(log.fileName||'')+'">'+escHtml(log.fileName||'未命名文件')+'<br><span style="color:var(--text-secondary);">日期：'+escHtml(dates)+'</span></span>'
+            + '<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+h(log.fileName||'')+'">'+h(log.fileName||'未命名文件')+'<br><span style="color:var(--text-secondary);">日期：'+h(dates)+'</span></span>'
             + '<span>匹配 '+(log.matched||0)+' / '+(log.total||0)+' 条</span>'
             + '<span style="color:'+(colors[status]||'#d97706')+';font-weight:500;">'+statusLabel+'</span>'
             + '</div>';
-    }).join('');
+    }).join('') : '<div style="text-align:center;padding:28px;color:var(--text-secondary);font-size:12px;">暂无纠正表上传记录</div>';
+    var orgHtml = orgLogs.length ? orgLogs.slice(0, 80).map(function(m) {
+        var t = new Date(m.submittedTs || m.updatedTs || m.ts || '');
+        var timeStr = isNaN(t.getTime()) ? '—' : t.toLocaleString('zh-CN', { hour12:false });
+        var status = m.status === 'submitted' ? '已同步' : '待上传';
+        var color = m.status === 'submitted' ? '#059669' : '#d97706';
+        return '<div style="padding:11px 14px;border-bottom:0.5px solid var(--border-color);display:grid;grid-template-columns:150px minmax(180px,1fr) minmax(220px,1.3fr) 80px;gap:10px;align-items:center;font-size:11px;">'
+            + '<span style="color:var(--text-secondary);">'+timeStr+'</span>'
+            + '<span><b style="color:#2563eb;">'+h(m.actor||'—')+'</b><br><span style="color:var(--text-secondary);">'+h([m.site,m.cat].filter(Boolean).join(' / ')||'—')+'</span></span>'
+            + '<span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="'+h((m.code||'')+' '+(m.from||'')+' → '+(m.to||''))+'">质检码 '+h(m.code||'—')+'：<span style="color:#64748b;text-decoration:line-through;">'+h(m.from||'—')+'</span> <span style="color:#94a3b8;">→</span> <b style="color:#15803d;">'+h(m.to||'—')+'</b></span>'
+            + '<span style="color:'+color+';font-weight:500;">'+status+'</span>'
+            + '</div>';
+    }).join('') : '<div style="text-align:center;padding:28px;color:var(--text-secondary);font-size:12px;">暂无手工组织架构修改记录</div>';
+    el.innerHTML = '<div style="font-size:12px;font-weight:600;color:var(--text-primary);padding:0 0 8px;">纠正表上传记录</div>'
+        + '<div style="border:0.5px solid var(--border-color);border-radius:8px;overflow:hidden;margin-bottom:14px;">' + correctionHtml + '</div>'
+        + '<div style="font-size:12px;font-weight:600;color:var(--text-primary);padding:0 0 8px;">手工组织架构修改记录</div>'
+        + '<div style="border:0.5px solid var(--border-color);border-radius:8px;overflow:hidden;">' + orgHtml + '</div>';
 }
 
 // == 反馈工单系统 ==
