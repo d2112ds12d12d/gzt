@@ -8,9 +8,40 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
     <link rel="icon" href="data:image/png;base64,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" type="image/png">
     <title>培训部数据看板 v1.62C</title>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js">
+    <script>
+    (function(){
+        var list = [];
+        function now(){ return Math.round(performance.now()); }
+        window.zbPerfMark = function(stage, meta){
+            list.push(Object.assign({ stage: stage, at: now() }, meta || {}));
+        };
+        window.zbPerfMeasure = function(stage, t0, meta){
+            list.push(Object.assign({ stage: stage, ms: Math.round(performance.now() - t0) }, meta || {}));
+        };
+        window.zbPerfReport = function(){
+            var nav = performance.getEntriesByType && performance.getEntriesByType('navigation')[0];
+            if (nav) {
+                console.table([{
+                    stage: 'navigation',
+                    dns: Math.round(nav.domainLookupEnd - nav.domainLookupStart),
+                    connect: Math.round(nav.connectEnd - nav.connectStart),
+                    ttfb: Math.round(nav.responseStart - nav.requestStart),
+                    response: Math.round(nav.responseEnd - nav.responseStart),
+                    domContentLoaded: Math.round(nav.domContentLoadedEventEnd),
+                    load: Math.round(nav.loadEventEnd)
+                }]);
+            }
+            console.table(list);
+            return list.slice();
+        };
+        window.zbPerfMark('head_perf_ready');
+        document.addEventListener('DOMContentLoaded', function(){ window.zbPerfMark('DOMContentLoaded'); });
+        window.addEventListener('load', function(){ window.zbPerfMark('window_load'); setTimeout(window.zbPerfReport, 1200); });
+    })();
     </script>
-    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js" onload="window.zbPerfMark&&zbPerfMark('cdn_xlsx_loaded')" onerror="window.zbPerfMark&&zbPerfMark('cdn_xlsx_error')">
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js" onload="window.zbPerfMark&&zbPerfMark('cdn_echarts_loaded')" onerror="window.zbPerfMark&&zbPerfMark('cdn_echarts_error')">
     </script>
     <!-- html2canvas / cos-js-sdk 改为按需懒加载（v1.61B 性能优化） -->
     <script>
@@ -4126,8 +4157,13 @@
             }
 
             window.fullRefresh = function fullRefresh() {
+                var _zbPerfT = performance.now();
                 if (typeof zbUpdateDataCutoffInfo === 'function') zbUpdateDataCutoffInfo();
-                if (!diffData.length && !summaryData.length) { clearAllPanels(); return; }
+                if (!diffData.length && !summaryData.length) {
+                    clearAllPanels();
+                    if (window.zbPerfMeasure) window.zbPerfMeasure('fullRefresh(no_data)', _zbPerfT);
+                    return;
+                }
                 currentFilteredDiff = filterDiffData(diffData).slice().sort((a,b) => (a.date||'').localeCompare(b.date||''));
                 detailCurrentOffset = 0;
                 updatePageHeader();
@@ -4148,6 +4184,7 @@
                 safeRender(renderIssueAnalysis, 'issue-analysis-root');
                 // 近期客观执行差异快报
                 renderHotspot();
+                if (window.zbPerfMeasure) window.zbPerfMeasure('fullRefresh', _zbPerfT, { diff: diffData.length, summary: summaryData.length });
             }
 
             // ══ 近期客观执行差异快报 ══
@@ -4624,6 +4661,7 @@
             window._activeCat = currentCat; // 初始化同步，防止首次加载时_activeCat为undefined
 
             window.bridgeData = function bridgeData() {
+                var _zbPerfT = performance.now();
                 function mapDiff5(r) {
                     return {
                         warehouse:       r.site,
@@ -4681,6 +4719,12 @@
                     ...DATA.diff5.filter(r => r.strategy === '大盘评估/站点').map(mapDiff5),
                     ...DATA.diff4.map(mapDiff4)
                 ].sort((a,b) => (a.date||'').localeCompare(b.date||''));
+                if (window.zbPerfMeasure) window.zbPerfMeasure('bridgeData', _zbPerfT, {
+                    qa: (DATA.qa||[]).length,
+                    diff5: (DATA.diff5||[]).length,
+                    diff4: (DATA.diff4||[]).length,
+                    allDiff: (window._allDiffData||[]).length
+                });
             }
 
             // ── 你的上传逻辑（多文件、增量、自动识别表类型）──
@@ -7388,6 +7432,7 @@ async function zbLoadCloudData(useApi) {
     // v1.61B 性能埋点
     window._zbPerf = [];
     const _zbT0 = performance.now();
+    if (window.zbPerfMark) window.zbPerfMark('zbLoadCloudData_start');
     const token = zbGetToken();
     const viaApi = !!(useApi && token);
 
@@ -7659,6 +7704,12 @@ async function zbLoadCloudData(useApi) {
     try {
         if (window._zbPerf && window._zbPerf.length) {
             window._zbPerf.push({ stage: '【zbLoadCloudData 总】', ms: Math.round(performance.now()-_zbT0), rows: '-' });
+            if (window.zbPerfMeasure) window.zbPerfMeasure('zbLoadCloudData', _zbT0, {
+                qa: (window._DATA.qa||[]).length,
+                sum: (window._DATA.sum||[]).length,
+                diff5: (window._DATA.diff5||[]).length,
+                diff4: (window._DATA.diff4||[]).length
+            });
             console.log('[v1.61B perf] 云端加载阶段耗时：');
             console.table(window._zbPerf);
         }
@@ -8918,11 +8969,19 @@ if (mainContent) mainContent.style.display = 'block';
 if (!window._dashboardStarted) {
     window._dashboardStarted = true;
     var _zbStartDashboard = function() {
-        try { if (typeof initDashboard === 'function') initDashboard(); } catch(e) { console.error('[v1.61G start] initDashboard fail:', e); }
+        if (window.zbPerfMark) window.zbPerfMark('dashboard_start');
+        try {
+            if (typeof initDashboard === 'function') {
+                var _zbInitT = performance.now();
+                initDashboard();
+                if (window.zbPerfMeasure) window.zbPerfMeasure('initDashboard', _zbInitT);
+            }
+        } catch(e) { console.error('[v1.61G start] initDashboard fail:', e); }
         // v1.61H 门禁：未登录 → 显示锁屏 + 不加载数据
         var _role = '';
         try { _role = localStorage.getItem('zb_role') || ''; } catch(e) {}
         if (_role !== 'trainer' && _role !== 'admin' && _role !== 'super') {
+            if (window.zbPerfMark) window.zbPerfMark('login_gate_shown');
             if (typeof zbShowLoginGate === 'function') zbShowLoginGate();
             // 不发起数据请求，等登录成功后由 zbGateSubmit 触发
             return;
@@ -8931,7 +8990,10 @@ if (!window._dashboardStarted) {
         // 初始化角色badge
         setTimeout(function() {
             try { if (typeof zbUpdateRoleBadge === 'function') zbUpdateRoleBadge(); } catch(e) {}
-            try { if (typeof zbLoadCloudData === 'function') zbLoadCloudData(false); } catch(e) { console.error('[v1.61G start] zbLoadCloudData fail:', e); }
+            try {
+                if (window.zbPerfMark) window.zbPerfMark('zbLoadCloudData_call');
+                if (typeof zbLoadCloudData === 'function') zbLoadCloudData(false);
+            } catch(e) { console.error('[v1.61G start] zbLoadCloudData fail:', e); }
             setTimeout(function() {
                 try { if (typeof zbCheckDataHealth === 'function') zbCheckDataHealth(); } catch(e) {}
             }, 800);
