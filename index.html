@@ -4775,7 +4775,7 @@
                         level1:          r.level1,
                         level2:          r.level2,
                         level3_orig:     r.level3_orig,
-                        level3:          r.level3_new || r.level3_orig,
+                        level3:          r.level3_new || '',
                         level3_new:      r.level3_new || '', // v1.61I: 严格新三级项，不 fallback；用于"三级项维度"准确统计
                         issueType:       r.issueType,
                         judgedIssueType: r.judgedType,
@@ -4796,7 +4796,7 @@
                         level1:          r.level1,
                         level2:          r.level2,
                         level3_orig:     r.level3_orig,
-                        level3:          r.level3_new || r.level3_orig,
+                        level3:          r.level3_new || '',
                         level3_new:      r.level3_new || '', // v1.61I: 同上
                         issueType:       r.issueType,
                         judgedIssueType: r.judgedType,
@@ -13106,11 +13106,14 @@ function _zbTRGetSitePair(currentSite) {
 }
 
 function _zbTRCalcIssueBreakdown(siteType, from, to, specificSite) {
-    if (!specificSite) return {total:0,exec:0,craft:0,sop:0,hidden:0,other:0};
+    if (!specificSite) return {total:0,exec:0,craft:0,sop:0,hidden:0,other:0,system:0,unclassified:0,types:{}};
     var allDiff = window._allDiffData || [];
     var isObj  = window.isObjective      || function(c){ return c&&String(c).includes('客观')&&!String(c).includes('主观'); };
     var isExec = window.isExecutionIssue || function(t){ return t==='执行问题'; };
-    function normJt(s){ return String(s||'').replace(/^[Ss][Oo][Pp](?=问题)/, 'SOP'); }
+    function normJt(s){
+        var v = String(s||'').trim().replace(/^[Ss][Oo][Pp](?=问题)/, 'SOP');
+        return (!v || v==='-' || v==='—' || v==='null' || v==='undefined') ? '未分类' : v;
+    }
     // 同质检码 exec优先，否则取第一条——每码只计一次
     var byCode = {};
     allDiff.forEach(function(d){
@@ -13124,16 +13127,14 @@ function _zbTRCalcIssueBreakdown(siteType, from, to, specificSite) {
         if (!prev) { byCode[d.code] = jt; }
         else if (isExec(jt) && !isExec(prev)) { byCode[d.code] = jt; }
     });
-    var total=0, exec=0, craft=0, sop=0, hidden=0;
+    var total=0, exec=0, types={};
     Object.keys(byCode).forEach(function(code){
         total++;
         var jt = byCode[code];
         if (jt==='执行问题') exec++;
-        else if (jt==='工艺问题') craft++;
-        else if (jt==='SOP问题') sop++;
-        else if (jt==='隐性问题') hidden++;
+        else types[jt]=(types[jt]||0)+1;
     });
-    return {total:total, exec:exec, craft:craft, sop:sop, hidden:hidden, other:Math.max(0,total-exec-craft-sop-hidden)};
+    return {total:total, exec:exec, craft:types['工艺问题']||0, sop:types['SOP问题']||0, hidden:types['隐性问题']||0, other:types['其他问题']||0, system:types['系统问题']||0, unclassified:types['未分类']||0, types:types};
 }
 
 function _zbTRCalcRate(siteType, from, to, specificSite) {
@@ -13387,13 +13388,17 @@ async function zbGenerateTrainerReport(orgScope) {
     function metric(s,c,a,b){var rows=uniqueExec(s,c,a,b),n=checks(s,c,a,b);return {rows:rows,codes:rows.length,checks:n,rate:n?rows.length/n*100:null};}
     function breakdown(s,c,scope){
         var by={};
+        function normIssueType(v){
+            v=String(v||'').trim().replace(/^[Ss][Oo][Pp](?=问题)/,'SOP');
+            return (!v||v==='-'||v==='—'||v==='null'||v==='undefined')?'未分类':v;
+        }
         allDiff.forEach(function(d){
             if(scope && !_zbTRInOrgScope(d,scope))return;
             if(d.warehouse!==s||d.cat!==c||!inWin(d,r.curStart,r.curEnd)||!isObj(d.category)||!d.code)return;
-            var jt=String(d.judgedIssueType||'').replace(/^[Ss][Oo][Pp](?=问题)/,'SOP');
+            var jt=normIssueType(d.judgedIssueType);
             if(!by[d.code]||isExec(jt))by[d.code]={jt:jt,org:d.inspectorOrg||''};
         });
-        var out={total:0,exec:0,craft:0,sop:0,hidden:0,other:0,moduleExec:0,repairExec:0};
+        var out={total:0,exec:0,craft:0,sop:0,hidden:0,other:0,system:0,unclassified:0,moduleExec:0,repairExec:0,types:{}};
         Object.keys(by).forEach(function(k){
             out.total++;
             var row=by[k], v=row.jt;
@@ -13401,11 +13406,16 @@ async function zbGenerateTrainerReport(orgScope) {
                 out.exec++;
                 if(_zbTRInOrgScope({inspectorOrg:row.org},'module'))out.moduleExec++;
                 else if(_zbTRInOrgScope({inspectorOrg:row.org},'repair'))out.repairExec++;
-            }else if(v==='工艺问题')out.craft++;
-            else if(v==='SOP问题')out.sop++;
-            else if(v==='隐性问题')out.hidden++;
-            else out.other++;
+            }else{
+                out.types[v]=(out.types[v]||0)+1;
+            }
         });
+        out.craft=out.types['工艺问题']||0;
+        out.sop=out.types['SOP问题']||0;
+        out.hidden=out.types['隐性问题']||0;
+        out.other=out.types['其他问题']||0;
+        out.system=out.types['系统问题']||0;
+        out.unclassified=out.types['未分类']||0;
         return out;
     }
     async function tableMaps(s,c,field,withReasons,scope){
@@ -13525,7 +13535,12 @@ async function zbGenerateTrainerReport(orgScope) {
     function summary(b, orgBd){
         var red = orgBd || b;
         var orgText = mode==='phone' ? ' <span>（模块123+全检占<b>'+red.moduleExec+'</b>个，拆修复测占<b>'+red.repairExec+'</b>个）</span>' : '';
-        return '客观问题共 <b>'+b.total+'</b> 例，执行问题 <b>'+b.exec+'</b> 例'+orgText+'，隐性问题 <b>'+b.hidden+'</b> 例，SOP问题 <b>'+b.sop+'</b> 例，其他问题 <b>'+b.other+'</b> 例，工艺问题 <b>'+b.craft+'</b> 例；';
+        var parts=['客观问题共 <b>'+b.total+'</b> 例','执行问题 <b>'+b.exec+'</b> 例'+orgText];
+        Object.keys(b.types||{}).map(function(name){return {name:name,count:b.types[name]||0};})
+            .filter(function(x){return x.count>0;})
+            .sort(function(a,b){return b.count-a.count||a.name.localeCompare(b.name,'zh');})
+            .forEach(function(x){parts.push(x.name+' <b>'+x.count+'</b> 例');});
+        return parts.join('，')+'；';
     }
     var F='font-family:Arial,\'PingFang SC\',\'Microsoft YaHei\',sans-serif;';
     var html='<div id="zbTRReport" style="'+F+'font-size:11pt;color:#1e293b;max-width:760px;line-height:1.65;padding:8px;">'
@@ -17337,7 +17352,44 @@ async function _zbBcUploadImgToCos(b64) {
     });
 }
 
-async function _zbBcSendFeishu(chatId, b64, text, title) {
+function _zbBcBuildInteractiveImageCard(imageKey, title, subtitle) {
+    return {
+        config: { wide_screen_mode: true },
+        header: {
+            template: 'blue',
+            title: { tag: 'plain_text', content: title || '站点客观执行差异率播报' },
+            subtitle: { tag: 'plain_text', content: subtitle || '群播报 · 所有人可见 · 手机品类' }
+        },
+        elements: [
+            {
+                tag: 'img',
+                img_key: imageKey,
+                alt: { tag: 'plain_text', content: '站点客观执行差异率播报' },
+                mode: 'fit_horizontal'
+            },
+            {
+                tag: 'action',
+                actions: [
+                    {
+                        tag: 'button',
+                        text: { tag: 'plain_text', content: '查看我的四品类' },
+                        type: 'primary',
+                        value: { action: 'open_four_personal', source: 'group_phone_broadcast' }
+                    },
+                    {
+                        tag: 'button',
+                        text: { tag: 'plain_text', content: '打开完整看板' },
+                        type: 'default',
+                        url: 'https://zhuanzhuan.tw.cn'
+                    }
+                ]
+            }
+        ]
+    };
+}
+
+async function _zbBcSendFeishu(chatId, b64, text, title, options) {
+    options = options || {};
     // 1. 上传图片拿 image_key
     var upRes = await fetch(ZB_BC_PROXY, {
         method: 'POST',
@@ -17347,7 +17399,24 @@ async function _zbBcSendFeishu(chatId, b64, text, title) {
     var upJson = await upRes.json();
     if (upJson.code !== 0) throw new Error('图片上传失败：' + upJson.msg);
 
-    // 2. 发图片
+    // 2. 首页群播报优先发送互动图片卡片；失败时降级为旧的图片+文字。
+    if (options.interactiveCard) {
+        try {
+            var card = _zbBcBuildInteractiveImageCard(upJson.image_key, title, options.subtitle);
+            var rc = await fetch(ZB_BC_PROXY, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ _action: 'feishu_send', chat_id: chatId, msg_type: 'interactive', content: JSON.stringify(card) })
+            });
+            var dc = await rc.json();
+            if (dc.code !== 0) throw new Error(dc.msg || '互动卡片发送失败');
+            return;
+        } catch (err) {
+            console.warn('[播报] 互动卡片发送失败，降级为图片+文字', err);
+        }
+    }
+
+    // 3. 发图片
     var r1 = await fetch(ZB_BC_PROXY, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -17356,7 +17425,7 @@ async function _zbBcSendFeishu(chatId, b64, text, title) {
     var d1 = await r1.json();
     if (d1.code !== 0) throw new Error('图片发送失败：' + d1.msg);
 
-    // 3. 发文字
+    // 4. 发文字
     var r2 = await fetch(ZB_BC_PROXY, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -17498,9 +17567,9 @@ function zbBcDrawCanvas(data,periodLabel,changeLabel){
     ctx.beginPath();ctx.arc(W+10,-10,110,0,Math.PI*2);ctx.fill();
     ctx.beginPath();ctx.arc(W*0.3,HEADER_H+30,130,0,Math.PI*2);ctx.fill();
     // Title
-    ctx.fillStyle='#fff'; sf(17,'700'); ctx.fillText('培训部  客执差异率播报',24,30);
+    ctx.fillStyle='#fff'; sf(17,'700'); ctx.fillText('站点客观执行差异率播报',24,30);
     // "手机品类" badge
-    var titleW=ctx.measureText('培训部  客执差异率播报').width;
+    var titleW=ctx.measureText('站点客观执行差异率播报').width;
     var badgeTxt='手机品类'; sf(10,'600');
     var bdgW=ctx.measureText(badgeTxt).width+14;
     ctx.fillStyle='rgba(255,255,255,.18)'; rrect(24+titleW+10,14,bdgW,19,4); ctx.fill();
@@ -18281,7 +18350,10 @@ async function zbBcConfirmSend(){
             return;
         }
         if(typeof showToast==='function')showToast('上传播报图...');
-        await _zbBcSendFeishu(chatId, b64, ZB_BC_TEXT, '质执播报 · '+modeLabel);
+        await _zbBcSendFeishu(chatId, b64, ZB_BC_TEXT, '站点客观执行差异率播报', {
+            interactiveCard: true,
+            subtitle: '群播报 · 所有人可见 · 手机品类 · ' + modeLabel
+        });
         zbBcCloseModal();
         if(typeof showToast==='function')showToast('✅ 播报已发送到飞书群');
     }catch(e){
@@ -18417,16 +18489,16 @@ function _zbBcUpdateVisibility(){
     </div>
     <!-- 预览内容 -->
     <div style="padding:14px 18px;">
-      <div style="font-size:11px;color:#9ca3af;margin-bottom:8px;">将发送两条消息：</div>
-      <!-- 消息1：图片说明 -->
+      <div style="font-size:11px;color:#9ca3af;margin-bottom:8px;">将发送 1 张互动卡片：</div>
+      <!-- 卡片内容：图片说明 -->
       <div style="border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;margin-bottom:8px;background:#fafafa;">
         <div style="font-size:11.5px;font-weight:600;color:#374151;margin-bottom:6px;">① 播报图片</div>
         <div id="zbBcStatsBox" style="font-size:12px;color:#6b7280;line-height:1.8;">计算中...</div>
       </div>
-      <!-- 消息2：文字 -->
+      <!-- 卡片按钮 -->
       <div style="border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;background:#fafafa;">
-        <div style="font-size:11.5px;font-weight:600;color:#374151;margin-bottom:6px;">② 文字说明</div>
-        <div style="font-size:12px;color:#6b7280;line-height:1.7;">数据异常请及时反馈区域培训师<br>查看完整看板 → zhuanzhuan.tw.cn</div>
+        <div style="font-size:11.5px;font-weight:600;color:#374151;margin-bottom:6px;">② 卡片按钮</div>
+        <div style="font-size:12px;color:#6b7280;line-height:1.7;">查看我的四品类（仅点击人可见）<br>打开完整看板 → zhuanzhuan.tw.cn</div>
       </div>
     </div>
     <!-- Webhook Key 配置（可折叠） -->
