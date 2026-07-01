@@ -23,7 +23,7 @@ concurrency:
 jobs:
   scan:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 15
     steps:
       - name: Check scan window
         id: window
@@ -57,7 +57,7 @@ jobs:
           fi
           base="${AUTO_UPLOAD_SCAN_URL%/}"
           response_file="$(mktemp)"
-          http_code="$(curl -sS --retry 2 --retry-delay 5 --max-time 180 \
+          http_code="$(curl -sS --retry 1 --retry-delay 5 --max-time 600 \
             -w '%{http_code}' \
             -o "$response_file" \
             "$base/auto-upload/scan?mode=scheduled&secret=$AUTO_UPLOAD_SCAN_SECRET"
