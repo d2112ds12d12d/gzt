@@ -2,6 +2,15 @@ name: Auto Upload Scan
 
 on:
   workflow_dispatch:
+    inputs:
+      force:
+        description: 'Force scan outside Asia/Shanghai 07:00-12:59'
+        required: false
+        default: 'false'
+        type: choice
+        options:
+          - 'false'
+          - 'true'
   schedule:
     # GitHub Actions uses UTC. These two ranges cover 07:00-12:59 Asia/Shanghai.
     - cron: '*/10 23 * * *'
@@ -20,6 +29,12 @@ jobs:
         id: window
         shell: bash
         run: |
+          force="${{ github.event.inputs.force || 'false' }}"
+          if [ "$force" = "true" ]; then
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+            echo "Force scan enabled, bypass scan window."
+            exit 0
+          fi
           hour="$(TZ=Asia/Shanghai date +%H)"
           if [ "$hour" -lt 7 ] || [ "$hour" -gt 12 ]; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
