@@ -6297,22 +6297,22 @@ const GH_USER = 'd2112ds12d12d', GH_REPO = 'Qgkb', GH_FOLDER = 'QGZLdata';
 const ZB_TRAINER_MAP = {
     '转转-深圳智能验机中心': { '手机': ['曾权','王礼宇'], '四品类': ['李翊豪'] },
     '转转-青岛智能验机中心': { '手机': ['李广洲','秦震磊'], '四品类': ['李正浩'] },
-    '转转-成都智能验机中心': { '手机': ['周榆清','潘天一'], '四品类': ['暂定'] },
+    '转转-成都智能验机中心': { '手机': ['周榆清','潘天一'], '四品类': ['王耀辉'] },
     '青岛后验中心仓':        { '手机': ['李广洲','秦震磊'], '四品类': ['李正浩'] },
     '深圳后验中心仓':        { '手机': ['曾权','王礼宇'], '四品类': ['李翊豪'] },
-    '成都后验中心仓':        { '手机': ['周榆清','潘天一'], '四品类': ['暂定'] },
+    '成都后验中心仓':        { '手机': ['周榆清','潘天一'], '四品类': ['王耀辉'] },
     '南昌库':    { '全部': ['张永童'] },
     '襄阳中心仓':{ '全部': ['程襄荆'] },
     '武汉库':    { '全部': ['宗飞飞'] },
     '济南库':    { '全部': ['赵圣林'] },
     '石家庄库':  { '全部': ['韩子申'] },
-    '杭州库':    { '全部': ['韩昊'] },
+    '杭州库':    { '全部': ['岳丰平'] },
     '长沙库':    { '全部': ['李忠'] },
     '重庆库':    { '全部': ['何袁袁'] },
-    '郑州库':    { '全部': ['陈中民'] },
+    '郑州库':    { '全部': ['程襄荆'] },
     '合肥库':    { '全部': ['袁续'] },
-    '深圳中心仓':{ '全部': ['杨佳丹'] },
-    '西安库':    { '全部': ['左成龙'] },
+    '深圳中心仓':{ '全部': ['韩昊'] },
+    '西安库':    { '全部': ['何袁袁'] },
     '福州库':    { '全部': ['岳丰平'] },
     '沈阳库':    { '全部': ['孟德强'] },
     '昆明库':    { '全部': ['田睿'] },
@@ -19229,6 +19229,32 @@ function _zbProbPages(diff, cat) {
     return { probs:probs, pages:pages };
 }
 
+function _zbTrainingNormalizeAttach(v) {
+    if (!v) return { images: [], note: '' };
+    if (Array.isArray(v)) return { images: v, note: '' };
+    return { images: Array.isArray(v.images) ? v.images : [], note: v.note || '' };
+}
+
+function _zbTrainingImageSrc(src) {
+    src = String(src || '').trim();
+    if (!src) return '';
+    if (/^(https?:|data:|blob:)/i.test(src)) return src;
+    if (src.indexOf('qc-images/') === 0) return ZB_IMG.cosBase + '/' + src;
+    return ZB_IMG.cosBase + '/qc-images/' + src;
+}
+
+function _zbTrainingGetAttach(attachments, d) {
+    attachments = attachments || {};
+    var key = (typeof zbImgKey === 'function') ? zbImgKey(d) : '';
+    if (key && attachments[key]) return _zbTrainingNormalizeAttach(attachments[key]);
+    var code = String(d && d.code || '').trim();
+    if (!code) return { images: [], note: '' };
+    if (attachments[code]) return _zbTrainingNormalizeAttach(attachments[code]);
+    var prefix = code + '|';
+    var hitKey = Object.keys(attachments).find(function(k){ return k.indexOf(prefix) === 0; });
+    return hitKey ? _zbTrainingNormalizeAttach(attachments[hitKey]) : { images: [], note: '' };
+}
+
 // ── 入口 ──
 window.zbTrainingClick = function() {
     var btn = document.getElementById('zbTrainingBtn');
@@ -19262,10 +19288,14 @@ window.zbTrainingGenerate = async function(site, mode) {
         await zbLoadPptxGenJS();
         var attachments = {};
         try {
-            var tok = typeof zbGetToken==='function' ? zbGetToken() : '';
-            if (tok) {
-                var att = await ghApiFetch(GH_FILES.qcAttachments, tok).catch(function(){ return null; });
-                if (att && typeof att==='object') attachments = att;
+            if (typeof zbLoadAttach === 'function') {
+                attachments = await zbLoadAttach();
+            } else {
+                var tok = typeof zbGetToken==='function' ? zbGetToken() : '';
+                if (tok) {
+                    var att = await ghApiFetch(GH_FILES.qcAttachments, tok).catch(function(){ return null; });
+                    if (att && typeof att==='object') attachments = att;
+                }
             }
         } catch(e) {}
         var t1 = _zbDate(-1), t2 = _zbDate(-2);
@@ -19569,12 +19599,12 @@ function zbTrainingSlideHTML(s) {
 
     if (s.type==='case') {
         var d=s.d; var code=d.code||'';
-        var att=(s.attachments&&code&&s.attachments[code])||{};
-        var imgs=att.images||[]; var note=att.note||'';
+        var att=_zbTrainingGetAttach(s.attachments, d);
+        var imgs=(att.images||[]).map(_zbTrainingImageSrc).filter(Boolean); var note=att.note||'';
         var titleStr='失误案例 · '+(s.subLabel?s.subLabel+'·':'')+'案例'+s.caseNum;
         var subStr=(d.person||'')+' · '+(d.model||'')+' · '+(d.level3||d.level2||'');
         var imgHtml=imgs.length>0
-            ?'<img src="https://zb-images-1423465873.cos.ap-guangzhou.myqcloud.com/qc-images/'+imgs[0]+'" style="width:100%;height:100%;object-fit:contain;" onerror="this.parentNode.innerHTML=\'<div style=&quot;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#d1d5db;font-size:11px;&quot;><div>📷</div><div>暂无案例图</div></div>\'">'
+            ?'<img src="'+imgs[0]+'" style="width:100%;height:100%;object-fit:contain;" onerror="this.parentNode.innerHTML=\'<div style=&quot;display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#d1d5db;font-size:11px;&quot;><div>📷</div><div>暂无案例图</div></div>\'">'
             :'<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:#d1d5db;font-size:11px;"><div>📷</div><div>暂无案例图</div></div>';
         return '<div style="width:800px;height:450px;background:#fff;position:relative;border-radius:8px;overflow:hidden;">'
             +'<div style="position:absolute;left:0;top:0;right:0;height:56px;background:#E8433A;padding:10px 14px;">'
@@ -19736,13 +19766,13 @@ function _zbAddPptxSlide(pptx, s) {
     }
     if (s.type==='case') {
         var d=s.d; var ck=d.code||'';
-        var att=(s.attachments&&ck&&s.attachments[ck])||{};
-        var imgs=att.images||[]; var note=att.note||'';
+        var att=_zbTrainingGetAttach(s.attachments, d);
+        var imgs=(att.images||[]).map(_zbTrainingImageSrc).filter(Boolean); var note=att.note||'';
         var ttl='失误案例  ·  '+(s.subLabel?s.subLabel+'·':'')+'案例'+s.caseNum;
         _zbPptHdr(sl,ttl,(d.person||'')+' · '+(d.model||'')+' · '+(d.level3||d.level2||''));
         // 图片区（左）
         if(imgs.length>0){
-            try { sl.addImage({path:'https://zb-images-1423465873.cos.ap-guangzhou.myqcloud.com/qc-images/'+imgs[0],x:0.4,y:0.72,w:4.5,h:4.65}); }
+            try { sl.addImage({path:imgs[0],x:0.4,y:0.72,w:4.5,h:4.65}); }
             catch(e){ sl.addShape('rect',{x:0.4,y:0.72,w:4.5,h:4.65,fill:{color:'F8FAFC'},line:{color:'E2E8F0'}}); sl.addText('暂无案例图',{x:0.4,y:2.8,w:4.5,h:0.4,fontSize:12,color:'D1D5DB',align:'center'}); }
         } else {
             sl.addShape('rect',{x:0.4,y:0.72,w:4.5,h:4.65,fill:{color:'F8FAFC'},line:{color:'E2E8F0'}});
