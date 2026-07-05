@@ -783,6 +783,73 @@
         .zb-page-header h1 { font-size:1.7rem; font-weight:800; color:var(--text-primary); letter-spacing:-0.03em; }
         .zb-page-header-sub { font-size:12px; color:var(--text-secondary); margin-top:4px; }
         .zb-page-header-sub .hl { color:var(--btn-bg); font-weight:600; }
+        body.zb-case-library-mode .sticky-filter-bar,
+        body.zb-case-library-mode #zbBcWrapper { display:none !important; }
+        .case-library-page { display:block; }
+        .case-library-panel { background:var(--card-bg); border:1px solid var(--border-color); border-radius:14px; box-shadow:var(--shadow-sm); }
+        .case-library-shell { padding:14px 16px 18px; min-height:calc(100vh - 118px); }
+        .case-library-cats { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
+        .case-cat-btn { height:32px; padding:0 18px; border-radius:18px; border:1px solid var(--border-color); background:#fff; color:#64748b; font-size:13px; font-weight:800; cursor:pointer; }
+        .case-cat-btn.active { background:#2563eb; color:#fff; border-color:#2563eb; box-shadow:0 8px 18px rgba(37,99,235,.18); }
+        .case-filter-desk { border:1px solid #dbe5f2; border-radius:13px; background:linear-gradient(180deg,#f8fbff,#fff); padding:11px; margin-bottom:12px; }
+        .case-filter-grid { display:grid; grid-template-columns:repeat(3,minmax(150px,1fr)) minmax(220px,1.45fr) 132px; gap:9px; align-items:end; }
+        .case-combo-box { position:relative; min-width:0; }
+        .case-combo-label { display:block; color:#64748b; font-size:10.5px; font-weight:800; margin:0 0 5px 2px; }
+        .case-combo-shell { position:relative; height:38px; border:1px solid #d8e2f0; border-radius:10px; background:#fff; display:flex; align-items:center; overflow:hidden; transition:border-color .15s, box-shadow .15s; }
+        .case-combo-shell:focus-within, .case-combo-box.open .case-combo-shell { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.12); }
+        .case-combo-input { width:100%; height:100%; border:0; outline:0; background:transparent; padding:0 36px 0 12px; color:#0f172a; font-size:13px; font-weight:800; }
+        .case-combo-input::placeholder { color:#a7b3c4; font-weight:700; }
+        .case-combo-arrow { position:absolute; right:10px; top:50%; width:9px; height:9px; border-right:2px solid #94a3b8; border-bottom:2px solid #94a3b8; transform:translateY(-62%) rotate(45deg); pointer-events:none; }
+        .case-dropdown { display:none; position:absolute; z-index:20; left:0; right:0; top:48px; max-height:240px; overflow:auto; padding:6px; border:1px solid #dbe5f2; border-radius:12px; background:#fff; box-shadow:0 18px 40px rgba(15,23,42,.14); }
+        .case-combo-box.open .case-dropdown { display:block; }
+        .case-option { display:flex; align-items:center; justify-content:space-between; gap:8px; min-height:34px; border-radius:9px; padding:0 10px; color:#334155; font-size:12.5px; font-weight:750; cursor:pointer; }
+        .case-option:hover, .case-option.active { background:#eff6ff; color:#1d4ed8; }
+        .case-option-count { color:#94a3b8; font-size:11px; font-weight:800; }
+        .case-search { width:100%; height:38px; border:1px solid #d8e2f0; border-radius:10px; padding:0 12px; outline:none; background:#fff; color:#0f172a; font-size:13px; font-weight:650; box-sizing:border-box; }
+        .case-search:focus { border-color:#3b82f6; box-shadow:0 0 0 3px rgba(59,130,246,.12); }
+        .case-sort { width:100%; height:38px; border:1px solid #d8e2f0; border-radius:10px; padding:0 10px; background:#fff; color:#334155; font-size:12px; font-weight:800; outline:none; }
+        .case-batchbar { display:none; align-items:center; justify-content:space-between; gap:12px; padding:9px 12px; margin-bottom:12px; border:1px solid #bfdbfe; border-radius:10px; background:#eff6ff; color:#1d4ed8; font-size:12px; font-weight:700; }
+        .case-batchbar.active { display:flex; }
+        .case-action-btn { height:30px; padding:0 12px; border-radius:8px; border:1px solid #bfdbfe; background:#fff; color:#2563eb; font-size:12px; font-weight:700; cursor:pointer; }
+        .case-action-btn.danger { border-color:#fecaca; color:#dc2626; background:#fff; }
+        .case-gallery { display:grid; grid-template-columns:repeat(auto-fill,minmax(150px,1fr)); gap:12px; align-items:start; }
+        .case-card { position:relative; border:1px solid var(--border-color); border-radius:10px; overflow:hidden; background:#fff; cursor:pointer; box-shadow:0 6px 16px rgba(15,23,42,.04); transition:transform .15s, box-shadow .15s, border-color .15s; }
+        .case-card:hover { transform:translateY(-2px); box-shadow:0 10px 24px rgba(15,23,42,.08); border-color:#bfdbfe; }
+        .case-check { position:absolute; top:8px; left:8px; z-index:2; width:16px; height:16px; accent-color:#2563eb; }
+        .case-thumb { height:116px; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--case-accent-soft,#eff6ff),#f8fafc); }
+        .case-thumb-img { width:100%; height:100%; object-fit:cover; display:block; }
+        .case-thumb-card { width:96px; height:74px; border-radius:10px; background:#fff; display:flex; flex-direction:column; justify-content:center; gap:8px; padding:11px; box-shadow:0 10px 22px rgba(100,116,139,.12); }
+        .case-thumb-card i { width:34px; height:34px; border-radius:50%; background:var(--case-accent-soft,#dbeafe); display:block; }
+        .case-thumb-card span { height:8px; border-radius:8px; background:var(--case-accent,#93c5fd); display:block; }
+        .case-thumb-card span:nth-child(3) { width:78%; opacity:.65; }
+        .case-third-tag { position:absolute; top:8px; right:8px; max-width:122px; padding:4px 8px; border-radius:999px; background:rgba(15,23,42,.76); color:#fff; font-size:10px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .case-card-foot { display:flex; align-items:center; justify-content:space-between; gap:8px; padding:9px 10px; border-top:1px solid #eef2f7; }
+        .case-site { font-size:12px; font-weight:800; color:#334155; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+        .case-reuse { font-size:11px; font-weight:800; color:#334155; padding:3px 7px; border-radius:999px; background:#f8fafc; }
+        .case-preview-mask { position:fixed; inset:0; z-index:9800; display:none; align-items:center; justify-content:center; padding:28px; background:rgba(15,23,42,.48); backdrop-filter:blur(8px); }
+        .case-preview-mask.active { display:flex; }
+        .case-preview { width:min(1040px,92vw); max-height:90vh; border-radius:18px; background:#fff; box-shadow:0 28px 80px rgba(15,23,42,.28); overflow:hidden; display:flex; flex-direction:column; --case-pan-x:0px; --case-pan-y:0px; --case-origin-x:50%; --case-origin-y:50%; }
+        .case-preview-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; padding:18px 22px 12px; }
+        .case-preview-title { font-size:22px; font-weight:900; color:#0f172a; margin:0 0 5px; }
+        .case-preview-sub { color:#64748b; font-size:13px; font-weight:700; }
+        .case-preview-close { width:38px; height:38px; border-radius:12px; border:1px solid var(--border-color); background:#fff; font-size:24px; cursor:pointer; }
+        .case-preview-imgbox { position:relative; margin:0 22px; height:min(62vh,590px); border:1px solid #dbe4f0; border-radius:14px; background:#eef4fb; overflow:hidden; display:flex; align-items:center; justify-content:center; cursor:grab; user-select:none; touch-action:none; }
+        .case-preview-imgbox.is-dragging { cursor:grabbing; }
+        .case-preview-img { width:100%; height:100%; padding:16px; display:flex; align-items:center; justify-content:center; transform:translate(var(--case-pan-x,0px), var(--case-pan-y,0px)) scale(var(--case-zoom,1)); transform-origin:var(--case-origin-x,50%) var(--case-origin-y,50%); transition:transform .12s ease; will-change:transform; }
+        .case-preview-real-img { max-width:100%; max-height:100%; width:auto; height:auto; object-fit:contain; border-radius:12px; box-shadow:0 10px 30px rgba(15,23,42,.10); pointer-events:none; }
+        .case-preview-img .case-thumb-card { width:min(520px,70%); height:58%; }
+        .case-preview-zoombar { position:absolute; right:14px; top:14px; z-index:2; display:flex; align-items:center; gap:6px; padding:5px; border:1px solid rgba(203,213,225,.88); border-radius:999px; background:rgba(255,255,255,.90); box-shadow:0 14px 34px rgba(15,23,42,.16); backdrop-filter:blur(10px); cursor:default; }
+        .case-preview-zoombar .case-action-btn { height:32px; min-width:40px; padding:0 10px; border-radius:999px; }
+        .case-preview-zoom-text { min-width:46px; text-align:center; font-size:12px; font-weight:900; color:#334155; }
+        .case-preview-actions { display:flex; align-items:center; gap:10px; padding:16px 22px 20px; flex-wrap:wrap; }
+        .case-preview-meta { display:grid; grid-template-columns:repeat(4,minmax(120px,1fr)); gap:10px; padding:0 22px 20px; }
+        .case-meta-item { border:1px solid var(--border-color); border-radius:10px; padding:9px 11px; background:#fff; }
+        .case-meta-label { font-size:11px; color:#64748b; font-weight:800; margin-bottom:4px; }
+        .case-meta-val { font-size:13px; color:#0f172a; font-weight:850; }
+        @media (max-width: 980px) {
+            .case-filter-grid { grid-template-columns:1fr; }
+            .case-preview-meta { grid-template-columns:repeat(2,minmax(120px,1fr)); }
+        }
         @keyframes zb-card-flash {
             0%   { background: var(--card-bg, var(--color-background-primary, #fff)); }
             30%  { background: #eff6ff; }
@@ -1014,13 +1081,10 @@
       <div class="zb-sub">ZHUAN · 培训内部数据平台</div>
     </div>
     <div class="zb-nav-lbl">数据模块</div>
-    <div class="zb-nav-item active" onclick="zbNav('overview',this)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 10 10 7 13 10 17 7"/></svg> 数据总览</div>
+    <div class="zb-nav-item active" onclick="zbNav('overview',this)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/><polyline points="7 10 10 7 13 10 17 7"/></svg> 质量数据总览</div>
+    <div id="zb-nav-case-library" class="zb-nav-item" onclick="zbNav('caseLibrary',this)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/></svg> 质检案例图库</div>
     <div id="zb-nav-site" class="zb-nav-item" style="display:none;" onclick="zbNav('site',this)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg> 站点详情</div>
     <div id="zb-nav-person" class="zb-nav-item" style="display:none;" onclick="zbNav('person',this)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg> 质检人详情</div>
-    <div id="zb-recent-block" style="display:none;border-top:1px solid var(--border-color);padding:10px 0 0;">
-      <div class="zb-nav-lbl" style="padding-top:4px;">最近查看</div>
-      <div id="zb-recent-list"></div>
-    </div>
     <div class="zb-nav-lbl" style="margin-top:4px;">系统</div>
     <div class="zb-nav-item" onclick="zbOpenLog()" style="cursor:pointer;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg> 日志</div>
     <div class="zb-nav-item" id="zb-nav-settings" onclick="zbOpenSettings()" style="cursor:pointer;"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg> 设置</div>
@@ -1614,6 +1678,64 @@
                 </div>
               </div>
             </div><!-- end zb-page person -->
+
+            <!-- ══ 质检案例图库 页面（第一阶段：入口 + mock 懒加载） ══ -->
+            <div class="zb-page" id="zb-page-caseLibrary">
+              <div class="case-library-page">
+                <section class="case-library-panel case-library-shell">
+                  <div class="case-library-cats" id="caseLibCats"></div>
+                  <div class="case-filter-desk">
+                    <div class="case-filter-grid">
+                      <div class="case-combo-box" data-case-level="l1">
+                        <label class="case-combo-label">一级项</label>
+                        <div class="case-combo-shell">
+                          <input class="case-combo-input" id="caseLibL1" type="text" placeholder="全部一级项" autocomplete="off">
+                          <span class="case-combo-arrow"></span>
+                        </div>
+                        <div class="case-dropdown"></div>
+                      </div>
+                      <div class="case-combo-box" data-case-level="l2">
+                        <label class="case-combo-label">二级项</label>
+                        <div class="case-combo-shell">
+                          <input class="case-combo-input" id="caseLibL2" type="text" placeholder="全部二级项" autocomplete="off">
+                          <span class="case-combo-arrow"></span>
+                        </div>
+                        <div class="case-dropdown"></div>
+                      </div>
+                      <div class="case-combo-box" data-case-level="l3">
+                        <label class="case-combo-label">三级项</label>
+                        <div class="case-combo-shell">
+                          <input class="case-combo-input" id="caseLibL3" type="text" placeholder="全部三级项" autocomplete="off">
+                          <span class="case-combo-arrow"></span>
+                        </div>
+                        <div class="case-dropdown"></div>
+                      </div>
+                      <div>
+                        <label class="case-combo-label">搜索</label>
+                        <input class="case-search" id="caseLibSearch" type="text" placeholder="搜索站点或质检码" oninput="zbCaseLibRenderGallery()">
+                      </div>
+                      <div>
+                        <label class="case-combo-label">排序</label>
+                        <select class="case-sort" id="caseLibSort" onchange="zbCaseLibRenderGallery()">
+                          <option value="reuse">复用最高</option>
+                          <option value="latest">最新优先</option>
+                          <option value="site">站点排序</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="case-batchbar" id="caseLibBatchBar">
+                    <span id="caseLibSelectedText">已选择 0 个案例</span>
+                    <div style="display:flex;align-items:center;gap:8px;">
+                      <button class="case-action-btn" onclick="zbCaseLibMockAction('download')">下载选中</button>
+                      <button class="case-action-btn" onclick="zbCaseLibMockAction('copy')">复制案例</button>
+                      <button class="case-action-btn danger" onclick="zbCaseLibMockAction('delete')">删除选中</button>
+                    </div>
+                  </div>
+                  <div class="case-gallery" id="caseLibGallery"></div>
+                </section>
+              </div>
+            </div><!-- end zb-page caseLibrary -->
 
             <!-- ══ 周度矫正名单·手机 页面 v1.62 ══ -->
             <div class="zb-page" id="zb-page-correction">
@@ -10914,6 +11036,491 @@ function zbRenderSiteIssueAnalysis(execDiff, rootEl) {
     pgEl.innerHTML='<select onchange="window._zbIssuePageSize=+this.value;window._zbIssuePage=1;window._zbIssueRerender&&window._zbIssueRerender();" style="height:24px;font-size:11px;border-radius:6px;border:0.5px solid var(--border-color);padding:0 4px;background:var(--filter-input-bg);color:var(--text-primary);">'+opts+'</select><button onclick="if(window._zbIssuePage>1){window._zbIssuePage--;window._zbIssueRerender&&window._zbIssueRerender();}" style="min-width:28px;height:24px;border-radius:6px;border:0.5px solid var(--border-color);background:transparent;color:var(--text-primary);font-size:11px;cursor:pointer;">上一页</button>'+pns+'<button onclick="if(window._zbIssuePage<'+totalPages+'){window._zbIssuePage++;window._zbIssueRerender&&window._zbIssueRerender();}" style="min-width:28px;height:24px;border-radius:6px;border:0.5px solid var(--border-color);background:transparent;color:var(--text-primary);font-size:11px;cursor:pointer;">下一页</button>';
 }
 
+// ── 质检案例图库：从云端案例图缓存构建，mock 仅作本地兜底 ──
+var _caseLibState = { inited:false, cat:'手机', selected:{}, loading:false, loaded:false, error:'', retry:0 };
+var _caseLibCases = [
+    { id:'c1', cat:'手机', l1:'外观', l2:'边框', l3:'磕碰漏检', site:'成都后验', code:'1210950001', date:'2026-07-02', reuse:42, color:'#ef4444' },
+    { id:'c2', cat:'手机', l1:'充电', l2:'有线充电', l3:'接触不良', site:'重庆库', code:'1210345819', date:'2026-07-01', reuse:36, color:'#2563eb' },
+    { id:'c3', cat:'手机', l1:'外观', l2:'屏幕', l3:'划痕漏检', site:'青岛', code:'1210295447', date:'2026-07-03', reuse:27, color:'#059669' },
+    { id:'c4', cat:'手机', l1:'拆修', l2:'拆修浸液', l3:'工具-屏幕偏光检测异常', site:'深圳', code:'1210871359', date:'2026-06-30', reuse:18, color:'#7c3aed' },
+    { id:'c5', cat:'笔记本', l1:'功能', l2:'键盘', l3:'按键失灵漏检', site:'杭州库', code:'NB10071001', date:'2026-07-03', reuse:21, color:'#d97706' },
+    { id:'c6', cat:'手表', l1:'外观', l2:'表框', l3:'划痕漏检', site:'合肥库', code:'WATCH070201', date:'2026-07-02', reuse:15, color:'#0f766e' }
+];
+var _caseLibMockCases = _caseLibCases.slice();
+
+function zbCaseLibEsc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"']/g, function(s) {
+        return ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[s];
+    });
+}
+
+function zbCaseLibColor(seed) {
+    var palette = ['#2563eb','#7c3aed','#059669','#ef4444','#d97706','#0f766e','#db2777','#0891b2'];
+    var str = String(seed || '');
+    var n = 0;
+    for (var i = 0; i < str.length; i++) n = (n * 31 + str.charCodeAt(i)) >>> 0;
+    return palette[n % palette.length];
+}
+
+function zbCaseLibNormalizeImage(item) {
+    if (!item) return '';
+    if (typeof item === 'string') return item;
+    return item.url || item.src || item.image || item.href || item.cosUrl || item.downloadUrl || '';
+}
+
+function zbCaseLibBuildFromAttach(attach) {
+    var rows = Array.isArray(window._allDiffData) ? window._allDiffData : [];
+    var out = [];
+    var seen = {};
+    rows.forEach(function(row) {
+        if (!row || !row.code) return;
+        var l3 = row.level3 || row.level3_new || '';
+        if (!l3 || l3 === '-' || l3 === '无') return;
+        var entry = (typeof zbGetRowAttachFromMap === 'function') ? zbGetRowAttachFromMap(row, attach || {}) : null;
+        var images = entry && Array.isArray(entry.images) ? entry.images : [];
+        if (!images.length) return;
+        images.forEach(function(img, idx) {
+            var url = zbCaseLibNormalizeImage(img);
+            if (!url) return;
+            var id = (entry.key || zbImgKey(row) || row.code) + '#' + idx;
+            if (seen[id]) return;
+            seen[id] = true;
+            out.push({
+                id: id,
+                cat: row.cat || row.category || '未分类',
+                l1: row.level1 || row.l1 || '未分类',
+                l2: row.level2 || row.l2 || '未分类',
+                l3: l3,
+                site: row.warehouse || row.site || '',
+                code: row.code || '',
+                date: row.date || row.checkDate || '',
+                reuse: Number(row.reuse || 0),
+                color: zbCaseLibColor([row.cat,row.level1,row.level2,l3].join('|')),
+                imageUrl: url,
+                images: images.map(zbCaseLibNormalizeImage).filter(Boolean),
+                imageIndex: idx,
+                attachKey: entry.key || '',
+                note: entry.note || ''
+            });
+        });
+    });
+    return out;
+}
+
+function zbCaseLibSetLoadingText(text) {
+    var gallery = document.getElementById('caseLibGallery');
+    if (gallery) {
+        gallery.innerHTML = '<div style="grid-column:1/-1;padding:30px;text-align:center;color:var(--text-secondary);font-size:13px;">' + zbCaseLibEsc(text) + '</div>';
+    }
+}
+
+async function zbCaseLibLoadRealData(force) {
+    if (_caseLibState.loading) return;
+    if (_caseLibState.loaded && !force) return;
+    _caseLibState.loading = true;
+    _caseLibState.error = '';
+    zbCaseLibSetLoadingText('正在读取云端案例图...');
+    try {
+        var attach = (typeof zbLoadAttach === 'function') ? await zbLoadAttach() : {};
+        var diffRows = Array.isArray(window._allDiffData) ? window._allDiffData : [];
+        if (!diffRows.length && _caseLibState.retry < 20) {
+            _caseLibState.retry += 1;
+            _caseLibState.loading = false;
+            _caseLibState.loaded = false;
+            zbCaseLibSetLoadingText('正在等待质量数据加载...');
+            setTimeout(function(){ zbCaseLibLoadRealData(true); }, 800);
+            return;
+        }
+        var rows = zbCaseLibBuildFromAttach(attach || {});
+        _caseLibCases = rows;
+        _caseLibState.loaded = true;
+        _caseLibState.loading = false;
+        _caseLibState.retry = 0;
+        _caseLibState.selected = {};
+        zbCaseLibRenderCats();
+        zbCaseLibResetFilters();
+        zbCaseLibRenderGallery();
+    } catch (err) {
+        console.warn('[case-library] load failed', err);
+        _caseLibState.error = err && err.message ? err.message : String(err || '读取失败');
+        _caseLibState.loading = false;
+        _caseLibCases = _caseLibMockCases.slice();
+        zbCaseLibRenderCats();
+        zbCaseLibResetFilters();
+        zbCaseLibRenderGallery();
+    }
+}
+
+function zbCaseLibEnsure() {
+    if (!_caseLibState.inited) {
+        _caseLibState.inited = true;
+        zbCaseLibRenderCats();
+        zbCaseLibBindFilters();
+        zbCaseLibResetFilters();
+        zbCaseLibRenderGallery();
+        zbCaseLibLoadRealData();
+    }
+}
+
+function zbCaseLibRenderCats() {
+    var el = document.getElementById('caseLibCats');
+    if (!el) return;
+    var baseCats = ['手机','笔记本','平板','手表','耳机'];
+    var catMap = {};
+    baseCats.forEach(function(cat){ catMap[cat] = true; });
+    _caseLibCases.forEach(function(x){ if (x && x.cat) catMap[x.cat] = true; });
+    var cats = Object.keys(catMap);
+    if (cats.indexOf(_caseLibState.cat) < 0) _caseLibState.cat = cats[0] || '手机';
+    el.innerHTML = cats.map(function(cat) {
+        return '<button class="case-cat-btn' + (_caseLibState.cat === cat ? ' active' : '') + '" onclick="zbCaseLibSetCat(\'' + cat + '\')">' + cat + '</button>';
+    }).join('');
+}
+
+function zbCaseLibSetCat(cat) {
+    _caseLibState.cat = cat;
+    _caseLibState.selected = {};
+    zbCaseLibRenderCats();
+    zbCaseLibResetFilters();
+    zbCaseLibRenderGallery();
+}
+
+function zbCaseLibBaseRows() {
+    return _caseLibCases.filter(function(x) { return x.cat === _caseLibState.cat; });
+}
+
+function zbCaseLibInput(level) {
+    return document.getElementById('caseLib' + level.toUpperCase());
+}
+
+function zbCaseLibValue(level) {
+    var el = zbCaseLibInput(level);
+    return el ? el.value.trim() : '';
+}
+
+function zbCaseLibBuildOptions(level) {
+    var rows = zbCaseLibBaseRows();
+    var l1 = level === 'l1' ? '' : zbCaseLibValue('l1');
+    var l2 = level === 'l3' ? zbCaseLibValue('l2') : '';
+    var counts = {};
+    rows.forEach(function(x) {
+        if (l1 && x.l1 !== l1) return;
+        if (l2 && x.l2 !== l2) return;
+        var label = x[level];
+        if (!label) return;
+        counts[label] = (counts[label] || 0) + 1;
+    });
+    return Object.keys(counts).sort(function(a,b){ return counts[b] - counts[a] || a.localeCompare(b); }).map(function(label) {
+        return { label: label, count: counts[label] };
+    });
+}
+
+function zbCaseLibResetFilters() {
+    ['l1','l2','l3'].forEach(function(level) {
+        var input = zbCaseLibInput(level);
+        if (input) input.value = '';
+    });
+    zbCaseLibRenderDropdowns();
+}
+
+function zbCaseLibSyncChildren(level) {
+    if (level === 'l1') {
+        if (zbCaseLibInput('l2')) zbCaseLibInput('l2').value = '';
+        if (zbCaseLibInput('l3')) zbCaseLibInput('l3').value = '';
+    } else if (level === 'l2') {
+        if (zbCaseLibInput('l3')) zbCaseLibInput('l3').value = '';
+    }
+    zbCaseLibRenderDropdowns();
+    zbCaseLibRenderGallery();
+}
+
+function zbCaseLibRenderDropdowns() {
+    document.querySelectorAll('.case-combo-box').forEach(function(box) {
+        var level = box.getAttribute('data-case-level');
+        var dropdown = box.querySelector('.case-dropdown');
+        if (!dropdown) return;
+        var current = zbCaseLibValue(level);
+        dropdown.innerHTML = zbCaseLibBuildOptions(level).map(function(opt) {
+            return '<div class="case-option' + (opt.label === current ? ' active' : '') + '" data-case-option="' + zbCaseLibEsc(opt.label) + '"><span>' + zbCaseLibEsc(opt.label) + '</span><span class="case-option-count">' + opt.count + '</span></div>';
+        }).join('') || '<div class="case-option" style="color:#94a3b8;cursor:default;">暂无选项</div>';
+    });
+}
+
+function zbCaseLibBindFilters() {
+    document.querySelectorAll('.case-combo-box').forEach(function(box) {
+        var level = box.getAttribute('data-case-level');
+        var input = box.querySelector('.case-combo-input');
+        if (!input || input.dataset.caseBound) return;
+        input.dataset.caseBound = '1';
+        input.addEventListener('focus', function() {
+            document.querySelectorAll('.case-combo-box').forEach(function(x){ if (x !== box) x.classList.remove('open'); });
+            box.classList.add('open');
+            zbCaseLibRenderDropdowns();
+        });
+        input.addEventListener('input', function() {
+            _caseLibState.selected = {};
+            if (level === 'l1') {
+                if (zbCaseLibInput('l2')) zbCaseLibInput('l2').value = '';
+                if (zbCaseLibInput('l3')) zbCaseLibInput('l3').value = '';
+            } else if (level === 'l2' && zbCaseLibInput('l3')) {
+                zbCaseLibInput('l3').value = '';
+            }
+            zbCaseLibRenderDropdowns();
+            zbCaseLibRenderGallery();
+        });
+    });
+    if (!window._caseLibOutsideBound) {
+        window._caseLibOutsideBound = true;
+        document.addEventListener('click', function(e) {
+            var option = e.target.closest && e.target.closest('.case-option[data-case-option]');
+            if (option) {
+                var box = option.closest('.case-combo-box');
+                var level = box && box.getAttribute('data-case-level');
+                var input = box && box.querySelector('.case-combo-input');
+                if (input && level) {
+                    input.value = option.getAttribute('data-case-option') || '';
+                    box.classList.remove('open');
+                    _caseLibState.selected = {};
+                    zbCaseLibSyncChildren(level);
+                }
+                return;
+            }
+            if (!(e.target.closest && e.target.closest('.case-combo-box'))) {
+                document.querySelectorAll('.case-combo-box').forEach(function(box){ box.classList.remove('open'); });
+            }
+        });
+    }
+}
+
+function zbCaseLibRows() {
+    var rows = zbCaseLibBaseRows();
+    var l1 = zbCaseLibValue('l1');
+    var l2 = zbCaseLibValue('l2');
+    var l3 = zbCaseLibValue('l3');
+    if (l1) rows = rows.filter(function(x) { return x.l1.indexOf(l1) >= 0; });
+    if (l2) rows = rows.filter(function(x) { return x.l2.indexOf(l2) >= 0; });
+    if (l3) rows = rows.filter(function(x) { return x.l3.indexOf(l3) >= 0; });
+    var kw = (document.getElementById('caseLibSearch') || {}).value || '';
+    kw = kw.trim().toLowerCase();
+    if (kw) {
+        rows = rows.filter(function(x) {
+            return [x.site,x.code,x.l1,x.l2,x.l3].join(' ').toLowerCase().indexOf(kw) >= 0;
+        });
+    }
+    var sort = (document.getElementById('caseLibSort') || {}).value || 'reuse';
+    rows = rows.slice();
+    if (sort === 'latest') rows.sort(function(a,b){ return String(b.date).localeCompare(String(a.date)); });
+    else if (sort === 'site') rows.sort(function(a,b){ return String(a.site).localeCompare(String(b.site)); });
+    else rows.sort(function(a,b){ return (b.reuse || 0) - (a.reuse || 0); });
+    return rows;
+}
+
+function zbCaseLibRenderGallery() {
+    var gallery = document.getElementById('caseLibGallery');
+    if (!gallery) return;
+    if (_caseLibState.loading) {
+        zbCaseLibSetLoadingText('正在读取云端案例图...');
+        return;
+    }
+    var rows = zbCaseLibRows();
+    gallery.innerHTML = rows.map(function(x) {
+        var checked = _caseLibState.selected[x.id] ? ' checked' : '';
+        var soft = x.color + '22';
+        var thumb = x.imageUrl
+            ? '<img class="case-thumb-img" data-case-img="' + zbCaseLibEsc(x.imageUrl) + '" alt="' + zbCaseLibEsc(x.l3) + '">'
+            : '<div class="case-thumb-card"><i></i><span></span><span></span></div>';
+        return '<article class="case-card" onclick="zbCaseLibOpen(\'' + x.id + '\')" style="--case-accent:' + x.color + ';--case-accent-soft:' + soft + ';">'
+            + '<input class="case-check" type="checkbox"' + checked + ' onclick="zbCaseLibToggle(event,\'' + x.id + '\')">'
+            + '<div class="case-thumb">' + thumb + '</div>'
+            + '<div class="case-card-foot"><span class="case-site">' + zbCaseLibEsc(x.site) + '</span><span class="case-reuse">↗ ' + (x.reuse || 0) + '</span></div>'
+            + '</article>';
+    }).join('') || '<div style="grid-column:1/-1;padding:30px;text-align:center;color:var(--text-secondary);font-size:13px;">' + (_caseLibState.error ? '读取云端案例图失败，已显示本地示例' : '暂无匹配案例；仅收录已有图片且具备新三级项的差异') + '</div>';
+    gallery.querySelectorAll('img[data-case-img]').forEach(function(img) {
+        var url = img.getAttribute('data-case-img') || '';
+        if (typeof zbSetImageSrcWithRetry === 'function') zbSetImageSrcWithRetry(img, url);
+        else img.src = url;
+    });
+    zbCaseLibUpdateBatch();
+}
+
+function zbCaseLibToggle(e, id) {
+    if (e) { e.stopPropagation(); }
+    _caseLibState.selected[id] = !_caseLibState.selected[id];
+    if (!_caseLibState.selected[id]) delete _caseLibState.selected[id];
+    zbCaseLibUpdateBatch();
+}
+
+function zbCaseLibUpdateBatch() {
+    var ids = Object.keys(_caseLibState.selected);
+    var bar = document.getElementById('caseLibBatchBar');
+    var txt = document.getElementById('caseLibSelectedText');
+    if (bar) bar.classList.toggle('active', ids.length > 0);
+    if (txt) txt.textContent = '已选择 ' + ids.length + ' 个案例';
+}
+
+function zbCaseLibMockAction(type) {
+    var map = { download:'已模拟下载选中案例', copy:'已模拟复制案例信息', delete:'管理员删除动作将在真实接入后启用' };
+    if (typeof showToast === 'function') showToast(map[type] || '操作已模拟');
+}
+
+function zbCaseLibOpen(id) {
+    var item = _caseLibCases.find(function(x){ return x.id === id; });
+    if (!item) return;
+    var mask = document.getElementById('caseLibPreviewMask');
+    if (!mask) {
+        mask = document.createElement('div');
+        mask.id = 'caseLibPreviewMask';
+        mask.className = 'case-preview-mask';
+        document.body.appendChild(mask);
+    }
+    window._caseLibPreviewState = { zoom:1, panX:0, panY:0, dragging:false, startX:0, startY:0, baseX:0, baseY:0 };
+    var previewImg = item.imageUrl
+        ? '<img class="case-preview-real-img" data-case-preview-img="' + zbCaseLibEsc(item.imageUrl) + '" alt="' + zbCaseLibEsc(item.l3) + '">'
+        : '<div class="case-thumb-card"><i></i><span></span><span></span></div>';
+    mask.innerHTML = '<div class="case-preview" style="--case-zoom:1;--case-accent:' + item.color + ';--case-accent-soft:' + item.color + '22;">'
+        + '<div class="case-preview-head"><div><h3 class="case-preview-title">' + zbCaseLibEsc(item.site) + '</h3><div class="case-preview-sub">' + zbCaseLibEsc([item.cat,item.l1,item.l2,item.l3].join(' / ')) + '</div></div><button class="case-preview-close" onclick="zbCaseLibClose()">×</button></div>'
+        + '<div class="case-preview-imgbox" onwheel="zbCaseLibWheelZoom(event)" onmousedown="zbCaseLibPanStart(event)" ondblclick="zbCaseLibToggleZoom(event)">'
+        + '<div class="case-preview-zoombar" onmousedown="event.stopPropagation()" ondblclick="event.stopPropagation()">'
+        + '<button class="case-action-btn" onclick="zbCaseLibZoom(-0.18,false,event)">－</button><span class="case-preview-zoom-text" id="caseLibZoomText">100%</span><button class="case-action-btn" onclick="zbCaseLibZoom(0.18,false,event)">＋</button><button class="case-action-btn" onclick="zbCaseLibZoom(0,true,event)">1:1</button></div>'
+        + '<div class="case-preview-img">' + previewImg + '</div></div>'
+        + '<div class="case-preview-actions"><button class="case-action-btn" onclick="zbCaseLibMockAction(\'copy\')">复制案例</button><button class="case-action-btn" onclick="zbCaseLibMockAction(\'download\')">下载图片</button></div>'
+        + '<div class="case-preview-meta">'
+        + zbCaseLibMeta('站点', item.site) + zbCaseLibMeta('质检码', item.code) + zbCaseLibMeta('日期', item.date) + zbCaseLibMeta('复用次数', item.reuse)
+        + '</div></div>';
+    mask.classList.add('active');
+    zbCaseLibApplyPreviewTransform();
+    var img = mask.querySelector('img[data-case-preview-img]');
+    if (img) {
+        var url = img.getAttribute('data-case-preview-img') || '';
+        if (typeof zbSetImageSrcWithRetry === 'function') zbSetImageSrcWithRetry(img, url);
+        else img.src = url;
+    }
+}
+
+function zbCaseLibMeta(label, val) {
+    return '<div class="case-meta-item"><div class="case-meta-label">' + zbCaseLibEsc(label) + '</div><div class="case-meta-val">' + zbCaseLibEsc(val) + '</div></div>';
+}
+
+function zbCaseLibClamp(num, min, max) {
+    return Math.max(min, Math.min(max, num));
+}
+
+function zbCaseLibPreviewState() {
+    if (!window._caseLibPreviewState) {
+        window._caseLibPreviewState = { zoom:1, panX:0, panY:0, dragging:false, startX:0, startY:0, baseX:0, baseY:0 };
+    }
+    return window._caseLibPreviewState;
+}
+
+function zbCaseLibApplyPreviewTransform() {
+    var state = zbCaseLibPreviewState();
+    var box = document.querySelector('#caseLibPreviewMask .case-preview');
+    if (!box) return;
+    box.style.setProperty('--case-zoom', state.zoom);
+    box.style.setProperty('--case-pan-x', state.panX + 'px');
+    box.style.setProperty('--case-pan-y', state.panY + 'px');
+    box.style.setProperty('--case-origin-x', state.originX || '50%');
+    box.style.setProperty('--case-origin-y', state.originY || '50%');
+    var text = document.getElementById('caseLibZoomText');
+    if (text) text.textContent = Math.round(state.zoom * 100) + '%';
+}
+
+function zbCaseLibZoom(delta, reset, ev) {
+    if (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+    }
+    var state = zbCaseLibPreviewState();
+    if (reset) {
+        state.zoom = 1;
+        state.panX = 0;
+        state.panY = 0;
+        state.originX = '50%';
+        state.originY = '50%';
+    } else {
+        state.zoom = zbCaseLibClamp((state.zoom || 1) + delta, 0.7, 4);
+        if (state.zoom <= 1.01) {
+            state.panX = 0;
+            state.panY = 0;
+        }
+    }
+    zbCaseLibApplyPreviewTransform();
+}
+
+function zbCaseLibSetZoomOrigin(ev) {
+    var box = ev.currentTarget;
+    var rect = box.getBoundingClientRect();
+    var state = zbCaseLibPreviewState();
+    state.originX = zbCaseLibClamp((ev.clientX - rect.left) / rect.width * 100, 0, 100).toFixed(2) + '%';
+    state.originY = zbCaseLibClamp((ev.clientY - rect.top) / rect.height * 100, 0, 100).toFixed(2) + '%';
+}
+
+function zbCaseLibWheelZoom(ev) {
+    ev.preventDefault();
+    zbCaseLibSetZoomOrigin(ev);
+    var state = zbCaseLibPreviewState();
+    state.zoom = zbCaseLibClamp(state.zoom * (ev.deltaY < 0 ? 1.12 : 0.88), 0.7, 4);
+    if (state.zoom <= 1.01) {
+        state.panX = 0;
+        state.panY = 0;
+    }
+    zbCaseLibApplyPreviewTransform();
+}
+
+function zbCaseLibPanStart(ev) {
+    if (ev.button !== 0) return;
+    var state = zbCaseLibPreviewState();
+    if (state.zoom <= 1.01) return;
+    ev.preventDefault();
+    state.dragging = true;
+    state.startX = ev.clientX;
+    state.startY = ev.clientY;
+    state.baseX = state.panX || 0;
+    state.baseY = state.panY || 0;
+    ev.currentTarget.classList.add('is-dragging');
+    document.addEventListener('mousemove', zbCaseLibPanMove);
+    document.addEventListener('mouseup', zbCaseLibPanEnd);
+}
+
+function zbCaseLibPanMove(ev) {
+    var state = zbCaseLibPreviewState();
+    if (!state.dragging) return;
+    state.panX = state.baseX + ev.clientX - state.startX;
+    state.panY = state.baseY + ev.clientY - state.startY;
+    zbCaseLibApplyPreviewTransform();
+}
+
+function zbCaseLibPanEnd() {
+    var state = zbCaseLibPreviewState();
+    state.dragging = false;
+    var box = document.querySelector('#caseLibPreviewMask .case-preview-imgbox');
+    if (box) box.classList.remove('is-dragging');
+    document.removeEventListener('mousemove', zbCaseLibPanMove);
+    document.removeEventListener('mouseup', zbCaseLibPanEnd);
+}
+
+function zbCaseLibToggleZoom(ev) {
+    ev.preventDefault();
+    zbCaseLibSetZoomOrigin(ev);
+    var state = zbCaseLibPreviewState();
+    if (state.zoom > 1.05) {
+        state.zoom = 1;
+        state.panX = 0;
+        state.panY = 0;
+        state.originX = '50%';
+        state.originY = '50%';
+    } else {
+        state.zoom = 2;
+        state.panX = 0;
+        state.panY = 0;
+    }
+    zbCaseLibApplyPreviewTransform();
+}
+
+function zbCaseLibClose() {
+    zbCaseLibPanEnd();
+    var mask = document.getElementById('caseLibPreviewMask');
+    if (mask) mask.classList.remove('active');
+}
 
 function zbNav(name, el) {
     document.querySelectorAll('.zb-page').forEach(function(p){ p.classList.remove('active'); });
@@ -10921,6 +11528,8 @@ function zbNav(name, el) {
     var pg = document.getElementById('zb-page-' + name);
     if (pg) pg.classList.add('active');
     if (el) el.classList.add('active');
+    document.body.classList.toggle('zb-case-library-mode', name === 'caseLibrary');
+    if (name === 'caseLibrary' && typeof zbCaseLibEnsure === 'function') zbCaseLibEnsure();
 
     // 站点类型筛选按钮永久隐藏（功能保留但不在UI上暴露）
     var siteTypeEls = ['siteTypeLbl', 'globalSiteType-ALL', 'globalSiteType-DW', 'globalSiteType-ZX'];
@@ -10944,35 +11553,18 @@ function zbNav(name, el) {
     }
 }
 
-// ── 最近查看记录（内存，不持久化）──
+// ── 旧侧栏历史记录已下线：保留空函数兼容旧调用 ──
 var _zbRecentHistory = [];
 
 function zbAddRecent(type, name) {
-    _zbRecentHistory = _zbRecentHistory.filter(function(r) {
-        return !(r.type === type && r.name === name);
-    });
-    _zbRecentHistory.unshift({ type: type, name: name });
-    if (_zbRecentHistory.length > 3) _zbRecentHistory = _zbRecentHistory.slice(0, 3);
-    zbRenderRecent();
+    return;
 }
 
 function zbRenderRecent() {
     var block = document.getElementById('zb-recent-block');
     var list  = document.getElementById('zb-recent-list');
-    if (!block || !list) return;
-    if (!_zbRecentHistory.length) { block.style.display = 'none'; return; }
-    block.style.display = '';
-    list.innerHTML = _zbRecentHistory.map(function(r, idx) {
-        var icon = r.type === 'site' ? '🏢' : '👤';
-        var label = icon + ' ' + r.name;
-        var attr  = r.type === 'site'
-            ? 'data-recent-site="' + r.name.replace(/"/g, '&quot;') + '"'
-            : 'data-recent-person="' + r.name.replace(/"/g, '&quot;') + '"';
-        return '<div style="display:flex;align-items:center;gap:0;" data-recent-idx="' + idx + '">'
-            + '<div class="zb-nav-item" style="font-size:11px;padding:5px 8px 5px 14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0;" ' + attr + ' title="' + r.name + '">' + label + '</div>'
-            + '<span data-recent-del="' + idx + '" style="padding:4px 10px 4px 4px;font-size:12px;color:var(--text-secondary);cursor:pointer;flex-shrink:0;opacity:0.6;line-height:1;" title="移除">×</span>'
-            + '</div>';
-    }).join('');
+    if (block) block.style.display = 'none';
+    if (list) list.innerHTML = '';
 }
 
 // ── 质检人详情页：跳转 + 渲染 ──
@@ -11281,25 +11873,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     })();
 
-    // 侧边栏「最近查看」：事件委托
-    var recentList = document.getElementById('zb-recent-list');
-    if (recentList) {
-        recentList.addEventListener('click', function(e) {
-            // 删除按钮
-            var delBtn = e.target.closest('[data-recent-del]');
-            if (delBtn) {
-                var idx = parseInt(delBtn.dataset.recentDel);
-                _zbRecentHistory.splice(idx, 1);
-                zbRenderRecent();
-                return;
-            }
-            // 跳转
-            var item = e.target.closest('[data-recent-site],[data-recent-person]');
-            if (!item) return;
-            if (item.dataset.recentSite) zbNavToSite(item.dataset.recentSite);
-            else if (item.dataset.recentPerson) zbNavToPerson(item.dataset.recentPerson);
-        });
-    }
 });
 </script>
 
