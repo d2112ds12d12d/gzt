@@ -6669,6 +6669,8 @@ async function zbUploadToCos(file, imgKey) {
 var _zbAttach = null;
 var _zbAttachLoaded = false;
 var _zbAttachLoading = null;
+var _zbAttachFetchedAt = 0;
+var _ZB_ATTACH_REFRESH_TTL = 60 * 1000;
 var _ZB_ATTACH_CACHE_KEY = 'zb_attach_cache';
 var _ZB_ATTACH_DIRTY_KEY = 'zb_attach_dirty_v1';
 var _ZB_PERSON_SUBMITTED_KEY = 'zb_person_submitted_v1';
@@ -6714,8 +6716,9 @@ function _zbMigrateAttach(data) {
     return migrated;
 }
 
-async function zbLoadAttach() {
-    if (_zbAttachLoaded) return _zbAttach || {};
+async function zbLoadAttach(force) {
+    force = !!force;
+    if (!force && _zbAttachLoaded && (Date.now() - _zbAttachFetchedAt < _ZB_ATTACH_REFRESH_TTL)) return _zbAttach || {};
     if (_zbAttachLoading) return _zbAttachLoading;
 
     // 先读 localStorage 缓存，立即可用
@@ -6725,7 +6728,7 @@ async function zbLoadAttach() {
         if (raw) cached = JSON.parse(raw);
     } catch(e) {}
 
-    if (cached) _zbAttach = _zbMigrateAttach(cached);
+    if (cached && !_zbAttach) _zbAttach = _zbMigrateAttach(cached);
 
     // 拉云端最新；失败时才退回缓存，避免新抓图后页面继续使用旧 localStorage。
     _zbAttachLoading = (async function() {
@@ -6746,6 +6749,7 @@ async function zbLoadAttach() {
             if (!_zbAttach) _zbAttach = {};
         }
         _zbAttachLoaded = true;
+        _zbAttachFetchedAt = Date.now();
         _zbAttachLoading = null;
         try { localStorage.setItem(_ZB_ATTACH_CACHE_KEY, JSON.stringify(_zbAttach)); } catch(e) {}
         return _zbAttach;
@@ -11121,7 +11125,7 @@ async function zbCaseLibLoadRealData(force) {
     _caseLibState.error = '';
     zbCaseLibSetLoadingText('正在读取云端案例图...');
     try {
-        var attach = (typeof zbLoadAttach === 'function') ? await zbLoadAttach() : {};
+        var attach = (typeof zbLoadAttach === 'function') ? await zbLoadAttach(force) : {};
         var diffRows = Array.isArray(window._allDiffData) ? window._allDiffData : [];
         if (!diffRows.length && _caseLibState.retry < 20) {
             _caseLibState.retry += 1;
