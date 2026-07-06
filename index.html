@@ -7745,7 +7745,7 @@ async function zbConfirmLogin() { }
 function zbLogout() { zbSidebarUserClick(); }
 
 // ── 云端拉取 ──
-async function zbLoadCloudData(useApi) {
+async function zbLoadCloudData(useApi, preserveFilters, rangeOverride) {
     // v1.61G: typeof 守卫，防 Safari 上 inline script 还没解析完 zbShowSkeleton 时被调用
     try { if (typeof zbShowSkeleton === 'function') zbShowSkeleton(); } catch(e) { console.warn('[v1.61G] zbShowSkeleton fail:', e); }
     if (typeof showToast === 'function') showToast('⏳ 正在加载云端数据…');
@@ -7773,38 +7773,50 @@ async function zbLoadCloudData(useApi) {
     // 辅助：计算日期范围涉及的月份列表 ["2026-04","2026-05",...]
     function getMonthsInRange(startD, endD) {
         const months = [];
+        function pushMonthByDate(d) {
+            var ym = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+            if (months.indexOf(ym) === -1) months.push(ym);
+        }
+        // 默认保留上月+本月，覆盖健康预警和周报的高频跨月场景。
+        const now = new Date();
+        pushMonthByDate(new Date(now.getFullYear(), now.getMonth() - 1, 1));
+        pushMonthByDate(new Date(now.getFullYear(), now.getMonth(), 1));
         if (!startD || !endD) {
-            // 无筛选范围：取最近3个月
-            const now = new Date();
-            for (let i = 2; i >= 0; i--) {
-                const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-                months.push(d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0'));
-            }
             return months;
         }
         const s = new Date(startD), e = new Date(endD);
+        if (isNaN(s.getTime()) || isNaN(e.getTime())) return months;
+        // 选中跨月窗口时补上起始月的上月，避免环比/周报类逻辑缺口。
+        pushMonthByDate(new Date(s.getFullYear(), s.getMonth() - 1, 1));
         const cur = new Date(s.getFullYear(), s.getMonth(), 1);
         while (cur <= e) {
-            months.push(cur.getFullYear() + '-' + String(cur.getMonth()+1).padStart(2,'0'));
+            pushMonthByDate(cur);
             cur.setMonth(cur.getMonth() + 1);
         }
         return months;
     }
 
-    // 加载分片文件（diff5/diff4），合并所有月份数据
+    // 加载分片文件（diff5/diff4），按当前日期筛选懒加载并缓存月份数据
     async function loadSharded(prefix) {
-        // 固定加载最近6个月，不依赖顶部日期筛选，确保数据完整
-        // v1.61B: 6 个月文件并发拉取（Promise.all 保序，merged 顺序与串行版完全一致）
-        const now = new Date();
-        const months = [];
-        for (let i = 5; i >= 0; i--) {
-            const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
-            const ym = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
-            months.push(ym);
-        }
+        var filterStart = (rangeOverride && rangeOverride.start) || (startDateFilter && startDateFilter.value) || '';
+        var filterEnd = (rangeOverride && rangeOverride.end) || (endDateFilter && endDateFilter.value) || '';
+        const months = getMonthsInRange(filterStart, filterEnd);
+        if (!window._zbShardCache) window._zbShardCache = {};
+        if (!window._zbShardCache[prefix]) window._zbShardCache[prefix] = {};
+        if (!window._zbLegacyShardCache) window._zbLegacyShardCache = {};
+        const cache = window._zbShardCache[prefix];
         const _t0 = performance.now();
+        let cacheHits = 0;
         const results = await Promise.all(months.map(function(ym){
-            return fetchFile(prefix + ym + '.json');
+            if (cache[ym]) {
+                cacheHits++;
+                return cache[ym];
+            }
+            return fetchFile(prefix + ym + '.json').then(function(json){
+                var normalized = (json && json.rows) ? json : { rows: [] };
+                cache[ym] = normalized;
+                return normalized;
+            });
         }));
         let merged = [];
         for (let i = 0; i < results.length; i++) {
@@ -7812,7 +7824,7 @@ async function zbLoadCloudData(useApi) {
             if (json && json.rows && json.rows.length > 0) merged = merged.concat(json.rows);
             // 文件不存在（404）属正常情况，静默跳过
         }
-        if (window._zbPerf) window._zbPerf.push({ stage: 'loadSharded('+prefix+')', ms: Math.round(performance.now()-_t0), rows: merged.length });
+        if (window._zbPerf) window._zbPerf.push({ stage: 'loadSharded('+prefix+months.join(',')+')', ms: Math.round(performance.now()-_t0), rows: merged.length, cacheHits: cacheHits });
         // 兜底：旧整体文件补充缺失月份
         // v1.61M: 原逻辑"全空才回退"有缺陷——培训师第一次 push 只创建当月分片，
         // 其余月份 404，merged 非空导致回退被跳过，历史月份数据从所有人屏幕消失。
@@ -7833,7 +7845,10 @@ async function zbLoadCloudData(useApi) {
             }
             var missingMonths = months.filter(function(m){ return !coveredSet.has(m); });
             if (missingMonths.length > 0) {
-                const legacyJson = await fetchFile(legacyName);
+                if (!window._zbLegacyShardCache[legacyName]) {
+                    window._zbLegacyShardCache[legacyName] = await fetchFile(legacyName);
+                }
+                const legacyJson = window._zbLegacyShardCache[legacyName];
                 if (legacyJson && legacyJson.rows) {
                     var extraRows = legacyJson.rows.filter(function(r){
                         return missingMonths.indexOf((r.date||'').slice(0,7)) !== -1;
@@ -7991,8 +8006,10 @@ async function zbLoadCloudData(useApi) {
             var endVal   = y + '-' + m + '-' + pad(lastDay);
             var sdf = document.getElementById('startDateFilter');
             var edf = document.getElementById('endDateFilter');
-            if (sdf) sdf.value = startVal;
-            if (edf) edf.value = endVal;
+            if (!preserveFilters) {
+                if (sdf) sdf.value = startVal;
+                if (edf) edf.value = endVal;
+            }
         })();
         if (typeof bridgeData === 'function') bridgeData();
         // 云端 reload 完后刷新数据健康预警条（之前只在上传 Excel 后跑一次，
@@ -8047,7 +8064,7 @@ async function zbLoadCloudData(useApi) {
             console.warn('[v1.61E] 首次加载 loaded=0，1.5s 后自动重试 (attempt ' + (_attempt+1) + ')');
             showToast('⏳ 网络抖动，自动重试中…', true);
             setTimeout(function(){
-                zbLoadCloudData(useApi);
+                zbLoadCloudData(useApi, preserveFilters);
             }, 1500);
             return; // ← 关键：不 zbHideSkeleton，骨架屏继续显示
         } else {
@@ -8085,7 +8102,7 @@ function zbShowSkeletonError(useApi) {
         if (existed && existed.parentNode) existed.parentNode.removeChild(existed);
         var thisBox = document.getElementById('zbSkeletonErrorBox');
         if (thisBox) thisBox.remove();
-        zbLoadCloudData(useApi);
+        zbLoadCloudData(useApi, preserveFilters);
     });
 }
 
@@ -13305,7 +13322,7 @@ window.zbTriggerCountUp = function() {
     });
 };
 
-function zbDoQuery() {
+async function zbDoQuery() {
   var btn = document.getElementById('zbQueryBtn');
   if (btn) {
     btn.style.background = '#fff';
@@ -13314,7 +13331,11 @@ function zbDoQuery() {
     btn.textContent = '→ 查询';
   }
   if (typeof updatePersonFilterOptions === 'function') updatePersonFilterOptions();
-  if (typeof fullRefresh === 'function') fullRefresh();
+  if (typeof zbLoadCloudData === 'function') {
+    await zbLoadCloudData(false, true);
+  } else if (typeof fullRefresh === 'function') {
+    fullRefresh();
+  }
   // 如果当前在站点页，也刷新站点
   var sitePage = document.getElementById('zb-page-site');
   if (sitePage && sitePage.classList.contains('active')) {
@@ -14017,10 +14038,18 @@ function zbTRChooseOrgScope() {
 
 async function zbGenerateTrainerReport(orgScope) {
     var D=window._DATA;
+    var r=_zbWeekRanges();
+    if (typeof zbLoadCloudData === 'function' && r && r.lastStart && r.curEnd) {
+        try {
+            await zbLoadCloudData(false, true, { start: r.lastStart, end: r.curEnd });
+            D = window._DATA;
+        } catch(e) {
+            console.warn('[周报] 补拉周报日期分片失败:', e);
+        }
+    }
     if(!D){ showToast('❌ 数据未加载，请先导入 Excel'); return; }
     var site=window._zbCurrentSiteName||'';
     if(!site){ showToast('❌ 请先打开站点页面'); return; }
-    var r=_zbWeekRanges();
     var pair=_zbTRGetSitePair(site);
     var activeCat=window._activeCat||'手机';
     var siteType=typeof zbGetSiteType==='function'?zbGetSiteType(site):'中心仓';
