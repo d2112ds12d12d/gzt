@@ -836,6 +836,56 @@
         .case-pager-btn { padding:0 10px; }
         .case-pager-size { padding:0 8px; }
         .case-pager-btn:disabled { opacity:.42; cursor:not-allowed; }
+        .case-home { display:grid; gap:12px; }
+        .case-home-hero { display:grid; grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr); gap:12px; }
+        .case-home-overview, .case-home-panel, .case-home-tile { background:#fff; border:1px solid #dbe5f2; border-radius:12px; box-shadow:0 8px 22px rgba(35,55,90,.06); }
+        .case-home-overview { padding:16px; }
+        .case-home-eyebrow { font-size:11px; color:#64748b; font-weight:800; margin-bottom:5px; }
+        .case-home-title { font-size:23px; line-height:1.18; font-weight:850; color:#12213a; margin-bottom:7px; }
+        .case-home-desc { font-size:12px; color:#64748b; line-height:1.6; margin-bottom:15px; }
+        .case-home-metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:9px; }
+        .case-home-metric { background:#f7faff; border:1px solid #e0e8f5; border-radius:10px; padding:11px; min-width:0; }
+        .case-home-metric label { display:block; font-size:10.5px; color:#7c8ba2; margin-bottom:7px; font-weight:800; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .case-home-metric strong { font-size:24px; color:#1d4ed8; line-height:1; }
+        .case-home-metric small { font-size:10px; color:#8a99ad; margin-left:3px; }
+        .case-home-panel { padding:14px; }
+        .case-home-hd { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:11px; }
+        .case-home-panel-title { font-size:14px; font-weight:850; color:#16243a; }
+        .case-home-note { font-size:10.5px; color:#8a99ad; white-space:nowrap; }
+        .case-home-cat-list { display:grid; gap:9px; }
+        .case-home-cat-row { display:grid; grid-template-columns:58px 1fr 44px; gap:9px; align-items:center; cursor:pointer; }
+        .case-home-cat-name { font-size:12px; font-weight:850; color:#26364f; }
+        .case-home-bar { height:9px; border-radius:8px; background:#e9eef6; overflow:hidden; }
+        .case-home-fill { height:100%; border-radius:8px; background:#2563eb; min-width:4px; }
+        .case-home-cat-count { font-size:12px; font-weight:850; text-align:right; color:#1f2d44; }
+        .case-home-tiles { display:grid; grid-template-columns:repeat(5,minmax(0,1fr)); gap:10px; }
+        .case-home-tile { padding:12px; min-height:106px; cursor:pointer; transition:transform .15s, border-color .15s, box-shadow .15s; }
+        .case-home-tile:hover { transform:translateY(-2px); border-color:#bfdbfe; box-shadow:0 10px 24px rgba(15,23,42,.08); }
+        .case-home-tile-top { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+        .case-home-tile-name { font-size:13px; font-weight:850; color:#16243a; }
+        .case-home-dot { width:8px; height:8px; border-radius:50%; background:#2563eb; }
+        .case-home-tile-num { font-size:26px; line-height:1; font-weight:850; color:#16243a; }
+        .case-home-tile-sub { font-size:10.5px; color:#7c8ba2; margin-top:4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .case-home-mini-imgs { display:flex; gap:4px; margin-top:8px; min-height:28px; }
+        .case-home-mini-imgs img { width:28px; height:28px; border-radius:5px; object-fit:cover; border:1px solid #e2e8f0; background:#f1f5f9; }
+        .case-home-content { display:grid; grid-template-columns:minmax(0,1fr) 330px; gap:12px; }
+        .case-home-gallery-grid { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; }
+        .case-home-card { background:#fff; border:1px solid #dfe7f2; border-radius:8px; overflow:hidden; min-width:0; box-shadow:0 6px 14px rgba(35,55,90,.06); cursor:pointer; }
+        .case-home-thumb { height:126px; background:#edf2f8; position:relative; overflow:hidden; }
+        .case-home-thumb img { width:100%; height:100%; object-fit:cover; display:block; }
+        .case-home-tag { position:absolute; top:8px; left:8px; border-radius:10px; background:rgba(255,255,255,.94); font-size:10px; font-weight:850; color:#2563eb; padding:3px 8px; }
+        .case-home-card-body { padding:8px 9px; }
+        .case-home-issue { font-size:11.5px; line-height:1.25; font-weight:850; color:#22314a; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .case-home-meta { margin-top:5px; display:flex; justify-content:space-between; gap:8px; font-size:10.5px; color:#7c8ba2; white-space:nowrap; }
+        .case-home-rank-list { display:grid; gap:8px; }
+        .case-home-rank-item { display:grid; grid-template-columns:23px minmax(0,1fr) 36px; gap:7px; align-items:center; padding:8px 9px; background:#f7faff; border:1px solid #e0e8f5; border-radius:8px; }
+        .case-home-rank-no { width:21px; height:21px; border-radius:6px; background:#edf4ff; color:#2563eb; font-size:10.5px; font-weight:850; display:flex; align-items:center; justify-content:center; }
+        .case-home-rank-name { min-width:0; display:flex; align-items:center; gap:5px; font-size:11.5px; font-weight:800; color:#24334b; }
+        .case-home-rank-text { min-width:0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+        .case-home-rank-num { text-align:right; font-size:12.5px; font-weight:850; color:#1d4ed8; }
+        .case-home-badge { height:17px; min-width:32px; padding:0 7px; border-radius:9px; font-size:9.5px; font-weight:850; display:inline-flex; align-items:center; justify-content:center; flex-shrink:0; }
+        .case-home-empty { padding:30px; text-align:center; color:var(--text-secondary); font-size:13px; background:#fff; border:1px solid #dbe5f2; border-radius:12px; }
+        @media(max-width:1280px){ .case-home-hero,.case-home-content{grid-template-columns:1fr;} .case-home-tiles{grid-template-columns:repeat(3,minmax(0,1fr));} }
         .case-preview-mask { position:fixed; inset:0; z-index:9800; display:none; align-items:center; justify-content:center; padding:28px; background:rgba(15,23,42,.48); backdrop-filter:blur(8px); }
         .case-preview-mask.active { display:flex; }
         .case-preview { width:min(1040px,92vw); max-height:90vh; border-radius:18px; background:#fff; box-shadow:0 28px 80px rgba(15,23,42,.28); overflow:hidden; display:flex; flex-direction:column; --case-pan-x:0px; --case-pan-y:0px; --case-origin-x:50%; --case-origin-y:50%; }
@@ -11128,7 +11178,7 @@ function zbRenderSiteIssueAnalysis(execDiff, rootEl) {
 }
 
 // ── 质检案例图库：从云端案例图缓存构建，mock 仅作本地兜底 ──
-var _caseLibState = { inited:false, cat:'手机', selected:{}, loading:false, loaded:false, error:'', retry:0, page:1, pageSize:20 };
+var _caseLibState = { inited:false, cat:'首页', selected:{}, loading:false, loaded:false, error:'', retry:0, page:1, pageSize:20 };
 var _caseLibCases = [
     { id:'c1', cat:'手机', l1:'外观', l2:'边框', l3:'磕碰漏检', site:'成都后验', code:'1210950001', date:'2026-07-02', reuse:42, color:'#ef4444' },
     { id:'c2', cat:'手机', l1:'充电', l2:'有线充电', l3:'接触不良', site:'重庆库', code:'1210345819', date:'2026-07-01', reuse:36, color:'#2563eb' },
@@ -11151,6 +11201,22 @@ function zbCaseLibColor(seed) {
     var n = 0;
     for (var i = 0; i < str.length; i++) n = (n * 31 + str.charCodeAt(i)) >>> 0;
     return palette[n % palette.length];
+}
+
+function zbCaseLibCatColor(cat) {
+    var map = { '手机':'#2563eb', '笔记本':'#d97706', '平板':'#10b981', '手表':'#7c3aed', '耳机':'#ef4444' };
+    return map[cat] || zbCaseLibColor(cat);
+}
+
+function zbCaseLibCatBadgeClass(cat) {
+    var map = { '手机':'#e8efff|#2563eb', '笔记本':'#fff4df|#b56808', '平板':'#e7f8f1|#0b8f68', '手表':'#f0ecff|#6546c8', '耳机':'#ffecef|#c9343f' };
+    var pair = (map[cat] || '#edf2f7|#475569').split('|');
+    return 'background:' + pair[0] + ';color:' + pair[1] + ';';
+}
+
+function zbCaseLibIssueLabel(item) {
+    if (!item) return '';
+    return item.l3 || item.l2 || item.l1 || '未标质检项';
 }
 
 function zbCaseLibNormalizeImage(item) {
@@ -11264,8 +11330,8 @@ function zbCaseLibRenderCats() {
     var catMap = {};
     baseCats.forEach(function(cat){ catMap[cat] = true; });
     _caseLibCases.forEach(function(x){ if (x && x.cat) catMap[x.cat] = true; });
-    var cats = Object.keys(catMap);
-    if (cats.indexOf(_caseLibState.cat) < 0) _caseLibState.cat = cats[0] || '手机';
+    var cats = ['首页'].concat(Object.keys(catMap));
+    if (cats.indexOf(_caseLibState.cat) < 0) _caseLibState.cat = '首页';
     el.innerHTML = cats.map(function(cat) {
         return '<button class="case-cat-btn' + (_caseLibState.cat === cat ? ' active' : '') + '" onclick="zbCaseLibSetCat(\'' + cat + '\')">' + cat + '</button>';
     }).join('');
@@ -11281,7 +11347,17 @@ function zbCaseLibSetCat(cat) {
 }
 
 function zbCaseLibBaseRows() {
+    if (_caseLibState.cat === '首页') return _caseLibCases.slice();
     return _caseLibCases.filter(function(x) { return x.cat === _caseLibState.cat; });
+}
+
+function zbCaseLibSetDetailVisible(visible) {
+    var filter = document.querySelector('#zb-page-caseLibrary .case-filter-desk');
+    var batch = document.getElementById('caseLibBatchBar');
+    var pager = document.getElementById('caseLibPager');
+    if (filter) filter.style.display = visible ? '' : 'none';
+    if (batch && !visible) batch.classList.remove('active');
+    if (pager && !visible) pager.innerHTML = '';
 }
 
 function zbCaseLibInput(level) {
@@ -11450,6 +11526,133 @@ function zbCaseLibRenderPager(total, totalPages) {
         + '</div>';
 }
 
+function zbCaseLibHomeStats() {
+    var rows = _caseLibCases.slice();
+    var baseCats = ['手机','笔记本','平板','手表','耳机'];
+    var catCounts = {}, siteMap = {}, itemMap = {};
+    baseCats.forEach(function(cat){ catCounts[cat] = 0; });
+    rows.forEach(function(x) {
+        var cat = x.cat || '未分类';
+        catCounts[cat] = (catCounts[cat] || 0) + 1;
+        if (x.site) siteMap[x.site] = true;
+        var itemKey = [x.cat || '', x.l1 || '', x.l2 || '', x.l3 || ''].join('|');
+        if (itemKey.replace(/\|/g,'')) itemMap[itemKey] = true;
+    });
+    return {
+        rows: rows,
+        catCounts: catCounts,
+        total: rows.length,
+        catTotal: Object.keys(catCounts).filter(function(cat){ return catCounts[cat] > 0; }).length,
+        siteTotal: Object.keys(siteMap).length,
+        itemTotal: Object.keys(itemMap).length
+    };
+}
+
+function zbCaseLibHomeRecent(rows, limit) {
+    return rows.slice().sort(function(a,b) {
+        var d = String(b.date || '').localeCompare(String(a.date || ''));
+        if (d) return d;
+        return String(b.id || '').localeCompare(String(a.id || ''));
+    }).slice(0, limit || 8);
+}
+
+function zbCaseLibHomeTopItems(rows, limit) {
+    var map = {};
+    rows.forEach(function(x) {
+        var key = [x.cat || '', x.l1 || '', x.l2 || '', x.l3 || ''].join('|');
+        if (!map[key]) map[key] = { cat:x.cat || '未分类', label:zbCaseLibIssueLabel(x), count:0 };
+        map[key].count += 1;
+    });
+    return Object.keys(map).map(function(k){ return map[k]; }).sort(function(a,b) {
+        return b.count - a.count || String(a.cat).localeCompare(String(b.cat)) || String(a.label).localeCompare(String(b.label));
+    }).slice(0, limit || 6);
+}
+
+function zbCaseLibHomeMiniImgs(rows, cat) {
+    return rows.filter(function(x){ return x.cat === cat && x.imageUrl; }).slice(0, 3).map(function(x) {
+        return '<img data-case-home-img="' + zbCaseLibEsc(x.imageUrl) + '" alt="' + zbCaseLibEsc(zbCaseLibIssueLabel(x)) + '">';
+    }).join('');
+}
+
+function zbCaseLibRenderHome() {
+    var gallery = document.getElementById('caseLibGallery');
+    if (!gallery) return;
+    zbCaseLibSetDetailVisible(false);
+    _caseLibState.selected = {};
+    var stats = zbCaseLibHomeStats();
+    if (!stats.total) {
+        gallery.className = 'case-home';
+        gallery.innerHTML = '<div class="case-home-empty">' + (_caseLibState.error ? '读取云端案例图失败，已显示本地示例' : '暂无案例图数据') + '</div>';
+        return;
+    }
+    var cats = ['手机','笔记本','平板','手表','耳机'];
+    var maxCat = Math.max.apply(null, cats.map(function(cat){ return stats.catCounts[cat] || 0; }).concat([1]));
+    var catRows = cats.map(function(cat) {
+        var count = stats.catCounts[cat] || 0;
+        var pct = Math.max(3, Math.round(count / maxCat * 100));
+        var color = zbCaseLibCatColor(cat);
+        return '<div class="case-home-cat-row" onclick="zbCaseLibSetCat(\'' + cat + '\')">'
+            + '<div class="case-home-cat-name">' + cat + '</div>'
+            + '<div class="case-home-bar"><div class="case-home-fill" style="width:' + pct + '%;background:' + color + ';"></div></div>'
+            + '<div class="case-home-cat-count">' + count + '</div>'
+            + '</div>';
+    }).join('');
+    var tiles = cats.map(function(cat) {
+        var count = stats.catCounts[cat] || 0;
+        var color = zbCaseLibCatColor(cat);
+        var sub = cat === '手机' ? '当前图库主力品类'
+            : cat === '笔记本' ? '功能与外观案例沉淀'
+            : cat === '平板' ? '屏幕显示类更突出'
+            : count > 0 ? '案例持续沉淀' : '等待后续入库';
+        return '<div class="case-home-tile" onclick="zbCaseLibSetCat(\'' + cat + '\')">'
+            + '<div class="case-home-tile-top"><div class="case-home-tile-name">' + cat + '</div><span class="case-home-dot" style="background:' + color + ';"></span></div>'
+            + '<div class="case-home-tile-num">' + count + '</div>'
+            + '<div class="case-home-tile-sub">' + sub + '</div>'
+            + '<div class="case-home-mini-imgs">' + zbCaseLibHomeMiniImgs(stats.rows, cat) + '</div>'
+            + '</div>';
+    }).join('');
+    var recent = zbCaseLibHomeRecent(stats.rows, 8).map(function(x) {
+        return '<article class="case-home-card" onclick="zbCaseLibOpen(\'' + zbCaseLibEsc(x.id) + '\')">'
+            + '<div class="case-home-thumb"><img data-case-home-img="' + zbCaseLibEsc(x.imageUrl || '') + '" alt="' + zbCaseLibEsc(zbCaseLibIssueLabel(x)) + '"><span class="case-home-tag" style="color:' + zbCaseLibCatColor(x.cat) + ';">' + zbCaseLibEsc(x.cat || '未分类') + '</span></div>'
+            + '<div class="case-home-card-body"><div class="case-home-issue" title="' + zbCaseLibEsc(zbCaseLibIssueLabel(x)) + '">' + zbCaseLibEsc(zbCaseLibIssueLabel(x)) + '</div>'
+            + '<div class="case-home-meta"><span>' + zbCaseLibEsc(x.date || '未标日期') + '</span><span>' + zbCaseLibEsc(x.site || '未标站点') + '</span></div></div>'
+            + '</article>';
+    }).join('');
+    var topItems = zbCaseLibHomeTopItems(stats.rows, 6).map(function(x, idx) {
+        return '<div class="case-home-rank-item">'
+            + '<div class="case-home-rank-no">' + (idx + 1) + '</div>'
+            + '<div class="case-home-rank-name"><span class="case-home-badge" style="' + zbCaseLibCatBadgeClass(x.cat) + '">' + zbCaseLibEsc(x.cat) + '</span><span class="case-home-rank-text" title="' + zbCaseLibEsc(x.label) + '">' + zbCaseLibEsc(x.label) + '</span></div>'
+            + '<div class="case-home-rank-num">' + x.count + '</div>'
+            + '</div>';
+    }).join('');
+    gallery.className = 'case-home';
+    gallery.innerHTML = ''
+        + '<div class="case-home-hero">'
+        + '<div class="case-home-overview">'
+        + '<div class="case-home-eyebrow">CASE LIBRARY OVERVIEW</div>'
+        + '<div class="case-home-title">质检案例图库 · 数据资产总览</div>'
+        + '<div class="case-home-desc">从案例数量、品类分布、站点覆盖和新增图片，呈现质检案例图库的整体沉淀情况。</div>'
+        + '<div class="case-home-metrics">'
+        + '<div class="case-home-metric"><label>已入库案例图</label><strong>' + stats.total + '</strong><small>张</small></div>'
+        + '<div class="case-home-metric"><label>覆盖品类</label><strong>' + stats.catTotal + '</strong><small>类</small></div>'
+        + '<div class="case-home-metric"><label>覆盖站点</label><strong>' + stats.siteTotal + '</strong><small>个</small></div>'
+        + '<div class="case-home-metric"><label>覆盖质检项</label><strong>' + stats.itemTotal + '</strong><small>个</small></div>'
+        + '</div></div>'
+        + '<div class="case-home-panel"><div class="case-home-hd"><div class="case-home-panel-title">五品类案例分布</div><div class="case-home-note">按已入库图片数统计</div></div><div class="case-home-cat-list">' + catRows + '</div></div>'
+        + '</div>'
+        + '<div class="case-home-tiles">' + tiles + '</div>'
+        + '<div class="case-home-content">'
+        + '<div class="case-home-panel"><div class="case-home-hd"><div class="case-home-panel-title">新增案例图片流</div><div class="case-home-note">卡片显示质检项 + 日期</div></div><div class="case-home-gallery-grid">' + recent + '</div></div>'
+        + '<div class="case-home-panel"><div class="case-home-hd"><div class="case-home-panel-title">高频案例质检项</div><div class="case-home-note">按图库图片数量排序</div></div><div class="case-home-rank-list">' + topItems + '</div></div>'
+        + '</div>';
+    gallery.querySelectorAll('img[data-case-home-img]').forEach(function(img) {
+        var url = img.getAttribute('data-case-home-img') || '';
+        if (!url) return;
+        if (typeof zbSetImageSrcWithRetry === 'function') zbSetImageSrcWithRetry(img, url);
+        else img.src = url;
+    });
+}
+
 function zbCaseLibRenderGallery() {
     var gallery = document.getElementById('caseLibGallery');
     if (!gallery) return;
@@ -11457,6 +11660,12 @@ function zbCaseLibRenderGallery() {
         zbCaseLibSetLoadingText('正在读取云端案例图...');
         return;
     }
+    if (_caseLibState.cat === '首页') {
+        zbCaseLibRenderHome();
+        return;
+    }
+    zbCaseLibSetDetailVisible(true);
+    gallery.className = 'case-gallery';
     var rows = zbCaseLibRows();
     var total = rows.length;
     var pageSize = _caseLibState.pageSize || 20;
