@@ -6523,13 +6523,47 @@ var zbTrainerInfo = null; // 当前登录的培训师信息 {id,name,sites,cats}
 
 // 从auth_users.json加载培训师列表并验证ID
 // 兼容两种 schema：data.trainers（老） / data.users（外部工具新生成的）
-async function zbLoadAndMatchTrainer(inputId) {
+async function zbLoadAuthUsers() {
     try {
         var token = zbGetToken();
         var data = await ghApiFetch(GH_FILES.auth, token);
         var trainers = (data && (data.trainers || data.users)) || [];
-        return trainers.find(function(t){ return t.id === inputId; }) || null;
+        return { ok: true, trainers: trainers };
+    } catch(e) {
+        console.warn('[auth] load users failed', e);
+        return { ok: false, trainers: [] };
+    }
+}
+
+async function zbLoadAndMatchTrainer(inputId) {
+    try {
+        var result = await zbLoadAuthUsers();
+        if (!result.ok) return null;
+        return result.trainers.find(function(t){ return t.id === inputId; }) || null;
     } catch(e) { return null; }
+}
+
+async function zbRefreshTrainerSessionFromCloud() {
+    if (zbRole !== 'trainer') return true;
+    var cached = zbTrainerInfo;
+    if (!cached) {
+        try { cached = JSON.parse(localStorage.getItem('zb_trainer') || 'null'); } catch(e) {}
+    }
+    if (!cached || !cached.id) return false;
+    var result = await zbLoadAuthUsers();
+    if (!result.ok) return true;
+    var latest = result.trainers.find(function(t){ return t.id === cached.id; }) || null;
+    if (!latest) {
+        zbRole = 'viewer';
+        zbTrainerInfo = null;
+        try { localStorage.setItem('zb_role', 'viewer'); } catch(e) {}
+        try { localStorage.removeItem('zb_trainer'); } catch(e) {}
+        if (typeof showToast === 'function') showToast('当前培训师权限已失效，请重新登录');
+        return false;
+    }
+    zbTrainerInfo = latest;
+    try { localStorage.setItem('zb_trainer', JSON.stringify(latest)); } catch(e) {}
+    return true;
 }
 
 // 角色体系：viewer（查看者）| trainer（培训师）| admin（管理员）| super（超管，隐藏）
@@ -9352,7 +9386,16 @@ if (!window._dashboardStarted) {
         }
         // 已登录 → 正常流程
         // 初始化角色badge
-        setTimeout(function() {
+        setTimeout(async function() {
+            try {
+                if (typeof zbRefreshTrainerSessionFromCloud === 'function') {
+                    var sessionOk = await zbRefreshTrainerSessionFromCloud();
+                    if (!sessionOk) {
+                        if (typeof zbShowLoginGate === 'function') zbShowLoginGate();
+                        return;
+                    }
+                }
+            } catch(e) { console.warn('[auth] refresh trainer session failed', e); }
             try { if (typeof zbUpdateRoleBadge === 'function') zbUpdateRoleBadge(); } catch(e) {}
             try {
                 if (window.zbPerfMark) window.zbPerfMark('zbLoadCloudData_call');
