@@ -6589,7 +6589,9 @@ function zbCanEditRow(row) {
         okCat = true;
     } else {
         var catPool = zbGetTrainerCatPool(zbTrainerInfo.cats);
-        okCat = catPool.length === 0 || catPool.includes(rowCat);
+        var isAllCat = catPool.includes('全部') || catPool.includes('全品类') || catPool.includes('五品类') || catPool.includes('ALL') || catPool.includes('all');
+        var isFourCat = catPool.includes('四品类') && ['笔记本','平板','手表','耳机'].includes(rowCat);
+        okCat = catPool.length === 0 || isAllCat || isFourCat || catPool.includes(rowCat);
     }
     return okSite && okCat;
 }
