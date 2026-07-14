@@ -2880,6 +2880,26 @@
                 if (typeof zbUpdateDraftUI === 'function') zbUpdateDraftUI();
             }
 
+            // 新编辑键带日期和站点，避免同一质检码跨日期/站点时串改；读取时兼容旧的 code|field 草稿。
+            function dtMakeEditKey(date, code, site, col) {
+                return [date || '', code || '', site || '', col || ''].join('|');
+            }
+            function dtParseEditKey(editKey, meta) {
+                var parts = String(editKey || '').split('|');
+                meta = meta || {};
+                if (parts.length >= 4) {
+                    return { date:parts[0] || meta.date || '', code:parts[1] || meta.code || '', site:parts[2] || meta.site || '', field:parts.slice(3).join('|') || meta.field || '' };
+                }
+                return { date:meta.date || '', code:parts[0] || meta.code || '', site:meta.site || '', field:parts[1] || meta.field || '' };
+            }
+            function dtResolveEditKey(row, col) {
+                var fullKey = dtMakeEditKey(row.date || '', row.code || '', row.warehouse || row.site || row._warehouse || '', col);
+                if (dtEdits[fullKey] !== undefined) return fullKey;
+                var legacyKey = (row.code || '') + '|' + col;
+                return dtEdits[legacyKey] !== undefined ? legacyKey : fullKey;
+            }
+            window.dtParseEditKey = dtParseEditKey;
+
             // 可编辑列
             const DT_EDITABLE_COLS = ['person','inspectorOrg'];
             const DT_COL_LABELS = { date:'日期', warehouse:'站点名称', cat:'品类', code:'质检码', level1:'一级项', level2:'二级项', level3_orig:'原三级项', level3:'新三级项', category:'主客观分类', issueType:'问题类型', judgedIssueType:'抽检判定类型', person:'质检人员', inspectorOrg:'原操作人组织架构', qaInspector:'QA抽检人' };
@@ -2930,7 +2950,7 @@
             window._dtState = { colFilters:{}, popupCol:null, popupSelected:new Set(), allVals:[] };
 
             function dtGetVal(d, col) {
-                const editKey = d.code + '|' + col;
+                const editKey = dtResolveEditKey(d, col);
                 return (dtEdits[editKey] !== undefined ? dtEdits[editKey] : d[col]) || '-';
             }
 
@@ -3010,13 +3030,13 @@
                     var rowEditable = (typeof zbCanEditRow === 'function') ? zbCanEditRow(d) : false;
                     return '<tr>' + cols.map(function(col) {
                         const val = dtGetVal(d, col);
-                        const editKey = d.code + '|' + col;
+                        const editKey = dtResolveEditKey(d, col);
                         const isModified = dtEdits[editKey] !== undefined;
                         const canEdit = DT_EDITABLE_COLS.includes(col) && rowEditable;
                         if (canEdit) {
                             var cellHtml = col === 'inspectorOrg' ? dtOrgChipHtml(val, d.warehouse || d.site || '') : dtEscapeHtml(val);
                             return '<td><span class="dt-cell-editable'+(isModified?' dt-cell-modified':'')+'" '
-                                +'data-code="'+dtEscapeHtml(d.code)+'" data-col="'+col+'" data-orig="'+dtEscapeHtml(d[col]||'-')+'" data-site="'+dtEscapeHtml(d.warehouse || d.site || '')+'" data-cat="'+dtEscapeHtml(d.cat || '')+'" data-value="'+dtEscapeHtml(val)+'">'
+                                +'data-date="'+dtEscapeHtml(d.date || '')+'" data-code="'+dtEscapeHtml(d.code)+'" data-col="'+col+'" data-orig="'+dtEscapeHtml(d[col]||'-')+'" data-site="'+dtEscapeHtml(d.warehouse || d.site || '')+'" data-cat="'+dtEscapeHtml(d.cat || '')+'" data-value="'+dtEscapeHtml(val)+'">'
                                 +cellHtml+'</span></td>';
                         }
                         if (col === 'inspectorOrg') return '<td>'+dtOrgChipHtml(val, d.warehouse || d.site || '')+'</td>';
@@ -3303,12 +3323,19 @@
                 level3:          'level3_new',
                 judgedIssueType: 'judgedType'
             };
-            function dtApplyEditToData(code, col, newVal) {
+            function dtApplyEditToData(code, col, newVal, date, site) {
                 if (!code) return;
+                function isTarget(r) {
+                    if (!r || r.code !== code) return false;
+                    if (date && String(r.date || '') !== String(date)) return false;
+                    var rowSite = r.warehouse || r.site || r._warehouse || '';
+                    if (site && String(rowSite) !== String(site)) return false;
+                    return true;
+                }
                 // 1. _allDiffData：mapped 字段直接写
                 var allDiff = window._allDiffData || [];
                 for (var i = 0; i < allDiff.length; i++) {
-                    if (allDiff[i] && allDiff[i].code === code) {
+                    if (isTarget(allDiff[i])) {
                         allDiff[i][col] = newVal;
                     }
                 }
@@ -3321,7 +3348,7 @@
                 ];
                 sources.forEach(function(arr){
                     for (var i = 0; i < arr.length; i++) {
-                        if (arr[i] && arr[i].code === code) {
+                        if (isTarget(arr[i])) {
                             arr[i][origCol] = newVal;
                         }
                     }
@@ -3336,9 +3363,9 @@
                 }
             }
 
-            function dtCommitCellEdit(code, col, orig, site, cat, newVal) {
+            function dtCommitCellEdit(code, col, orig, site, cat, newVal, date) {
                 newVal = String(newVal == null ? '' : newVal).trim() || orig;
-                const editKey = code + '|' + col;
+                const editKey = dtMakeEditKey(date, code, site, col);
                 const oldVal = dtEdits[editKey] !== undefined ? dtEdits[editKey] : orig;
                 if (newVal !== oldVal || (dtEdits[editKey] === undefined && newVal !== orig)) {
                     if (newVal !== orig) {
@@ -3350,6 +3377,7 @@
                             code: code,
                             field: col,
                             fieldLabel: DT_COL_LABELS[col] || col,
+                            date: date || '',
                             from: oldMeta.from || orig || '—',
                             to: newVal || '—',
                             site: site,
@@ -3375,7 +3403,7 @@
                         _zbPersistDraftState();
                     }
                     dtSaveEdits();
-                    dtApplyEditToData(code, col, newVal);
+                    dtApplyEditToData(code, col, newVal, date, site);
                     // 原操作人/组织架构先保存在本地草稿，由明细页右上角统一上传云端。
                     zbAddLog({ type:'edit', code:code, col:DT_COL_LABELS[col]||col, from:oldVal, to:newVal });
                     if (typeof fullRefresh === 'function') setTimeout(fullRefresh, 0);
@@ -3395,6 +3423,7 @@
             function dtShowOrgMenu(span) {
                 dtCloseOrgMenu();
                 const code = span.dataset.code;
+                const date = span.dataset.date || '';
                 const col  = span.dataset.col;
                 const orig = span.dataset.orig;
                 const site = span.dataset.site || '';
@@ -3413,7 +3442,7 @@
                     btn.innerHTML = dtOrgChipHtml(opt, site);
                     btn.onclick = function(e) {
                         e.stopPropagation();
-                        dtCommitCellEdit(code, col, orig, site, cat, opt);
+                        dtCommitCellEdit(code, col, orig, site, cat, opt, date);
                         dtCloseOrgMenu();
                     };
                     menu.appendChild(btn);
@@ -3430,6 +3459,7 @@
             function dtStartEdit(span) {
                 if (span.querySelector('input')) return;
                 const code = span.dataset.code;
+                const date = span.dataset.date || '';
                 const col  = span.dataset.col;
                 const orig = span.dataset.orig;
                 const site = span.dataset.site || '';
@@ -3447,7 +3477,7 @@
                 span.appendChild(input);
                 input.focus(); input.select();
                 const save = function() {
-                    dtCommitCellEdit(code, col, orig, site, cat, input.value.trim() || orig);
+                    dtCommitCellEdit(code, col, orig, site, cat, input.value.trim() || orig, date);
                 };
                 input.addEventListener('keydown', function(e) {
                     if (e.key === 'Enter') { e.preventDefault(); save(); }
@@ -3460,7 +3490,7 @@
             }
 
             function dtBuildEditableSpan(row, col) {
-                var editKey = (row.code||'') + '|' + col;
+                var editKey = dtResolveEditKey(row, col);
                 var displayVal = (dtEdits[editKey] !== undefined) ? dtEdits[editKey] : (row[col] || '');
                 var isModified = dtEdits[editKey] !== undefined;
                 var submitted = !!(window._zbPersonSubmitted && window._zbPersonSubmitted[editKey]);
@@ -3469,6 +3499,7 @@
                 if (hasMeta && meta.status === 'submitted') submitted = true;
                 var span = document.createElement('span');
                 span.className = 'dt-cell-editable' + (isModified ? ' dt-cell-modified' : '');
+                span.setAttribute('data-date', row.date || '');
                 span.setAttribute('data-code', row.code||'');
                 span.setAttribute('data-col', col);
                 span.setAttribute('data-orig', row[col]||'-');
@@ -8687,6 +8718,71 @@ async function _zbPushMonthlyMerge(fname, memRows, rowKey, token, label) {
     return await _zbPushFile(fname, { rows: merged, updated: new Date().toISOString() }, token);
 }
 
+// 差异明细字段级提交：每次都基于云端最新文件打补丁；409 后重新读取、重新合并，避免旧整月快照覆盖他人修改。
+async function _zbPushMonthlyFieldPatches(fname, patches, token, label) {
+    label = label || '[明细字段提交]';
+    for (var attempt = 0; attempt < 3; attempt++) {
+        try {
+            var metaRes = await fetch(ghUrl(fname) + '?t=' + Date.now(), { headers:{ Authorization:'token ' + token } });
+            if (!metaRes.ok) throw new Error('读取云端文件失败：' + metaRes.status);
+            var fileMeta = await metaRes.json();
+            var b64 = fileMeta.content;
+            if (!b64 || fileMeta.encoding === 'none') {
+                var blobRes = await fetch('https://api.github.com/repos/' + GH_USER + '/' + GH_REPO + '/git/blobs/' + fileMeta.sha, { headers:{ Authorization:'token ' + token } });
+                if (!blobRes.ok) throw new Error('读取云端大文件失败：' + blobRes.status);
+                var blobMeta = await blobRes.json();
+                b64 = blobMeta.content;
+            }
+            var binary = atob(String(b64 || '').replace(/\n/g, ''));
+            var bytes = new Uint8Array(binary.length);
+            for (var bi = 0; bi < binary.length; bi++) bytes[bi] = binary.charCodeAt(bi);
+            var cloudJson = JSON.parse(new TextDecoder().decode(bytes));
+            var rows = Array.isArray(cloudJson.rows) ? cloudJson.rows : [];
+            var matched = 0;
+            rows.forEach(function(row) {
+                patches.forEach(function(patch) {
+                    if (String(row.code || '') !== String(patch.code || '')) return;
+                    if (patch.date && String(row.date || '') !== String(patch.date)) return;
+                    if (patch.site && String(row.site || '') !== String(patch.site)) return;
+                    row[patch.field] = patch.value;
+                    matched++;
+                });
+            });
+            if (!matched) throw new Error('云端未找到本次修改对应记录');
+
+            var jsonBytes = new TextEncoder().encode(JSON.stringify({ rows:rows, updated:new Date().toISOString() }));
+            var outBinary = '';
+            jsonBytes.forEach(function(b){ outBinary += String.fromCharCode(b); });
+            var body = {
+                message: 'Update ' + fname + ' fields via dashboard',
+                content: btoa(outBinary),
+                sha: fileMeta.sha
+            };
+            var putRes = await fetch(ghUrl(fname), {
+                method:'PUT',
+                headers:{ Authorization:'token ' + token, 'Content-Type':'application/json' },
+                body:JSON.stringify(body)
+            });
+            if (putRes.ok) {
+                console.log(label, '字段级提交成功', fname, { patches:patches.length, matched:matched, attempt:attempt + 1 });
+                return true;
+            }
+            if (putRes.status === 409 && attempt < 2) {
+                console.warn(label, '409 conflict，重新读取最新文件后合并', fname, 'attempt', attempt + 1);
+                continue;
+            }
+            throw new Error('提交失败：' + putRes.status + ' ' + await putRes.text());
+        } catch(e) {
+            if (attempt >= 2) {
+                console.error(label, fname, e);
+                return false;
+            }
+            console.warn(label, '重试字段级提交', fname, e);
+        }
+    }
+    return false;
+}
+
 // ── 推送进度全屏遮罩（防呆：推送期间锁死整屏，禁止再次编辑导致并发 PUT 409）──
 // state: 'pushing' | 'success' | 'failure' | 'timeout' | 'close'
 // opts:  { msg?, onRetry?, onAbandon? }
@@ -8833,14 +8929,23 @@ async function _doPushEdits(token, editsOverride) {
     var diff4  = (window._DATA && window._DATA.diff4)  || [];
     if (!diff5.length && !diff4.length) return { allOk: false, errMsg: '本地数据为空' };
 
-    var codes = new Set();
+    var metaStoreForPatch = window._dtEditMeta || {};
+    var editSpecs = [];
     var personEditedCodes = new Set();  // 改了 person 列的 code，用于触发 zbRemoveCorrection
     Object.keys(edits).forEach(function(editKey) {
-        var parts = editKey.split('|');
-        var code = parts[0], col = parts[1];
-        if (code) {
-            codes.add(code);
-            if (col === 'person') personEditedCodes.add(code);
+        var meta = metaStoreForPatch[editKey] || {};
+        var parsed = (typeof dtParseEditKey === 'function') ? dtParseEditKey(editKey, meta) : { code:meta.code || '', field:meta.field || '' };
+        if (parsed.code && parsed.field) {
+            editSpecs.push({
+                editKey: editKey,
+                date: parsed.date || meta.date || '',
+                code: parsed.code,
+                site: parsed.site || meta.site || '',
+                cat: meta.cat || '',
+                field: parsed.field,
+                value: edits[editKey]
+            });
+            if (parsed.field === 'person') personEditedCodes.add(parsed.code);
         }
     });
 
@@ -8858,54 +8963,46 @@ async function _doPushEdits(token, editsOverride) {
         corrPrefetchPromise.then(function(){ _stamp('corrections 预拉(并行)', _tCorrPull); });
     }
 
-    var touched5 = new Set();
-    var touched4 = new Set();
-    diff5.forEach(function(r) {
-        if (!codes.has(r.code)) return;
-        var ym = (r.date||'').slice(0,7);
-        if (ym && ym.length === 7) touched5.add(ym);
-    });
-    diff4.forEach(function(r) {
-        if (!codes.has(r.code)) return;
-        var ym = (r.date||'').slice(0,7);
-        if (ym && ym.length === 7) touched4.add(ym);
-    });
-
-    if (!touched5.size && !touched4.size) return { allOk: true };
-
-    function buildMonthMap(arr) {
-        var m = {};
-        arr.forEach(function(r){
-            var ym = (r.date||'').slice(0,7);
-            if (!ym || ym.length < 7) return;
-            if (!m[ym]) m[ym] = [];
-            m[ym].push(r);
+    var patchFiles = {};
+    var mappedToOrig = { person:'inspector', inspectorOrg:'inspectorOrg' };
+    function collectFieldPatches(rows, prefix) {
+        editSpecs.forEach(function(spec) {
+            var origField = mappedToOrig[spec.field];
+            if (!origField) return;
+            rows.forEach(function(row) {
+                if (String(row.code || '') !== String(spec.code)) return;
+                if (spec.date && String(row.date || '') !== String(spec.date)) return;
+                if (spec.site && String(row.site || '') !== String(spec.site)) return;
+                if (spec.cat && row.cat && String(row.cat) !== String(spec.cat)) return;
+                var ym = String(row.date || '').slice(0, 7);
+                if (ym.length !== 7) return;
+                var fname = prefix + ym + '.json';
+                if (!patchFiles[fname]) patchFiles[fname] = {};
+                var patchKey = [row.date || '', row.code || '', row.site || '', origField].join('|');
+                patchFiles[fname][patchKey] = {
+                    date: row.date || spec.date || '',
+                    code: spec.code,
+                    site: row.site || spec.site || '',
+                    field: origField,
+                    value: spec.value
+                };
+            });
         });
-        return m;
     }
-    var monthMap5 = buildMonthMap(diff5);
-    var monthMap4 = buildMonthMap(diff4);
+    collectFieldPatches(diff5, 'phone_diff_');
+    collectFieldPatches(diff4, 'five_cat_');
+
+    if (!Object.keys(patchFiles).length) return { allOk: false, errMsg: '未找到本次修改对应的云端记录' };
 
     var allOk = true;
     var failedFiles = [];
-    // 行身份 key：date|code|site 三联，跟 import 端 smartMerge 一致
-    var rowKey = function(r){ return (r.date||'') + '|' + (r.code||'') + '|' + (r.site||''); };
-    var _tDiff5 = performance.now();
-    for (var ym of touched5) {
-        if (!monthMap5[ym]) continue;
-        var fname = 'phone_diff_' + ym + '.json';
-        var ok = await _zbPushMonthlyMerge(fname, monthMap5[ym], rowKey, token, '[zbPushEdits]');
+    var _tFieldPatch = performance.now();
+    for (var fname of Object.keys(patchFiles)) {
+        var patches = Object.values(patchFiles[fname]);
+        var ok = await _zbPushMonthlyFieldPatches(fname, patches, token, '[zbPushEdits]');
         if (!ok) { allOk = false; failedFiles.push(fname); console.error('编辑推送失败:', fname); }
     }
-    if (touched5.size) _stamp('diff5 pull+push', _tDiff5);
-    var _tDiff4 = performance.now();
-    for (var ym of touched4) {
-        if (!monthMap4[ym]) continue;
-        var fname = 'five_cat_' + ym + '.json';
-        var ok = await _zbPushMonthlyMerge(fname, monthMap4[ym], rowKey, token, '[zbPushEdits]');
-        if (!ok) { allOk = false; failedFiles.push(fname); console.error('编辑推送失败:', fname); }
-    }
-    if (touched4.size) _stamp('diff4 pull+push', _tDiff4);
+    _stamp('字段级 pull+patch+push', _tFieldPatch);
 
     // 改 person 列触发 corrections 删除（本地 + 云端 person_corrections.json）
     // 必须在 phone_diff 推送之后做：即便 corrections 删失败，phone_diff 已经是新值，
@@ -8945,13 +9042,15 @@ async function _doPushEdits(token, editsOverride) {
             var metaStore = window._dtEditMeta || {};
             var auditDiffs = [];
             Object.keys(edits).forEach(function(editKey) {
-                var parts = editKey.split('|');
-                var code = parts[0] || '';
-                var field = parts[1] || '';
                 var meta = metaStore[editKey] || {};
+                var parsed = (typeof dtParseEditKey === 'function') ? dtParseEditKey(editKey, meta) : { code:meta.code || '', field:meta.field || '' };
+                var code = parsed.code || '';
+                var field = parsed.field || '';
                 auditDiffs.push({
+                    editKey: editKey,
+                    date: parsed.date || meta.date || '',
                     code: code,
-                    site: meta.site || '',
+                    site: parsed.site || meta.site || '',
                     cat: meta.cat || '',
                     field: meta.fieldLabel || (typeof DT_COL_LABELS !== 'undefined' && DT_COL_LABELS[field]) || field,
                     fieldKey: field,
@@ -8996,10 +9095,11 @@ async function _doPushEdits(token, editsOverride) {
                 var cloudMeta = await ghApiFetch(GH_FILES.detailEditMeta, token).catch(function(){ return null; });
                 var records = (cloudMeta && cloudMeta.records && typeof cloudMeta.records === 'object') ? cloudMeta.records : {};
                 auditDiffs.forEach(function(x) {
-                    var key = (x.code || '') + '|' + (x.fieldKey || '');
+                    var key = x.editKey || ((x.code || '') + '|' + (x.fieldKey || ''));
                     if (!key || key === '|') return;
                     records[key] = Object.assign({}, records[key] || {}, metaStore[key] || {}, {
                         code: x.code || '',
+                        date: x.date || '',
                         field: x.fieldKey || '',
                         fieldLabel: x.field || '',
                         from: x.from || '—',
@@ -9050,14 +9150,20 @@ function zbCleanStaleEdits() {
     var edits = window._dtEdits;
     if (!edits || !Object.keys(edits).length) return false;
     var allDiff = window._allDiffData || [];
-    var codeMap = {};
-    allDiff.forEach(function(d){ if (d.code) codeMap[d.code] = d; });
+    var metaStore = window._dtEditMeta || {};
     var changed = false;
     Object.keys(edits).forEach(function(editKey) {
-        var parts = editKey.split('|');
-        var code = parts[0], col = parts[1];
+        var meta = metaStore[editKey] || {};
+        var parsed = (typeof dtParseEditKey === 'function') ? dtParseEditKey(editKey, meta) : { code:meta.code || '', field:meta.field || '' };
+        var code = parsed.code, col = parsed.field;
         if (!code || !col) return;
-        var rec = codeMap[code];
+        var rec = allDiff.find(function(d) {
+            if (!d || String(d.code || '') !== String(code)) return false;
+            if (parsed.date && String(d.date || '') !== String(parsed.date)) return false;
+            var site = d.warehouse || d.site || d._warehouse || '';
+            if (parsed.site && String(site) !== String(parsed.site)) return false;
+            return true;
+        });
         if (!rec) return;
         var cloudVal = String(rec[col] !== undefined ? rec[col] : '');
         if (cloudVal === String(edits[editKey])) {
