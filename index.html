@@ -8857,6 +8857,93 @@ async function _zbPushMonthlyFieldPatches(fname, patches, token, label) {
     return false;
 }
 
+// 操作审计整行删除：基于云端最新月文件精确删除；409 后重新读取再删，避免 merge 把已删行补回来。
+async function _zbPushMonthlyRowDeletes(fname, deleteSpecs, token, label) {
+    label = label || '[记录删除]';
+    var identityFields = ['cat','strategy','level1','level2','level3_orig','level3_new','issueType','judgedType','model'];
+    for (var attempt = 0; attempt < 3; attempt++) {
+        try {
+            var metaRes = await fetch(ghUrl(fname) + '?t=' + Date.now(), { headers:{ Authorization:'token ' + token } });
+            if (!metaRes.ok) throw new Error('读取云端文件失败：' + metaRes.status);
+            var fileMeta = await metaRes.json();
+            var b64 = fileMeta.content;
+            if (!b64 || fileMeta.encoding === 'none') {
+                var blobRes = await fetch('https://api.github.com/repos/' + GH_USER + '/' + GH_REPO + '/git/blobs/' + fileMeta.sha, { headers:{ Authorization:'token ' + token } });
+                if (!blobRes.ok) throw new Error('读取云端大文件失败：' + blobRes.status);
+                var blobMeta = await blobRes.json();
+                b64 = blobMeta.content;
+            }
+            var binary = atob(String(b64 || '').replace(/\n/g, ''));
+            var bytes = new Uint8Array(binary.length);
+            for (var bi = 0; bi < binary.length; bi++) bytes[bi] = binary.charCodeAt(bi);
+            var cloudJson = JSON.parse(new TextDecoder().decode(bytes));
+            var rows = Array.isArray(cloudJson.rows) ? cloudJson.rows : [];
+            var removed = 0;
+            var unresolved = [];
+
+            deleteSpecs.forEach(function(spec) {
+                var primaryMatches = [];
+                rows.forEach(function(row, idx) {
+                    if (String(row.date || '') !== String(spec.date || '')) return;
+                    if (String(row.code || '') !== String(spec.code || '')) return;
+                    if (String(row.site || '') !== String(spec.site || '')) return;
+                    primaryMatches.push(idx);
+                });
+                // 已被其他提交删除时按幂等成功处理。
+                if (!primaryMatches.length) return;
+                var targetIdx = primaryMatches.find(function(idx) {
+                    var row = rows[idx];
+                    return identityFields.every(function(field) {
+                        return String(row[field] || '') === String(spec[field] || '');
+                    });
+                });
+                if (targetIdx === undefined) {
+                    unresolved.push(spec.code || '');
+                    return;
+                }
+                rows.splice(targetIdx, 1);
+                removed++;
+            });
+
+            if (unresolved.length) throw new Error('云端记录已变化，无法安全定位：' + unresolved.join('、'));
+            if (!removed) {
+                console.log(label, '目标记录已不存在，按删除成功处理', fname);
+                return true;
+            }
+
+            var jsonBytes = new TextEncoder().encode(JSON.stringify({ rows:rows, updated:new Date().toISOString() }));
+            var outBinary = '';
+            jsonBytes.forEach(function(b){ outBinary += String.fromCharCode(b); });
+            var body = {
+                message: 'Delete rows from ' + fname + ' via dashboard',
+                content: btoa(outBinary),
+                sha: fileMeta.sha
+            };
+            var putRes = await fetch(ghUrl(fname), {
+                method:'PUT',
+                headers:{ Authorization:'token ' + token, 'Content-Type':'application/json' },
+                body:JSON.stringify(body)
+            });
+            if (putRes.ok) {
+                console.log(label, '整行删除成功', fname, { requested:deleteSpecs.length, removed:removed, attempt:attempt + 1 });
+                return true;
+            }
+            if (putRes.status === 409 && attempt < 2) {
+                console.warn(label, '409 conflict，重新读取最新文件后删除', fname, 'attempt', attempt + 1);
+                continue;
+            }
+            throw new Error('提交失败：' + putRes.status + ' ' + await putRes.text());
+        } catch(e) {
+            if (attempt >= 2) {
+                console.error(label, fname, e);
+                return false;
+            }
+            console.warn(label, '重试整行删除', fname, e);
+        }
+    }
+    return false;
+}
+
 // ── 推送进度全屏遮罩（防呆：推送期间锁死整屏，禁止再次编辑导致并发 PUT 409）──
 // state: 'pushing' | 'success' | 'failure' | 'timeout' | 'close'
 // opts:  { msg?, onRetry?, onAbandon? }
@@ -13647,8 +13734,10 @@ async function _doEditSave() {
         return null;
     }
 
-    // 每个源各自记录"被改动 / 被删除的月份"
+    // 每个源分别记录被编辑月份；删除走独立云端精确删除，不能再走 merge。
     var touchedMonths = { diff5: new Set(), diff4: new Set() };
+    var editedMonths = { diff5: new Set(), diff4: new Set() };
+    var deleteSpecsByFile = {};
 
     // 反向写回原始行
     Object.keys(_zbEditChanges).forEach(function(key){
@@ -13659,7 +13748,10 @@ async function _doEditSave() {
         var src = locateSource(origRow);
         if (!src) return;
         var ym = (mappedRow.date||'').slice(0,7);
-        if (ym && ym.length===7) touchedMonths[src].add(ym);
+        if (ym && ym.length===7) {
+            touchedMonths[src].add(ym);
+            editedMonths[src].add(ym);
+        }
         var changes = _zbEditChanges[key];
         Object.keys(changes).forEach(function(mappedField){
             var origField = MAPPED_TO_ORIG[mappedField] || mappedField;
@@ -13676,7 +13768,25 @@ async function _doEditSave() {
         var src = locateSource(origRow);
         if (!src) return;
         var ym = (mappedRow.date||'').slice(0,7);
-        if (ym && ym.length===7) touchedMonths[src].add(ym);
+        if (ym && ym.length===7) {
+            touchedMonths[src].add(ym);
+            var fname = (src === 'diff5' ? 'phone_diff_' : 'five_cat_') + ym + '.json';
+            if (!deleteSpecsByFile[fname]) deleteSpecsByFile[fname] = [];
+            deleteSpecsByFile[fname].push({
+                date: origRow.date || mappedRow.date || '',
+                code: origRow.code || mappedRow.code || '',
+                site: origRow.site || mappedRow.warehouse || '',
+                cat: origRow.cat || mappedRow.cat || '',
+                strategy: origRow.strategy || '',
+                level1: origRow.level1 || '',
+                level2: origRow.level2 || '',
+                level3_orig: origRow.level3_orig || '',
+                level3_new: origRow.level3_new || '',
+                issueType: origRow.issueType || '',
+                judgedType: origRow.judgedType || '',
+                model: origRow.model || ''
+            });
+        }
         var arr = src === 'diff5' ? diff5 : diff4;
         var i = arr.indexOf(origRow);
         if (i !== -1) arr.splice(i, 1);
@@ -13714,18 +13824,24 @@ async function _doEditSave() {
     var rowKey = function(r){ return (r.date||'') + '|' + (r.code||'') + '|' + (r.site||''); };
 
     // 推 手机 diff5（phone_diff_<YM>.json），走 merge
-    for (var ym of touchedMonths.diff5) {
+    for (var ym of editedMonths.diff5) {
         if (!monthMap5[ym]) continue;
         var fname = 'phone_diff_' + ym + '.json';
         var ok = await _zbPushMonthlyMerge(fname, monthMap5[ym], rowKey, token, '[记录编辑]');
         if (!ok) { allOk = false; console.error('[记录编辑] 推送失败:', fname); }
     }
     // 推 四品类 diff4（five_cat_<YM>.json），走 merge
-    for (var ym of touchedMonths.diff4) {
+    for (var ym of editedMonths.diff4) {
         if (!monthMap4[ym]) continue;
         var fname = 'five_cat_' + ym + '.json';
         var ok = await _zbPushMonthlyMerge(fname, monthMap4[ym], rowKey, token, '[记录编辑]');
         if (!ok) { allOk = false; console.error('[记录编辑] 推送失败:', fname); }
+    }
+
+    // 删除必须最后执行：若同一月同时有编辑，先合并编辑，再从最新云端文件精确移除选中行。
+    for (var deleteFile of Object.keys(deleteSpecsByFile)) {
+        var deleteOk = await _zbPushMonthlyRowDeletes(deleteFile, deleteSpecsByFile[deleteFile], token, '[记录删除]');
+        if (!deleteOk) { allOk = false; console.error('[记录删除] 推送失败:', deleteFile); }
     }
 
     if (allOk) {
