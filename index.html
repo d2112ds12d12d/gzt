@@ -16185,6 +16185,11 @@ function zbCheckDataHealth() {
     var bar = document.getElementById('zbDataHealthBar');
     if (!bar || _zbHealthDismissed) return;
     var DATA = window._DATA || {};
+    // 四品类按需加载完成前不做完整性判断，避免登录定时器/辅助数据回调把“未加载”误报成“未上传”。
+    if (!window._zbFourCatReady && !(Array.isArray(DATA.diff4) && DATA.diff4.length)) {
+        bar.style.display = 'none';
+        return;
+    }
     // 手机：qa（大盘抽检）+ diff5（差异明细）都齐才算完整
     var datesQa    = new Set((DATA.qa   ||[]).map(function(r){ return r.date; }));
     var datesDiff5 = new Set((DATA.diff5||[]).map(function(r){ return r.date; }));
