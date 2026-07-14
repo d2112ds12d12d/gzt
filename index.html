@@ -8460,10 +8460,12 @@ async function zbLoadCloudData(useApi) {
             try { await window.zbEnsureFourCatData(); } catch(e) { console.warn('[lazy-four-cat] 当前页面补载失败:', e); }
         }
         if (typeof bridgeData === 'function') bridgeData();
-        // 云端 reload 完后刷新数据健康预警条（之前只在上传 Excel 后跑一次，
-        // 后续 reload 数据补全也要重新评估，避免显示过期的"缺失"列表）
-        if (typeof zbCheckDataHealth === 'function') {
+        // 健康检查依赖四品类明细；按需数据尚未就绪时先隐藏，避免把“未加载”误报成“未上传”。
+        if (typeof zbCheckDataHealth === 'function' && window._zbFourCatReady) {
             try { _zbHealthDismissed = false; zbCheckDataHealth(); } catch(e) {}
+        } else {
+            var healthBarBeforeFourCat = document.getElementById('zbDataHealthBar');
+            if (healthBarBeforeFourCat) healthBarBeforeFourCat.style.display = 'none';
         }
         // 数据加载完立即应用操作人纠正（不等轮询，确保导出时person已是正确值）
         try {
@@ -8485,6 +8487,16 @@ async function zbLoadCloudData(useApi) {
         try { document.dispatchEvent(new CustomEvent('zb:core-data-ready')); } catch(e) {}
         var loadAuxWhenIdle = function(){
             if (typeof window.zbLoadDeferredAux === 'function') window.zbLoadDeferredAux().catch(function(e){ console.warn('[deferred-aux] 加载失败:', e); });
+            // 管理端在首屏完成后后台补载四品类，再做完整健康检查；不阻塞首页核心数据展示。
+            if ((zbRole === 'admin' || zbRole === 'super') && typeof window.zbEnsureFourCatData === 'function' && !window._zbFourCatReady) {
+                window.zbEnsureFourCatData().then(function(){
+                    if (typeof zbCheckDataHealth === 'function') {
+                        try { _zbHealthDismissed = false; zbCheckDataHealth(); } catch(e) {}
+                    }
+                }).catch(function(e){
+                    console.warn('[health-check] 四品类后台加载失败，本次不展示完整性预警:', e);
+                });
+            }
         };
         if (typeof requestIdleCallback === 'function') requestIdleCallback(loadAuxWhenIdle, { timeout:3000 });
         else setTimeout(loadAuxWhenIdle, 1200);
