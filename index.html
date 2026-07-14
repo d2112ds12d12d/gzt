@@ -39,8 +39,6 @@
         window.addEventListener('load', function(){ window.zbPerfMark('window_load'); setTimeout(window.zbPerfReport, 1200); });
     })();
     </script>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js" onload="window.zbPerfMark&&zbPerfMark('cdn_xlsx_loaded')" onerror="window.zbPerfMark&&zbPerfMark('cdn_xlsx_error')">
-    </script>
     <script src="https://cdn.jsdelivr.net/npm/echarts@5.5.0/dist/echarts.min.js" onload="window.zbPerfMark&&zbPerfMark('cdn_echarts_loaded')" onerror="window.zbPerfMark&&zbPerfMark('cdn_echarts_error')">
     </script>
     <!-- html2canvas / cos-js-sdk 改为按需懒加载（v1.61B 性能优化） -->
@@ -61,6 +59,13 @@
     window.zbEnsureHtml2Canvas = function(){
         if (typeof html2canvas !== 'undefined') return Promise.resolve();
         return window.zbLoadScript('https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js');
+    };
+    window.zbEnsureXlsx = function(){
+        if (typeof window.XLSX !== 'undefined') return Promise.resolve();
+        var t0 = performance.now();
+        return window.zbLoadScript('https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js').then(function(){
+            if (window.zbPerfMeasure) window.zbPerfMeasure('lazy_xlsx_loaded', t0);
+        });
     };
     window.zbEnsureCosSdk = function(){
         if (typeof window.COS !== 'undefined') return Promise.resolve();
@@ -2240,7 +2245,12 @@
                     if (r.ok) { window._zbTableLinks = await r.json(); }
                 } catch(e) { window._zbTableLinks = {}; }
             }
-            zbLoadTableLinks();
+            // 首屏完成后再拉表格跳转配置，避免与核心质量数据争抢网络。
+            if (window._zbCoreDataReady) {
+                setTimeout(zbLoadTableLinks, 0);
+            } else {
+                document.addEventListener('zb:core-data-ready', function(){ setTimeout(zbLoadTableLinks, 0); }, { once:true });
+            }
 
             // 根据站点名判断站点类型
             window.zbGetSiteType = function(siteName) {
@@ -4052,7 +4062,8 @@
                 window.open(url, '_blank');
             };
 
-            function exportToExcel(opts) {
+            async function exportToExcel(opts) {
+                await window.zbEnsureXlsx();
                 opts = opts || {};
                 var filterCats  = opts.cats  || null;  // null=全部
                 var filterSites = opts.sites || null;  // null=全部
@@ -4903,6 +4914,7 @@
             }
 
             async function loadDataByMode(mode) {
+                await window.zbEnsureXlsx();
                 showLoading();
                 const [sumFile, diffFile] = FILE_MAP[mode];
                 if (loadWeeklyBtn) loadWeeklyBtn.classList.toggle('active', mode === 'weekly');
@@ -4987,10 +4999,21 @@
             let currentCat = '手机';
             window._activeCat = currentCat; // 初始化同步，防止首次加载时_activeCat为undefined
 
+            // 行级标准化缓存：源行内容未变化时复用映射对象；编辑任一展示字段后签名变化并自动重算。
+            const _zbBridgeCache5 = new WeakMap();
+            const _zbBridgeCache4 = new WeakMap();
+            function _zbBridgeRowSig(r) {
+                return [r.site,r.cat,r.inspector,r.qaInspector,r.inspectorOrg,r.subjobj,r.date,r.level1,r.level2,
+                    r.level3_orig,r.level3_new,r.issueType,r.judgedType,r.brand,r.model,r.code,r.strategy].join('\u001f');
+            }
+
             window.bridgeData = function bridgeData() {
                 var _zbPerfT = performance.now();
                 function mapDiff5(r) {
-                    return {
+                    var sig = _zbBridgeRowSig(r);
+                    var hit = _zbBridgeCache5.get(r);
+                    if (hit && hit.sig === sig) return hit.value;
+                    var value = {
                         warehouse:       r.site,
                         cat:             r.cat,
                         person:          r.inspector,
@@ -5010,9 +5033,14 @@
                         code:            r.code,
                         _origRef:        r
                     };
+                    _zbBridgeCache5.set(r, { sig:sig, value:value });
+                    return value;
                 }
                 function mapDiff4(r) {
-                    return {
+                    var sig = _zbBridgeRowSig(r);
+                    var hit = _zbBridgeCache4.get(r);
+                    if (hit && hit.sig === sig) return hit.value;
+                    var value = {
                         warehouse:       r.site,
                         cat:             r.cat,
                         person:          r.inspector,
@@ -5031,21 +5059,22 @@
                         code:            r.code,
                         _origRef:        r
                     };
+                    _zbBridgeCache4.set(r, { sig:sig, value:value });
+                    return value;
                 }
+                var mappedPhone = DATA.diff5.filter(r => r.strategy === '大盘评估/站点').map(mapDiff5);
+                var mappedFour = window._zbFourCatReady ? DATA.diff4.map(mapDiff4) : [];
                 if (currentCat === '手机') {
                     summaryData = zbGetCheckRows(currentCat).map(r => ({ siteName: r.site, totalChecks: r.checks, date: r.date }));
-                    diffData = DATA.diff5.filter(r => r.strategy === '大盘评估/站点').map(mapDiff5);
+                    diffData = mappedPhone;
                 } else {
                     // 四品类汇总（sum + 历史 dw4sum 去重后统一口径）
                     summaryData = zbGetCheckRows(currentCat).map(r => ({ siteName: r.site, totalChecks: r.checks, date: r.date }));
                     // 四品类差异明细（大仓+中心仓已统一存入diff4）
-                    diffData = DATA.diff4.filter(r => r.cat === currentCat).map(mapDiff4);
+                    diffData = mappedFour.filter(r => r.cat === currentCat);
                 }
                 // 差异明细页全量数据（所有品类，dw4cat已合并进diff4）
-                window._allDiffData = [
-                    ...DATA.diff5.filter(r => r.strategy === '大盘评估/站点').map(mapDiff5),
-                    ...DATA.diff4.map(mapDiff4)
-                ].sort((a,b) => (a.date||'').localeCompare(b.date||''));
+                window._allDiffData = mappedPhone.concat(mappedFour).sort((a,b) => (a.date||'').localeCompare(b.date||''));
                 if (window.zbPerfMeasure) window.zbPerfMeasure('bridgeData', _zbPerfT, {
                     qa: (DATA.qa||[]).length,
                     diff5: (DATA.diff5||[]).length,
@@ -5057,6 +5086,7 @@
             // ── 你的上传逻辑（多文件、增量、自动识别表类型）──
             window.processExcelFiles = async function processExcelFiles(files) {
                 if (!files.length) return;
+                await window.zbEnsureXlsx();
                 showLoading();
                 showToast('正在解析…');
                 var _thisUploadKeys = new Set(); // 记录本次实际上传了哪些表
@@ -5389,7 +5419,16 @@
             // loadDataByMode('weekly');
 
             // ── 品类切换：直接在闭包内绑定，不需要window._zb*迂回 ──
-            function switchCat(cat) {
+            async function switchCat(cat) {
+                if (cat !== '手机' && typeof window.zbEnsureFourCatData === 'function' && !window._zbFourCatReady) {
+                    if (typeof showToast === 'function') showToast('⏳ 正在加载四品类数据…');
+                    try {
+                        await window.zbEnsureFourCatData();
+                    } catch(e) {
+                        if (typeof showToast === 'function') showToast('四品类数据加载失败，请重试', true);
+                        return;
+                    }
+                }
                 // 更新品类变量
                 currentCat = cat;
                 currentRankCat = cat;
@@ -8246,28 +8285,69 @@ async function zbLoadCloudData(useApi) {
         return merged;
     }
 
-    let loaded = 0;
     if (!window._DATA) window._DATA = {};
 
-    // v1.61B 性能优化：所有数据桶并发拉取（原串行 7 个 await，约 14+ 个 RTT；并发后压到 ~1 个 RTT）
-    // Promise.all 保证结果顺序，loadSharded 内部已并行 6 个月文件
-    // 后处理仍然按原顺序串行，保留兜底/合并/完整性判断逻辑完全不变
+    // 四品类明细与历史兼容文件按需加载：切换四品类或进入案例图库时才请求。
+    window._zbFourCatReady = false;
+    window._zbFourCatLoadPromise = null;
+    window.zbEnsureFourCatData = function(force) {
+        if (window._zbFourCatReady && !force) return Promise.resolve(true);
+        if (window._zbFourCatLoadPromise) return window._zbFourCatLoadPromise;
+        var lazyT0 = performance.now();
+        window._zbFourCatLoadPromise = Promise.all([
+            loadSharded('five_cat_'),
+            fetchFile(GH_FILES.dw4cat),
+            fetchFile(GH_FILES.dw4sum)
+        ]).then(function(parts) {
+            var diff4 = parts[0] || [];
+            var dw4catJson = parts[1];
+            var dw4sumJson = parts[2];
+            if (diff4.length > 0) window._DATA.diff4 = diff4;
+            else if (!Array.isArray(window._DATA.diff4)) window._DATA.diff4 = [];
+
+            if (dw4catJson && dw4catJson.rows && dw4catJson.rows.length > 0) {
+                window._DATA.dw4cat = dw4catJson.rows;
+                var existingKeys = new Set((window._DATA.diff4 || []).map(function(r){ return (r.date||'')+'|'+(r.code||'')+'|'+(r.site||''); }));
+                var toMerge = dw4catJson.rows.filter(function(r){ return !existingKeys.has((r.date||'')+'|'+(r.code||'')+'|'+(r.site||'')); });
+                if (toMerge.length) window._DATA.diff4 = (window._DATA.diff4 || []).concat(toMerge);
+            }
+
+            if (dw4sumJson && dw4sumJson.rows && dw4sumJson.rows.length > 0) {
+                window._DATA.dw4sum = dw4sumJson.rows;
+                if (!window._DATA.sum) window._DATA.sum = [];
+                var existingSumKeys = new Set(window._DATA.sum.map(function(r){ return (r.date||'')+'|'+(r.site||'')+'|'+(r.cat||''); }));
+                var toMergeSum = dw4sumJson.rows.filter(function(r){ return !existingSumKeys.has((r.date||'')+'|'+(r.site||'')+'|'+(r.cat||'')); });
+                if (toMergeSum.length) window._DATA.sum = window._DATA.sum.concat(toMergeSum);
+            }
+            window._zbFourCatReady = true;
+            if (window.zbPerfMeasure) window.zbPerfMeasure('lazy_four_cat_data', lazyT0, {
+                diff4: (window._DATA.diff4 || []).length,
+                dw4cat: (window._DATA.dw4cat || []).length,
+                dw4sum: (window._DATA.dw4sum || []).length
+            });
+            return true;
+        }).catch(function(err) {
+            console.warn('[lazy-four-cat] 加载失败:', err);
+            throw err;
+        }).finally(function() {
+            window._zbFourCatLoadPromise = null;
+        });
+        return window._zbFourCatLoadPromise;
+    };
+
+    let loaded = 0;
+
+    // 首屏只拉手机总览需要的核心数据；四品类走上方按需加载。
     const _tAll = performance.now();
     const _parallel = await Promise.all([
         loadSharded('qa_diff_'),                 // 0 qa 分片
         fetchFile(GH_FILES.sum),                 // 1 sum 单文件
-        loadSharded('phone_diff_'),              // 2 diff5 分片
-        loadSharded('five_cat_'),                // 3 diff4 分片
-        fetchFile(GH_FILES.dw4cat),              // 4 旧大仓明细
-        fetchFile(GH_FILES.dw4sum)               // 5 旧大仓汇总
+        loadSharded('phone_diff_')               // 2 diff5 分片
     ]);
-    if (window._zbPerf) window._zbPerf.push({ stage: '并发拉取(6 桶)', ms: Math.round(performance.now()-_tAll), rows: '-' });
+    if (window._zbPerf) window._zbPerf.push({ stage: '首屏核心拉取(3桶)', ms: Math.round(performance.now()-_tAll), rows: '-' });
     const qa       = _parallel[0];
     const sumJson  = _parallel[1];
     const diff5    = _parallel[2];
-    const diff4    = _parallel[3];
-    const dw4catJson = _parallel[4];
-    const dw4sumJson = _parallel[5];
 
     // 加载 qa（按月分片，同时兼容旧单文件）
     if (qa.length > 0) {
@@ -8288,35 +8368,8 @@ async function zbLoadCloudData(useApi) {
         else console.warn('云端返回空数组但本地有数据，跳过覆盖:', GH_FILES.sum);
     }
 
-    // 加载 diff5 / diff4（按月分片）
+    // 首屏加载手机明细；四品类明细在需要时加载。
     if (diff5.length > 0) { window._DATA.diff5 = diff5; loaded++; }
-    if (diff4.length > 0) { window._DATA.diff4 = diff4; loaded++; }
-
-    // 兼容迁移：读旧的大仓单文件，合并进diff4（历史数据兜底，新数据已统一存入five_cat_YM分片）
-    if (dw4catJson && dw4catJson.rows && dw4catJson.rows.length > 0) {
-        window._DATA.dw4cat = dw4catJson.rows;
-        // 将旧大仓数据合并进diff4，避免历史数据丢失
-        if (!window._DATA.diff4) window._DATA.diff4 = [];
-        var existingKeys = new Set(window._DATA.diff4.map(function(r){ return (r.date||'')+'|'+(r.code||'')+'|'+(r.site||''); }));
-        var toMerge = dw4catJson.rows.filter(function(r){ return !existingKeys.has((r.date||'')+'|'+(r.code||'')+'|'+(r.site||'')); });
-        if (toMerge.length) {
-            window._DATA.diff4 = window._DATA.diff4.concat(toMerge);
-            console.log('[迁移] 旧大仓数据合并进diff4:', toMerge.length, '条');
-        }
-    }
-
-    // 兼容迁移：读旧的dw4sum单文件，合并进sum（历史数据兜底）
-    // v1.61B: dw4sumJson 已在上方 Promise.all 中并发取到，这里只做合并
-    if (dw4sumJson && dw4sumJson.rows && dw4sumJson.rows.length > 0) {
-        window._DATA.dw4sum = dw4sumJson.rows;
-        if (!window._DATA.sum) window._DATA.sum = [];
-        var existingSumKeys = new Set(window._DATA.sum.map(function(r){ return (r.date||'')+'|'+(r.site||'')+'|'+(r.cat||''); }));
-        var toMergeSum = dw4sumJson.rows.filter(function(r){ return !existingSumKeys.has((r.date||'')+'|'+(r.site||'')+'|'+(r.cat||'')); });
-        if (toMergeSum.length) {
-            window._DATA.sum = window._DATA.sum.concat(toMergeSum);
-            console.log('[迁移] 旧大仓汇总数据合并进sum:', toMergeSum.length, '条');
-        }
-    }
 
     // 已废弃：旧版 inspector_override.json 是 inline edits 的"云端覆盖层"，
     // 每次 zbLoadCloudData 会用它覆盖局部 dtEdits 变量，导致刷新云端反而把刚改的新值
@@ -8324,27 +8377,37 @@ async function zbLoadCloudData(useApi) {
     // 现在 phone_diff_YM.json 才是 inspector 字段的唯一真相，覆盖层已无用且有害。
     // 老文件留在 GitHub 上当历史归档，不再读取。
 
-    // v1.61B: 主板审核 + 日志 并发取（互不依赖）
-    const _tAux = performance.now();
-    const _aux = await Promise.all([
-        fetchFile(GH_FILES.mainboard).catch(function(){ return null; }),
-        fetchFile(GH_FILES.log).catch(function(){ return null; }),
-        fetchFile(GH_FILES.healthIgnores).catch(function(){ return null; }),
-        fetchFile(GH_FILES.detailEditMeta).catch(function(){ return null; })
-    ]);
-    if (window._zbPerf) window._zbPerf.push({ stage: '并发拉取(mainboard+log+health+editMeta)', ms: Math.round(performance.now()-_tAux), rows: '-' });
-    const mbJson = _aux[0];
-    window._mainboardData = (mbJson && typeof mbJson === 'object') ? mbJson : {};
-    const logJson = _aux[1];
-    if (logJson && logJson.logs) { _zbLog = logJson.logs; localStorage.setItem('zb_upload_log', JSON.stringify(_zbLog)); }
-    const healthJson = _aux[2];
-    window._zbHealthIgnores = (healthJson && Array.isArray(healthJson.ignores)) ? healthJson.ignores : [];
-    try { localStorage.setItem('zb_health_ignores', JSON.stringify(window._zbHealthIgnores)); } catch(e) {}
-    const editMetaJson = _aux[3];
-    if (editMetaJson && editMetaJson.records && typeof editMetaJson.records === 'object') {
-        window._dtEditMeta = Object.assign({}, editMetaJson.records, window._dtEditMeta || {});
-        try { localStorage.setItem('zb_detail_edit_meta', JSON.stringify(window._dtEditMeta)); } catch(e) {}
-    }
+    // 管理页/日志/健康忽略配置不阻塞首屏，核心数据完成后在空闲时补齐。
+    window._zbAuxLoadPromise = null;
+    window.zbLoadDeferredAux = function() {
+        if (window._zbAuxLoadPromise) return window._zbAuxLoadPromise;
+        var auxT0 = performance.now();
+        window._zbAuxLoadPromise = Promise.all([
+            fetchFile(GH_FILES.mainboard).catch(function(){ return null; }),
+            fetchFile(GH_FILES.log).catch(function(){ return null; }),
+            fetchFile(GH_FILES.healthIgnores).catch(function(){ return null; }),
+            fetchFile(GH_FILES.detailEditMeta).catch(function(){ return null; })
+        ]).then(function(aux) {
+            var mbJson = aux[0];
+            window._mainboardData = (mbJson && typeof mbJson === 'object') ? mbJson : {};
+            var logJson = aux[1];
+            if (logJson && logJson.logs) { _zbLog = logJson.logs; localStorage.setItem('zb_upload_log', JSON.stringify(_zbLog)); }
+            var healthJson = aux[2];
+            window._zbHealthIgnores = (healthJson && Array.isArray(healthJson.ignores)) ? healthJson.ignores : [];
+            try { localStorage.setItem('zb_health_ignores', JSON.stringify(window._zbHealthIgnores)); } catch(e) {}
+            var editMetaJson = aux[3];
+            if (editMetaJson && editMetaJson.records && typeof editMetaJson.records === 'object') {
+                window._dtEditMeta = Object.assign({}, editMetaJson.records, window._dtEditMeta || {});
+                try { localStorage.setItem('zb_detail_edit_meta', JSON.stringify(window._dtEditMeta)); } catch(e) {}
+            }
+            if (typeof zbCheckDataHealth === 'function') {
+                try { _zbHealthDismissed = false; zbCheckDataHealth(); } catch(e) {}
+            }
+            if (window.zbPerfMeasure) window.zbPerfMeasure('deferred_aux_data', auxT0);
+            return true;
+        }).finally(function(){ window._zbAuxLoadPromise = null; });
+        return window._zbAuxLoadPromise;
+    };
 
     // H: 格式清洗——把 qa/sum 里历史遗留斜杠日期统一转成横线格式
     function fixSlashDate(s) {
@@ -8372,7 +8435,7 @@ async function zbLoadCloudData(useApi) {
 
     if (loaded > 0) {
         const src = viaApi ? '（API直连）' : '';
-        showToast('✅ 云端数据已加载（' + loaded + '/4）' + src);
+        showToast('✅ 核心数据已加载（' + loaded + '/3）' + src);
         if (typeof zbSetCloudStatus === 'function') zbSetCloudStatus('ok');
         // 默认日期：数据源最新月份的完整月（1号到月底）
         (function() {
@@ -8392,6 +8455,10 @@ async function zbLoadCloudData(useApi) {
             if (sdf) sdf.value = startVal;
             if (edf) edf.value = endVal;
         })();
+        var needsFourCatNow = (window._activeCat && window._activeCat !== '手机') || document.body.classList.contains('zb-case-library-mode');
+        if (needsFourCatNow && typeof window.zbEnsureFourCatData === 'function') {
+            try { await window.zbEnsureFourCatData(); } catch(e) { console.warn('[lazy-four-cat] 当前页面补载失败:', e); }
+        }
         if (typeof bridgeData === 'function') bridgeData();
         // 云端 reload 完后刷新数据健康预警条（之前只在上传 Excel 后跑一次，
         // 后续 reload 数据补全也要重新评估，避免显示过期的"缺失"列表）
@@ -8414,6 +8481,13 @@ async function zbLoadCloudData(useApi) {
             var _hadStale = zbCleanStaleEdits();
             if (_hadStale && typeof fullRefresh === 'function') fullRefresh();
         }
+        window._zbCoreDataReady = true;
+        try { document.dispatchEvent(new CustomEvent('zb:core-data-ready')); } catch(e) {}
+        var loadAuxWhenIdle = function(){
+            if (typeof window.zbLoadDeferredAux === 'function') window.zbLoadDeferredAux().catch(function(e){ console.warn('[deferred-aux] 加载失败:', e); });
+        };
+        if (typeof requestIdleCallback === 'function') requestIdleCallback(loadAuxWhenIdle, { timeout:3000 });
+        else setTimeout(loadAuxWhenIdle, 1200);
     } else {
         showToast('云端暂无数据，请上传文件');
         if (typeof zbSetCloudStatus === 'function') zbSetCloudStatus('err');
@@ -11628,6 +11702,8 @@ async function zbCaseLibLoadRealData(force) {
     _caseLibState.error = '';
     zbCaseLibSetLoadingText('正在读取云端案例图...');
     try {
+        if (typeof window.zbEnsureFourCatData === 'function') await window.zbEnsureFourCatData();
+        if (typeof bridgeData === 'function') bridgeData();
         var attach = (typeof zbLoadAttach === 'function') ? await zbLoadAttach(force) : {};
         await zbLoadCaseStars(force);
         var diffRows = Array.isArray(window._allDiffData) ? window._allDiffData : [];
@@ -17276,6 +17352,7 @@ var _ZB_CORRECTION_KEY = 'zb_person_corrections_v1';
 async function zbProcessCorrectionFile(file) {
     showToast('⏳ 解析手机原操作人矫正表中…');
     try {
+        await window.zbEnsureXlsx();
         var arrayBuffer = await new Promise(function(resolve, reject) {
             var reader = new FileReader();
             reader.onload = function(e){ resolve(e.target.result); };
@@ -17547,8 +17624,8 @@ async function zbRemoveCorrection(code, prefetchedCloud) {
             setTimeout(_applyWhenReady, 1000);
         }
     } catch(e) {}
-    // 后台拉 GitHub 最新版本
-    setTimeout(async function() {
+    // 后台拉 GitHub 最新版本：核心质量数据完成后再拉，避免首屏阶段抢网络。
+    var _pullLatestCorrections = async function() {
         try {
             var token = zbGetToken();
             var latest = await ghApiFetch(GH_FILES.personCorrections, token);
@@ -17559,7 +17636,10 @@ async function zbRemoveCorrection(code, prefetchedCloud) {
                 }
             }
         } catch(e) {} // 文件不存在时静默跳过
-    }, 3000);
+    };
+    var _scheduleLatestCorrections = function(){ setTimeout(_pullLatestCorrections, 1200); };
+    if (window._zbCoreDataReady) _scheduleLatestCorrections();
+    else document.addEventListener('zb:core-data-ready', _scheduleLatestCorrections, { once:true });
 })();
 
 // ── 纠正表日志渲染 ──
@@ -17984,8 +18064,12 @@ window.zbFbMarkAllRead = async function() {
     zbRenderFeedbackAdmin();
 };
 
-// 初始化时加载反馈
-setTimeout(zbLoadFeedback, 2000);
+// 初始化时加载反馈：等核心质量数据 ready 后再拉，减少首屏网络争用。
+(function zbInitFeedbackLoad() {
+    var run = function(){ setTimeout(zbLoadFeedback, 1600); };
+    if (window._zbCoreDataReady) run();
+    else document.addEventListener('zb:core-data-ready', run, { once:true });
+})();
 
 // 把原上传按钮改成打开弹窗
 document.addEventListener('DOMContentLoaded', function(){
@@ -18504,7 +18588,8 @@ window.zbExpRiUpdSummary = function() {
     if(el) el.innerHTML = (cat || '全部品类') + ' · ' + (s||'—') + ' ~ ' + (e||'—') + ' · ' + scope + '口径 · 导出Excel';
 };
 
-window.zbExportRankExcel = function(opts) {
+window.zbExportRankExcel = async function(opts) {
+    await window.zbEnsureXlsx();
     opts = opts || {};
     var D = window._DATA || {};
     if (typeof XLSX === 'undefined') { showToast && showToast('❌ Excel组件未加载'); return; }
@@ -20083,7 +20168,8 @@ document.addEventListener('DOMContentLoaded', function() {
 /* ─────────────────────────────────────────────
    解析 + 比对
 ───────────────────────────────────────────── */
-function wcProcessFile(file) {
+async function wcProcessFile(file) {
+    await window.zbEnsureXlsx();
     var reader = new FileReader();
     reader.onload = function(e) {
         try {
@@ -20408,8 +20494,9 @@ window.wcPgGo = function(p) {
 /* ─────────────────────────────────────────────
    导出 Excel
 ───────────────────────────────────────────── */
-window.wcExport = function() {
+window.wcExport = async function() {
     if (!WC.diffs.length) { if(window.showToast) showToast('暂无数据'); return; }
+    await window.zbEnsureXlsx();
     var headers = ['序号','质检码','日期','站点','差异类型',
         '操作人(日度)','操作人(周度)',
         '质检项类型(日度)','质检项类型(周度)',
