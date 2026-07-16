@@ -13929,16 +13929,45 @@ function zbMarkQueryPending() {
   btn.textContent = '! 查询';
 }
 // ══ 全局搜索 ══
-window._zbSearchScope = 'current'; // 'current' | 'all'
+window._zbSearchScope = 'all'; // 全局搜索默认不受顶部日期、品类和口径限制
 window._zbSearchFocusIdx = -1;
 
-window.zbOpenSearch = function() {
+window.zbApplySearchScopeUI = function() {
+    var track = document.getElementById('zbSearchScopeTrack');
+    var thumb = document.getElementById('zbSearchScopeThumb');
+    var label = document.getElementById('zbSearchScopeLabel');
+    if (window._zbSearchScope === 'all') {
+        if (track) { track.style.background = '#dbeafe'; }
+        if (thumb) { thumb.style.left = '14px'; thumb.style.background = '#2563eb'; }
+        if (label) { label.style.color = '#2563eb'; label.textContent = '全量搜索'; }
+    } else {
+        if (track) { track.style.background = '#e2e8f0'; }
+        if (thumb) { thumb.style.left = '2px'; thumb.style.background = '#94a3b8'; }
+        if (label) { label.style.color = '#64748b'; label.textContent = '当前范围'; }
+    }
+    zbUpdateSearchScopeHint();
+};
+
+window.zbOpenSearch = async function() {
     var overlay = document.getElementById('zbSearchOverlay');
     if (!overlay) return;
+    window._zbSearchScope = 'all';
     overlay.style.display = 'flex';
     setTimeout(function(){ document.getElementById('zbSearchInput').focus(); }, 50);
-    zbUpdateSearchScopeHint();
+    zbApplySearchScopeUI();
     zbSearchQuery('');
+    if (!window._zbFourCatReady && typeof window.zbEnsureFourCatData === 'function') {
+        var results = document.getElementById('zbSearchResults');
+        if (results) results.innerHTML = '<div style="padding:24px;text-align:center;font-size:12px;color:#64748b;">正在加载全部品类数据...</div>';
+        try {
+            await window.zbEnsureFourCatData();
+            if (typeof bridgeData === 'function') bridgeData();
+        } catch (e) {
+            console.warn('[global-search] 四品类数据加载失败:', e);
+        }
+        var input = document.getElementById('zbSearchInput');
+        zbSearchQuery(input ? input.value : '');
+    }
 };
 
 window.zbCloseSearch = function(e) {
@@ -13978,19 +14007,7 @@ document.addEventListener('keydown', function(e) {
 
 window.zbToggleSearchScope = function() {
     window._zbSearchScope = window._zbSearchScope === 'current' ? 'all' : 'current';
-    var track = document.getElementById('zbSearchScopeTrack');
-    var thumb = document.getElementById('zbSearchScopeThumb');
-    var label = document.getElementById('zbSearchScopeLabel');
-    if (window._zbSearchScope === 'all') {
-        if (track) { track.style.background = '#dbeafe'; }
-        if (thumb) { thumb.style.left = '14px'; thumb.style.background = '#2563eb'; }
-        if (label) { label.style.color = '#2563eb'; label.textContent = '全量搜索'; }
-    } else {
-        if (track) { track.style.background = '#e2e8f0'; }
-        if (thumb) { thumb.style.left = '2px'; thumb.style.background = '#94a3b8'; }
-        if (label) { label.style.color = '#64748b'; label.textContent = '当前范围'; }
-    }
-    zbUpdateSearchScopeHint();
+    zbApplySearchScopeUI();
     var input = document.getElementById('zbSearchInput');
     if (input) zbSearchQuery(input.value);
 };
@@ -14550,7 +14567,7 @@ function _zbWeeklyDedupMaps(data, groupField, r) {
     var curSets = {}, lastSets = {};
     (data||[]).forEach(function(d){
         var dt = d.date ? d.date.split(' ')[0] : '';
-        var k = d[groupField] || '未知';
+        var k = typeof groupField === 'function' ? groupField(d) : (d[groupField] || '未知');
         var code = d.code || ('__nc__'+Math.random());
         if (dt >= r.curStart && dt <= r.curEnd) {
             if (!curSets[k]) curSets[k] = new Set();
@@ -14565,6 +14582,13 @@ function _zbWeeklyDedupMaps(data, groupField, r) {
     Object.keys(curSets).forEach(function(k){ cur[k] = curSets[k].size; });
     Object.keys(lastSets).forEach(function(k){ last[k] = lastSets[k].size; });
     return { cur: cur, last: last };
+}
+
+function _zbWeeklyItemName(d) {
+    var level2 = String((d && (d.level2 || d.level2_new)) || '').trim();
+    var level3 = String((d && (d.level3 || d.level3_new)) || '').trim() || '未知';
+    if (!level2 || level2 === '-' || level2 === '—') return level3;
+    return level2 + '｜' + level3;
 }
 
 // 生成单张周报对比表（5列：名称/上周差异数量/本周差异数量/变化/原因分析）
@@ -14651,7 +14675,7 @@ async function zbGenerateWeeklyReport() {
     var personData = window._sitePersonData || [];
     var execDiff   = window._siteExecDiff || [];
     var personMaps = _zbWeeklyDedupMaps(personData, 'person', r);
-    var level3Maps = _zbWeeklyDedupMaps(execDiff, 'level3', r);
+    var level3Maps = _zbWeeklyDedupMaps(execDiff, _zbWeeklyItemName, r);
 
     // 还原页面状态
     if (!prevCompare && typeof zbRenderSiteDetail === 'function') {
@@ -14669,7 +14693,7 @@ async function zbGenerateWeeklyReport() {
         curSectionTitle: '本周失误人明细', lastSectionTitle: '上周失误人明细'
     });
     var table2 = _zbBuildWeeklyReportTable({
-        nameLabel: '三级项名称',
+        nameLabel: '二级项｜三级项',
         curMap: level3Maps.cur, lastMap: level3Maps.last,
         curLabel: r.curLabel, lastLabel: r.lastLabel,
         curSectionTitle: '本周失误项明细', lastSectionTitle: '上周失误项明细'
@@ -14677,7 +14701,7 @@ async function zbGenerateWeeklyReport() {
 
     var html = '<div style="'+FONT+'font-size:13pt;font-weight:700;color:#1e293b;margin-bottom:6px;">'+siteName+' · 人维度周报</div>'
         + table1
-        + '<div style="'+FONT+'font-size:13pt;font-weight:700;color:#1e293b;margin:14px 0 6px;">'+siteName+' · 三级项维度周报</div>'
+        + '<div style="'+FONT+'font-size:13pt;font-weight:700;color:#1e293b;margin:14px 0 6px;">'+siteName+' · 质检项维度周报</div>'
         + table2;
 
     try {
@@ -14787,7 +14811,7 @@ function _zbTRBuildTable(siteType, r, groupField, specificSite) {
         if (!isObj(d.category)) return;
         if (!isExec(normJt(d.judgedIssueType||''))) return;
         if (!d.code) return;
-        var fv = d[f]||'未知';
+        var fv = groupField === 'level3_new' ? _zbWeeklyItemName(d) : (d[f]||'未知');
         var dt = (d.date||'').split(' ')[0];
         if (dt>=r.curStart  && dt<=r.curEnd   && !firstCur[d.code])  firstCur[d.code]  = fv;
         if (dt>=r.lastStart && dt<=r.lastEnd  && !firstLast[d.code]) firstLast[d.code] = fv;
@@ -15039,7 +15063,7 @@ async function zbGenerateTrainerReport(orgScope) {
     async function tableMaps(s,c,field,withReasons,scope){
         var curRows=uniqueExec(s,c,r.curStart,r.curEnd,scope),lastRows=uniqueExec(s,c,r.lastStart,r.lastEnd,scope);
         var maps={cur:{},last:{},reasons:{},images:{}};
-        function key(d){return field==='person'?(d.person||'未知'):(d.level3||d.level3_new||'未知');}
+        function key(d){return field==='person'?(d.person||'未知'):_zbWeeklyItemName(d);}
         curRows.forEach(function(d){var k=key(d);maps.cur[k]=(maps.cur[k]||0)+1;});
         lastRows.forEach(function(d){var k=key(d);maps.last[k]=(maps.last[k]||0)+1;});
         if(withReasons&&typeof zbGetRowNote==='function'){
@@ -15168,7 +15192,7 @@ async function zbGenerateTrainerReport(orgScope) {
     html+='<div style="font-weight:700;margin:9px 0 3px;">具体原因：</div><div contenteditable="true" style="min-height:22px;border-bottom:1px dashed #cbd5e1;"></div>';
     sectionData.forEach(function(x){
         html+='<div style="font-size:12pt;font-weight:700;color:'+blue+';margin:16px 0 4px;">▶'+x.cfg.name+'</div><div>'+summary(x.bd,x.orgBd)+'</div>'
-            +'<div style="font-weight:700;margin:9px 0 4px;">●质检项维度</div>'+_zbTRRenderTable(x.items,'三级项名称',r.curLabel,r.lastLabel,true)
+            +'<div style="font-weight:700;margin:9px 0 4px;">●质检项维度</div>'+_zbTRRenderTable(x.items,'二级项｜三级项',r.curLabel,r.lastLabel,true)
             +'<div style="font-weight:700;margin:12px 0 4px;">●质检人维度</div>'+_zbTRRenderTable(x.people,'操作人',r.curLabel,r.lastLabel,false);
     });
     function blank(label){return '<div style="margin:5px 0;"><span>'+label+'</span><span contenteditable="true" style="display:inline-block;min-width:260px;min-height:18px;border-bottom:1px dashed #cbd5e1;"></span></div>';}
@@ -15412,7 +15436,7 @@ async function zbGenerateTrainerReportLegacy() {
         + '<div '+P+'><span '+LABEL+'>上周：</span>'+block()+'</div>'
         + '<div '+P+'><span '+LABEL+'>具体原因：</span>'+block()+'</div>'
         + '<div style="margin:10px 0 4px;"><b style="font-size:14px;color:#374151;">质检项维度（本周 '+r.curLabel+' vs 上周 '+r.lastLabel+'）</b></div>'
-        + _zbTRRenderTable(dwL3, '三级项名称', r.curLabel, r.lastLabel)
+        + _zbTRRenderTable(dwL3, '二级项｜三级项', r.curLabel, r.lastLabel)
         + '<div style="margin:14px 0 4px;"><b style="font-size:14px;color:#374151;">质检人维度</b></div>'
         + _zbTRRenderTable(dwPer, '操作人', r.curLabel, r.lastLabel)
 
@@ -15421,7 +15445,7 @@ async function zbGenerateTrainerReportLegacy() {
         + '<div '+P+'>'+fIssue(hyCur)+'；</div>'
         + '<div '+P+'><span '+LABEL+'>上周：</span>'+block()+'</div>'
         + '<div style="margin:10px 0 4px;"><b style="font-size:14px;color:#374151;">质检项维度（本周 '+r.curLabel+' vs 上周 '+r.lastLabel+'）</b></div>'
-        + _zbTRRenderTable(hyL3, '三级项名称', r.curLabel, r.lastLabel)
+        + _zbTRRenderTable(hyL3, '二级项｜三级项', r.curLabel, r.lastLabel)
         + '<div style="margin:14px 0 4px;"><b style="font-size:14px;color:#374151;">质检人维度</b></div>'
         + _zbTRRenderTable(hyPer, '操作人', r.curLabel, r.lastLabel)
 
@@ -18266,17 +18290,17 @@ document.addEventListener('DOMContentLoaded', function(){
       <input id="zbSearchInput" placeholder="搜索质检码、质检人、站点、质检项..." style="flex:1;font-size:13px;color:#0f172a;border:none;outline:none;background:transparent;" oninput="zbSearchQuery(this.value)">
       <!-- Toggle E样式 -->
       <div id="zbSearchScopeWrap" onclick="zbToggleSearchScope()" style="display:flex;align-items:center;gap:6px;cursor:pointer;flex-shrink:0;user-select:none;">
-        <div id="zbSearchScopeTrack" style="width:28px;height:16px;border-radius:8px;background:#e2e8f0;position:relative;transition:background .2s;flex-shrink:0;">
-          <div id="zbSearchScopeThumb" style="width:12px;height:12px;border-radius:50%;background:#94a3b8;position:absolute;top:2px;left:2px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.15);"></div>
+        <div id="zbSearchScopeTrack" style="width:28px;height:16px;border-radius:8px;background:#dbeafe;position:relative;transition:background .2s;flex-shrink:0;">
+          <div id="zbSearchScopeThumb" style="width:12px;height:12px;border-radius:50%;background:#2563eb;position:absolute;top:2px;left:14px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.15);"></div>
         </div>
-        <span id="zbSearchScopeLabel" style="font-size:11px;color:#64748b;transition:color .2s;white-space:nowrap;">当前范围</span>
+        <span id="zbSearchScopeLabel" style="font-size:11px;color:#2563eb;transition:color .2s;white-space:nowrap;">全量搜索</span>
       </div>
       <span onclick="zbCloseSearch()" style="font-size:10px;color:#94a3b8;background:#f1f5f9;padding:2px 7px;border-radius:4px;border:1px solid #e2e8f0;cursor:pointer;flex-shrink:0;">ESC</span>
     </div>
     <!-- 范围提示条 -->
-    <div id="zbSearchScopeHint" style="padding:5px 16px;font-size:11px;color:#64748b;background:#f8fafc;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:6px;">
-      <div id="zbSearchScopeHintDot" style="width:5px;height:5px;border-radius:50%;background:#2563eb;flex-shrink:0;"></div>
-      <span id="zbSearchScopeHintText">当前范围：加载中...</span>
+    <div id="zbSearchScopeHint" style="padding:5px 16px;font-size:11px;color:#64748b;background:#fff9f0;border-bottom:1px solid #f1f5f9;display:flex;align-items:center;gap:6px;">
+      <div id="zbSearchScopeHintDot" style="width:5px;height:5px;border-radius:50%;background:#f59e0b;flex-shrink:0;"></div>
+      <span id="zbSearchScopeHintText">全量搜索：所有日期 · 所有品类 · 不限口径</span>
     </div>
     <!-- 结果区 -->
     <div id="zbSearchResults" style="max-height:380px;overflow-y:auto;"></div>
