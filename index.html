@@ -20150,6 +20150,8 @@ function _zbBcUpdateVisibility(){
 // 几何线框：淡蓝色三角/六边/圆环空心线条缓慢漂浮 + 旋转
 // 数量较少（线框比光点存在感强），三种形状交替分布
 (function(){
+    var ENABLE_BACKGROUND_PARTICLES = false;
+    if (!ENABLE_BACKGROUND_PARTICLES) return;
     if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     var layer = document.createElement('div');
     layer.className = 'bg-particles';
