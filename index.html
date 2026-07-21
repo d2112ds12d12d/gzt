@@ -793,9 +793,26 @@
         .case-library-page { display:block; }
         .case-library-panel { background:var(--card-bg); border:1px solid var(--border-color); border-radius:14px; box-shadow:var(--shadow-sm); }
         .case-library-shell { padding:14px 16px 18px; min-height:calc(100vh - 118px); }
-        .case-library-cats { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:10px; }
-        .case-cat-btn { height:32px; padding:0 18px; border-radius:18px; border:1px solid var(--border-color); background:#fff; color:#64748b; font-size:13px; font-weight:800; cursor:pointer; }
-        .case-cat-btn.active { background:#2563eb; color:#fff; border-color:#2563eb; box-shadow:0 8px 18px rgba(37,99,235,.18); }
+        .case-library-cats { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:12px; }
+        .case-overview-btn { height:34px; padding:0 15px; border-radius:8px; border:1px solid #bfdbfe; background:#fff; color:#2563eb; font-size:13px; font-weight:800; cursor:pointer; }
+        .case-overview-btn.active { background:#2563eb; color:#fff; border-color:#2563eb; box-shadow:0 7px 16px rgba(37,99,235,.16); }
+        .case-nav-divider { width:1px; height:22px; background:#dbe5f2; flex:0 0 auto; }
+        .case-category-group { min-width:0; display:flex; align-items:center; gap:10px; }
+        .case-category-label { color:#94a3b8; font-size:11px; font-weight:800; white-space:nowrap; }
+        .case-category-tabs { min-width:0; display:flex; align-items:center; gap:4px; overflow-x:auto; scrollbar-width:none; }
+        .case-category-tabs::-webkit-scrollbar { display:none; }
+        .case-category-tab { position:relative; height:34px; padding:0 12px; border:0; background:transparent; color:#64748b; font-size:13px; font-weight:800; cursor:pointer; white-space:nowrap; }
+        .case-category-tab::after { content:''; position:absolute; left:10px; right:10px; bottom:0; height:2px; border-radius:2px; background:transparent; }
+        .case-category-tab:hover { color:#2563eb; }
+        .case-category-tab.active { color:#2563eb; }
+        .case-category-tab.active::after { background:#2563eb; }
+        @media (max-width:720px) {
+            .case-library-cats { gap:8px; flex-wrap:nowrap; }
+            .case-nav-divider { height:20px; }
+            .case-category-group { flex:1; overflow:hidden; gap:6px; }
+            .case-category-tab { padding:0 9px; }
+            .case-category-tab::after { left:7px; right:7px; }
+        }
         .case-filter-desk { border:1px solid #dbe5f2; border-radius:13px; background:linear-gradient(180deg,#f8fbff,#fff); padding:11px; margin-bottom:12px; }
         .case-filter-grid { display:grid; grid-template-columns:repeat(3,minmax(150px,1fr)) minmax(220px,1.45fr) 132px; gap:9px; align-items:end; }
         .case-combo-box { position:relative; min-width:0; }
@@ -7205,8 +7222,8 @@ function zbUpdateDraftUI() {
     btn.disabled = !!window._zbDraftSyncing;
 }
 
-async function zbPushAttachDrafts(token) {
-    var dirtySnapshot = JSON.parse(JSON.stringify(_zbAttachDirty || {}));
+async function zbPushAttachDrafts(token, selectedDirty) {
+    var dirtySnapshot = JSON.parse(JSON.stringify(selectedDirty || _zbAttachDirty || {}));
     if (!Object.keys(dirtySnapshot).length) return { allOk: true };
     var latest = {};
     try {
@@ -11853,11 +11870,15 @@ function zbCaseLibRenderCats() {
     var catMap = {};
     baseCats.forEach(function(cat){ catMap[cat] = true; });
     _caseLibCases.forEach(function(x){ if (x && x.cat) catMap[x.cat] = true; });
-    var cats = ['首页'].concat(Object.keys(catMap));
-    if (cats.indexOf(_caseLibState.cat) < 0) _caseLibState.cat = '首页';
-    el.innerHTML = cats.map(function(cat) {
-        return '<button class="case-cat-btn' + (_caseLibState.cat === cat ? ' active' : '') + '" onclick="zbCaseLibSetCat(\'' + cat + '\')">' + cat + '</button>';
+    var cats = Object.keys(catMap);
+    if (_caseLibState.cat !== '首页' && cats.indexOf(_caseLibState.cat) < 0) _caseLibState.cat = '首页';
+    var overview = '<button class="case-overview-btn' + (_caseLibState.cat === '首页' ? ' active' : '') + '" onclick="zbCaseLibSetCat(\'首页\')">▦ 图库总览</button>';
+    var tabs = cats.map(function(cat) {
+        return '<button class="case-category-tab' + (_caseLibState.cat === cat ? ' active' : '') + '" onclick="zbCaseLibSetCat(\'' + cat + '\')">' + cat + '</button>';
     }).join('');
+    el.innerHTML = overview
+        + '<span class="case-nav-divider" aria-hidden="true"></span>'
+        + '<div class="case-category-group"><span class="case-category-label">按品类浏览</span><div class="case-category-tabs">' + tabs + '</div></div>';
 }
 
 function zbCaseLibSetCat(cat) {
@@ -12242,9 +12263,24 @@ async function zbCaseLibDeleteSelected() {
         if (typeof showToast === 'function') showToast('仅管理员可删除案例图库关联');
         return;
     }
-    if (!confirm('确定删除选中的 ' + ids.length + ' 个案例图库关联？\n\n只会删除图库/差异明细里的图片关联，不会物理删除 COS 图片文件。删除后需点击右上角「上传云端」才会同步给其他人。')) return;
-    var attach = await zbLoadAttach();
+    if (window._zbCaseLibDeleteSyncing) return;
+    var token = typeof zbGetToken === 'function' ? zbGetToken() : '';
+    if (!token) {
+        if (typeof showToast === 'function') showToast('❌ 缺少云端凭证，无法删除并同步');
+        return;
+    }
+    if (!confirm('确定删除选中的 ' + ids.length + ' 个案例图库关联？\n\n删除后会立即同步云端，并同时从差异明细移除图片关联；不会物理删除 COS 图片文件。')) return;
+    window._zbCaseLibDeleteSyncing = true;
+    var attach;
+    try {
+        attach = await zbLoadAttach();
+    } catch (loadErr) {
+        window._zbCaseLibDeleteSyncing = false;
+        if (typeof showToast === 'function') showToast('❌ 云端附件数据读取失败，未执行删除');
+        return;
+    }
     var selectedMap = {};
+    var deletionDirty = {};
     ids.forEach(function(id){ selectedMap[id] = true; });
     var removed = 0;
     ids.forEach(function(id) {
@@ -12261,6 +12297,8 @@ async function zbCaseLibDeleteSelected() {
         if (entry.images.length !== before) {
             removed += before - entry.images.length;
             _zbMarkAttachDirty(item.attachKey, 'images');
+            if (!deletionDirty[item.attachKey]) deletionDirty[item.attachKey] = {};
+            deletionDirty[item.attachKey].images = true;
         }
     });
     _zbAttach = attach;
@@ -12268,10 +12306,25 @@ async function zbCaseLibDeleteSelected() {
     _caseLibCases = _caseLibCases.filter(function(item) {
         return !(item && selectedMap[item.id]);
     });
-    zbCaseLibInvalidateFromAttachChange();
     zbCaseLibRenderGallery();
-    if (typeof showToast === 'function') {
-        showToast(removed ? '已删除 ' + removed + ' 个图片关联，待上传云端' : '未找到可删除的图片关联');
+    if (!removed) {
+        window._zbCaseLibDeleteSyncing = false;
+        if (typeof showToast === 'function') showToast('未找到可删除的图片关联');
+        return;
+    }
+    if (typeof showToast === 'function') showToast('正在删除并同步云端…');
+    try {
+        var syncResult = await zbPushAttachDrafts(token, deletionDirty);
+        if (!syncResult || !syncResult.allOk) throw new Error((syncResult && syncResult.errMsg) || '云端同步失败');
+        zbCaseLibInvalidateFromAttachChange();
+        if (typeof showToast === 'function') showToast('✅ 已删除 ' + removed + ' 个图片关联并同步云端');
+    } catch (err) {
+        console.warn('[case-library] delete sync failed', err);
+        _zbPersistDraftState();
+        zbUpdateDraftUI();
+        if (typeof showToast === 'function') showToast('⚠️ 已在本地删除，但云端同步失败；可稍后在差异明细补传');
+    } finally {
+        window._zbCaseLibDeleteSyncing = false;
     }
 }
 
