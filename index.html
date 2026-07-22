@@ -4178,6 +4178,12 @@
                 return checks > 0 ? (execDiff / checks * 100) : null;
             }
 
+            function zbIsValidRankSite(site) {
+                const value = String(site == null ? '' : site).trim();
+                if (!value) return false;
+                return !['null', 'undefined', '/', '-', '—'].includes(value.toLowerCase());
+            }
+
             function renderNewRankBoard() {
                 const cat = currentRankCat;
                 // 日期口径：使用筛选器范围内的最后一天 vs 前一天（T-1）
@@ -4240,7 +4246,7 @@
                 const dwDynRows = buildRows(DW_SITES, false).sort((a,b) => (a.rate===null?1:0) - (b.rate===null?1:0) || (a.rate||0) - (b.rate||0));
                 const dwFixRows = buildRows(DW_HOUYAN, true);
                 // 中心仓：排除大仓和后验中心仓，动态排名
-                const allSites = [...new Set([...DATA.qa,...DATA.sum].map(r=>r.site).filter(Boolean))];
+                const allSites = [...new Set([...DATA.qa,...DATA.sum].map(r=>r.site).filter(zbIsValidRankSite))];
                 const zxDynamic = allSites.filter(s => !DW_SITES.includes(s) && !DW_HOUYAN.includes(s));
                 const zxDynRows = buildRows(zxDynamic, false).sort((a,b) => (a.rate===null?1:0) - (b.rate===null?1:0) || (a.rate||0) - (b.rate||0));
                 const zxFixRows = [];
