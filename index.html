@@ -8472,6 +8472,49 @@ async function zbLoadCloudData(useApi) {
         return Promise.resolve(true);
     };
 
+    window._zbScopeSwitchLoading = false;
+    window.zbScopeNeedsFullLoad = function(scope) {
+        scope = String(scope || 'exec');
+        return (scope === 'subj' || scope === 'all') && !window._zbFullDiffReady;
+    };
+    window.zbSetScopeLoadingState = function(loading, scope) {
+        window._zbScopeSwitchLoading = !!loading;
+        var scopeLabel = String(scope || '') === 'all' ? '全部' : '主观';
+        var label = document.getElementById('zbKouJingLabel');
+        var siteHint = document.getElementById('siteDataScopeHint');
+        var controls = document.querySelectorAll('.zb-kj-item, #siteDataScopeTab button[data-scope]');
+        if (loading) {
+            if (label && !label.dataset.zbIdleText) label.dataset.zbIdleText = label.textContent || '';
+            if (siteHint && !siteHint.dataset.zbIdleText) siteHint.dataset.zbIdleText = siteHint.textContent || '';
+            if (label) label.textContent = '正在加载' + scopeLabel + '数据…';
+            if (siteHint) siteHint.textContent = '正在加载完整数据，请稍候…';
+            controls.forEach(function(el) {
+                if (!el.dataset.zbPrevPointerEvents) el.dataset.zbPrevPointerEvents = el.style.pointerEvents || '';
+                if (!el.dataset.zbPrevOpacity) el.dataset.zbPrevOpacity = el.style.opacity || '';
+                el.style.pointerEvents = 'none';
+                el.style.opacity = '0.55';
+                el.setAttribute('aria-busy', 'true');
+            });
+            if (typeof showToast === 'function') showToast('⏳ 正在加载完整数据，请稍候…');
+            return;
+        }
+        if (label && label.dataset.zbIdleText) {
+            label.textContent = label.dataset.zbIdleText;
+            delete label.dataset.zbIdleText;
+        }
+        if (siteHint && siteHint.dataset.zbIdleText) {
+            siteHint.textContent = siteHint.dataset.zbIdleText;
+            delete siteHint.dataset.zbIdleText;
+        }
+        controls.forEach(function(el) {
+            el.style.pointerEvents = el.dataset.zbPrevPointerEvents || '';
+            el.style.opacity = el.dataset.zbPrevOpacity || '';
+            delete el.dataset.zbPrevPointerEvents;
+            delete el.dataset.zbPrevOpacity;
+            el.removeAttribute('aria-busy');
+        });
+    };
+
     let loaded = 0;
 
     // 首屏只拉手机总览需要的核心数据；四品类走上方按需加载。
@@ -12835,6 +12878,12 @@ document.addEventListener('DOMContentLoaded', function() {
         scopeTab.addEventListener('click', async function(e) {
             var btn = e.target.closest('button[data-scope]');
             if (!btn) return;
+            if (window._zbScopeSwitchLoading) return;
+            var showScopeLoading = typeof window.zbScopeNeedsFullLoad === 'function'
+                && window.zbScopeNeedsFullLoad(btn.dataset.scope);
+            if (showScopeLoading && typeof window.zbSetScopeLoadingState === 'function') {
+                window.zbSetScopeLoadingState(true, btn.dataset.scope);
+            }
             if (typeof window.zbEnsureScopeData === 'function') {
                 try {
                     await window.zbEnsureScopeData(btn.dataset.scope);
@@ -12843,6 +12892,10 @@ document.addEventListener('DOMContentLoaded', function() {
                     console.warn('[site-scope] 数据补载失败:', err);
                     if (typeof showToast === 'function') showToast('口径数据加载失败，请重试', true);
                     return;
+                } finally {
+                    if (showScopeLoading && typeof window.zbSetScopeLoadingState === 'function') {
+                        window.zbSetScopeLoadingState(false, btn.dataset.scope);
+                    }
                 }
             }
             window._siteDataScope = btn.dataset.scope;
@@ -16120,11 +16173,17 @@ window.zbKouJingOutside = function(e) {
 document.addEventListener('click', async function(e) {
     var item = e.target.closest('.zb-kj-item');
     if (!item) return;
+    if (window._zbScopeSwitchLoading) return;
     var kj = item.dataset.kj;
     var label = item.dataset.label;
     var color = item.dataset.color || '#2563eb';
     var bg = item.dataset.bg || '#eff6ff';
     var border = item.dataset.border || '#bfdbfe';
+    var showScopeLoading = typeof window.zbScopeNeedsFullLoad === 'function'
+        && window.zbScopeNeedsFullLoad(kj);
+    if (showScopeLoading && typeof window.zbSetScopeLoadingState === 'function') {
+        window.zbSetScopeLoadingState(true, kj);
+    }
     if (typeof window.zbEnsureScopeData === 'function') {
         try {
             await window.zbEnsureScopeData(kj);
@@ -16133,6 +16192,10 @@ document.addEventListener('click', async function(e) {
             console.warn('[global-scope] 数据补载失败:', err);
             if (typeof showToast === 'function') showToast('口径数据加载失败，请重试', true);
             return;
+        } finally {
+            if (showScopeLoading && typeof window.zbSetScopeLoadingState === 'function') {
+                window.zbSetScopeLoadingState(false, kj);
+            }
         }
     }
     window._zbGlobalKouJing = kj;
@@ -16300,6 +16363,9 @@ function zbGetHealthIgnoreMap() {
 function zbLatestCompleteDataDate() {
     var DATA = window._DATA || {};
     var validDate = function(v){ return /^\d{4}-\d{2}-\d{2}$/.test(String(v||'')); };
+    // 客观轻量模式下，某品类当天没有客观差异是合法的，不能据此判定完整文件缺失。
+    // 只有完整明细已补载时，才沿用“汇总 + 完整差异明细”双轨判断。
+    var requireFullDiff = !!window._zbFullDiffReady || window._zbDetailLoadMode === 'full';
     var latestFromSet = function(set) {
         var arr = Array.from(set).filter(validDate).sort();
         return arr.length ? arr[arr.length - 1] : '';
@@ -16307,7 +16373,7 @@ function zbLatestCompleteDataDate() {
     var qaDates = new Set((DATA.qa||[]).map(function(r){ return r.date; }).filter(validDate));
     var diff5Dates = new Set((DATA.diff5||[]).map(function(r){ return r.date; }).filter(validDate));
     var phoneComplete = new Set();
-    qaDates.forEach(function(d){ if (diff5Dates.has(d)) phoneComplete.add(d); });
+    qaDates.forEach(function(d){ if (!requireFullDiff || diff5Dates.has(d)) phoneComplete.add(d); });
 
     var fiveCats = ['笔记本','平板','手表','耳机'];
     var sumKeys = new Set((DATA.sum||[]).filter(function(r){ return validDate(r.date) && r.cat; }).map(function(r){ return r.date+'||'+r.cat; }));
@@ -16321,7 +16387,7 @@ function zbLatestCompleteDataDate() {
     fiveDates.forEach(function(d) {
         var ok = fiveCats.every(function(cat){
             var k = d + '||' + cat;
-            return sumKeys.has(k) && diff4Keys.has(k);
+            return sumKeys.has(k) && (!requireFullDiff || diff4Keys.has(k));
         });
         if (ok) fiveComplete.add(d);
     });
@@ -16493,6 +16559,9 @@ function zbCheckDataHealth() {
     var bar = document.getElementById('zbDataHealthBar');
     if (!bar || _zbHealthDismissed) return;
     var DATA = window._DATA || {};
+    // 轻量模式只含客观记录；某日某品类只有主观问题时，轻量明细中没有该 key 属于正常情况。
+    // 因此仅在完整明细确实已加载后，才把差异明细 key 用作完整性依据。
+    var requireFullDiff = !!window._zbFullDiffReady || window._zbDetailLoadMode === 'full';
     // 四品类按需加载完成前不做完整性判断，避免登录定时器/辅助数据回调把“未加载”误报成“未上传”。
     if (!window._zbFourCatReady && !(Array.isArray(DATA.diff4) && DATA.diff4.length)) {
         bar.style.display = 'none';
@@ -16516,12 +16585,12 @@ function zbCheckDataHealth() {
         var dateStr = d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
         // 手机：qa 或 diff5 任一缺，都算缺
         if (!datesQa.has(dateStr)) missingPhoneItems.push({ date:dateStr, type:'phone', cat:'手机', field:'qa' });
-        if (!datesDiff5.has(dateStr)) missingPhoneItems.push({ date:dateStr, type:'phone', cat:'手机', field:'diff5' });
+        if (requireFullDiff && !datesDiff5.has(dateStr)) missingPhoneItems.push({ date:dateStr, type:'phone', cat:'手机', field:'diff5' });
         // 四品类：任一品类的 sum 或 diff4 缺，就算这天四品类有缺失
         fiveCats.forEach(function(cat){
             var k = dateStr + '||' + cat;
             if (!fiveSumKeys.has(k)) missingFiveItems.push({ date:dateStr, type:'five_cat', cat:cat, field:'sum' });
-            if (!fiveDiff4Keys.has(k)) missingFiveItems.push({ date:dateStr, type:'five_cat', cat:cat, field:'diff4' });
+            if (requireFullDiff && !fiveDiff4Keys.has(k)) missingFiveItems.push({ date:dateStr, type:'five_cat', cat:cat, field:'diff4' });
         });
     }
     var ignoreMap = zbGetHealthIgnoreMap();
@@ -16545,7 +16614,9 @@ function zbCheckDataHealth() {
     if (missingFive.length)  lines += '<div style="font-size:11px;color:#92400e;margin-top:2px;">四品类：' + missingFive.join(' · ') + '</div>';
     if (pendingInspector.length) lines += '<div style="font-size:11px;color:#92400e;margin-top:2px;">原操作人矫正表待同步：' + pendingInspector.join(' · ') + '</div>';
     if (failedInspector.length) lines += '<div style="font-size:11px;color:#b91c1c;margin-top:2px;">原操作人矫正表同步失败：' + failedInspector.join(' · ') + '</div>';
-    var noteStr = '※ 完整 = 手机需 qa+差异明细、四品类需 汇总+差异明细 都齐；矫正表状态仅在云端管理查看';
+    var noteStr = requireFullDiff
+        ? '※ 完整 = 手机需 qa+差异明细、四品类需 汇总+差异明细 都齐；矫正表状态仅在云端管理查看'
+        : '※ 当前为客观轻量模式：按手机 qa、四品类汇总判断上传完整性；无客观差异不再误报';
     if (!missingPhone.length && !missingFive.length && !pendingInspector.length && !failedInspector.length) { bar.style.display = 'none'; return; }
     var issueDates = new Set([...missingPhone, ...missingFive, ...pendingInspector, ...failedInspector]);
     var titleStr = issueDates.size ? ('近15天 '+issueDates.size+' 天数据未上传、缺失或未同步') : '近15天存在矫正表异常状态';
