@@ -407,6 +407,24 @@
             overflow: hidden;
         }
         .stats-spark svg { width: 100%; height: 100%; display: block; }
+        .stats-item[data-load-state="unloaded"] { border-color: rgba(245,158,11,.26); }
+        .stats-item[data-load-state="unloaded"]:focus-visible { outline: 2px solid #f59e0b; outline-offset: 2px; }
+        .stats-item[data-load-state="loading"] { pointer-events: none; opacity: .78; }
+        .stats-unloaded-hint { color:#b45309 !important; font-weight:600 !important; }
+        .stats-spark-unloaded { display:flex; align-items:center; justify-content:center; }
+        .stats-spark-unloaded::before {
+            content:''; position:absolute; left:0; right:0; top:50%;
+            border-top:1px dashed rgba(245,158,11,.45);
+        }
+        .stats-spark-unloaded span {
+            position:relative; z-index:1; padding:1px 8px; border-radius:999px;
+            background:rgba(255,255,255,.92); color:#b45309; font-size:9px; font-weight:600;
+        }
+        .stats-kpi-spinner {
+            display:inline-block; width:18px; height:18px; margin-right:7px; vertical-align:-2px;
+            border:2px solid rgba(245,158,11,.25); border-top-color:#f59e0b; border-radius:50%;
+            animation:zbSpin .7s linear infinite;
+        }
         .trend-chart-box { width: 100%; height: 380px; margin-top: 12px; }
         .insight-grid { display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; margin-top: 16px; align-items: start; }
         .obj-rank-wrapper { display: flex; flex-direction: column; min-width: 0; }
@@ -2577,7 +2595,9 @@
 
             function updateStatsBoard() {
                 if (!statsArea) return;
-                const hash = getFilterHash() + '|' + (typeof currentSiteType !== 'undefined' ? currentSiteType : 'ALL');
+                const hash = getFilterHash()
+                    + '|' + (typeof currentSiteType !== 'undefined' ? currentSiteType : 'ALL')
+                    + '|detail:' + (window._zbFullDiffReady ? 'full' : 'objective');
                 if (cache.stats && cache.filterHash === hash) { statsArea.innerHTML = cache.stats; return; }
                 if (!summaryData.length) { statsArea.innerHTML = '<div class="stats-item">⚠️ 请加载数据</div>'; return; }
 
@@ -2686,6 +2706,9 @@
                     var countupAttr = !isNaN(numVal) ? ` data-countup="${numVal}" ${isPercent?'data-countup-percent="1"':''}` : '';
                     return `<div class="stats-item" data-type="${type}" data-count="${dc||''}"><div class="stats-item-side" style="background:${KPI_COLORS[type]||'#2563eb'};"></div><div class="stats-item-body"><div class="stats-label">${label}</div><div class="stats-number" style="color:${KPI_NUM_COLORS[type]||'#1d4ed8'};"${countupAttr}>${val}</div>${yh||''}${sparkHtml?'<div class="stats-spark">'+sparkHtml+'</div>':''}</div></div>`;
                 };
+                const mkSubjectiveUnloaded = () => {
+                    return `<div class="stats-item" data-type="subj_diff" data-load-state="unloaded" data-count="" role="button" tabindex="0" aria-label="主观差异率尚未加载，点击加载并查看" title="主观数据默认不加载，点击后读取完整数据并查看明细"><div class="stats-item-side" style="background:${KPI_COLORS.subj_diff};"></div><div class="stats-item-body"><div class="stats-label">主观差异率（未加载）</div><div class="stats-number" style="color:${KPI_NUM_COLORS.subj_diff};">—</div><div class="stats-yest flat stats-unloaded-hint">点击加载主观数据</div><div class="stats-spark stats-spark-unloaded"><span>按需加载</span></div></div></div>`;
+                };
 
                 function kpiHtml(k, yk, trend) {
                     var tc=k.totalChecks;
@@ -2694,8 +2717,11 @@
                         if (!trend) return '';
                         return sparkSvg(trend[type], KPI_COLORS[type]);
                     };
+                    var subjCard = window._zbFullDiffReady
+                        ? mk('subj_diff',tc?(sR*100).toFixed(2)+'%':'0%','主观差异率（'+k.uniqueCodesSubj+'台）',k.uniqueCodesSubj,fmtY(sR,yk?yk.sR:null,false),sp('subj_diff'))
+                        : mkSubjectiveUnloaded();
                     return mk('total_checks',tc,'总抽检量','',fmtY(tc,yk?yk.tc:null,true),sp('total_checks'))
-                        +mk('subj_diff',tc?(sR*100).toFixed(2)+'%':'0%','主观差异率（'+k.uniqueCodesSubj+'台）',k.uniqueCodesSubj,fmtY(sR,yk?yk.sR:null,false),sp('subj_diff'))
+                        +subjCard
                         +mk('obj_diff',tc?(oR*100).toFixed(2)+'%':'0%','客观差异率（'+k.uniqueCodesObj+'台）',k.uniqueCodesObj,fmtY(oR,yk?yk.oR:null,false),sp('obj_diff'))
                         +mk('exec_diff',tc?(eR*100).toFixed(2)+'%':'0%','客观执行差异率（'+k.execObjTotal+'台）',k.execObjTotal,fmtY(eR,yk?yk.eR:null,false),sp('exec_diff'));
                 }
@@ -3927,7 +3953,7 @@
                 );
             }
 
-            window.openDetailWithData = function openDetailWithData(records, title, showCat) {
+            window.openDetailWithData = function openDetailWithData(records, title, showCat, forceKouJing) {
                 if (!records.length) { showToast('无明细数据'); return; }
                 // 每次打开新弹窗清空列筛选和透视过滤状态
                 if (window._dtState) { window._dtState.colFilters = {}; window._dtState.popupCol = null; }
@@ -3963,6 +3989,7 @@
                     else if (kouJingLabel.includes('主观')) kouJing='SUBJ';
                     else kouJing='ALL';
                 }
+                if (forceKouJing === 'SUBJ') { kouJing = 'SUBJ'; kouJingLabel = '主观'; }
                 window._modalKouJing = kouJing;
                 window._modalKouJingLabel = kouJingLabel;
 
@@ -5407,7 +5434,8 @@
                 if (issueTypeChart) issueTypeChart.resize();
             });
 
-            if (statsArea) statsArea.addEventListener('click', e => {
+            window._zbSubjectKpiLoading = false;
+            if (statsArea) statsArea.addEventListener('click', async e => {
                 const card = e.target.closest('.stats-item'); if (!card) return;
                 const type = card.dataset.type;
                 const deviceCount = card.dataset.count;
@@ -5415,11 +5443,49 @@
                 if (type === 'total_checks') { showToast('抽检总量为汇总统计，无明细数据'); return; }
                 else if (type === 'total_diff' || type === 'unique_all') { records = currentFilteredDiff; labelName = '差异总量'; }
                 else if (type === 'obj_diff' || type === 'unique_obj') { records = currentFilteredDiff.filter(d => isObjective(d.category)); labelName = '客观差异'; }
-                else if (type === 'subj_diff' || type === 'unique_subj') { records = currentFilteredDiff.filter(d => isSubjective(d.category)); labelName = '主观差异'; }
+                else if (type === 'subj_diff' || type === 'unique_subj') {
+                    labelName = '主观差异';
+                    if (!window._zbFullDiffReady) {
+                        if (window._zbSubjectKpiLoading) return;
+                        window._zbSubjectKpiLoading = true;
+                        card.dataset.loadState = 'loading';
+                        card.setAttribute('aria-busy', 'true');
+                        var body = card.querySelector('.stats-item-body');
+                        if (body) body.innerHTML = '<div class="stats-label">主观差异率</div><div class="stats-number" style="color:#b45309;font-size:18px;"><span class="stats-kpi-spinner"></span>加载中</div><div class="stats-yest flat stats-unloaded-hint">正在读取完整数据，请稍候…</div><div class="stats-spark stats-spark-unloaded"><span>请稍候</span></div>';
+                        if (typeof showToast === 'function') showToast('⏳ 正在加载主观数据…');
+                        try {
+                            if (typeof window.zbEnsureFullDiffData !== 'function') throw new Error('完整数据加载器未就绪');
+                            await window.zbEnsureFullDiffData();
+                            if (typeof bridgeData === 'function') bridgeData();
+                            if (typeof fullRefresh === 'function') fullRefresh();
+                            records = currentFilteredDiff.filter(d => isSubjective(d.category));
+                            var subjDeviceCount = new Set(records.map(d => d.code).filter(Boolean)).size;
+                            if (records.length) {
+                                openDetailWithData(records, `主观差异明细（${subjDeviceCount} 台设备 · ${records.length}条）`, true, 'SUBJ');
+                            } else if (typeof showToast === 'function') {
+                                showToast('当前筛选范围内主观差异为 0 台');
+                            }
+                        } catch(err) {
+                            console.warn('[subjective-kpi] 数据补载失败:', err);
+                            if (typeof fullRefresh === 'function') fullRefresh();
+                            if (typeof showToast === 'function') showToast('主观数据加载失败，请重试', true);
+                        } finally {
+                            window._zbSubjectKpiLoading = false;
+                        }
+                        return;
+                    }
+                    records = currentFilteredDiff.filter(d => isSubjective(d.category));
+                }
                 else if (type === 'exec_diff' || type === 'exec_count') { records = currentFilteredDiff.filter(d => isObjective(d.category) && isExecutionIssue(d.judgedIssueType)); labelName = '客观执行差异'; }
                 const countStr = deviceCount ? `${deviceCount} 台设备 · ` : '';
-                if (records.length) openDetailWithData(records, `${labelName}明细（${countStr}${records.length}条）`);
+                if (records.length) openDetailWithData(records, `${labelName}明细（${countStr}${records.length}条）`, true, labelName === '主观差异' ? 'SUBJ' : '');
                 else showToast('暂无数据');
+            });
+            if (statsArea) statsArea.addEventListener('keydown', e => {
+                var card = e.target.closest('.stats-item[data-load-state="unloaded"]');
+                if (!card || (e.key !== 'Enter' && e.key !== ' ')) return;
+                e.preventDefault();
+                card.click();
             });
 
             // 主题切换
