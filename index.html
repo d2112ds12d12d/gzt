@@ -1173,9 +1173,6 @@
     <!-- cos-js-sdk 已改为按需懒加载（见 head 中 zbEnsureCosSdk） v1.61B -->
 </head>
 <body>
-<!-- v1.61H 强制登录门禁（A3 接受管理员密码或培训师 ID；B1 永久登录；C1 全屏模态；D2 无后门）
-     注：默认 display:none，启动脚本判断未登录才显示；HTML 解析完到启动判断前的极短窗口期，下层内容尚未加载，不会有数据泄露。
-     应急说明：若密码全丢，从 GitHub 下载源文件，在浏览器 DevTools 里 localStorage.setItem('zb_role','admin') 后刷新即可。 -->
 <div id="zbLoginGate" style="display:none;position:fixed;inset:0;z-index:99999;align-items:center;justify-content:center;background:rgba(15,23,42,0.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);">
   <div style="background:#fff;border-radius:16px;padding:36px 44px;width:380px;max-width:90vw;box-shadow:0 20px 60px rgba(0,0,0,0.35);text-align:center;">
     <div style="font-size:14px;color:#94a3b8;margin-bottom:6px;letter-spacing:.08em;">ZHUAN · 培训部数据平台</div>
@@ -2306,7 +2303,7 @@
                 return catLinks[siteType] || null;
             };
 
-            // 保存表格链接配置到GitHub
+            // 保存表格链接配置到云端
             window.zbSaveTableLinks = async function zbSaveTableLinks() {
                 var token = (typeof window.zbGetToken === 'function' ? window.zbGetToken() : null)
                     || window._zbToken || window.zbToken || '';
@@ -5502,7 +5499,7 @@
             // v1.61C: 移除离线版周/月度 xlsx 自动加载
             // 原 loadDataByMode('weekly') 会尝试 fetch 同目录下的 周汇总表.xlsx/差异明细表.xlsx，
             // 实际部署目录不存在这俩文件 → fetch 404 → catch 静默，但 toast "正在加载周度数据..." 已经先弹了。
-            // 当前数据加载完全走 zbLoadCloudData（GitHub raw CDN），离线版入口已是死代码（按钮也早已从 UI 移除）。
+            // 当前数据加载完全走 zbLoadCloudData，离线版入口已是死代码（按钮也早已从 UI 移除）。
             // 函数体 loadDataByMode / processParsedData / setDataFromParsed 保留，
             // 防万一未来恢复按钮或外部隐式依赖；本行自动触发不再执行。
             // loadDataByMode('weekly');
@@ -6643,7 +6640,7 @@
 </div><!-- end zb-layout -->
 <script>
 // ══════════════════════════════════════════
-// GitHub 云端配置
+// 云端数据配置
 // ══════════════════════════════════════════
 const GH_USER = 'd2112ds12d12d', GH_REPO = 'Qgkb', GH_FOLDER = 'QGZLdata';
 
@@ -6714,11 +6711,7 @@ function _tk() { return _t.join(''); }
 
 function ghUrl(file) { return `https://api.github.com/repos/${GH_USER}/${GH_REPO}/contents/${GH_FOLDER}/${file}`; }
 function ghRaw(file) { var base = location.hostname.indexOf('github.io') !== -1 ? 'https://raw.githubusercontent.com/' + GH_USER + '/' + GH_REPO + '/main/' + GH_FOLDER : 'https://kanban.zhuanzhuan.tw.cn/' + GH_FOLDER; return base + '/' + file + '?t=' + Date.now(); }
-// GitHub Contents API — 绕过 CDN，推送后几乎立即可读，需要 Token
-// 大文件兜底：Contents API 对 >1MB 文件返回 encoding:'none' 且 content 为空，
-// 此时必须改走 Git Blob API（/git/blobs/{sha}，上限 100MB，同样不经 CDN）。
-// 不处理这条分支会让本函数返回 null → 调用方退回 raw.githubusercontent.com，
-// 而 raw CDN 有 ~5min Fastly 缓存且 ?t= 不会绕过它，导致推送后其他人刷新看不到。
+// 云端接口优先读取；大文件返回内容为空时改走对象接口兜底。
 async function ghApiFetch(fname, token) {
     const r = await fetch(ghUrl(fname) + '?t=' + Date.now(), { headers: { Authorization: 'token ' + token } });
     if (!r.ok) return null;
@@ -7014,7 +7007,7 @@ async function zbSaveCaseStarToggle(starKey, meta, nextMine) {
             return latest;
         }
         if (put.status === 409 && attempt < 2) continue;
-        throw new Error('GitHub 写入失败：' + put.status);
+        throw new Error('云端写入失败：' + put.status);
     }
     throw new Error('标星同步失败，请稍后再试');
 }
@@ -8621,7 +8614,7 @@ async function zbLoadCloudData(useApi) {
     // 每次 zbLoadCloudData 会用它覆盖局部 dtEdits 变量，导致刷新云端反而把刚改的新值
     // 盖回早期脏数据（实测 bug 根因，2026-06-01）。
     // 现在 phone_diff_YM.json 才是 inspector 字段的唯一真相，覆盖层已无用且有害。
-    // 老文件留在 GitHub 上当历史归档，不再读取。
+    // 老文件仅作历史归档，不再读取。
 
     // 管理页/日志/健康忽略配置不阻塞首屏，核心数据完成后在空闲时补齐。
     window._zbAuxLoadPromise = null;
@@ -8819,7 +8812,7 @@ function zbShowSkeletonError(useApi) {
     });
 }
 
-// ── 推送到GitHub ──
+// ── 推送到云端 ──
 // ── 带进度遮罩的批量云端推送 ──
 async function zbPushAllWithProgress(uploadedKeys) {
     var tasks = [
@@ -9042,7 +9035,7 @@ async function _zbPushFile(fname, content, token) {
 }
 
 // 月度分片 merge 推送：先拉云端、用内存行按 key 覆盖、保留云端独有行
-// 用于 zbPushToGitHub / _doEditSave / zbPushEdits 三条路径
+// 三条写入路径共用的月分片同步逻辑
 // rowKey: r => string，必须能稳定标识"同一条记录"（diff5 用 date|code|site）
 // label: 日志前缀
 async function _zbPushMonthlyMerge(fname, memRows, rowKey, token, label) {
@@ -17431,7 +17424,7 @@ async function zbMigrateDw4Legacy() {
       showToast('✅ 旧数据已合并至分片文件');
     }
 
-    // 删除旧文件（写入空内容占位，GitHub不支持直接删除，用API删）
+    // 删除旧文件
     var delOk = true;
     for (var j = 0; j < legacyFiles.length; j++) {
       var fn = legacyFiles[j];
@@ -17450,7 +17443,7 @@ async function zbMigrateDw4Legacy() {
       localStorage.setItem('zb_dw4_migrated', '1');
       showToast('✅ 迁移完成，旧文件已从云端删除');
     } else {
-      showToast('⚠️ 数据已迁移，但部分旧文件删除失败，可手动到 GitHub 删除');
+      showToast('⚠️ 数据已迁移，但部分旧文件删除失败，请到云端数据仓库处理');
       localStorage.setItem('zb_dw4_migrated', '1');
     }
 
@@ -18124,7 +18117,7 @@ async function zbRemoveCorrection(code, prefetchedCloud) {
     return result;
 }
 
-// 页面加载时自动从 localStorage 恢复纠正（快速），后台再从 GitHub 拉最新
+// 页面加载时先恢复本地纠正缓存，后台再拉取云端最新版本
 (function zbInitCorrections() {
     try {
         var cached = localStorage.getItem(_ZB_CORRECTION_KEY);
@@ -18141,7 +18134,7 @@ async function zbRemoveCorrection(code, prefetchedCloud) {
             setTimeout(_applyWhenReady, 1000);
         }
     } catch(e) {}
-    // 后台拉 GitHub 最新版本：核心质量数据完成后再拉，避免首屏阶段抢网络。
+    // 后台拉取云端最新版本：核心质量数据完成后再拉，避免首屏阶段抢网络。
     var _pullLatestCorrections = async function() {
         try {
             var token = zbGetToken();
@@ -18236,7 +18229,7 @@ async function zbLoadFeedback() {
     zbUpdateFeedbackDot();
 }
 
-// 保存反馈数据到GitHub
+// 保存反馈数据到云端
 async function zbSaveFeedback() {
     var token = zbGetToken();
     await _zbPushFile(GH_FILES.feedback, { tickets: _zbFeedbackData }, token);
