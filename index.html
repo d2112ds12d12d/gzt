@@ -7315,6 +7315,7 @@ async function zbSyncDrafts() {
 }
 
 window.addEventListener('beforeunload', function(e) {
+    if (window._zbConfirmedDashboardReload) return;
     var s = zbGetDraftSummary();
     if (s.personCount + s.images + s.notes > 0) {
         e.preventDefault();
@@ -8309,20 +8310,83 @@ async function zbLoadCloudData(useApi) {
         return merged;
     }
 
+    function zbIsObjectiveOverallRow(row) {
+        var scope = String(row && row.subjobj || '').trim();
+        return scope.indexOf('客观') !== -1 && scope.indexOf('主观') === -1;
+    }
+    window.zbIsObjectiveOverallRow = zbIsObjectiveOverallRow;
+
+    // 客观整体轻量分片：缺失时按月回退完整分片并在浏览器端过滤，确保发布可渐进完成。
+    async function loadObjectiveSharded(fullPrefix) {
+        var lightT0 = performance.now();
+        var lightPrefix = fullPrefix === 'phone_diff_' ? 'phone_objective_' : 'five_cat_objective_';
+        var legacyName = fullPrefix === 'phone_diff_' ? 'phone_diff_detail.json' : 'five_cat_detail.json';
+        var now = new Date();
+        var months = [];
+        for (var i = 5; i >= 0; i--) {
+            var d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+            months.push(d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'));
+        }
+        var lightResults = await Promise.all(months.map(function(ym) {
+            return fetchFile(lightPrefix + ym + '.json');
+        }));
+        var fallbackResults = await Promise.all(months.map(function(ym, idx) {
+            var light = lightResults[idx];
+            if (light && Array.isArray(light.rows)) return Promise.resolve(null);
+            return fetchFile(fullPrefix + ym + '.json');
+        }));
+        var merged = [];
+        var unresolvedMonths = [];
+        months.forEach(function(ym, idx) {
+            var light = lightResults[idx];
+            if (light && Array.isArray(light.rows)) {
+                merged = merged.concat(light.rows.filter(zbIsObjectiveOverallRow));
+                return;
+            }
+            var full = fallbackResults[idx];
+            if (full && Array.isArray(full.rows)) {
+                merged = merged.concat(full.rows.filter(zbIsObjectiveOverallRow));
+            } else {
+                unresolvedMonths.push(ym);
+            }
+        });
+        if (unresolvedMonths.length) {
+            var legacy = await fetchFile(legacyName);
+            if (legacy && Array.isArray(legacy.rows)) {
+                merged = merged.concat(legacy.rows.filter(function(row) {
+                    return unresolvedMonths.indexOf(String(row.date || '').slice(0, 7)) !== -1
+                        && zbIsObjectiveOverallRow(row);
+                }));
+            }
+        }
+        if (window._zbPerf) window._zbPerf.push({
+            stage: 'loadObjectiveSharded(' + fullPrefix + ')',
+            ms: Math.round(performance.now() - lightT0),
+            rows: merged.length
+        });
+        return merged;
+    }
+    window.zbLoadObjectiveSharded = loadObjectiveSharded;
+
     if (!window._DATA) window._DATA = {};
 
-    // 四品类明细与历史兼容文件按需加载：切换四品类或进入案例图库时才请求。
+    // 首屏只持有客观整体轻量明细；主观、全部和用户主动开启的全量搜索再补载完整明细。
     window._zbFourCatReady = false;
     window._zbFourCatLoadPromise = null;
+    window._zbFullDiffReady = false;
+    window._zbFullDiffLoadPromise = null;
+    window._zbDetailLoadMode = 'objective';
     window.zbEnsureFourCatData = function(force) {
         if (window._zbFourCatReady && !force) return Promise.resolve(true);
         if (window._zbFourCatLoadPromise) return window._zbFourCatLoadPromise;
         var lazyT0 = performance.now();
         window._zbFourCatLoadPromise = Promise.all([
-            loadSharded('five_cat_'),
+            loadObjectiveSharded('five_cat_'),
             fetchFile(GH_FILES.dw4cat),
             fetchFile(GH_FILES.dw4sum)
         ]).then(function(parts) {
+            // 完整明细若已先一步加载完成，不允许较晚返回的客观子集覆盖它。
+            if (window._zbFullDiffReady) return true;
             var diff4 = parts[0] || [];
             var dw4catJson = parts[1];
             var dw4sumJson = parts[2];
@@ -8330,9 +8394,9 @@ async function zbLoadCloudData(useApi) {
             else if (!Array.isArray(window._DATA.diff4)) window._DATA.diff4 = [];
 
             if (dw4catJson && dw4catJson.rows && dw4catJson.rows.length > 0) {
-                window._DATA.dw4cat = dw4catJson.rows;
+                window._DATA.dw4cat = dw4catJson.rows.filter(zbIsObjectiveOverallRow);
                 var existingKeys = new Set((window._DATA.diff4 || []).map(function(r){ return (r.date||'')+'|'+(r.code||'')+'|'+(r.site||''); }));
-                var toMerge = dw4catJson.rows.filter(function(r){ return !existingKeys.has((r.date||'')+'|'+(r.code||'')+'|'+(r.site||'')); });
+                var toMerge = window._DATA.dw4cat.filter(function(r){ return !existingKeys.has((r.date||'')+'|'+(r.code||'')+'|'+(r.site||'')); });
                 if (toMerge.length) window._DATA.diff4 = (window._DATA.diff4 || []).concat(toMerge);
             }
 
@@ -8359,6 +8423,55 @@ async function zbLoadCloudData(useApi) {
         return window._zbFourCatLoadPromise;
     };
 
+    window.zbEnsureFullDiffData = function(force) {
+        if (window._zbFullDiffReady && !force) return Promise.resolve(true);
+        if (window._zbFullDiffLoadPromise) return window._zbFullDiffLoadPromise;
+        var fullT0 = performance.now();
+        window._zbFullDiffLoadPromise = Promise.all([
+            loadSharded('phone_diff_'),
+            loadSharded('five_cat_'),
+            fetchFile(GH_FILES.dw4cat),
+            fetchFile(GH_FILES.dw4sum)
+        ]).then(function(parts) {
+            window._DATA.diff5 = parts[0] || [];
+            window._DATA.diff4 = parts[1] || [];
+            var dw4catJson = parts[2];
+            var dw4sumJson = parts[3];
+            if (dw4catJson && Array.isArray(dw4catJson.rows)) {
+                window._DATA.dw4cat = dw4catJson.rows;
+                var existingKeys = new Set(window._DATA.diff4.map(function(r){ return (r.date||'')+'|'+(r.code||'')+'|'+(r.site||''); }));
+                var extra = dw4catJson.rows.filter(function(r){ return !existingKeys.has((r.date||'')+'|'+(r.code||'')+'|'+(r.site||'')); });
+                if (extra.length) window._DATA.diff4 = window._DATA.diff4.concat(extra);
+            }
+            if (dw4sumJson && Array.isArray(dw4sumJson.rows)) {
+                window._DATA.dw4sum = dw4sumJson.rows;
+                if (!Array.isArray(window._DATA.sum)) window._DATA.sum = [];
+                var sumKeys = new Set(window._DATA.sum.map(function(r){ return (r.date||'')+'|'+(r.site||'')+'|'+(r.cat||''); }));
+                var extraSum = dw4sumJson.rows.filter(function(r){ return !sumKeys.has((r.date||'')+'|'+(r.site||'')+'|'+(r.cat||'')); });
+                if (extraSum.length) window._DATA.sum = window._DATA.sum.concat(extraSum);
+            }
+            window._zbFourCatReady = true;
+            window._zbFullDiffReady = true;
+            window._zbDetailLoadMode = 'full';
+            if (typeof bridgeData === 'function') bridgeData();
+            if (window.zbPerfMeasure) window.zbPerfMeasure('lazy_full_diff_data', fullT0, {
+                diff5:(window._DATA.diff5 || []).length,
+                diff4:(window._DATA.diff4 || []).length
+            });
+            return true;
+        }).finally(function() {
+            window._zbFullDiffLoadPromise = null;
+        });
+        return window._zbFullDiffLoadPromise;
+    };
+
+    window.zbEnsureScopeData = function(scope) {
+        scope = String(scope || 'exec');
+        if (scope === 'subj' || scope === 'all') return window.zbEnsureFullDiffData();
+        if (window._activeCat && window._activeCat !== '手机') return window.zbEnsureFourCatData();
+        return Promise.resolve(true);
+    };
+
     let loaded = 0;
 
     // 首屏只拉手机总览需要的核心数据；四品类走上方按需加载。
@@ -8366,7 +8479,7 @@ async function zbLoadCloudData(useApi) {
     const _parallel = await Promise.all([
         loadSharded('qa_diff_'),                 // 0 qa 分片
         fetchFile(GH_FILES.sum),                 // 1 sum 单文件
-        loadSharded('phone_diff_')               // 2 diff5 分片
+        loadObjectiveSharded('phone_diff_')      // 2 手机客观整体轻量分片
     ]);
     if (window._zbPerf) window._zbPerf.push({ stage: '首屏核心拉取(3桶)', ms: Math.round(performance.now()-_tAll), rows: '-' });
     const qa       = _parallel[0];
@@ -8751,6 +8864,25 @@ async function zbPushToGitHub(tableType, force) {
     return await _zbPushFile(fname, content, token);
 }
 
+function zbObjectiveLightFileName(fname) {
+    var match = /^(phone_diff_|five_cat_)(\d{4}-\d{2})\.json$/.exec(String(fname || ''));
+    if (!match) return '';
+    return (match[1] === 'phone_diff_' ? 'phone_objective_' : 'five_cat_objective_') + match[2] + '.json';
+}
+
+async function _zbPushObjectiveLightFromFull(fname, rows, token) {
+    var lightName = zbObjectiveLightFileName(fname);
+    if (!lightName) return true;
+    var objectiveRows = (Array.isArray(rows) ? rows : []).filter(zbIsObjectiveOverallRow);
+    var ok = await _zbPushFile(lightName, {
+        rows: objectiveRows,
+        updated: new Date().toISOString(),
+        source: fname
+    }, token);
+    if (!ok) console.error('[客观轻量分片] 同步失败:', lightName);
+    return ok;
+}
+
 // 通用文件推送（获取SHA + PUT）
 // 409 = 乐观锁冲突（拿到的 sha 已陈旧），自动重新拉 sha 再 PUT，最多重试 2 次
 async function _zbPushFile(fname, content, token) {
@@ -8780,7 +8912,12 @@ async function _zbPushFile(fname, content, token) {
         if (sha) body.sha = sha;
         try {
             const res = await fetch(ghUrl(fname), { method: 'PUT', headers: { Authorization: 'token ' + token, 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-            if (res.ok) return true;
+            if (res.ok) {
+                if (zbObjectiveLightFileName(fname)) {
+                    return await _zbPushObjectiveLightFromFull(fname, content && content.rows, token);
+                }
+                return true;
+            }
             if (res.status === 409 && attempt < 2) {
                 // sha 已陈旧（并发或刚被别人 PUT），重新拉再试
                 console.warn('[_zbPushFile] 409 conflict, refetching sha and retrying:', fname, 'attempt', attempt + 1);
@@ -8875,7 +9012,7 @@ async function _zbPushMonthlyFieldPatches(fname, patches, token, label) {
             });
             if (putRes.ok) {
                 console.log(label, '字段级提交成功', fname, { patches:patches.length, matched:matched, attempt:attempt + 1 });
-                return true;
+                return await _zbPushObjectiveLightFromFull(fname, rows, token);
             }
             if (putRes.status === 409 && attempt < 2) {
                 console.warn(label, '409 conflict，重新读取最新文件后合并', fname, 'attempt', attempt + 1);
@@ -8944,7 +9081,7 @@ async function _zbPushMonthlyRowDeletes(fname, deleteSpecs, token, label) {
             if (unresolved.length) throw new Error('云端记录已变化，无法安全定位：' + unresolved.join('、'));
             if (!removed) {
                 console.log(label, '目标记录已不存在，按删除成功处理', fname);
-                return true;
+                return await _zbPushObjectiveLightFromFull(fname, rows, token);
             }
 
             var jsonBytes = new TextEncoder().encode(JSON.stringify({ rows:rows, updated:new Date().toISOString() }));
@@ -8962,7 +9099,7 @@ async function _zbPushMonthlyRowDeletes(fname, deleteSpecs, token, label) {
             });
             if (putRes.ok) {
                 console.log(label, '整行删除成功', fname, { requested:deleteSpecs.length, removed:removed, attempt:attempt + 1 });
-                return true;
+                return await _zbPushObjectiveLightFromFull(fname, rows, token);
             }
             if (putRes.status === 409 && attempt < 2) {
                 console.warn(label, '409 conflict，重新读取最新文件后删除', fname, 'attempt', attempt + 1);
@@ -11773,6 +11910,10 @@ function zbCaseLibBuildFromAttach(attach) {
     var seen = {};
     rows.forEach(function(row) {
         if (!row || !row.code) return;
+        var scope = String(row.category || row.subjobj || '').trim();
+        var issue = String(row.judgedIssueType || row.judgedType || row.issueType || '').trim();
+        // 案例图库只收录客观执行案例；主观记录的人工图片仍保留在差异明细中。
+        if (scope.indexOf('客观') === -1 || scope.indexOf('主观') !== -1 || issue.indexOf('执行') === -1) return;
         var l3 = row.level3 || row.level3_new || '';
         if (!l3 || l3 === '-' || l3 === '无') return;
         var entry = (typeof zbGetRowAttachFromMap === 'function') ? zbGetRowAttachFromMap(row, attach || {}) : null;
@@ -11825,6 +11966,7 @@ async function zbCaseLibLoadRealData(force) {
     _caseLibState.error = '';
     zbCaseLibSetLoadingText('正在读取云端案例图...');
     try {
+        // 图库只需要客观执行案例，补齐四品类客观轻量分片即可，不触发完整明细下载。
         if (typeof window.zbEnsureFourCatData === 'function') await window.zbEnsureFourCatData();
         if (typeof bridgeData === 'function') bridgeData();
         var attach = (typeof zbLoadAttach === 'function') ? await zbLoadAttach(force) : {};
@@ -12690,9 +12832,19 @@ document.addEventListener('DOMContentLoaded', function() {
     var scopeLabels = { exec:'客观执行', obj:'客观整体', subj:'主观', all:'全部' };
     var scopeTab = document.getElementById('siteDataScopeTab');
     if (scopeTab) {
-        scopeTab.addEventListener('click', function(e) {
+        scopeTab.addEventListener('click', async function(e) {
             var btn = e.target.closest('button[data-scope]');
             if (!btn) return;
+            if (typeof window.zbEnsureScopeData === 'function') {
+                try {
+                    await window.zbEnsureScopeData(btn.dataset.scope);
+                    if (typeof bridgeData === 'function') bridgeData();
+                } catch(err) {
+                    console.warn('[site-scope] 数据补载失败:', err);
+                    if (typeof showToast === 'function') showToast('口径数据加载失败，请重试', true);
+                    return;
+                }
+            }
             window._siteDataScope = btn.dataset.scope;
             scopeTab.querySelectorAll('button').forEach(function(b) {
                 var isOn = b.dataset.scope === window._siteDataScope;
@@ -13989,13 +14141,13 @@ function zbMarkQueryPending() {
   btn.textContent = '! 查询';
 }
 // ══ 全局搜索 ══
-window._zbSearchScope = 'all'; // 全局搜索默认不受顶部日期、品类和口径限制
+window._zbSearchScope = 'current'; // 默认搜索当前范围；用户主动切换后才加载全量明细
 window._zbSearchFocusIdx = -1;
 window._zbSearchPreparePromise = null;
 window._zbSearchLoadFailed = false;
 
 window.zbSearchDataReady = function() {
-    return !!window._zbCoreDataReady && (window._zbSearchScope !== 'all' || !!window._zbFourCatReady);
+    return !!window._zbCoreDataReady && (window._zbSearchScope !== 'all' || !!window._zbFullDiffReady);
 };
 
 window.zbPrepareSearchData = function() {
@@ -14014,9 +14166,9 @@ window.zbPrepareSearchData = function() {
         }
         document.addEventListener('zb:core-data-ready', onReady, { once:true });
     }).then(async function() {
-        if (window._zbSearchScope === 'all' && !window._zbFourCatReady) {
-            if (typeof window.zbEnsureFourCatData !== 'function') throw new Error('四品类加载器未就绪');
-            await window.zbEnsureFourCatData();
+        if (window._zbSearchScope === 'all' && !window._zbFullDiffReady) {
+            if (typeof window.zbEnsureFullDiffData !== 'function') throw new Error('完整明细加载器未就绪');
+            await window.zbEnsureFullDiffData();
             if (typeof bridgeData === 'function') bridgeData();
         }
         return true;
@@ -14052,7 +14204,7 @@ window.zbApplySearchScopeUI = function() {
 window.zbOpenSearch = async function() {
     var overlay = document.getElementById('zbSearchOverlay');
     if (!overlay) return;
-    window._zbSearchScope = 'all';
+    window._zbSearchScope = 'current';
     overlay.style.display = 'flex';
     setTimeout(function(){ document.getElementById('zbSearchInput').focus(); }, 50);
     zbApplySearchScopeUI();
@@ -14095,11 +14247,12 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-window.zbToggleSearchScope = function() {
+window.zbToggleSearchScope = async function() {
     window._zbSearchScope = window._zbSearchScope === 'current' ? 'all' : 'current';
     zbApplySearchScopeUI();
     var input = document.getElementById('zbSearchInput');
     if (input) zbSearchQuery(input.value);
+    if (window._zbSearchScope === 'all') await zbPrepareSearchData();
 };
 
 window.zbUpdateSearchScopeHint = function() {
@@ -15964,7 +16117,7 @@ window.zbKouJingOutside = function(e) {
 };
 
 // 点击口径选项
-document.addEventListener('click', function(e) {
+document.addEventListener('click', async function(e) {
     var item = e.target.closest('.zb-kj-item');
     if (!item) return;
     var kj = item.dataset.kj;
@@ -15972,6 +16125,16 @@ document.addEventListener('click', function(e) {
     var color = item.dataset.color || '#2563eb';
     var bg = item.dataset.bg || '#eff6ff';
     var border = item.dataset.border || '#bfdbfe';
+    if (typeof window.zbEnsureScopeData === 'function') {
+        try {
+            await window.zbEnsureScopeData(kj);
+            if (typeof bridgeData === 'function') bridgeData();
+        } catch(err) {
+            console.warn('[global-scope] 数据补载失败:', err);
+            if (typeof showToast === 'function') showToast('口径数据加载失败，请重试', true);
+            return;
+        }
+    }
     window._zbGlobalKouJing = kj;
 
     // 更新标签样式
@@ -16834,75 +16997,14 @@ function zbSetCloudStatus(status) {
 }
 
 // ── 手动刷新按钮 ──
-async function zbRefreshCloudManual() {
-  var btn  = document.getElementById('zbRefreshBtn');
-  var icon = document.getElementById('zbRefreshIcon');
-  var hint = document.getElementById('zbRefreshHint');
-  if (btn && btn.classList.contains('zb-loading')) return; // 防重复点击
+function zbRefreshCloudManual() {
+  var summary = zbGetDraftSummary();
+  var hasPendingDrafts = summary.personCount + summary.images + summary.notes > 0;
+  if (hasPendingDrafts && !window.confirm('刷新会丢失尚未上传的修改，是否继续？')) return;
 
-  // ── 加载中状态 ──
-  if (btn)  { btn.classList.remove('zb-ok','zb-err'); btn.classList.add('zb-loading'); btn.disabled = true; }
-  if (icon) { icon.style.animation = 'zbSpin .7s linear infinite'; }
-  if (hint) { hint.style.display = ''; hint.style.color = '#2563eb'; hint.textContent = '加载中…'; }
-  zbSetCloudStatus('loading');
-
-  var startTime = Date.now();
-  try {
-    // 走 GitHub Contents API 而非 raw CDN，绕过 Fastly 边缘缓存（cache key 不含 query string，
-    // ?t=Date.now() 对它无效），保证手动刷新拿到的是最新 commit
-    await zbLoadCloudData(true);
-    zbSetCloudStatus('ok');
-
-    // 计算时间戳和最新数据日期
-    var now = new Date();
-    var timeStr = now.getHours().toString().padStart(2,'0') + ':' + now.getMinutes().toString().padStart(2,'0');
-    var latestDate = '';
-    if (window._allDiffData && window._allDiffData.length) {
-      var dates = window._allDiffData.map(function(d){ return (d.date||'').split(' ')[0]; }).filter(Boolean).sort();
-      latestDate = dates[dates.length-1] || '';
-    }
-    // 日期只显示 MM-DD 更简洁
-    var dateShort = latestDate ? latestDate.slice(5) : '';
-
-    // ── 成功状态：打勾图标 ──
-    if (btn)  { btn.classList.remove('zb-loading'); btn.classList.add('zb-ok'); btn.disabled = false; }
-    if (icon) {
-      icon.style.animation = 'zbBtnPop .3s ease';
-      icon.innerHTML = '<polyline points="20 6 9 17 4 12" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5"/>';
-    }
-    if (hint) { hint.style.color = '#15803d'; hint.textContent = timeStr + (dateShort ? ' · ' + dateShort : ''); }
-
-    // 2s 后复原
-    setTimeout(function() {
-      if (btn)  { btn.classList.remove('zb-ok'); }
-      if (icon) {
-        icon.style.animation = '';
-        icon.innerHTML = '<polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/>';
-      }
-      if (hint) { hint.style.color = 'var(--sidebar-lbl)'; }
-    }, 2000);
-
-  } catch(e) {
-    zbSetCloudStatus('err');
-
-    // ── 失败状态：叉图标 ──
-    if (btn)  { btn.classList.remove('zb-loading'); btn.classList.add('zb-err'); btn.disabled = false; }
-    if (icon) {
-      icon.style.animation = 'zbBtnPop .3s ease';
-      icon.innerHTML = '<line x1="18" y1="6" x2="6" y2="18" stroke-linecap="round"/><line x1="6" y1="6" x2="18" y2="18" stroke-linecap="round"/>';
-    }
-    if (hint) { hint.style.color = '#dc2626'; hint.textContent = '失败，请重试'; }
-
-    // 3s 后复原
-    setTimeout(function() {
-      if (btn)  { btn.classList.remove('zb-err'); }
-      if (icon) {
-        icon.style.animation = '';
-        icon.innerHTML = '<polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/>';
-      }
-      if (hint) { hint.style.color = 'var(--sidebar-lbl)'; }
-    }, 3000);
-  }
+  // 已明确确认时跳过 beforeunload 的重复提示，只放行本次整页刷新。
+  window._zbConfirmedDashboardReload = true;
+  window.location.reload();
 }
 
 function _zbShowRefreshResult(success, elapsed) {
@@ -18411,10 +18513,10 @@ document.addEventListener('DOMContentLoaded', function(){
       <input id="zbSearchInput" placeholder="搜索质检码、质检人、站点、质检项..." style="flex:1;font-size:13px;color:#0f172a;border:none;outline:none;background:transparent;" oninput="zbSearchQuery(this.value)">
       <!-- Toggle E样式 -->
       <div id="zbSearchScopeWrap" onclick="zbToggleSearchScope()" style="display:flex;align-items:center;gap:6px;cursor:pointer;flex-shrink:0;user-select:none;">
-        <div id="zbSearchScopeTrack" style="width:28px;height:16px;border-radius:8px;background:#dbeafe;position:relative;transition:background .2s;flex-shrink:0;">
-          <div id="zbSearchScopeThumb" style="width:12px;height:12px;border-radius:50%;background:#2563eb;position:absolute;top:2px;left:14px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.15);"></div>
+        <div id="zbSearchScopeTrack" style="width:28px;height:16px;border-radius:8px;background:#e2e8f0;position:relative;transition:background .2s;flex-shrink:0;">
+          <div id="zbSearchScopeThumb" style="width:12px;height:12px;border-radius:50%;background:#94a3b8;position:absolute;top:2px;left:2px;transition:all .2s;box-shadow:0 1px 3px rgba(0,0,0,0.15);"></div>
         </div>
-        <span id="zbSearchScopeLabel" style="font-size:11px;color:#2563eb;transition:color .2s;white-space:nowrap;">全量搜索</span>
+        <span id="zbSearchScopeLabel" style="font-size:11px;color:#64748b;transition:color .2s;white-space:nowrap;">当前范围</span>
       </div>
       <span onclick="zbCloseSearch()" style="font-size:10px;color:#94a3b8;background:#f1f5f9;padding:2px 7px;border-radius:4px;border:1px solid #e2e8f0;cursor:pointer;flex-shrink:0;">ESC</span>
     </div>
