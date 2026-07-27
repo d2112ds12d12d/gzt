@@ -710,6 +710,25 @@
         .rank-col-scroll::-webkit-scrollbar-track { background:transparent; }
         .rank-col-scroll::-webkit-scrollbar-thumb { background:var(--border-color); border-radius:2px; }
         .rank-col-scroll:hover::-webkit-scrollbar-thumb { background:#b0bec9; }
+        .rank-section-label {
+            padding:4px 14px; font-size:10px; color:var(--text-secondary); background:var(--kpi-bg);
+            border-bottom:0.5px solid var(--border-color); letter-spacing:.03em;
+            display:flex; align-items:center; justify-content:space-between; gap:8px;
+        }
+        .rank-section-label.separated { border-top:0.5px solid var(--border-color); }
+        .rank-target-badge {
+            display:inline-flex; align-items:center; flex-shrink:0; padding:2px 7px;
+            border:1px solid var(--border-color); border-radius:999px; background:var(--filter-input-bg);
+            color:var(--text-secondary); font-size:10px; font-weight:600; letter-spacing:0;
+        }
+        .rank-board-foot {
+            padding:7px 16px; border-top:0.5px solid var(--border-color); font-size:10px;
+            color:var(--text-secondary); display:flex; align-items:center; justify-content:space-between;
+            gap:12px; flex-wrap:wrap;
+        }
+        .rank-color-legend { display:inline-flex; align-items:center; gap:12px; flex-wrap:wrap; }
+        .rank-color-item { display:inline-flex; align-items:center; gap:4px; }
+        .rank-color-dot { width:7px; height:7px; border-radius:50%; flex-shrink:0; }
         .rank-row {
             display:grid; grid-template-columns:22px minmax(0,1fr) 70px 46px minmax(0,1fr) 50px;
             align-items:center; gap:4px;
@@ -1411,19 +1430,20 @@
                             <span>大仓</span>
                             <span style="font-size:10px;color:#a16207;font-weight:400;">智能验机中心 + 后验中心仓</span>
                         </div>
-                        <div style="padding:4px 14px;font-size:10px;color:var(--text-secondary);background:var(--kpi-bg);border-bottom:0.5px solid var(--border-color);letter-spacing:.03em;">— 智能验机中心 —</div>
+                        <div class="rank-section-label"><span>— 智能验机中心 —</span><span class="rank-target-badge" id="rankTargetDW">目标 ≤ 1.00%</span></div>
                         <div id="rankBoardDW"></div>
-                        <div style="padding:4px 14px;font-size:10px;color:var(--text-secondary);background:var(--kpi-bg);border-top:0.5px solid var(--border-color);border-bottom:0.5px solid var(--border-color);letter-spacing:.03em;" id="rankHouyanLabel">— 后验中心仓 —</div>
+                        <div class="rank-section-label separated" id="rankHouyanLabel"><span>— 后验中心仓 —</span><span class="rank-target-badge" id="rankTargetHY">目标 ≤ 1.40%</span></div>
                         <div id="rankBoardHouyan"></div>
                     </div>
                     <!-- 右：中心仓 -->
                     <div id="rankColZX" style="border-left:3px solid #dbeafe;">
-                        <div style="padding:9px 14px;font-size:11px;font-weight:500;color:#1d4ed8;border-bottom:0.5px solid var(--border-color);">中心仓</div>
+                        <div style="padding:9px 14px;font-size:11px;font-weight:500;color:#1d4ed8;border-bottom:0.5px solid var(--border-color);display:flex;align-items:center;justify-content:space-between;gap:8px;"><span>中心仓</span><span class="rank-target-badge" id="rankTargetZX">目标 ≤ 1.40%</span></div>
                         <div id="rankBoardZX"></div>
                     </div>
                 </div>
-                <div style="padding:7px 16px;border-top:0.5px solid var(--border-color);font-size:10px;color:var(--text-secondary);">
-                    ↑红色=较昨日上升（变差）· ↓绿色=较昨日下降（改善）· —=暂无昨日数据 · 涨跌 = 筛选期最新日 vs 前一日的差异率变化
+                <div class="rank-board-foot">
+                    <span class="rank-color-legend"><span class="rank-color-item"><i class="rank-color-dot" style="background:#16a34a;"></i>绿色=达到目标</span><span class="rank-color-item"><i class="rank-color-dot" style="background:#f59e0b;"></i>黄色=超过目标</span></span>
+                    <span>↑红色=较昨日上升（变差）· ↓绿色=较昨日下降（改善）· —=暂无昨日数据 · 涨跌 = 筛选期最新日 vs 前一日的差异率变化</span>
                 </div>
             </div>
 
@@ -4210,6 +4230,30 @@
 
             function renderNewRankBoard() {
                 const cat = currentRankCat;
+                const RANK_RATE_TARGETS = {
+                    dw:       { '手机':1.00, '笔记本':1.80, '平板':1.00, '耳机':1.20, '手表':1.10 },
+                    standard: { '手机':1.40, '笔记本':2.80, '平板':1.50, '耳机':1.50, '手表':1.50 }
+                };
+                function rankRateTarget(cat, targetGroup) {
+                    const groupTargets = RANK_RATE_TARGETS[targetGroup] || RANK_RATE_TARGETS.standard;
+                    return Number(groupTargets[cat]);
+                }
+                function isRateOverTarget(rate, target) {
+                    return rate !== null && Number(rate.toFixed(2)) > target;
+                }
+                function rateColor(rate, target) {
+                    if (rate === null) return '#94a3b8';
+                    return isRateOverTarget(rate, target) ? '#f59e0b' : '#16a34a';
+                }
+                function updateRankTargetLabels(cat) {
+                    const dwTarget = rankRateTarget(cat, 'dw');
+                    const standardTarget = rankRateTarget(cat, 'standard');
+                    [['rankTargetDW', dwTarget], ['rankTargetHY', standardTarget], ['rankTargetZX', standardTarget]].forEach(([id, target]) => {
+                        const el = document.getElementById(id);
+                        if (el) el.textContent = '目标 ≤ ' + target.toFixed(2) + '%';
+                    });
+                }
+                updateRankTargetLabels(cat);
                 // 日期口径：使用筛选器范围内的最后一天 vs 前一天（T-1）
                 const startD = startDateFilter.value;
                 const endD   = endDateFilter.value;
@@ -4268,19 +4312,12 @@
                 // 大仓
                 // 大仓：智能验机中心（动态排名）+ 后验中心仓（固定在底部）
                 const dwDynRows = buildRows(DW_SITES, false).sort((a,b) => (a.rate===null?1:0) - (b.rate===null?1:0) || (a.rate||0) - (b.rate||0));
-                const dwFixRows = buildRows(DW_HOUYAN, true);
+                const dwFixRows = buildRows(DW_HOUYAN, true).sort((a,b) => (a.rate===null?1:0) - (b.rate===null?1:0) || (a.rate||0) - (b.rate||0));
                 // 中心仓：排除大仓和后验中心仓，动态排名
                 const allSites = [...new Set([...DATA.qa,...DATA.sum].map(r=>r.site).filter(zbIsValidRankSite))];
                 const zxDynamic = allSites.filter(s => !DW_SITES.includes(s) && !DW_HOUYAN.includes(s));
                 const zxDynRows = buildRows(zxDynamic, false).sort((a,b) => (a.rate===null?1:0) - (b.rate===null?1:0) || (a.rate||0) - (b.rate||0));
                 const zxFixRows = [];
-
-                function rateColor(rate) {
-                    if (rate === null) return '#94a3b8';
-                    if (rate > 5) return '#dc2626';
-                    if (rate > 2) return '#f59e0b';
-                    return '#16a34a';
-                }
 
                 // 预计算每个站点近15天每日差异率（用于火花图）
                 function calcSparkData(site, cat) {
@@ -4309,11 +4346,14 @@
                         + '</svg>';
                 }
 
-                function renderRows(rows, maxRate) {
+                function renderRows(rows, maxRate, targetGroup) {
                     return rows.map((r, i) => {
                         const noCls = r.isFixed ? 'fixed' : (i===0?'top1':i===1?'top2':i===2?'top3':'normal');
                         const noTxt = r.isFixed ? '—' : String(i+1);
-                        const color = rateColor(r.rate);
+                        const target = rankRateTarget(cat, targetGroup);
+                        const color = rateColor(r.rate, target);
+                        const targetStatus = r.rate === null ? 'none' : (isRateOverTarget(r.rate, target) ? 'over' : 'ok');
+                        const targetTitle = '目标 ' + target.toFixed(2) + '%';
                         const pct = maxRate > 0 && r.rate !== null ? (r.rate / maxRate * 100).toFixed(0) : 0;
                         const activeCat = window._activeCat || '';
                         const trainers = (typeof zbGetTrainers === 'function') ? zbGetTrainers(r.site, activeCat) : [];
@@ -4325,14 +4365,14 @@
                             : '';
                         const sparkData = calcSparkData(r.site, cat);
                         const spark = sparkSVG(sparkData, r.changeCls);
-                        return `<div class="rank-row" data-site="${r.site}" onclick="zbClickRankSite(this)" style="cursor:pointer;">
+                        return `<div class="rank-row" data-site="${r.site}" data-target="${target.toFixed(2)}" data-target-status="${targetStatus}" onclick="zbClickRankSite(this)" style="cursor:pointer;">
                             <div class="rank-no ${noCls}">${noTxt}</div>
                             <div class="rank-name" title="${r.site}" style="min-width:0;overflow:hidden;">
                                 <div style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${r.site}</div>
                                 ${trainerHtml}
                             </div>
-                            <div class="rank-bar-wrap"><div class="rank-bar-inner" style="width:${pct}%;background:${color}"></div></div>
-                            <div class="rank-rate" style="color:${color}">${r.rate !== null ? r.rate.toFixed(2)+'%' : '—'}</div>
+                            <div class="rank-bar-wrap" title="${targetTitle}"><div class="rank-bar-inner" style="width:${pct}%;background:${color}"></div></div>
+                            <div class="rank-rate" title="${targetTitle}" style="color:${color}">${r.rate !== null ? r.rate.toFixed(2)+'%' : '—'}</div>
                             ${metaHtml}
                             <div class="rank-change ${r.changeCls}">${r.change}</div>
                         </div>`;
@@ -4342,12 +4382,12 @@
                 const zxMax = Math.max(...zxDynRows.map(r=>r.rate||0), 0.001);
                 const dwMax = Math.max(...dwDynRows.map(r=>r.rate||0), ...dwFixRows.map(r=>r.rate||0), 0.001);
                 const globalMax = Math.max(zxMax, dwMax);
-                document.getElementById('rankBoardDW').innerHTML = renderRows(dwDynRows, globalMax);
+                document.getElementById('rankBoardDW').innerHTML = renderRows(dwDynRows, globalMax, 'dw');
                 var houyanEl = document.getElementById('rankBoardHouyan');
                 var houyanLabel = document.getElementById('rankHouyanLabel');
-                if (houyanEl) houyanEl.innerHTML = dwFixRows.length ? renderRows(dwFixRows, globalMax) : '';
+                if (houyanEl) houyanEl.innerHTML = dwFixRows.length ? renderRows(dwFixRows, globalMax, 'standard') : '';
                 if (houyanLabel) houyanLabel.style.display = dwFixRows.length ? '' : 'none';
-                document.getElementById('rankBoardZX').innerHTML = renderRows(zxDynRows, globalMax);
+                document.getElementById('rankBoardZX').innerHTML = renderRows(zxDynRows, globalMax, 'standard');
 
                 // 站点类型联动：控制大仓/中心仓区块显隐
                 (function applyRankSiteTypeFilter() {
